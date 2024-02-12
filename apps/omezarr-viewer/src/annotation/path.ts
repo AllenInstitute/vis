@@ -1,4 +1,4 @@
-import { vec2, vec4 } from "@aibs-vis/geometry"
+import type { vec2, vec4 } from "@vis/geometry"
 
 export type Point = {
     point: vec2;

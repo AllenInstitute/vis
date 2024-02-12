@@ -1,4 +1,0 @@
-{
-  "npm.packageManager": "pnpm",
-  "typescript.tsserver.useSyntaxServer": "auto"
-}

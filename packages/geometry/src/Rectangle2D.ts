@@ -1,5 +1,5 @@
-import { box2D } from "./box2D";
-import { Vec2, vec2 } from "./vec2";
+import type { box2D } from "./box2D";
+import { Vec2, type vec2 } from "./vec2";
 
 export type rectangle2D = {
   center: vec2;

@@ -1,17 +1,27 @@
-// TODO - pick the right options for
-// stuff like outDir,lib/target etc...
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
-    "paths": { "~/*": ["./*"] },
+    "paths": {
+      "~/*": [
+        "./*"
+      ]
+    },
     "outDir": "./lib",
     "module": "ES2022",
     "target": "ES2022",
-    "lib": ["es2022"],
+    "lib": [
+      "es2022"
+    ],
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["./src/index.ts"],
-  "exclude": ["tests/", "**/*.test.ts"]
+  "include": [
+    "./src/index.ts"
+  ],
+  "exclude": [
+    "tests/",
+    "**/*.test.ts"
+  ]
 }

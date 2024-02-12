@@ -2,7 +2,7 @@
 import { ImGui, ImGui_Impl } from "@zhobo63/imgui-ts";
 import REGL from "regl";
 import {
-  ZarrDataset,
+  type ZarrDataset,
   explain,
   getSlice,
   indexOfDimension,
@@ -11,19 +11,19 @@ import {
   sizeInUnits,
   sizeInVoxels,
 } from "./zarr-data";
-import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
+import { AsyncDataCache, beginLongRunningFrame } from "@vis/scatterbrain";
 import {
-  AxisAlignedPlane,
-  VoxelSliceRenderSettings,
-  VoxelTile,
+  type AxisAlignedPlane,
+  type VoxelSliceRenderSettings,
+  type VoxelTile,
   buildVersaRenderer,
   cacheKeyFactory,
   getVisibleTiles,
   requestsForTile,
 } from "./versa-renderer";
-import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
-import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
-import { Camera } from "./camera";
+import { Box2D, type Interval, Vec2, type box2D, type vec2 } from "@vis/geometry";
+import type { FrameLifecycle } from "@vis/scatterbrain/lib/render-queue";
+import type { Camera } from "./camera";
 import { buildImageRenderer } from "./image-renderer";
 import { ImVec2, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";
 import { colorMapWidget } from "./components/color-map";

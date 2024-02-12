@@ -1,8 +1,7 @@
 // lets make some easy to understand utils to access .zarr data stored in an s3 bucket somewhere
-import { Box2D, Interval, box2D, limit, Box3D, box3D } from "@aibs-vis/geometry";
-import { HTTPStore, NestedArray, TypedArray, openArray, openGroup, slice } from "zarr";
+import { HTTPStore, NestedArray, type TypedArray, openArray, openGroup, slice } from "zarr";
 import { some } from "lodash";
-import { Vec2, vec2 } from "~/node_modules/@aibs-vis/geometry/lib/vec2";
+import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from "@vis/geometry";
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
@@ -143,7 +142,7 @@ export function pickBestScale(
   const choice = datasets.reduce(
     (bestSoFar, cur) =>
       dstToDesired(vxlPitch(sizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-      dstToDesired(vxlPitch(sizeInVoxels(plane, axes, cur)!), pxPitch)
+        dstToDesired(vxlPitch(sizeInVoxels(plane, axes, cur)!), pxPitch)
         ? cur
         : bestSoFar,
     datasets[0]

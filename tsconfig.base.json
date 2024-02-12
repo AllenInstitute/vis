@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "verbatimModuleSyntax": true,
+        "declaration": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true
+    }
+}

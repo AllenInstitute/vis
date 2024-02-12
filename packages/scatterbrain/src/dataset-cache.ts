@@ -6,6 +6,7 @@ export function promisify<D>(thing: D | Promise<D>) {
 export function mapify<D>(results: ReadonlyArray<{ key: string; result: D }>): Record<string, D> {
     return results.reduce((attrs, cur) => ({ ...attrs, [cur.key]: cur.result }), {});
 }
+
 export class AsyncDataCache<D> {
     private entries: Map<string, MaybePromise<D>>;
 

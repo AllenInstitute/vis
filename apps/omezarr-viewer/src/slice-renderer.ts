@@ -1,16 +1,16 @@
 import REGL from "regl";
 import {
-  ZarrDataset,
-  ZarrRequest,
+  type ZarrDataset,
+  type ZarrRequest,
   getSlice,
   indexOfDimension,
   pickBestScale,
   sizeInUnits,
   sizeInVoxels,
 } from "./zarr-data";
-import { Box2D, Interval, Vec2, box2D, vec2, vec4 } from "@aibs-vis/geometry";
+import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@vis/geometry";
 import { omit } from "lodash";
-import { Camera } from "./camera";
+import type { Camera } from "./camera";
 
 type Props = {
   tile: vec4;

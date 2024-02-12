@@ -1,8 +1,9 @@
 // an IM-gui widget for controlling the display of a single channel
 
-import { Interval } from "@aibs-vis/geometry";
+// an IM-gui widget for controlling the display of a single channel
+import type { Interval } from "@vis/geometry";
 import { ImGui } from "@zhobo63/imgui-ts";
-import { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
+import type { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
 import { ImGuiColorEditFlags, ImGuiSliderFlags, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";
 
 // assumes its mid-frame of an IMGui.newFrame() when called!

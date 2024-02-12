@@ -1,4 +1,4 @@
-import { VectorLib } from "./vector";
+import type { VectorLib } from "./vector";
 
 type VectorConstraint = ReadonlyArray<number>;
 export type box<V extends VectorConstraint> = {

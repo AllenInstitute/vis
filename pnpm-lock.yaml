@@ -8,15 +8,15 @@ importers:
 
   apps/omezarr-viewer:
     dependencies:
-      '@aibs-vis/geometry':
-        specifier: workspace:*
-        version: link:../../packages/geometry
-      '@aibs-vis/scatterbrain':
-        specifier: workspace:*
-        version: link:../../packages/scatterbrain
       '@types/lodash':
         specifier: ^4.14.202
         version: 4.14.202
+      '@vis/geometry':
+        specifier: workspace:*
+        version: link:../../packages/geometry
+      '@vis/scatterbrain':
+        specifier: workspace:*
+        version: link:../../packages/scatterbrain
       '@zhobo63/imgui-ts':
         specifier: ^0.1.43
         version: 0.1.43

@@ -1,4 +1,4 @@
-import { box2D, vec2 } from "@aibs-vis/geometry"
+import type { box2D, vec2 } from "@vis/geometry"
 
 // a basic camera, for viewing slices
 export type Camera = {

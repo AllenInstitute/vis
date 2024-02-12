@@ -1,5 +1,5 @@
-import { vec2, vec4 } from "@aibs-vis/geometry";
-import REGL, { Framebuffer2D } from "regl";
+import type { vec2, vec4 } from "@vis/geometry";
+import REGL, { type Framebuffer2D } from "regl";
 
 type Props = {
   target: Framebuffer2D | null;
