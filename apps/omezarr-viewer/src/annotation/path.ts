@@ -1,4 +1,4 @@
-import type { vec2, vec4 } from "@vis/geometry"
+import type { vec2, vec4 } from "@alleninstitute/vis-geometry"
 
 export type Point = {
     point: vec2;

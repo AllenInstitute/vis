@@ -1,6 +1,6 @@
 import REGL, { type Framebuffer2D } from "regl";
 import { type ZarrDataset, type ZarrRequest, getSlice, pickBestScale, sizeInUnits, sizeInVoxels } from "./zarr-data";
-import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@vis/geometry";
+import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 import { omit, slice } from "lodash";
 import type { Camera } from "./camera";
 import type { NestedArray, TypedArray } from "zarr";

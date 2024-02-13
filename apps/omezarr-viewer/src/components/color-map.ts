@@ -1,7 +1,7 @@
 // an IM-gui widget for controlling the display of a single channel
 
 // an IM-gui widget for controlling the display of a single channel
-import type { Interval } from "@vis/geometry";
+import type { Interval } from "@alleninstitute/vis-geometry";
 import { ImGui } from "@zhobo63/imgui-ts";
 import type { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
 import { ImGuiColorEditFlags, ImGuiSliderFlags, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";
