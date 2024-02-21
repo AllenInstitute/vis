@@ -114,6 +114,9 @@ class VersaDemo {
 
     // })
   }
+  cacheReport() {
+    this.cache.report();
+  }
   async initThumbnails() {
     // TODO cleanupThumbnails();
     const sliceSize = sizeInUnits(
@@ -484,6 +487,9 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: VersaDemo) {
     if (ImGui.GetIO().WantCaptureKeyboard) return;
 
     switch (e.key) {
+      case "b":
+        demo.cacheReport();
+        break;
       case "a":
         demo.nextAxis();
         break;
@@ -520,8 +526,13 @@ async function demotime() {
     // extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
   });
   const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
+  canvas.tabIndex = 3;
   setupGui(gl);
-  const voxelSliceCache: AsyncDataCache<REGL.Texture2D> = new AsyncDataCache<REGL.Texture2D>();
+  const voxelSliceCache: AsyncDataCache<REGL.Texture2D> = new AsyncDataCache<REGL.Texture2D>(
+    (tex: REGL.Texture2D) => { console.log('destroy! ', tex); tex.destroy() },
+    (tex: REGL.Texture2D) => 1,
+    300
+  );
   const zarr = await load(file);
   explain(zarr);
 

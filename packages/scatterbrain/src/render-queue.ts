@@ -39,13 +39,19 @@ function renderIfCached<Column, Item, Settings>(
     }
     return requests;
 }
-function isAbortError(error: Error) {
-    if (error instanceof DOMException) {
-        // beyond this, there is a legacy name, legacy code, and semi-experimental non-legacy name?
-        // TODO: this info may change, take a look here: https://developer.mozilla.org/en-US/docs/Web/API/DOMException#error_names
-        return error.code === DOMException.ABORT_ERR || error.name === 'AbortError';
+function isAbortError(error: Error | unknown) {
+    try {
+        if (error === 'cancelled') return true;
+
+        if (error instanceof DOMException) {
+            // beyond this, there is a legacy name, legacy code, and semi-experimental non-legacy name?
+            // TODO: this info may change, take a look here: https://developer.mozilla.org/en-US/docs/Web/API/DOMException#error_names
+            return error.code === DOMException.ABORT_ERR || error.name === 'AbortError';
+        }
+        return false;
+    } catch (err) {
+        return error === 'cancelled'
     }
-    return false;
 }
 
 function cacheAndRenderItem<Column, Item, Settings>(
@@ -93,9 +99,12 @@ function cacheAndRenderItem<Column, Item, Settings>(
             .catch((err) => {
                 // abort errors are considered very normal for our use case, so only handle an error if its NOT an AbortError
                 if (!isAbortError(err)) {
+
                     handleError(err);
                 }
-            });
+            }).finally(() => {
+                reqs.forEach((key) => mutableCache.finished(cacheKeyForRequest(key, item, settings)))
+            })
     }
     return true;
 }
@@ -135,7 +144,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     if (queue.length === 0) {
         // we did all the work - it was already cached
         reportNormalStatus('finished_synchronously');
-        return { cancelFrame: () => {} };
+        return { cancelFrame: () => { } };
     }
     reportNormalStatus('begun');
     if (queue.length !== items.length) {
@@ -209,7 +218,8 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     // touched/referenced after cancellation, unless the author of render() did some super weird bad things
     return {
         cancelFrame: (reason?: string) => {
-            abort.abort(new DOMException(reason, 'AbortError'));
+            // abort.abort(new DOMException(reason, 'AbortError'));
+            abort.abort('cancelled')
             clearInterval(interval);
             reportNormalStatus('cancelled');
         },
