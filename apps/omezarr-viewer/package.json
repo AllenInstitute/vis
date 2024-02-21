@@ -1,5 +1,5 @@
 {
-  "name": "@vis/omezarr-demo",
+  "name": "@alleninstitute/vis-omezarr-demo",
   "version": "0.0.1",
   "contributors": [
     {
@@ -47,8 +47,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@vis/geometry": "workspace:*",
-    "@vis/scatterbrain": "workspace:*",
+    "@alleninstitute/vis-geometry": "workspace:*",
+    "@alleninstitute/vis-scatterbrain": "workspace:*",
     "@types/lodash": "^4.14.202",
     "@zhobo63/imgui-ts": "^0.1.43",
     "lodash": "^4.17.21",

@@ -2,3 +2,4 @@ node_modules
 lib
 dst
 .vscode
+.DS_Store
