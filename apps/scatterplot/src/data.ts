@@ -7,7 +7,7 @@ import { visitBFS } from "./tree";
 import { size } from "lodash";
 
 type Dataset = ReturnType<typeof loadDataset>
-type RenderSettings = {
+export type RenderSettings = {
     dataset: Dataset;
     view: box2D;
     color: string;
