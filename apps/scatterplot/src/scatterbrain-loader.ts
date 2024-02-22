@@ -50,7 +50,7 @@ export type ColumnarNode<V extends VectorConstraint> = {
     depth: number;
     geneUrl: string; // TODO: geneUrl here reflects a gene-specific aspect of the API - rename when a more-general name is decided on
 };
-type ColumnarTree<V extends VectorConstraint> = {
+export type ColumnarTree<V extends VectorConstraint> = {
     content: ColumnarNode<V>;
     children: ReadonlyArray<ColumnarTree<V>>
 }
@@ -164,19 +164,15 @@ export function loadDataset(metadata: ColumnarMetatdata, datasetUrl: string) {
         }),
         {} as Record<string, ColumnMetadata>
     );
-    const dimensionPicker =
-        columnInfo[spatialDimName].elements === 3
-            ? { dimensions: 3 as const, converter: convertTree3D, bounds: rootBounds }
-            : { dimensions: 2 as const, converter: convertTree2D, bounds: dropZ(rootBounds) };
     return {
-        dimensions: dimensionPicker.dimensions,
+        dimensions: 2,
         visualizationReferenceId: metadata.visualizationReferenceId,
-        bounds: dimensionPicker.bounds,
+        bounds: dropZ(rootBounds),
         url: datasetUrl,
         geneUrl: metadata.geneFileEndpoint,
         columnInfo,
         spatialColumn: metadata.spatialColumn,
-        tree: dimensionPicker.converter(
+        tree: convertTree2D(
             metadata.root,
             rootBounds,
             0,
