@@ -1,23 +1,40 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import type { AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
+import { beginLongRunningFrame, AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
+import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from './data'
 import REGL from "regl";
+import { loadDataset, type ColumnarMetatdata, type ColumnData, type ColumnarTree } from "./scatterbrain-loader";
+import { buildRenderer } from "./renderer";
+import type { FrameLifecycle } from "@alleninstitute/vis-scatterbrain/lib/render-queue";
+const better = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
+const busted = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
 class Demo {
     camera: {
         view: box2D;
         screen: vec2;
     }
+    dataset: Dataset | undefined;
     regl: REGL.Regl;
     canvas: HTMLCanvasElement;
+    renderer: ReturnType<typeof buildRenderer>;
     mouse: 'up' | 'down'
     mousePos: vec2;
-    constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
+    cache: AsyncDataCache<ColumnData>;
+    curFrame: FrameLifecycle | null;
+    constructor(canvas: HTMLCanvasElement, regl: REGL.Regl, url: string) {
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
             view: Box2D.create([0, 0], [(10 * w) / h, 10]),
             screen: [w, h]
         }
+        this.curFrame = null;
+        this.cache = new AsyncDataCache<ColumnData>();
+        loadJSON(url).then((metadata) => {
+            this.dataset = loadDataset(metadata, url)
+            this.rerender();
+        })
+        this.renderer = buildRenderer(regl);
         this.canvas = canvas;
-        this.mouse = 'down'
+        this.mouse = 'up'
         this.regl = regl;
         this.mousePos = [0, 0]
     }
@@ -45,10 +62,46 @@ class Demo {
         this.rerender();
     }
     rerender() {
-        this.regl.clear({ color: [0, 0, 0.2, 1], depth: 1 })
+        if (this.curFrame) {
+            this.curFrame.cancelFrame('whatever')
+        }
+        this.regl.clear({ color: [0.5, 0.5, 0.5, 1], depth: 1 })
+        if (this.dataset) {
+            // how big is one px in data-units?
+            const px = Box2D.size(this.camera.view)[0] / this.camera.screen[0]
+            const items = getVisibleItems(this.dataset, this.camera.view, 400 * px);
+            this.curFrame = beginLongRunningFrame<ColumnData, ColumnarTree<vec2>, RenderSettings>(
+                5, 33, items, this.cache, {
+                color: 'unused delete me noah',
+                dataset: this.dataset,
+                view: this.camera.view
+            },
+                fetchItem,
+                this.renderer,
+                (event) => {
+                    switch (event.status) {
+                        case "error":
+                            throw event.error; // error boundary might catch this
+                        case "progress":
+                            break;
+                        case "finished_synchronously":
+                        case "finished":
+                            this.curFrame = null;
+                            break;
+                        case "begun":
+                            break;
+                        case "cancelled":
+                            break;
+                        default:
+                            break;
+                    }
+                },
+                (reqKey, item, settings) => `${reqKey}:${item.content.name}`)
+        }
     }
 }
 let theDemo: Demo;
+
 function demoTime() {
     const thing = document.getElementById("glCanvas") as HTMLCanvasElement;
     thing.width = 2000;
@@ -65,7 +118,7 @@ function demoTime() {
         extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
-    theDemo = new Demo(canvas, regl);
+    theDemo = new Demo(canvas, regl, better);
 
     setupEventHandlers(canvas, theDemo);
 }
@@ -80,12 +133,15 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
     };
     canvas.onmousemove = (e: MouseEvent) => {
         // account for gl-origin vs. screen origin:
-        demo.mouseMove([-e.movementX, -e.movementY]);
+        demo.mouseMove([-e.movementX, e.movementY]);
     };
     canvas.onwheel = (e: WheelEvent) => {
         demo.zoom(e.deltaY > 0 ? 1.1 : 0.9);
     };
 }
 
-
+async function loadJSON(url: string) {
+    // obviously, we should check or something
+    return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetatdata)
+}
 demoTime();

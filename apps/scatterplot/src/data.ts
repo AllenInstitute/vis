@@ -6,7 +6,7 @@ import { fetchColumn, type ColumnarTree, type loadDataset, type ColumnData } fro
 import { visitBFS } from "./tree";
 import { size } from "lodash";
 
-type Dataset = ReturnType<typeof loadDataset>
+export type Dataset = ReturnType<typeof loadDataset>
 export type RenderSettings = {
     dataset: Dataset;
     view: box2D;
@@ -24,7 +24,7 @@ export function getVisibleItems(dataset: Dataset, view: box2D, sizeLimit: number
         (tree) => isVisible(view, sizeLimit, tree));
     return hits;
 }
-export function fetchItem(item: ColumnarTree<vec2>, settings: RenderSettings, signal: AbortSignal) {
+export function fetchItem(item: ColumnarTree<vec2>, settings: RenderSettings, signal?: AbortSignal) {
     const { dataset } = settings;
     const position = () => fetchColumn(item.content, settings.dataset, {
         name: dataset.spatialColumn,
@@ -32,7 +32,7 @@ export function fetchItem(item: ColumnarTree<vec2>, settings: RenderSettings, si
     }, signal);
     const color = () => fetchColumn(item.content, settings.dataset, {
         type: 'QUANTITATIVE',
-        name: '443'
+        name: '2097'
     }, signal);
     return {
         position,

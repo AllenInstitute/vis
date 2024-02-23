@@ -119,37 +119,7 @@ function convertTree2D(
                 : [],
     };
 }
-function convertTree3D(
-    n: DatasetTreeNode,
-    bounds: box3D,
-    depth: number,
-    metadataPath: string,
-    genePath: string
-): ColumnarTree<vec3> {
-    const safeName = sanitizeName(n.file);
-    return {
-        content: {
-            bounds,
-            count: n.numSpecimens,
-            depth,
-            url: metadataPath,
-            geneUrl: genePath,
-            name: safeName,
-        },
-        children:
-            n.children !== undefined && n.children.length > 0
-                ? n.children.map((c) =>
-                    convertTree3D(
-                        c,
-                        getChildBoundsUsingPotreeIndexing(bounds, getRelativeIndex(safeName, sanitizeName(c.file))),
-                        depth + 1,
-                        metadataPath,
-                        genePath
-                    )
-                )
-                : [],
-    };
-}
+
 export function loadDataset(metadata: ColumnarMetatdata, datasetUrl: string) {
     const box = metadata.boundingBox;
     const spatialDimName = metadata.spatialColumn;
@@ -199,7 +169,7 @@ export async function fetchColumn(
     node: ColumnarNode<ReadonlyArray<number>>,
     dataset: ReturnType<typeof loadDataset>,
     column: ColumnRequest,
-    signal: AbortSignal
+    signal?: AbortSignal
 ): Promise<ColumnData> {
     const referenceIdForEmbedding = dataset.visualizationReferenceId;
     const getColumnUrl = (columnName: string) => `${node.url}${columnName}/${referenceIdForEmbedding}/${node.name}.bin`;
