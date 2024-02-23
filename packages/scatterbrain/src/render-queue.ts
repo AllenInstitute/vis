@@ -8,9 +8,6 @@ function mapify<D>(results: ReadonlyArray<{ key: string; result: D }>): Record<s
     return results.reduce((attrs, cur) => ({ ...attrs, [cur.key]: cur.result }), {});
 }
 
-function areKeysAllCached<T>(cache: AsyncDataCache<T>, cacheKeys: readonly string[]): boolean {
-    return cacheKeys.every((key) => cache.isCached(key));
-}
 function renderIfCached<Column, Item, Settings>(
     mutableCache: AsyncDataCache<Column>,
     item: Item,
@@ -23,8 +20,7 @@ function renderIfCached<Column, Item, Settings>(
     const requests = requestsForItem(item, settings, abort);
     const reqs = keys(requests);
     if (
-        areKeysAllCached(
-            mutableCache,
+        mutableCache.areKeysAllCached(
             reqs.map((req) => cacheKeyForRequest(req, item, settings))
         )
     ) {
