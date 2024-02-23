@@ -21,18 +21,33 @@ function mapify<D>(results: ReadonlyArray<{ key: string; result: D }>): Record<s
 }
 
 /**
+ * Helper function to determine whether a given error is an AbortError, which occurs when a fetch request is aborted
+ * using an AbortController.
+ * 
+ * Contains logic that checks a deprecated field and error name that are subject to change in the future.
+ * 
+ * @param error Error to check for the AbortError
+ * @returns True if it's an AbortError, false otherwise
+ */
+function isAbortError(error: Error): boolean {
+    if (error instanceof DOMException) {
+        // WARNING: We currently check a deprecated field, but the DOMException data may change in the future: 
+        // https://developer.mozilla.org/en-US/docs/Web/API/DOMException#error_names
+        return error.code === DOMException.ABORT_ERR || error.name === 'AbortError';
+    }
+    return false;
+}
+
+/**
  * Runs the user-provided `render` function if the data for the given `item` is already cached,
  * otherwise it returns a record of requests still in flight.
  * 
- * TODO: Is this necessary? If they've finished, they're in the cache, so can we just do the render and await
- * the promises?
- * 
- * @param mutableCache The asynchronous cache to check for the data
- * @param item An array of the items to render
+ * @param mutableCache The asynchronous cache used to store the data
+ * @param item An generic items to render
  * @param settings Flexible object of settings related to the items that are being rendered
  * @param abort The abort signal, used for cancelling requests that no longer need to be finished
- * @param render The main render function, it will be called once all data is available
- * @param requestsForItem A function that returns a record of requests in the cache for the given key, item, and settings
+ * @param render The main render function that will be called once all data is available
+ * @param requestsForItem The function that kicks of the asynchronous requests for a given key, item, and settings
  * @param cacheKeyForRequest A function for generating a cache key for a given request key, item, and settings
  * @returns True if all the data is already cached and the items were rendered, otherwise a record of requests still in flight
  */
@@ -43,7 +58,7 @@ function renderIfCached<Column, Item, Settings>(
     abort: AbortSignal,
     render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
     requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
-    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key
+    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string
 ): true | Record<string, () => Promise<Column>> {
     const requests = requestsForItem(item, settings, abort);
     const requestKeys = Object.keys(requests);
@@ -65,32 +80,17 @@ function renderIfCached<Column, Item, Settings>(
 }
 
 /**
- * Helper function to determine whether a given error is an AbortError, which occurs when a fetch request is aborted
- * using an AbortController.
+ * Caches and renders an item.
  * 
- * @param error Error to check for the AbortError
- * @returns True if it's an AbortError, false otherwise
- */
-function isAbortError(error: Error): boolean {
-    if (error instanceof DOMException) {
-        // WARNING: We currently check a deprecated field, but the DOMException data may change in the future: 
-        // https://developer.mozilla.org/en-US/docs/Web/API/DOMException#error_names
-        return error.code === DOMException.ABORT_ERR || error.name === 'AbortError';
-    }
-    return false;
-}
-
-/**
- * 
- * @param mutableCache 
- * @param item 
- * @param settings Flexible object of settings related to the items that are being rendered 
- * @param abort 
- * @param requestsForItem 
- * @param render 
- * @param handleError 
- * @param cacheKeyForRequest 
- * @returns 
+ * @param mutableCache The asynchronous cache used to store the data 
+ * @param item A generic items to render
+ * @param settings Flexible object of settings related to the items that are being rendered
+ * @param abort The abort signal, used for cancelling requests that no longer need to be finished 
+ * @param requestsForItem The function that kicks of the asynchronous requests for a given key, item, and settings 
+ * @param render The main render function that will be called once all data is available
+ * @param handleError Error handling function to be called if an error occurs 
+ * @param cacheKeyForRequest A function for generating a cache key for a given request key, item, and settings
+ * @returns Returns true if the render was performed and a promise if it needed to wait for asynchronous requests to complete before rendering. 
  */
 function cacheAndRenderItem<Column, Item, Settings>(
     mutableCache: AsyncDataCache<Column>,
@@ -100,7 +100,7 @@ function cacheAndRenderItem<Column, Item, Settings>(
     requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
     render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
     handleError: (err: Error) => void,
-    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key
+    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string
 ): Promise<void> | boolean {
     // although this doesnt make  a ton of sense - lets check the abort signal anyway?
     if (abort.aborted) return false;
@@ -142,34 +142,57 @@ function cacheAndRenderItem<Column, Item, Settings>(
     }
     return true;
 }
+
+/**
+ * FrameLifecycle type that defines the functions a user can call to interact with the frame lifecycle.
+ * 
+ * Currently only supports `cancelFrame` to allow the user to cancel the frame on an ad-hoc basis.
+ */
 export type FrameLifecycle = {
     cancelFrame: (reason?: string) => void;
 };
+
+/**
+ * NormalStatus type that defines the possible non-error statuses for a frame.
+ * 
+ * `begun` - The frame has started running
+ * 
+ * `finished` - The frame has finished running
+ * 
+ * `cancelled` - The frame was cancelled by the user
+ * 
+ * `finished_synchronously` - The frame finished synchronously
+ * 
+ * `progress` - The frame is still running and has not finished
+ */
 export type NormalStatus = 'begun' | 'finished' | 'cancelled' | 'finished_synchronously' | 'progress';
 
 /**
- * `beingLongRunningFrame` does stuff
+ * `beingLongRunningFrame` starts a long-running frame that will render a list of items asynchronously based on
+ * the provided data, settings, and rendering functions.
  * 
- * Explain why and how and what happens
+ * The frame will run until all items have been rendered, or until the user cancels the frame. It will update the
+ * provided cache so that the data is available for other frames that may be running. This function is safe to call
+ * multiple times in different areas of your code, as it will complete quickly if/when all the data is already cached and available.
  * 
- * Maybe a short example of the usage?
- * TODO: Reorganize function parameters, or an object with named parameters
+ * You can listen for the status of the frame, allowing you to make decisions based on the progress of the frame.
  * 
- * @param maximumInflightAsyncTasks The maximum number of async tasks to run at once. Defaults to ??
- * @param queueProcessingIntervalMS The length of time to wait between processing the queue in milliseconds. Defaults to ??
- * @param items An array of items to render
+ * In addition, you can cancel the frame at any time, which will stop the frame from running and prevent any further
+ * rendering or data fetching from occurring.
+ * 
+ * @param maximumInflightAsyncTasks The maximum number of async tasks to run at once.
+ * @param queueProcessingIntervalMS The length of time to wait between processing the queue in milliseconds.
+ * @param items An array of generic items to render
  * @param mutableCache The asynchronous cache used to store the data
  * @param settings Flexible object of settings related to the items that are being rendered
- * @param requestsForItem The function that kicks of the asynchronous requests for a given item and settings
+ * @param requestsForItem The function that kicks of the asynchronous requests for a given key, item, and settings
  * @param render The main render function that will be called once all data is available
  * @param lifecycleCallback Callback function so they user can be notified of the status of the frame
  * @param cacheKeyForRequest A function for generating a cache key for a given request key, item, and settings. Defaults to the request key if not provided.
  * @returns A FrameLifecycle object with a cancelFrame function to allow users to cancel the frame when necessary
  */
 export function beginLongRunningFrame<Column, Item, Settings>(
-    // TODO: Provide a default
     maximumInflightAsyncTasks: number,
-    // TODO: Provide a default
     queueProcessingIntervalMS: number,
     items: Item[],
     mutableCache: AsyncDataCache<Column>,
@@ -201,15 +224,17 @@ export function beginLongRunningFrame<Column, Item, Settings>(
         reportNormalStatus('finished_synchronously');
         return { cancelFrame: () => {} };
     }
-    reportNormalStatus('begun');
-    if (queue.length !== items.length) {
-        // we did some work, but there's some left
+    if (queue.length === items.length) {
+        // This is the first time the frame has been running
+        reportNormalStatus('begun');
+    } else {
+        // We did some work, but there's some left
         reportNormalStatus('progress');
     }
     // inFlight is a staging area, for work on the queue
     // using a staging area like this allows us to control the # of promises/fetches that are
     // alive at any one time, which is important if you dont want to strangle the UI thread / browser
-    const inFlight: Set<Item> = new Set<Item>();
+    const inFlight = new Set<Item>();
 
     const doWorkOnQueue = (intervalId: number) => {
         // try our best to cleanup if something goes awry
@@ -235,6 +260,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
                 }
                 return;
             }
+            // We know there are items in the queue because of the check above, so we assert the type exist
             const itemToRender = queue.shift()!;
             try {
                 const result = cacheAndRenderItem(
