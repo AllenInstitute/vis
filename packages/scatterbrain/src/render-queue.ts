@@ -1,13 +1,41 @@
-import { keys } from 'lodash';
 import { AsyncDataCache } from './dataset-cache';
 
-function promisify<D>(thing: D | Promise<D>) {
-    return thing instanceof Promise ? thing : Promise.resolve(thing);
+/**
+ * `promisify` turns a value into a promise if it is not already a promise, otherwise it returns the promise as-is.
+ * 
+ * @param value A value to be turned into a promise, or a promise to be returned as-is
+ * @returns A resolved promise with the provided value if it is not a promise, or the provided promise
+ */
+function promisify<D>(value: D | Promise<D>): Promise<D> {
+    return value instanceof Promise ? value : Promise.resolve(value);
 }
+
+/**
+ * `mapify` turns an array of objects with a `key` and `result` property into a record with the `key` as the property name and the `result` as the value.
+ * 
+ * @param results The array of objects with a `key` and `result` property to turn into a Record
+ * @returns A Record with the `key` as the property name and the `result` as the value from the provided array
+ */
 function mapify<D>(results: ReadonlyArray<{ key: string; result: D }>): Record<string, D> {
     return results.reduce((attrs, cur) => ({ ...attrs, [cur.key]: cur.result }), {});
 }
 
+/**
+ * Runs the user-provided `render` function if the data for the given `item` is already cached,
+ * otherwise it returns a record of requests still in flight.
+ * 
+ * TODO: Is this necessary? If they've finished, they're in the cache, so can we just do the render and await
+ * the promises?
+ * 
+ * @param mutableCache The asynchronous cache to check for the data
+ * @param item An array of the items to render
+ * @param settings Flexible object of settings related to the items that are being rendered
+ * @param abort The abort signal, used for cancelling requests that no longer need to be finished
+ * @param render The main render function, it will be called once all data is available
+ * @param requestsForItem A function that returns a record of requests in the cache for the given key, item, and settings
+ * @param cacheKeyForRequest A function for generating a cache key for a given request key, item, and settings
+ * @returns True if all the data is already cached and the items were rendered, otherwise a record of requests still in flight
+ */
 function renderIfCached<Column, Item, Settings>(
     mutableCache: AsyncDataCache<Column>,
     item: Item,
@@ -18,32 +46,52 @@ function renderIfCached<Column, Item, Settings>(
     cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key
 ): true | Record<string, () => Promise<Column>> {
     const requests = requestsForItem(item, settings, abort);
-    const reqs = keys(requests);
+    const requestKeys = Object.keys(requests);
     if (
         mutableCache.areKeysAllCached(
-            reqs.map((req) => cacheKeyForRequest(req, item, settings))
+            requestKeys.map((req) => cacheKeyForRequest(req, item, settings))
         )
     ) {
         render(
             item,
             settings,
             mapify(
-                reqs.map((key) => ({ key, result: mutableCache.getCached(cacheKeyForRequest(key, item, settings)) }))
+                requestKeys.map((key) => ({ key, result: mutableCache.getCached(cacheKeyForRequest(key, item, settings)) }))
             )
         );
         return true;
     }
     return requests;
 }
-function isAbortError(error: Error) {
+
+/**
+ * Helper function to determine whether a given error is an AbortError, which occurs when a fetch request is aborted
+ * using an AbortController.
+ * 
+ * @param error Error to check for the AbortError
+ * @returns True if it's an AbortError, false otherwise
+ */
+function isAbortError(error: Error): boolean {
     if (error instanceof DOMException) {
-        // beyond this, there is a legacy name, legacy code, and semi-experimental non-legacy name?
-        // TODO: this info may change, take a look here: https://developer.mozilla.org/en-US/docs/Web/API/DOMException#error_names
+        // WARNING: We currently check a deprecated field, but the DOMException data may change in the future: 
+        // https://developer.mozilla.org/en-US/docs/Web/API/DOMException#error_names
         return error.code === DOMException.ABORT_ERR || error.name === 'AbortError';
     }
     return false;
 }
 
+/**
+ * 
+ * @param mutableCache 
+ * @param item 
+ * @param settings Flexible object of settings related to the items that are being rendered 
+ * @param abort 
+ * @param requestsForItem 
+ * @param render 
+ * @param handleError 
+ * @param cacheKeyForRequest 
+ * @returns 
+ */
 function cacheAndRenderItem<Column, Item, Settings>(
     mutableCache: AsyncDataCache<Column>,
     item: Item,
@@ -69,10 +117,9 @@ function cacheAndRenderItem<Column, Item, Settings>(
     if (didRenderOrRequests !== true) {
         // an async request(s) will need to happen first:
         const requests = didRenderOrRequests;
-        const reqs = keys(requests);
         const allDataReady = Promise.all(
-            reqs.map((key) =>
-                promisify(mutableCache.cache(cacheKeyForRequest(key, item, settings), requests[key])).then(
+            Object.entries(requests).map(([key, promises]) =>
+                promisify(mutableCache.cache(cacheKeyForRequest(key, item, settings), promises)).then(
                     (result) => ({
                         key,
                         result,
@@ -100,8 +147,29 @@ export type FrameLifecycle = {
 };
 export type NormalStatus = 'begun' | 'finished' | 'cancelled' | 'finished_synchronously' | 'progress';
 
+/**
+ * `beingLongRunningFrame` does stuff
+ * 
+ * Explain why and how and what happens
+ * 
+ * Maybe a short example of the usage?
+ * TODO: Reorganize function parameters, or an object with named parameters
+ * 
+ * @param maximumInflightAsyncTasks The maximum number of async tasks to run at once. Defaults to ??
+ * @param queueProcessingIntervalMS The length of time to wait between processing the queue in milliseconds. Defaults to ??
+ * @param items An array of items to render
+ * @param mutableCache The asynchronous cache used to store the data
+ * @param settings Flexible object of settings related to the items that are being rendered
+ * @param requestsForItem The function that kicks of the asynchronous requests for a given item and settings
+ * @param render The main render function that will be called once all data is available
+ * @param lifecycleCallback Callback function so they user can be notified of the status of the frame
+ * @param cacheKeyForRequest A function for generating a cache key for a given request key, item, and settings. Defaults to the request key if not provided.
+ * @returns A FrameLifecycle object with a cancelFrame function to allow users to cancel the frame when necessary
+ */
 export function beginLongRunningFrame<Column, Item, Settings>(
+    // TODO: Provide a default
     maximumInflightAsyncTasks: number,
+    // TODO: Provide a default
     queueProcessingIntervalMS: number,
     items: Item[],
     mutableCache: AsyncDataCache<Column>,
@@ -143,27 +211,26 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     // alive at any one time, which is important if you dont want to strangle the UI thread / browser
     const inFlight: Set<Item> = new Set<Item>();
 
-    // try our best to cleanup if something goes awry
-    const cleanupOnError = (err: unknown) => {
-        // clear the queue and the staging area (inFlight)
-        inFlight.clear();
-        queue.splice(0, queue.length);
-        // stop fetching
-        abort.abort(err);
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        clearInterval(interval);
-        // pass the error somewhere better:
-        lifecycleCallback({ status: 'error', error: err });
-    };
-    const doWorkOnQueue = () => {
+    const doWorkOnQueue = (intervalId: number) => {
+        // try our best to cleanup if something goes awry
+        const cleanupOnError = (err: unknown) => {
+            // clear the queue and the staging area (inFlight)
+            inFlight.clear();
+            queue.splice(0, queue.length);
+            // stop fetching
+            abort.abort(err);
+            clearInterval(intervalId);
+            // pass the error somewhere better:
+            lifecycleCallback({ status: 'error', error: err });
+        };
+
         while (inFlight.size < Math.max(maximumInflightAsyncTasks, 1)) {
             if (queue.length < 1) {
                 // we cant add anything to the in-flight staging area, the final task
                 // is already in flight
                 if (inFlight.size < 1) {
                     // we do want to wait for that last in-flight task to actually finish though:
-                    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                    clearInterval(interval);
+                    clearInterval(intervalId);
                     reportNormalStatus('finished');
                 }
                 return;
@@ -199,7 +266,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
             }
         }
     };
-    const interval = setInterval(doWorkOnQueue, queueProcessingIntervalMS);
+    const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
 
     // return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
     // touched/referenced after cancellation, unless the author of render() did some super weird bad things
