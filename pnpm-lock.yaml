@@ -80,13 +80,6 @@ importers:
         version: 5.3.3
 
   packages/scatterbrain:
-    dependencies:
-      '@types/lodash':
-        specifier: ^4.14.202
-        version: 4.14.202
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
     devDependencies:
       '@swc/core':
         specifier: ^1.3.107
@@ -97,6 +90,9 @@ importers:
       '@types/jest':
         specifier: ^29.5.11
         version: 29.5.11
+      '@types/lodash':
+        specifier: ^4.14.202
+        version: 4.14.202
       jest:
         specifier: ^29.7.0
         version: 29.7.0
@@ -106,6 +102,9 @@ importers:
       jest-transform-stub:
         specifier: 2.0.0
         version: 2.0.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -1150,7 +1149,6 @@ packages:
 
   /@types/lodash@4.14.202:
     resolution: {integrity: sha512-OvlIYQK9tNneDlS0VN54LLd5uiPCBOp7gS5Z0f1mjoJYBrtStzgmJBxONW3U6OZqdtNzZPmn9BS/7WI7BFFcFQ==}
-    dev: false
 
   /@types/node@20.11.10:
     resolution: {integrity: sha512-rZEfe/hJSGYmdfX9tvcPMYeYPW2sNl50nsw4jZmRcaG0HIAb0WYEpsB05GOb53vjqpyE9GUhlDQ4jLSoB5q9kg==}
@@ -2522,7 +2520,6 @@ packages:
 
   /lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-    dev: false
 
   /lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}

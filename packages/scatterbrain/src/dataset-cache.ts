@@ -53,7 +53,7 @@ export class AsyncDataCache<D> {
      * @returns True if all keys are cached, false if any are not in the cache
      */
     areKeysAllCached(cacheKeys: readonly string[]): boolean {
-        return cacheKeys.every(this.isCached);
+        return cacheKeys.every((key) => this.isCached(key));
     }
 
     /**
