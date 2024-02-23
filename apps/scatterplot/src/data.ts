@@ -2,15 +2,13 @@
 // todo rename this file
 
 import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { fetchColumn, type ColumnarTree, type loadDataset, type ColumnData } from "./scatterbrain-loader";
+import { fetchColumn, type ColumnarTree, type loadDataset } from "./scatterbrain-loader";
 import { visitBFS } from "./tree";
-import { size } from "lodash";
 
 export type Dataset = ReturnType<typeof loadDataset>
 export type RenderSettings = {
     dataset: Dataset;
     view: box2D;
-    color: string;
 }
 function isVisible(view: box2D, sizeLimit: number, tree: ColumnarTree<vec2>) {
     const { bounds } = tree.content;

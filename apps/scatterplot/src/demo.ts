@@ -65,14 +65,15 @@ class Demo {
         if (this.curFrame) {
             this.curFrame.cancelFrame('whatever')
         }
-        this.regl.clear({ color: [0.5, 0.5, 0.5, 1], depth: 1 })
+        this.regl.clear({ color: [0.25, 0.25, 0.25, 1], depth: 1 })
         if (this.dataset) {
             // how big is one px in data-units?
             const px = Box2D.size(this.camera.view)[0] / this.camera.screen[0]
-            const items = getVisibleItems(this.dataset, this.camera.view, 400 * px);
+            // lets only draw a box of points if its 90px wide:
+            const sizeThreshold = 90 * px;
+            const items = getVisibleItems(this.dataset, this.camera.view, sizeThreshold);
             this.curFrame = beginLongRunningFrame<ColumnData, ColumnarTree<vec2>, RenderSettings>(
                 5, 33, items, this.cache, {
-                color: 'unused delete me noah',
                 dataset: this.dataset,
                 view: this.camera.view
             },
@@ -104,8 +105,8 @@ let theDemo: Demo;
 
 function demoTime() {
     const thing = document.getElementById("glCanvas") as HTMLCanvasElement;
-    thing.width = 2000;
-    thing.height = 2000;
+    thing.width = thing.clientWidth;
+    thing.height = thing.clientHeight;
     const gl = thing.getContext("webgl", {
         alpha: true,
         preserveDrawingBuffer: true,
