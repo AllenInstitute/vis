@@ -1,17 +1,17 @@
-import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { beginLongRunningFrame, AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
-import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from "./data";
-import REGL from "regl";
-import { loadDataset, type ColumnarMetatdata, type ColumnData, type ColumnarTree } from "./scatterbrain-loader";
-import { buildRenderer } from "./renderer";
-import type { FrameLifecycle } from "@alleninstitute/vis-scatterbrain/lib/render-queue";
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { beginLongRunningFrame, AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
+import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from './data';
+import REGL from 'regl';
+import { loadDataset, type ColumnarMetatdata, type ColumnData, type ColumnarTree } from './scatterbrain-loader';
+import { buildRenderer } from './renderer';
+import type { FrameLifecycle } from '@alleninstitute/vis-scatterbrain/lib/render-queue';
 const better =
-  "https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json";
+  'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const busted =
-  "https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json";
+  'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
 
 const sead =
-  "https://bkp-2d-visualizations-stage.s3.amazonaws.com/sea_ad_merfish_20240208-20240212174445/Y1EM7CBU8LJUK815ABL/ScatterBrain.json";
+  'https://bkp-2d-visualizations-stage.s3.amazonaws.com/sea_ad_merfish_20240208-20240212174445/Y1EM7CBU8LJUK815ABL/ScatterBrain.json';
 class Demo {
   camera: {
     view: box2D;
@@ -21,7 +21,7 @@ class Demo {
   regl: REGL.Regl;
   canvas: HTMLCanvasElement;
   renderer: ReturnType<typeof buildRenderer>;
-  mouse: "up" | "down";
+  mouse: 'up' | 'down';
   mousePos: vec2;
   cache: AsyncDataCache<ColumnData>;
   pointSize: number;
@@ -41,15 +41,15 @@ class Demo {
     });
     this.renderer = buildRenderer(regl);
     this.canvas = canvas;
-    this.mouse = "up";
+    this.mouse = 'up';
     this.regl = regl;
     this.mousePos = [0, 0];
   }
-  mouseButton(click: "up" | "down") {
+  mouseButton(click: 'up' | 'down') {
     this.mouse = click;
   }
   mouseMove(delta: vec2) {
-    if (this.mouse === "down") {
+    if (this.mouse === 'down') {
       // drag the view
       const { screen, view } = this.camera;
       const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
@@ -74,7 +74,7 @@ class Demo {
   }
   rerender() {
     if (this.curFrame) {
-      this.curFrame.cancelFrame("whatever");
+      this.curFrame.cancelFrame('whatever');
     }
     this.regl.clear({ color: [0.25, 0.25, 0.25, 1], depth: 1 });
     if (this.dataset) {
@@ -97,17 +97,17 @@ class Demo {
         this.renderer,
         (event) => {
           switch (event.status) {
-            case "error":
+            case 'error':
               throw event.error; // error boundary might catch this
-            case "progress":
+            case 'progress':
               break;
-            case "finished_synchronously":
-            case "finished":
+            case 'finished_synchronously':
+            case 'finished':
               this.curFrame = null;
               break;
-            case "begun":
+            case 'begun':
               break;
-            case "cancelled":
+            case 'cancelled':
               break;
             default:
               break;
@@ -121,10 +121,10 @@ class Demo {
 let theDemo: Demo;
 
 function demoTime() {
-  const thing = document.getElementById("glCanvas") as HTMLCanvasElement;
+  const thing = document.getElementById('glCanvas') as HTMLCanvasElement;
   thing.width = thing.clientWidth;
   thing.height = thing.clientHeight;
-  const gl = thing.getContext("webgl", {
+  const gl = thing.getContext('webgl', {
     alpha: true,
     preserveDrawingBuffer: true,
     antialias: true,
@@ -133,7 +133,7 @@ function demoTime() {
   const regl = REGL({
     gl,
     // attributes: {},
-    extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
+    extensions: ['ANGLE_instanced_arrays', 'OES_texture_float', 'WEBGL_color_buffer_float'],
   });
   const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
   theDemo = new Demo(canvas, regl, better);
@@ -143,10 +143,10 @@ function demoTime() {
 
 function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
   canvas.onmousedown = (e: MouseEvent) => {
-    demo.mouseButton("down");
+    demo.mouseButton('down');
   };
   canvas.onmouseup = (e: MouseEvent) => {
-    demo.mouseButton("up");
+    demo.mouseButton('up');
   };
   canvas.onmousemove = (e: MouseEvent) => {
     // account for gl-origin vs. screen origin:

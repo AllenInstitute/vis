@@ -1,8 +1,8 @@
 // todo rename this file
 
-import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { fetchColumn, type ColumnarTree, type loadDataset } from "./scatterbrain-loader";
-import { visitBFS } from "./tree";
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { fetchColumn, type ColumnarTree, type loadDataset } from './scatterbrain-loader';
+import { visitBFS } from './tree';
 
 export type Dataset = ReturnType<typeof loadDataset>;
 export type RenderSettings = {
@@ -34,7 +34,7 @@ export function fetchItem(item: ColumnarTree<vec2>, settings: RenderSettings, si
       settings.dataset,
       {
         name: dataset.spatialColumn,
-        type: "METADATA",
+        type: 'METADATA',
       },
       signal
     );
@@ -43,8 +43,8 @@ export function fetchItem(item: ColumnarTree<vec2>, settings: RenderSettings, si
       item.content,
       settings.dataset,
       {
-        type: "QUANTITATIVE",
-        name: "2097",
+        type: 'QUANTITATIVE',
+        name: '2097',
       },
       signal
     );
