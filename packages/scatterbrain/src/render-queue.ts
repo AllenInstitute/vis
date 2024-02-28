@@ -83,7 +83,7 @@ function renderIfCached<Column, Item, Settings>(
  * Caches and renders an item.
  * 
  * @param mutableCache The asynchronous cache used to store the data 
- * @param item A generic items to render
+ * @param item A generic item to render
  * @param settings Flexible object of settings related to the items that are being rendered
  * @param abort The abort signal, used for cancelling requests that no longer need to be finished 
  * @param requestsForItem The function that kicks of the asynchronous requests for a given key, item, and settings 
@@ -224,10 +224,9 @@ export function beginLongRunningFrame<Column, Item, Settings>(
         reportNormalStatus('finished_synchronously');
         return { cancelFrame: () => {} };
     }
-    if (queue.length === items.length) {
-        // This is the first time the frame has been running
-        reportNormalStatus('begun');
-    } else {
+    // TODO: Re-examine lifecycle reporting, potentially unify all statuses into a single type
+    reportNormalStatus('begun');
+    if (queue.length !== items.length) {
         // We did some work, but there's some left
         reportNormalStatus('progress');
     }
