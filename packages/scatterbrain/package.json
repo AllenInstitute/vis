@@ -31,7 +31,8 @@
     "preinstall": "npx only-allow pnpm",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "test": "jest --config=jest.config.cjs --watch"
+    "test": "jest --config=jest.config.cjs --watch",
+    "fmt": "biome format . --write"
   },
   "repository": {
     "type": "git",
