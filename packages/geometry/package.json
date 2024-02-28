@@ -33,6 +33,7 @@
     "build": "tsc",
     "test": "jest --config=jest.config.cjs --watch",
     "check": "biome check .",
+    "check:fix": "biome check . --apply",
     "fmt": "biome format . --write",
     "lint": "biome lint ."
   },
