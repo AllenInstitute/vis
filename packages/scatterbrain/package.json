@@ -32,6 +32,7 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "test": "jest --config=jest.config.cjs --watch",
+    "check": "biome check .",
     "fmt": "biome format . --write",
     "lint": "biome lint ."
   },
