@@ -1,21 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "strict": true,
     "paths": {
       "~/*": [
         "./*"
       ]
     },
-    "outDir": "./lib",
     "module": "ES2022",
     "target": "ES2022",
     "lib": [
       "es2022"
     ],
-    "declaration": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true
   },
   "include": [
     "./src/index.ts"
