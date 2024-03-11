@@ -5,6 +5,5 @@
         "exactOptionalPropertyTypes": true,
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
-        "verbatimModuleSyntax": true
     }
 }
