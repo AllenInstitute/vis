@@ -35,6 +35,36 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
     } while (next());
     return vals;
   };
+  const setCorner = (box: box<V>, cornerIndex: number, position: V): box<V> => {
+        // cornerIndex is based from the generated corners from box.corners
+        // The corner index corresponds to a binary representation where each bit represents a dimension.
+        // For example, in a 2D box, [[minX, minY], [minX, maxY], [maxX, minY], [maxX, maxY]] would be [[0,0], [0,1], [1,0], [1,1]]
+        const binaryIndex = cornerIndex.toString(2).padStart(box.minCorner.length, '0').split('').map(Number);
+
+        const newMinCorner = [...box.minCorner];
+        const newMaxCorner = [...box.maxCorner];
+
+        // And then based on the binaryIndex (dimensions), set the correct value in each corner so the box corner outputs to the intended position
+        for (let i = 0; i < binaryIndex.length; i += 1) {
+            if (binaryIndex[i] === 0) {
+                newMinCorner[i] = position[i];
+            } else {
+                newMaxCorner[i] = position[i];
+            }
+        }
+
+        // Validate that minCorner is actually the minimum and maxCorner is the maximum
+        for (let i = 0; i < newMinCorner.length; i += 1) {
+            if (newMinCorner[i] > newMaxCorner[i]) {
+                [newMinCorner[i], newMaxCorner[i]] = [newMaxCorner[i], newMinCorner[i]];
+            }
+        }
+
+        return {
+            minCorner: newMinCorner as unknown as V,
+            maxCorner: newMaxCorner as unknown as V,
+        };
+  };
   const intersection = (a: box<V>, b: box<V>) => {
     const result: box<V> = {
       minCorner: lib.max(a.minCorner, b.minCorner),
@@ -60,6 +90,7 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
   return {
     create, // build a box
     corners, // get all the corners of the box
+    setCorner, // set a specific corner of the box to the given position
     isValid, // return false if the box has any non-finite points, or has a negative or zero volume/area etc..
     union, // return the smallest box that contains the two given boxes
     intersection, // return the intersection of two boxes if it exists
