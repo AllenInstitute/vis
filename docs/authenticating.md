@@ -16,25 +16,12 @@ Before you can publish a package, you'll need to get your Personal Access Token 
 //npm.pkg.github.com/:_authToken=YOUR_PAT
 ```
 
-## Authenticating in a GitHub Action
-If you have any GitHub Actions that install packages for the repository, you'll have to configure those as well using the following steps:
-
-1. Reach out to the `vis` repository owners with the name of the repository and which `vis` packages you want to use. They will add the repository to the "Manage Actions access" section of each package's settings.
-
-2. Add the following to your GitHub Actions as a step before you install your packages
-```
-- name: Login to NPM Registry
-  run: npm set "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}"
-```
-
-3. Run the GitHub Action and verify everything is working as expected.
-
-## Authenticating in a CI/CD Pipeline
+## Authenticating in Github Actions or Another CI/CD Pipeline
 If you have a CI/CD pipeline outside of GitHub Actions, do teh following to authenticate:
 
 1. Follow the instructions for generating a PAT in the previous section.
 
-2. Add that new token to your pipeline's secrets.
+2. Add that new token to your pipeline's secrets (e.g. `NODE_AUTH_TOKEN`).
 
 3. Use that secret in your pipeline to set up the token before you do the package install:
 ```
