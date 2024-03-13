@@ -16,7 +16,7 @@ Before you can publish a package, you'll need to get your Personal Access Token 
 //npm.pkg.github.com/:_authToken=YOUR_PAT
 ```
 
-## Authenticating in Github Actions or Another CI/CD Pipeline
+## Authenticating in GitHub Actions or Another CI/CD Pipeline
 If you have a CI/CD pipeline outside of GitHub Actions, do teh following to authenticate:
 
 1. Follow the instructions for generating a PAT in the previous section.
