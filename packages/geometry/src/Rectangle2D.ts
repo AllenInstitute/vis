@@ -24,3 +24,12 @@ export const scaleFromPoint = (rect: rectangle2D, scale: number, point: vec2) =>
     size: Vec2.scale(rect.size, scale),
   };
 };
+
+// linearly interpolate start --> end
+export function interpolateRectangles<T extends rectangle2D>(start: T, end: T, parameter: number): T {
+    return {
+        ...start,
+        center: Vec2.mix(start.center, end.center, parameter),
+        size: Vec2.mix(start.size, end.size, parameter),
+    };
+}
