@@ -10,14 +10,14 @@ Before you can publish a package, you'll need to get your Personal Access Token 
 
 3. You'll also need to Configure SSO for the Allen Institute organization for the token to work.
 
-4. Add the PAT to your `~/.npmrc` file. If you don't have an `~/.npmrc` file, create one. Add the following line to the file, replacing `YOUR_PAT` with the PAT you created in the previous step:
+4. Add the PAT to the `~/.npmrc` file in your **home directory**. If you don't have an `~/.npmrc` file, create one. (This file is different from the `.npmrc` files in each repository, _which get committed_, so be sure you're putting your token in the right place.) Add the following line to the file, replacing `YOUR_PAT` with the PAT you created in the previous step:
 
 ```
 //npm.pkg.github.com/:_authToken=YOUR_PAT
 ```
 
 ## Authenticating in GitHub Actions or Another CI/CD Pipeline
-If you have a CI/CD pipeline outside of GitHub Actions, do teh following to authenticate:
+If you have a CI/CD pipeline outside of GitHub Actions, do the following to authenticate:
 
 1. Follow the instructions for generating a PAT in the previous section.
 
