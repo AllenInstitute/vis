@@ -28,6 +28,9 @@
   "main": "dist/main.js",
   "module": "dist/module.js",
   "types": "dist/types.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "typecheck": "tsc --noEmit",
