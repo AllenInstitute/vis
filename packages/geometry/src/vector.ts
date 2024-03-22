@@ -94,6 +94,7 @@ export type VectorLib<T> = Readonly<{
     floor: unaryOp<T>;
     ceil: unaryOp<T>;
     scale: scalarOp<T>;
+    mix: (a: T, b: T, p: number) => T;
     sum: reduceOp<T>;
     dot: (a: T, b: T) => number;
     length: reduceOp<T>;
@@ -119,6 +120,7 @@ export function VectorLibFactory<V extends VectorConstraint>(): VectorLib<V> {
     const floor = componentUnaryOpFn<V>((a) => Math.floor(a));
     const ceil = componentUnaryOpFn<V>((a) => Math.ceil(a));
     const scale = scalarOpFn<V>((a, b) => a * b);
+    const mix = (a: V, b: V, p: number) => add(scale(a, 1.0 - p), scale(b, p));
     const sum = reduceComponentOpFn<V>((a, b) => a + b);
     const minComponent = reduceComponentOpFn<V>((a, b) => Math.min(a, b));
     const maxComponent = reduceComponentOpFn<V>((a, b) => Math.max(a, b));
@@ -147,6 +149,7 @@ export function VectorLibFactory<V extends VectorConstraint>(): VectorLib<V> {
         floor,
         ceil,
         scale,
+        mix,
         sum,
         dot,
         length,
