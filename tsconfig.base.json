@@ -2,8 +2,9 @@
     "compilerOptions": {
         "strict": true,
         "verbatimModuleSyntax": true,
-        "declaration": true,
+        "esModuleInterop": true,
+        "exactOptionalPropertyTypes": true,
+        "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
-        "esModuleInterop": true
     }
 }
