@@ -1,0 +1,27 @@
+// TODO - pick the right options for
+// stuff like outDir,lib/target etc...
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "~/*": [
+        "./*"
+      ]
+    },
+    "outDir": "./lib",
+    "moduleResolution": "Node10",
+    "module": "ES2022",
+    "target": "ES2022",
+    "lib": [
+      "es2022",
+      "DOM"
+    ],
+    "declaration": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}

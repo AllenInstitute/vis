@@ -11,3 +11,4 @@ export type { box2D } from "./box2D";
 export { Box3D } from "./box3D";
 export type { box3D } from "./box3D";
 export * from "./interval";
+export type { box } from './BoundingBox'
