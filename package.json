@@ -1,6 +1,7 @@
 {
     "name": "@alleninstitute/vis",
     "scripts": {
+        "preinstall": "npx only-allow pnpm",
         "build": "parcel build packages/*",
         "watch": "parcel watch packages/*"
     },
