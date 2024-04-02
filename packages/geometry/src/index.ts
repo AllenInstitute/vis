@@ -10,5 +10,6 @@ export { Box2D } from "./box2D";
 export type { box2D } from "./box2D";
 export { Box3D } from "./box3D";
 export type { box3D } from "./box3D";
-export * from "./interval";
+export { size, within, isFinite, isValid, fixOrder, intersection, limit } from "./interval";
 export type { box } from './BoundingBox'
+export { getMinimumBoundingBox, scaleFromPoint, interpolateRectangles } from './Rectangle2D';
