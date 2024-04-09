@@ -11,18 +11,20 @@ type cancelFn = () => void;
 type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> = {
     runner: useFn<SemanticKey, D>;
     awaiting: Set<CacheKey>;
+    blocking: Set<CacheKey>; // these are the cache keys associated with the items in 'ready' - we keep them around to make it easy to make sure we dont delete something we assume we have
+    // while an outstanding task is waiting on more data
     ready: Record<SemanticKey, D>;
 }
 // return true if the request is completely satisfied, false if its still awaiting more entries
 function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>(req: MutablePendingRequest<SemanticKey, CacheKey, D>, key: SemanticKey, cacheKey: CacheKey, item: D): boolean {
     if (req.awaiting.has(cacheKey)) {
         req.awaiting.delete(cacheKey);
+        req.blocking.add(cacheKey);
         req.ready[key] = item;
     }
     return req.awaiting.size === 0
 }
 type MutableCacheEntry<D> = {
-    pendingRequests: number;
     data: MaybePromise<D>;
     lastRequestedTimestamp: number;
 };
@@ -69,7 +71,18 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         this.entries.forEach((entry) => (sum += entry.data instanceof Promise ? 0 : this.size(entry.data)));
         return sum;
     }
-
+    private countRequests() {
+        const reqCounts: Record<CacheKey, number> = {} as Record<CacheKey, number>
+        for (const req of this.pendingRequests) {
+            for (const key of [...req.blocking, ...req.awaiting]) {
+                if (!reqCounts[key]) {
+                    reqCounts[key] = 0;
+                }
+                reqCounts[key] += 1;
+            }
+        }
+        return reqCounts;
+    }
     // if the cache is full, sort candidates which are not currently requested by their last-used timestamps
     // evict those items until the cache is no longer full
     private evictIfFull() {
@@ -77,8 +90,10 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         let used = this.usedSpace();
         const candidates: { key: CacheKey; data: D; lastRequestedTimestamp: number }[] = [];
         if (used > this.limit) {
+            // its potentially a bit slow to do this:
+            const counts = this.countRequests();
             this.entries.forEach((entry, key) => {
-                if (!(entry.data instanceof Promise) && entry.pendingRequests < 1) {
+                if (!(entry.data instanceof Promise) && (counts[key] ?? 0) < 1) {
                     candidates.push({ key, data: entry.data, lastRequestedTimestamp: entry.lastRequestedTimestamp });
                 }
             });
@@ -136,6 +151,10 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     }
     private dataArrived(key: SemanticKey, cacheKey: CacheKey, data: D) {
         this.evictIfFull(); // we just got some data - is there room in the cache?
+        const mutableEntry = this.entries.get(cacheKey);
+        if (mutableEntry) {
+            mutableEntry.data = data;
+        }
         const removeus: MutablePendingRequest<SemanticKey, CacheKey, D>[] = []
         for (const req of this.pendingRequests) {
             if (updatePendingRequest(req, key, cacheKey, data)) {
@@ -145,29 +164,53 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         }
         removeus.forEach(finished => this.pendingRequests.delete(finished));
     }
+    private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
+        if (this.isCached(cacheKey)) {
+            // note also the (!) opperator - we just checked that it exists
+            return this.getCached(cacheKey)! // note: mutates the entry to indicate that we requested it - this helps with prioritization during eviction
+        } else {
+            const gimmie = getter();
+            this.entries.set(cacheKey, {
+                data: gimmie,
+                lastRequestedTimestamp: performance.now(),
+            })
+            return gimmie.then((data) => {
+                this.dataArrived(semanticKey, cacheKey, data);
+            })
+        }
+    }
     cacheAndUse(workingSet: Record<SemanticKey, () => Promise<D>>, use: (items: Record<SemanticKey, D>) => void, toCacheKey: (semanticKey: SemanticKey) => CacheKey): cancelFn | undefined {
         const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[]
         const req: MutablePendingRequest<SemanticKey, CacheKey, D> = {
             awaiting: new Set<CacheKey>(keys.map(toCacheKey)),
             ready: {} as Record<SemanticKey, D>,
             runner: use,
+            blocking: new Set<CacheKey>()
         }
+
         for (const semanticKey of keys) {
-            if (this.isCached(toCacheKey(semanticKey))) {
-                if (updatePendingRequest(req, semanticKey, toCacheKey(semanticKey), this.getCached(toCacheKey(semanticKey))!)) {
-                    // we were lucky - it was all cache hits!
+            const result = this.prepareCache(semanticKey, toCacheKey(semanticKey), workingSet[semanticKey])
+            if (result instanceof Promise) {
+                result.catch((_reason) => {
+                    console.error(_reason)
+                    // delete the failed entry from the cache
+                    // also remove the entire request it belongs to
+                    this.entries.delete(toCacheKey(semanticKey));
+                    this.pendingRequests.delete(req);
+                    // note that catches get chained - so any catch handlers that came in with this promise
+                    // still get called
+                })
+            } else {
+                if (updatePendingRequest(req, semanticKey, toCacheKey(semanticKey), result)) {
                     use(req.ready);
-                    return undefined; // no need to actually keep the request!
+                    // early return in the case that everything was cached!
+                    // the only thing this short-circuits is pendingRequests.add(req)
+                    // (because of course it isnt pending, because we just did it!)
+                    return undefined;
                 }
             }
         }
         this.pendingRequests.add(req);
-        // begin actually making the async requests for each key
-        keys.forEach((semanticKey) => {
-            workingSet[semanticKey]().then((data: D) => {
-                this.dataArrived(semanticKey, toCacheKey(semanticKey), data);
-            })
-        })
         return () => {
             this.pendingRequests.delete(req);
         }
