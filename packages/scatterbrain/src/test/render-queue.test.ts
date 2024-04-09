@@ -20,7 +20,7 @@ describe('beginLongRunningFrame', () => {
                 }
             }, 100 * Math.random() + 50);
         });
-    let cache: AsyncDataCache<FakeTask> = new AsyncDataCache();
+    let cache: AsyncDataCache<string, string, FakeTask> = new AsyncDataCache(() => { }, () => 1, 9999);
     let renderSequence: FakeTask[] = [];
     function renderPretender(item: FakeItem, settings: FakeSettings, tasks: Record<string, FakeTask | undefined>) {
         const tsk = tasks[cacheKey(item, settings)];
@@ -52,10 +52,12 @@ describe('beginLongRunningFrame', () => {
             { color: 'red' },
             rq,
             renderPretender,
-            eventHandler
+            eventHandler,
+            (rq: string, item: FakeItem, settings: FakeSettings) => cacheKey(item, settings),
+            9999
         );
     beforeEach(() => {
-        cache = new AsyncDataCache();
+        cache = new AsyncDataCache(() => { }, () => 1, 9999);
         renderSequence = [];
     });
     it('runs the expected number of tasks', (done) => {
