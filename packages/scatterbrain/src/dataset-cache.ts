@@ -2,7 +2,7 @@ type MaybePromise<D> = D | Promise<D>;
 type RecordKey = string | number | symbol
 export interface AsyncCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> {
     isCached(k: CacheKey): boolean;
-    getCached(k: CacheKey): D | undefined;
+    getCachedUNSAFE(k: CacheKey): D | undefined;
     cacheAndUse(workingSet: Record<SemanticKey, () => Promise<D>>, use: (items: Record<SemanticKey, D>) => void, cacheKey: (semantic: SemanticKey) => CacheKey): cancelFn | undefined;
 }
 
@@ -48,6 +48,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     private destroyer: (d: D) => void;
     private entries: Map<CacheKey, MutableCacheEntry<D>>;
     private pendingRequests: Set<MutablePendingRequest<SemanticKey, CacheKey, D>>;
+
     /**
      * the intended use of this cache is to store resources used for rendering. Because the specific contents are generic, a simple interface must be provided
      * to support LRU cache eviction
@@ -66,7 +67,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         this.pendingRequests = new Set<MutablePendingRequest<SemanticKey, CacheKey, D>>();
     }
     private usedSpace() {
-        // Map uses iterators, so we're in for-loop teritorry here
+        // Map uses iterators, so we're in for-loop territory here
         let sum = 0;
         this.entries.forEach((entry) => (sum += entry.data instanceof Promise ? 0 : this.size(entry.data)));
         return sum;
@@ -135,12 +136,27 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     }
 
     /**
-     * `getCached` gets an entry from the cache for the given key (if the promise is resolved).
-     *
+     * @deprecated to alert (external) users to avoid calling this!
+     * `getCachedUNSAFE` gets an entry from the cache for the given key (if the promise is resolved).
+     * because of how eviction works - this method should be considered unsafe! consider the following
+     * @example
+     * const entry = cache.getCachedUnsafe('whatever')
+     * const otherStuff = await fetch('....')
+     * ... more code
+     * doSomethingCool(entry, otherStuff)
+     * 
+     * by the time the caller gets to the doSomethingCool call, the resources bound to the cache entry
+     * may have been disposed!
+     * do note that if you use a cache-entry synchronously (no awaits!) after requesting it, you're likely to not
+     * encounter any issues, however its a much more robust practice to simply refactor like so:
+     * 
+     * const otherStuff = await fetch('...')
+     * cache.cacheAndUse({...}, (...args)=>doSomethingCool(otherStuff, ..args), ...)
+     * 
      * @param key Entry key to look up in the cache
      * @returns The entry (D) if it is present, or undefined if it is not
      */
-    getCached(key: CacheKey): D | undefined {
+    getCachedUNSAFE(key: CacheKey): D | undefined {
         const entry = this.entries.get(key);
         if (!entry) return undefined;
 
@@ -156,26 +172,26 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         if (mutableEntry) {
             mutableEntry.data = data;
         }
-        const removeus: MutablePendingRequest<SemanticKey, CacheKey, D>[] = []
+        const removeUs: MutablePendingRequest<SemanticKey, CacheKey, D>[] = []
         for (const req of this.pendingRequests) {
             if (updatePendingRequest(req, key, cacheKey, data)) {
                 req.runner(req.ready);
-                removeus.push(req);
+                removeUs.push(req);
             }
         }
-        removeus.forEach(finished => this.pendingRequests.delete(finished));
+        removeUs.forEach(finished => this.pendingRequests.delete(finished));
     }
     private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
         if (this.isCached(cacheKey)) {
-            // note also the (!) opperator - we just checked that it exists
-            return this.getCached(cacheKey)! // note: mutates the entry to indicate that we requested it - this helps with prioritization during eviction
+            // note also the (!) operator - we just checked that it exists
+            return this.getCachedUNSAFE(cacheKey)! // note: mutates the entry to indicate that we requested it - this helps with prioritization during eviction
         } else {
-            const gimmie = getter();
+            const promiseData = getter();
             this.entries.set(cacheKey, {
-                data: gimmie,
+                data: promiseData,
                 lastRequestedTimestamp: performance.now(),
             })
-            return gimmie.then((data) => {
+            return promiseData.then((data) => {
                 this.dataArrived(semanticKey, cacheKey, data);
             })
         }
@@ -211,7 +227,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
 
                     // early return in the case that everything was cached!
                     // the only thing this short-circuits is pendingRequests.add(req)
-                    // (because of course it isnt pending, because we just did it!)
+                    // (because of course it isn't pending, because we just did it!)
                     return undefined;
                 }
             }
