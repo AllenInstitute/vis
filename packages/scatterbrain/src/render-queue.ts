@@ -1,4 +1,4 @@
-import { partial, partialRight } from 'lodash';
+import { partial } from 'lodash';
 import { AsyncDataCache } from './dataset-cache';
 
 /**
@@ -96,10 +96,13 @@ export function beginLongRunningFrame<Column, Item, Settings>(
   for (let i = 0; i < items.length; i += 1) {
     const itemToRender = items[i];
     const requestFns = requestsForItem(itemToRender, settings, abort.signal)
-    const cacheKeys = Object.keys(requestFns).map(key => cacheKeyForRequest(key, itemToRender, settings));
+    const cacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings)
+    const cacheKeys = Object.keys(requestFns).map(cacheKey);
+
     if (mutableCache.areKeysAllCached(cacheKeys)) {
+
       const result = mutableCache.cacheAndUse(
-        requestFns, partial(render, itemToRender, settings), partialRight(cacheKeyForRequest, itemToRender, settings)
+        requestFns, partial(render, itemToRender, settings), cacheKey
       );
       if (result !== undefined) {
         // this is a problem - the cache reported that all the keys are in the cache, however this result is a cancellation callback,
@@ -158,9 +161,10 @@ export function beginLongRunningFrame<Column, Item, Settings>(
       }
       // We know there are items in the queue because of the check above, so we assert the type exist
       const itemToRender = queue.shift()!;
+      const toCacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
       try {
         const result = mutableCache.cacheAndUse(
-          requestsForItem(itemToRender, settings, abort.signal), partial(render, itemToRender, settings), partialRight(cacheKeyForRequest, itemToRender, settings)
+          requestsForItem(itemToRender, settings, abort.signal), partial(render, itemToRender, settings), toCacheKey
         );
         if (result !== undefined) {
           // put this cancel callback in a list where we can invoke if something goes wrong

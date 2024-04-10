@@ -11,7 +11,7 @@ import {
   sizeInUnits,
   sizeInVoxels,
 } from "./zarr-data";
-import { AsyncDataCache, FrameLifecycle, beginLongRunningFrame } from "@alleninstitute/vis-scatterbrain";
+import { AsyncDataCache, type FrameLifecycle, beginLongRunningFrame } from "@alleninstitute/vis-scatterbrain";
 
 import { Box2D, type Interval, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import type { Camera } from "./camera";
@@ -50,7 +50,7 @@ class TissuecyteDemo {
   canvas: HTMLCanvasElement;
   curFrame: FrameLifecycle | null;
   rotation: number;
-  cache: AsyncDataCache<REGL.Texture2D>;
+  cache: AsyncDataCache<string, string, REGL.Texture2D>;
   regl: REGL.Regl;
   dataset: ZarrDataset;
   screenRenderer: ReturnType<typeof buildImageRenderer>;
@@ -61,7 +61,7 @@ class TissuecyteDemo {
     canvas: HTMLCanvasElement,
     dataset: ZarrDataset,
     regl: REGL.Regl,
-    cache: AsyncDataCache<REGL.Texture2D>,
+    cache: AsyncDataCache<string, string, REGL.Texture2D>,
     urls: string[]
   ) {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
@@ -467,7 +467,9 @@ async function demotime() {
   const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
   canvas.tabIndex = 3;
   setupGui(gl);
-  const voxelSliceCache: AsyncDataCache<REGL.Texture2D> = new AsyncDataCache<REGL.Texture2D>();
+  const voxelSliceCache: AsyncDataCache<string, string, REGL.Texture2D> = new AsyncDataCache<string, string, REGL.Texture2D>((d: REGL.Texture2D) => {
+    d.destroy()
+  }, (_d) => 1, 200);
   const zarr = await load(file);
   explain(zarr);
 

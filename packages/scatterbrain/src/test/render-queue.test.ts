@@ -1,6 +1,8 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import delay from 'lodash/delay';
 import { beginLongRunningFrame, type NormalStatus } from '../render-queue';
 import { AsyncDataCache } from '../dataset-cache';
+import { fakeFetch } from './test-utils';
 
 type FakeTask = { id: number; color: string };
 type FakeItem = { id: number };
@@ -8,18 +10,9 @@ type FakeSettings = { color: string };
 function cacheKey(item: FakeItem, settings: FakeSettings) {
     return `${settings.color}_${item.id}`;
 }
+
 // a few easy tests to start, we can get crazy later
 describe('beginLongRunningFrame', () => {
-    const fakeFetch = (id: number, color: string, signal?: AbortSignal): Promise<FakeTask> =>
-        new Promise((resolve, reject) => {
-            delay(() => {
-                if (signal?.aborted ?? false) {
-                    reject(new DOMException('abort fetch', 'AbortError'));
-                } else {
-                    resolve({ id, color });
-                }
-            }, 100 * Math.random() + 50);
-        });
     let cache: AsyncDataCache<string, string, FakeTask> = new AsyncDataCache(() => { }, () => 1, 9999);
     let renderSequence: FakeTask[] = [];
     function renderPretender(item: FakeItem, settings: FakeSettings, tasks: Record<string, FakeTask | undefined>) {
@@ -36,7 +29,7 @@ describe('beginLongRunningFrame', () => {
     };
     function rq(item: FakeItem, settings: FakeSettings, signal?: AbortSignal) {
         return {
-            [cacheKey(item, settings)]: () => fakeFetch(item.id, settings.color, signal),
+            [cacheKey(item, settings)]: () => fakeFetch({ id: item.id, color: settings.color }, signal),
         };
     }
     // a less wordy fake frame:
