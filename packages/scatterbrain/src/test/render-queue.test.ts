@@ -53,24 +53,33 @@ describe('beginLongRunningFrame', () => {
         cache = new AsyncDataCache(() => { }, () => 1, 9999);
         renderSequence = [];
     });
-    it('runs the expected number of tasks', (done) => {
+    it('runs the expected number of tasks', async () => {
+        let done: () => void;
+        const testOver = new Promise<void>((resolve, reject) => {
+            done = () => { resolve() }
+        })
         const events: string[] = [];
         fakeFrame(9, (e) => {
             events.push(e.status); // track the events for the test
             switch (e.status) {
                 case 'finished':
-                    expect(renderSequence.length).toBe(9);
-                    expect(events.length).toBe(9 + 2); // begin, ... progress x9 ..., finished
-                    expect(events[0]).toEqual('begun');
-                    expect(events[events.length - 1]).toEqual('finished');
                     done(); // if I dont get called, the test will fail very slowly
                     break;
                 default:
                     break;
             }
         });
+        await testOver;
+        expect(renderSequence.length).toBe(9);
+        expect(events.length).toBe(9 + 2); // begin, ... progress x9 ..., finished
+        expect(events[0]).toEqual('begun');
+        expect(events[events.length - 1]).toEqual('finished');
     });
-    it('can be cancelled without crash', (done) => {
+    it('can be cancelled without crash', async () => {
+        let done: () => void;
+        const testOver = new Promise<void>((resolve, reject) => {
+            done = () => resolve()
+        })
         try {
             const frame = fakeFrame(9, (e) => {
                 expect(renderSequence.length).toBeLessThan(9);
@@ -88,10 +97,14 @@ describe('beginLongRunningFrame', () => {
             // should not happen!
             expect(err).not.toBeDefined();
         }
+        await testOver;
     });
-    it('synchronously completes the second frame, because the cache gets warmed up', (done) => {
+    it('synchronously completes the second frame, because the cache gets warmed up', async () => {
         const allEvents: string[] = [];
-
+        let done: () => void;
+        const testOver = new Promise<void>((resolve, reject) => {
+            done = () => resolve()
+        })
         fakeFrame(9, (e) => {
             allEvents.push(e.status);
             if (e.status === 'finished') {
@@ -101,8 +114,6 @@ describe('beginLongRunningFrame', () => {
                     allEvents.push(e.status);
                     switch (e.status) {
                         case 'finished_synchronously':
-                            expect(renderSequence.length).toBe(9 + 9); // two frames, each having 9 tasks
-                            expect(allEvents.length).toBe(9 + 2 + 1); // all of the events of the first frame(begun,progress*9,finished) + 'finished_sync'
                             break;
                         default:
                             expect(e.status).toBe('finished_synchronously');
@@ -111,5 +122,8 @@ describe('beginLongRunningFrame', () => {
                 });
             }
         });
+        await testOver
+        expect(renderSequence.length).toBe(9 + 9); // two frames, each having 9 tasks
+        expect(allEvents.length).toBe(9 + 2 + 1); // all of the events of the first frame(begun,progress*9,finished) + 'finished_sync'
     });
 });

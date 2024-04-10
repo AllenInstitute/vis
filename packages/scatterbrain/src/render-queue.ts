@@ -164,12 +164,13 @@ export function beginLongRunningFrame<Column, Item, Settings>(
       const toCacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
       try {
         const result = mutableCache.cacheAndUse(
-          requestsForItem(itemToRender, settings, abort.signal), partial(render, itemToRender, settings), toCacheKey
+          requestsForItem(itemToRender, settings, abort.signal), partial(render, itemToRender, settings), toCacheKey, () => reportNormalStatus('progress')
         );
         if (result !== undefined) {
           // put this cancel callback in a list where we can invoke if something goes wrong
           // note that it is harmless to cancel a task that was completed
           taskCancelCallbacks.push(result);
+          result
         }
       } catch (err) {
         cleanupOnError(err);

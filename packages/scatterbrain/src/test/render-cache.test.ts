@@ -121,10 +121,14 @@ describe('async cache', () => {
             expect(cache.isCached(toCacheKey('position'))).toBeTruthy()
             // then reject the other to fail the overall task
             mockPromises.mockReject(spies[0], 'fetch failed for reals')
+            // so this is pretty gross...
+            // the number of awaits here relates to how many promises are chained together...
+            // todo think of a way to be smarter about this very async test...
             await Promise.resolve()
             await Promise.resolve()
 
             expect(cache.getNumPendingTasks()).toBe(0)
+
             expect(rendered.length).toBe(0);
             expect(boom).toBeTruthy()
             // the one that failed of course is missing from the cache
