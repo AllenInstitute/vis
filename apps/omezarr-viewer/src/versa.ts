@@ -10,7 +10,7 @@ import {
   pickBestScale,
   sizeInUnits,
   sizeInVoxels,
-} from "./zarr-data";
+} from "~/loaders/ome-zarr/zarr-data";
 import { AsyncDataCache, type FrameLifecycle, beginLongRunningFrame } from "@alleninstitute/vis-scatterbrain";
 import {
   type AxisAlignedPlane,
