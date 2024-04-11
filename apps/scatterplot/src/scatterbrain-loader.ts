@@ -25,7 +25,7 @@ export type DatasetTreeNode = {
 };
 // the schema for the json object for a given {todo thingy}
 // see example here: https://bkp-visualizations-pd.s3.us-west-2.amazonaws.com/MERSCOPE/ScatterBrain.json
-export type ColumnarMetatdata = {
+export type ColumnarMetadata = {
     geneFileEndpoint: string;
     metadataFileEndpoint: string;
     visualizationReferenceId: string;
@@ -119,7 +119,7 @@ function convertTree2D(
     };
 }
 
-export function loadDataset(metadata: ColumnarMetatdata, datasetUrl: string) {
+export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
     const box = metadata.boundingBox;
     const spatialDimName = metadata.spatialColumn;
     const rootBounds = Box3D.create([box.lx, box.ly, box.lz], [box.ux, box.uy, box.uz]);
@@ -175,11 +175,11 @@ export async function fetchColumn(
     const getGeneUrl = (columnName: string) =>
         `${dataset.geneUrl}${columnName}/${referenceIdForEmbedding}/${node.name}.bin`;
     if (column.type === 'QUANTITATIVE') {
-        const buff = await fetch(getGeneUrl(column.name), { signal:signal??null }).then((resp) => resp.arrayBuffer());
+        const buff = await fetch(getGeneUrl(column.name), { signal: signal ?? null }).then((resp) => resp.arrayBuffer());
         return { ...MakeTaggedBufferView('float', buff), elements: 1 };
     }
     const info = dataset.columnInfo[column.name];
-    const buff = await fetch(getColumnUrl(column.name), { signal:signal ??null }).then((resp) => resp.arrayBuffer());
+    const buff = await fetch(getColumnUrl(column.name), { signal: signal ?? null }).then((resp) => resp.arrayBuffer());
 
     return { ...MakeTaggedBufferView(info.type, buff), elements: info.elements };
 }

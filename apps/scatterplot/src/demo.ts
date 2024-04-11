@@ -3,7 +3,7 @@ import { beginLongRunningFrame, AsyncDataCache, type FrameLifecycle } from "@all
 
 import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from './data'
 import REGL from "regl";
-import { loadDataset, type ColumnarMetatdata, type ColumnData, type ColumnarTree } from "./scatterbrain-loader";
+import { loadDataset, type ColumnarMetadata, type ColumnData, type ColumnarTree } from "./scatterbrain-loader";
 import { buildRenderer } from "./renderer";
 const better = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const busted = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
@@ -148,6 +148,6 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
 
 async function loadJSON(url: string) {
     // obviously, we should check or something
-    return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetatdata)
+    return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetadata)
 }
 demoTime();
