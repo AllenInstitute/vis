@@ -1,11 +1,14 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { beginLongRunningFrame, AsyncDataCache, type FrameLifecycle } from "@alleninstitute/vis-scatterbrain";
+
 import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from './data'
 import REGL from "regl";
 import { loadDataset, type ColumnarMetatdata, type ColumnData, type ColumnarTree } from "./scatterbrain-loader";
 import { buildRenderer } from "./renderer";
 const better = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const busted = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
+const KB = 1000;
+const MB = 1000 * KB;
 class Demo {
     camera: {
         view: box2D;
@@ -17,7 +20,7 @@ class Demo {
     renderer: ReturnType<typeof buildRenderer>;
     mouse: 'up' | 'down'
     mousePos: vec2;
-    cache: AsyncDataCache<ColumnData>;
+    cache: AsyncDataCache<string, string, ColumnData>;
     curFrame: FrameLifecycle | null;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl, url: string) {
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
@@ -26,7 +29,10 @@ class Demo {
             screen: [w, h]
         }
         this.curFrame = null;
-        this.cache = new AsyncDataCache<ColumnData>();
+        this.cache = new AsyncDataCache<string, string, ColumnData>((_data) => {
+            // no op destroyer - GC will clean up for us
+        }, (data: ColumnData) => data.data.byteLength, 500 * MB);
+
         loadJSON(url).then((metadata) => {
             this.dataset = loadDataset(metadata, url)
             this.rerender();
