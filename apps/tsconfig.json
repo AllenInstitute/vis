@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "Node10",
+    "module": "ES2022",
+    "target": "ES2022",
+    "lib": [
+      "es2022",
+      "DOM"
+    ],
+    "declaration": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "paths": {
+      "~/*":["./common/src/*"]
+    },
+  },
+}

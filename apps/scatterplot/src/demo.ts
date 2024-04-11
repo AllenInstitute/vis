@@ -1,9 +1,9 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { beginLongRunningFrame, AsyncDataCache, type FrameLifecycle } from "@alleninstitute/vis-scatterbrain";
-
-import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from './data'
+import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from '~/loaders/scatterplot/data'
+import { loadDataset, type ColumnarMetadata, type ColumnData, type ColumnarTree } from "~/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
-import { loadDataset, type ColumnarMetadata, type ColumnData, type ColumnarTree } from "./scatterbrain-loader";
+
 import { buildRenderer } from "./renderer";
 const better = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const busted = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
