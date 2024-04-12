@@ -23,7 +23,7 @@ if you are interested in the code - you can start at the top: versa.ts contains 
     c. given fully-fetched data for a tile, render it! `buildVersaRenderer` - in this case we use [REgl](https://github.com/regl-project/regl/blob/master/API.md), an excellent WebGL abstraction layer, but the point of this plug-ability is that any user of the scatterbrain components may use whatever low-level rendering system (or data format) they prefer!
 ### Tissuecyte
 to run the Tissuecyte demo, assuming you've just cloned this repository:
-1. `run pnpm build` from the root directory
+1. run `pnpm build` from the root directory
 2. run `pnpm install` in this (apps/omezarr-viewer/) directory
 3. run `pnpm run tissuecyte` in this directory
 4. navigate to apps/omezarr-viewer/dst/ using your File browser / finder, and open `tissuecyte.html` in your browser.
