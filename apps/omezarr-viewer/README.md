@@ -3,7 +3,7 @@
 a very minimal demo to show how one might use the scatterbrain package to render volumetric images contained in an OME-zarr "File". Note that the datasets in the demos (there are 2) are hard-coded to some data in public S3 buckets.
 ### Versa
 to run the versa demo, assuming you've just cloned this repository:
-1. `run pnpm build` from the root directory
+1. run `pnpm build` from the root directory
 2. run `pnpm install` in this (apps/omezarr-viewer/) directory
 3. run `pnpm run versa` in this directory
 4. navigate to apps/omezarr-viewer/dst/ using your File browser / finder, and open `versa.html` in your browser.
