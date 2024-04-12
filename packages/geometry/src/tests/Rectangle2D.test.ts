@@ -1,6 +1,7 @@
 import { getMinimumBoundingBox, rectangle2D, scaleFromPoint } from "../Rectangle2D";
 import { Box2D, box2D } from "../box2D";
 import { Vec2, vec2 } from "../vec2";
+import { describe, expect, it, test } from 'vitest'
 
 function nearlyEqual(a: vec2, b: vec2, epsilon: number) {
   return Vec2.maxComponent(Vec2.map(Vec2.sub(a, b), Math.abs)) < epsilon;

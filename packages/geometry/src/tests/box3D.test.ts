@@ -1,6 +1,6 @@
 import { Box3D } from '../box3D';
 import { Vec3 } from '../vec3';
-
+import { describe, expect, test } from 'vitest'
 describe('Box3D', () => {
     // Basic box to use throughout the tests
     const box = Box3D.create([1, 2, 3], [3, 4, 5]);

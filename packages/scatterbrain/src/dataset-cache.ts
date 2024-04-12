@@ -98,16 +98,15 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
                     candidates.push({ key, data: entry.data, lastRequestedTimestamp: entry.lastRequestedTimestamp });
                 }
             });
-        }
-        const priority = candidates.sort((a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp);
+            const priority = candidates.sort((a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp);
 
-        for (const evictMe of priority) {
-            // console.log('evict: ', evictMe.key)
-            used -= this.size(evictMe.data);
-            this.destroyer(evictMe.data);
-            this.entries.delete(evictMe.key);
-            if (used < this.limit) {
-                return;
+            for (const evictMe of priority) {
+                used -= this.size(evictMe.data);
+                this.destroyer(evictMe.data);
+                this.entries.delete(evictMe.key);
+                if (used < this.limit) {
+                    return;
+                }
             }
         }
     }
@@ -210,7 +209,6 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
             if (result instanceof Promise) {
                 const prom = taskFinished !== undefined ? result.then(taskFinished) : result;
                 prom.catch((_reason) => {
-                    console.error(_reason)
                     // delete the failed entry from the cache
                     // also remove the entire request it belongs to
                     this.entries.delete(toCacheKey(semanticKey));
