@@ -3,11 +3,12 @@
 
 import { Box2D, visitBFS, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { fetchColumn, type ColumnarTree, type loadDataset } from "./scatterbrain-loader";
-
+import REGL from 'regl'
 export type Dataset = ReturnType<typeof loadDataset>
 export type RenderSettings = {
     dataset: Dataset;
     view: box2D;
+    target: REGL.Framebuffer2D | null;
 }
 function isVisible(view: box2D, sizeLimit: number, tree: ColumnarTree<vec2>) {
     const { bounds } = tree.content;

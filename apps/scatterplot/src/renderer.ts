@@ -1,4 +1,4 @@
-import REGL from "regl";
+import REGL, { type Framebuffer2D } from "regl";
 import type { ColumnData, ColumnarTree } from "~/loaders/scatterplot/scatterbrain-loader";
 import type { RenderSettings } from "~/loaders/scatterplot/data";
 import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
@@ -9,6 +9,7 @@ type Props = {
     count: number;
     position: Float32Array,
     color: Float32Array
+    target: Framebuffer2D | null;
 }
 export function buildRenderer(regl: REGL.Regl) {
     // build the regl command first
@@ -52,6 +53,7 @@ export function buildRenderer(regl: REGL.Regl) {
         blend: {
             enable: false,
         },
+        framebuffer: regl.prop<Props, 'target'>('target'),
         count: regl.prop<Props, 'count'>('count'),
         primitive: "points",
     })
@@ -65,7 +67,8 @@ export function buildRenderer(regl: REGL.Regl) {
                 count,
                 itemDepth,
                 position: position.data,
-                color: position.data
+                color: position.data,
+                target: settings.target
             })
         } else {
             // todo freak out!
