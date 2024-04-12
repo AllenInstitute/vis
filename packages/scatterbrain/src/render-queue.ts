@@ -2,24 +2,6 @@ import { partial } from 'lodash';
 import { AsyncDataCache } from './dataset-cache';
 
 /**
- * Helper function to determine whether a given error is an AbortError, which occurs when a fetch request is aborted
- * using an AbortController.
- * 
- * Contains logic that checks a deprecated field and error name that are subject to change in the future.
- * 
- * @param error Error to check for the AbortError
- * @returns True if it's an AbortError, false otherwise
- */
-function isAbortError(error: Error): boolean {
-  if (error instanceof DOMException) {
-    // WARNING: We currently check a deprecated field, but the DOMException data may change in the future: 
-    // https://developer.mozilla.org/en-US/docs/Web/API/DOMException#error_names
-    return error.code === DOMException.ABORT_ERR || error.name === 'AbortError';
-  }
-  return false;
-}
-
-/**
  * FrameLifecycle type that defines the functions a user can call to interact with the frame lifecycle.
  * 
  * Currently only supports `cancelFrame` to allow the user to cancel the frame on an ad-hoc basis.
