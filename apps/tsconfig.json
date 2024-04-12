@@ -12,6 +12,7 @@
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    // TODO: this feels like a bad idea...
     "paths": {
       "~/*":["./common/src/*"]
     },
