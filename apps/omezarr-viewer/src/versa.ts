@@ -66,8 +66,9 @@ class VersaDemo {
   ) {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
     this.datasets = urls;
+    const baseSize = sizeInUnits({ u: 'x', v: 'y' }, dataset.multiscales[0].axes, dataset.multiscales[0].datasets[0]) ?? [10, 10]
     this.camera = {
-      view: Box2D.create([0, 0], [(10 * w) / h, 10]),
+      view: Box2D.create([0, 0], [(baseSize[1] * w) / h, baseSize[1]]),
       screen: [w, h],
     };
     this.screenBuffer = { bounds: this.camera.view, fbo: regl.framebuffer(w, h) };

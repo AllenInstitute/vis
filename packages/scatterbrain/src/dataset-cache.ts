@@ -98,16 +98,16 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
                     candidates.push({ key, data: entry.data, lastRequestedTimestamp: entry.lastRequestedTimestamp });
                 }
             });
-        }
-        const priority = candidates.sort((a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp);
+            const priority = candidates.sort((a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp);
 
-        for (const evictMe of priority) {
-            // console.log('evict: ', evictMe.key)
-            used -= this.size(evictMe.data);
-            this.destroyer(evictMe.data);
-            this.entries.delete(evictMe.key);
-            if (used < this.limit) {
-                return;
+            for (const evictMe of priority) {
+                // console.log('evict: ', evictMe.key)
+                used -= this.size(evictMe.data);
+                this.destroyer(evictMe.data);
+                this.entries.delete(evictMe.key);
+                if (used < this.limit) {
+                    return;
+                }
             }
         }
     }
