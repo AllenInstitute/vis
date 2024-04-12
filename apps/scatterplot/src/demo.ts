@@ -80,7 +80,8 @@ class Demo {
             this.curFrame = beginLongRunningFrame<ColumnData, ColumnarTree<vec2>, RenderSettings>(
                 5, 33, items, this.cache, {
                 dataset: this.dataset,
-                view: this.camera.view
+                view: this.camera.view,
+                target: null,
             },
                 fetchItem,
                 this.renderer,
