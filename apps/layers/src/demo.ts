@@ -168,9 +168,11 @@ function demoTime() {
     });
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
     theDemo = new Demo(canvas, regl);
-    theDemo.addVolumeSlice("https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/").then(() => {
-        theDemo.addScatterplot('https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json')
+    theDemo.addVolumeSlice(ccf).then(() => {
+        theDemo.addScatterplot(tenx)
     })
 }
-
+const ccf = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/mouse3/230524_transposed_1501/avg_template/'
+const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/"
+const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json'
 demoTime();

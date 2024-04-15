@@ -21,7 +21,7 @@ export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: Zar
         const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(5, 33,
             items.tiles, cache, {
             dataset,
-            gamut: { min: 0, max: 2500 },
+            gamut: { min: 0, max: 500 },
             regl,
             rotation: (3 * Math.PI) / 2,
             target,
