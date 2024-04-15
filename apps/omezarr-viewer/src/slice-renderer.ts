@@ -9,7 +9,6 @@ import {
   sizeInVoxels,
 } from "~/loaders/ome-zarr/zarr-data";;
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
-import { omit } from "lodash";
 import type { Camera } from "./camera";
 
 type Props = {
@@ -52,7 +51,7 @@ export function buildVolumeSliceRenderer(regl: REGL.Regl) {
           return ((R*xy)+vec2(0.5,0.5));
         }
         void main(){
-           vec2 tileSize = tile.zw-tile.xy;
+           vec2 tileSize = (tile.zw-tile.xy);
            texCoord = rotateTextureCoordinates(pos,rot);
            vec2 obj = rotateObj((pos.xy*tileSize+tile.xy),rot);
             vec2 p = (obj-view.xy)/(view.zw-view.xy);

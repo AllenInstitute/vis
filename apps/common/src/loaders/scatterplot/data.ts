@@ -2,7 +2,7 @@
 // todo rename this file
 
 import { Box2D, visitBFS, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { fetchColumn, type ColumnarTree, type loadDataset } from "./scatterbrain-loader";
+import { fetchColumn, type ColumnarTree, type SlideViewDataset, type loadDataset } from "./scatterbrain-loader";
 import REGL from 'regl'
 export type Dataset = ReturnType<typeof loadDataset>
 export type RenderSettings = {
@@ -16,7 +16,23 @@ function isVisible(view: box2D, sizeLimit: number, tree: ColumnarTree<vec2>) {
 }
 export function getVisibleItems(dataset: Dataset, view: box2D, sizeLimit: number) {
     const hits: ColumnarTree<vec2>[] = []
-    visitBFS(dataset.tree,
+    let tree = 'slides' in dataset ? Object.values(dataset.slides)[0].tree : dataset.tree;
+    visitBFS(tree,
+        (t: ColumnarTree<vec2>) => t.children,
+        (tree) => { hits.push(tree) },
+        (tree) => isVisible(view, sizeLimit, tree));
+    return hits;
+}
+export function getVisibleItemsInSlide(dataset: SlideViewDataset, slide: string, view: box2D, sizeLimit: number){
+    const theSlide =  dataset.slides[slide];
+    if(!theSlide){
+        console.log('nope', Object.keys(dataset.slides))
+        return []
+    } 
+
+    const hits: ColumnarTree<vec2>[] = []
+    const tree = theSlide.tree;
+    visitBFS(tree,
         (t: ColumnarTree<vec2>) => t.children,
         (tree) => { hits.push(tree) },
         (tree) => isVisible(view, sizeLimit, tree));

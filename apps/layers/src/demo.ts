@@ -1,13 +1,13 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import type { Dataset } from "~/loaders/scatterplot/data";
-import { loadDataset, type ColumnData, type ColumnarMetadata } from "~/loaders/scatterplot/scatterbrain-loader";
+import { isSlideViewData, loadDataset, type ColumnData, type ColumnarMetadata } from "~/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
 import { AsyncDataCache, type FrameLifecycle, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { ScLayer } from "./scatterplotLayer";
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 import { SliceLayer } from "./sliceLayer";
-import { load } from "~/loaders/ome-zarr/zarr-data";
+import { load, sizeInUnits } from "~/loaders/ome-zarr/zarr-data";
 import { buildVolumeSliceRenderer } from "../../omezarr-viewer/src/slice-renderer";
 const KB = 1000;
 const MB = 1000 * KB;
@@ -23,7 +23,6 @@ class Demo {
         view: box2D;
         screen: vec2;
     }
-    dataset: Dataset | undefined;
     regl: REGL.Regl;
     canvas: HTMLCanvasElement;
     mouse: 'up' | 'down'
@@ -63,17 +62,23 @@ class Demo {
     addScatterplot(url: string) {
         const [w, h] = this.camera.screen
         return loadJSON(url).then((metadata) => {
-            this.dataset = loadDataset(metadata, url);
-            console.log('loaded up a layer: ', url)
-            this.layers.push(new ScLayer(this.regl, this.pointCache, this.dataset, [w, h], this.plotRenderer, () => {
-                this.requestReRender();
-            }));
+            const dataset = loadDataset(metadata, url);
+            
+            if(isSlideViewData(metadata)){
+                console.log('loaded up a layer: ', url)
+                console.log(dataset.bounds)
+                this.layers.push(new ScLayer(this.regl, this.pointCache, dataset, [w, h], this.plotRenderer, () => {
+                    this.requestReRender();
+                }));
+            }
+
         })
     }
     addVolumeSlice(url: string) {
         const [w, h] = this.camera.screen
         return load(url).then((dataset) => {
             console.log('loaded up a layer: ', url)
+            console.log('volume slice size: ', sizeInUnits({u:'x',v:'y'},dataset.multiscales[0].axes,dataset.multiscales[0].datasets[0]));
             this.layers.push(new SliceLayer(this.regl, this.textureCache, dataset, [w, h], this.sliceRenderer, () => {
                 this.requestReRender();
             }))
@@ -169,9 +174,10 @@ function demoTime() {
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
     theDemo = new Demo(canvas, regl);
     theDemo.addVolumeSlice(ccf).then(() => {
-        theDemo.addScatterplot(tenx)
+        theDemo.addScatterplot(merfish)
     })
 }
+const merfish='https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_slide_view_02142024-20240223021524/DTVLE1YGNTJQMWVMKEU/ScatterBrain.json'
 const ccf = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/mouse3/230524_transposed_1501/avg_template/'
 const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/"
 const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json'
