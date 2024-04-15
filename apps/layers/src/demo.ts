@@ -6,6 +6,9 @@ import { AsyncDataCache, type FrameLifecycle, type NormalStatus } from "@allenin
 import { ScLayer } from "./scatterplotLayer";
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
+import { SliceLayer } from "./sliceLayer";
+import { load } from "~/loaders/ome-zarr/zarr-data";
+import { buildVolumeSliceRenderer } from "../../omezarr-viewer/src/slice-renderer";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -27,17 +30,20 @@ class Demo {
     mousePos: vec2;
     pointCache: AsyncDataCache<string, string, ColumnData>;
     textureCache: AsyncDataCache<string, string, REGL.Texture2D>;
-    layer: ScLayer | null;
+    layers: Array<ScLayer | SliceLayer>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
+    plotRenderer: ReturnType<typeof buildRenderer>;
+    sliceRenderer: ReturnType<typeof buildVolumeSliceRenderer>;
     private refreshRequested: number = 0;
-    constructor(canvas: HTMLCanvasElement, regl: REGL.Regl, url: string) {
+    constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.canvas = canvas;
         this.mouse = 'up'
         this.regl = regl;
         this.mousePos = [0, 0]
-        this.layer = null;
-        const plotRenderer = buildRenderer(regl);
+        this.layers = [];
+        this.plotRenderer = buildRenderer(regl);
         this.imgRenderer = buildImageRenderer(regl);
+        this.sliceRenderer = buildVolumeSliceRenderer(regl);
         this.refreshRequested = 0;
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
@@ -52,16 +58,34 @@ class Demo {
             d.destroy()
         }, (_d) => 1, 512)
 
-        loadJSON(url).then((metadata) => {
+
+    }
+    addScatterplot(url: string) {
+        const [w, h] = this.camera.screen
+        return loadJSON(url).then((metadata) => {
             this.dataset = loadDataset(metadata, url);
-            this.layer = new ScLayer(regl, this.pointCache, this.dataset, [w, h], plotRenderer, () => {
+            console.log('loaded up a layer: ', url)
+            this.layers.push(new ScLayer(this.regl, this.pointCache, this.dataset, [w, h], this.plotRenderer, () => {
                 this.requestReRender();
-            })
+            }));
+        })
+    }
+    addVolumeSlice(url: string) {
+        const [w, h] = this.camera.screen
+        return load(url).then((dataset) => {
+            console.log('loaded up a layer: ', url)
+            this.layers.push(new SliceLayer(this.regl, this.textureCache, dataset, [w, h], this.sliceRenderer, () => {
+                this.requestReRender();
+            }))
         })
     }
     private onCameraChanged() {
-        if (this.layer) {
-            this.layer.onChangeView(this.camera.view);
+        for (const layer of this.layers) {
+            if (layer instanceof ScLayer) {
+                layer.onChangeView(this.camera.view)
+            } else if (layer instanceof SliceLayer) {
+                layer.onChangeView(this.camera, 0.5)
+            }
         }
     }
     requestReRender() {
@@ -112,16 +136,17 @@ class Demo {
     }
 
     refreshScreen() {
-        if (!this.layer) return
 
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
-        const src = this.layer.getRenderResults('prev');
-        this.imgRenderer({
-            box: Box2D.toFlatArray(src.bounds),
-            img: src.texture,
-            target: null,
-            view: Box2D.toFlatArray(this.camera.view)
-        })
+        for (const layer of this.layers) {
+            const src = layer.getRenderResults('prev');
+            this.imgRenderer({
+                box: Box2D.toFlatArray(src.bounds),
+                img: src.texture,
+                target: null,
+                view: Box2D.toFlatArray(this.camera.view)
+            })
+        }
     }
 }
 
@@ -142,7 +167,10 @@ function demoTime() {
         extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
-    theDemo = new Demo(canvas, regl, 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json');
+    theDemo = new Demo(canvas, regl);
+    theDemo.addVolumeSlice("https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/").then(() => {
+        theDemo.addScatterplot('https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json')
+    })
 }
 
 demoTime();
