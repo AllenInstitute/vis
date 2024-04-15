@@ -30,7 +30,7 @@
     "private": true,
     "scripts": {
       "preinstall": "npx only-allow pnpm",
-      "demo": "esbuild src/demo.ts --bundle --outfile=dst/demo.js && cp public/* dst/",
+      "demo": "esbuild src/demo.ts --bundle --outfile=dst/demo.js --watch && cp public/* dst/",
       "typecheck": "tsc --noEmit"
     },
     "devDependencies": {
