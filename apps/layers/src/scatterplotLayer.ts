@@ -3,8 +3,8 @@ import type { Image } from "./types";
 import { buildRenderer as buildScatterplotRenderer } from "../../scatterplot/src/renderer";
 import type REGL from "regl";
 import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { fetchItem, getVisibleItems, type Dataset, type RenderSettings } from "~/loaders/scatterplot/data";
-import { type ColumnData, type ColumnarTree, loadDataset, type ColumnarMetadata } from "~/loaders/scatterplot/scatterbrain-loader";
+import { fetchItem, getVisibleItems, getVisibleItemsInSlide, type Dataset, type RenderSettings } from "~/loaders/scatterplot/data";
+import { type ColumnData, type ColumnarTree, loadDataset, type ColumnarMetadata, type SlideViewDataset } from "~/loaders/scatterplot/scatterbrain-loader";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 import { swapBuffers, type BufferPair } from "~/bufferPair";
 
@@ -13,11 +13,11 @@ type RenderCallback = (event: { status: NormalStatus } | { status: 'error', erro
 
 type Cache = AsyncDataCache<string, string, ColumnData>
 type Renderer = ReturnType<typeof buildScatterplotRenderer>
-export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: Dataset) {
+export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: SlideViewDataset) {
 
     return (view: box2D, target: REGL.Framebuffer2D, callback: RenderCallback) => {
         // get the items:
-        const items = getVisibleItems(dataset, view, 1);
+        const items = getVisibleItemsInSlide(dataset, "1F6E851BNSJTU6B2T3I", view, 1);
         const frame = beginLongRunningFrame(5, 33, items, cache, { view, dataset, target }, fetchItem, renderer, callback, (reqKey, item, _settings) => `${reqKey}:${item.content.name}`);
         return frame;
     }
@@ -29,7 +29,7 @@ export class ScLayer {
     private runningFrame: FrameLifecycle | null;
     private regl: REGL.Regl;
     private onRenderUpdate: undefined | (() => void);
-    constructor(regl: REGL.Regl, cache: Cache, dataset: Dataset, resolution: vec2, plotRenderer: ReturnType<typeof buildScatterplotRenderer>, onRenderProgress?: () => void) {
+    constructor(regl: REGL.Regl, cache: Cache, dataset: SlideViewDataset, resolution: vec2, plotRenderer: ReturnType<typeof buildScatterplotRenderer>, onRenderProgress?: () => void) {
         this.buffers = {
             readFrom: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) },
             writeTo: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) }

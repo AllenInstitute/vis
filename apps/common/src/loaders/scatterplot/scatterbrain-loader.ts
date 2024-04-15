@@ -1,4 +1,4 @@
-import { Box3D, Vec3, type box, type box3D, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
+import { Box2D, Box3D, Vec3, type box, type box3D, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
 import { MakeTaggedBufferView, type TaggedTypedArray, type WebGLSafeBasicType } from "../../typed-array";
 
 type volumeBound = {
@@ -23,6 +23,11 @@ export type DatasetTreeNode = {
     numSpecimens: number;
     children: undefined | DatasetTreeNode[];
 };
+type SlideId = string;
+export type SlideTree = {
+    tree: ColumnarTree<vec2>;
+    id: SlideId;
+};
 // the schema for the json object for a given {todo thingy}
 // see example here: https://bkp-visualizations-pd.s3.us-west-2.amazonaws.com/MERSCOPE/ScatterBrain.json
 export type ColumnarMetadata = {
@@ -39,6 +44,28 @@ export type ColumnarMetadata = {
 export type ColumnMetadata = {
     type: WebGLSafeBasicType;
     elements: number;
+};
+type Slide = {
+    featureTypeValueReferenceId: string;
+    tree: {
+        root: DatasetTreeNode;
+        points: number;
+        boundingBox: volumeBound;
+        tightBoundingBox: volumeBound;
+    };
+};
+type SpatialReferenceFrame = {
+    anatomicalOrigin: string;
+    direction: string;
+    unit: string;
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+};
+export type SlideColumnarMetadata = Omit<ColumnarMetadata, 'root' | 'points' | 'boundingBox' | 'tightBoundingBox'> & {
+    slides: Slide[];
+    spatialUnit: SpatialReferenceFrame;
 };
 type VectorConstraint = ReadonlyArray<number>
 export type ColumnarNode<V extends VectorConstraint> = {
@@ -118,8 +145,65 @@ function convertTree2D(
                 : [],
     };
 }
+function mapBy<K extends string, T extends Record<K, string>>(items: readonly T[], k: K): Record<string, T> {
+    const dictionary: Record<string, T> = {};
+    items.forEach((item) => {
+        dictionary[item[k]] = item;
+    });
+    return dictionary;
+}
+export function isSlideViewData(data: ColumnarMetadata | SlideColumnarMetadata): data is SlideColumnarMetadata {
+    return 'slides' in data && 'spatialUnit' in data;
+}
+function loadSlideViewDataset(metadata: SlideColumnarMetadata, _datasetUrl: string) {
+    const {
+        geneFileEndpoint,
+        spatialColumn,
+        spatialUnit,
+        metadataFileEndpoint,
+        visualizationReferenceId,
+        pointAttributes,
+        slides,
+    } = metadata;
+    const { minX, minY, maxX, maxY } = spatialUnit;
+    const bounds = Box2D.create([Number(minX), Number(minY)], [Number(maxX), Number(maxY)]);
+
+    const columnInfo = pointAttributes.reduce(
+        (dictionary, attr) => ({
+            ...dictionary,
+            [attr.name]: {
+                elements: attr.elements,
+                type: attr.type,
+            } as const,
+        }),
+        {} as Record<string, ColumnMetadata>
+    );
+
+    const slideTrees: SlideTree[] = slides.map((slide) => {
+        const box = slide.tree.boundingBox;
+        const slideBounds = Box3D.create([box.lx, box.ly, box.lz], [box.ux, box.uy, box.uz]);
+        return {
+            tree: convertTree2D(slide.tree.root, slideBounds, 0, metadataFileEndpoint, geneFileEndpoint),
+            id: (slide.featureTypeValueReferenceId),
+        };
+    });
+    return {
+        bounds,
+        columnInfo,
+        dimensions: 2,
+        geneUrl: geneFileEndpoint,
+        spatialColumn,
+        url: metadataFileEndpoint,
+        slides: mapBy(slideTrees, 'id') as Record<SlideId, SlideTree>,
+        visualizationReferenceId,
+    };
+}
+export type SlideViewDataset = ReturnType<typeof loadSlideViewDataset>;
 
 export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
+    if(isSlideViewData(metadata)){
+        return loadSlideViewDataset(metadata,datasetUrl);
+    }
     const box = metadata.boundingBox;
     const spatialDimName = metadata.spatialColumn;
     const rootBounds = Box3D.create([box.lx, box.ly, box.lz], [box.ux, box.uy, box.uz]);
