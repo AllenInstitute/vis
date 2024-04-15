@@ -6,6 +6,7 @@ import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { fetchItem, getVisibleItems, type Dataset, type RenderSettings } from "~/loaders/scatterplot/data";
 import { type ColumnData, type ColumnarTree, loadDataset, type ColumnarMetadata } from "~/loaders/scatterplot/scatterbrain-loader";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
+import { swapBuffers, type BufferPair } from "~/bufferPair";
 
 
 type RenderCallback = (event: { status: NormalStatus } | { status: 'error', error: unknown }) => void;
@@ -22,23 +23,13 @@ export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: Dat
     }
 }
 
-export type BufferPair<T> = {
-    writeTo: T;
-    readFrom: T;
-}
-export function swapBuffers<T>(doubleBuffer: BufferPair<T>) {
-    const { readFrom, writeTo } = doubleBuffer;
-    return { readFrom: writeTo, writeTo: readFrom };
-}
-
 export class ScLayer {
     private buffers: BufferPair<Image>;
     private frameMaker: ReturnType<typeof buildFrameFactory>;
     private runningFrame: FrameLifecycle | null;
     private regl: REGL.Regl;
-    private imgRenderer: ReturnType<typeof buildImageRenderer>;
     private onRenderUpdate: undefined | (() => void);
-    constructor(regl: REGL.Regl, cache: Cache, dataset: Dataset, resolution: vec2, imageRenderer: ReturnType<typeof buildImageRenderer>, plotRenderer: ReturnType<typeof buildScatterplotRenderer>, onRenderProgress?: () => void) {
+    constructor(regl: REGL.Regl, cache: Cache, dataset: Dataset, resolution: vec2, plotRenderer: ReturnType<typeof buildScatterplotRenderer>, onRenderProgress?: () => void) {
         this.buffers = {
             readFrom: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) },
             writeTo: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) }
@@ -47,7 +38,6 @@ export class ScLayer {
         this.runningFrame = null;
         this.regl = regl;
 
-        this.imgRenderer = imageRenderer
 
         this.frameMaker = buildFrameFactory(cache, plotRenderer, dataset);
     }

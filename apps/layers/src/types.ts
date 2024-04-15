@@ -7,9 +7,3 @@ export type Image = {
     texture: REGL.Framebuffer2D
     bounds: box2D;
 }
-
-
-export type BufferPair<T> = {
-    writeTo: T;
-    readFrom: T;
-}

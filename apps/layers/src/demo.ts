@@ -54,7 +54,7 @@ class Demo {
 
         loadJSON(url).then((metadata) => {
             this.dataset = loadDataset(metadata, url);
-            this.layer = new ScLayer(regl, this.pointCache, this.dataset, [w, h], this.imgRenderer, plotRenderer, () => {
+            this.layer = new ScLayer(regl, this.pointCache, this.dataset, [w, h], plotRenderer, () => {
                 this.requestReRender();
             })
         })
