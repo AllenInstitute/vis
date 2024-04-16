@@ -46,7 +46,7 @@ export function fetchItem(item: ColumnarTree<vec2>, settings: RenderSettings, si
     }, signal);
     const color = () => fetchColumn(item.content, settings.dataset, {
         type: 'QUANTITATIVE',
-        name: '2097'
+        name: '442'
     }, signal);
     return {
         position,
