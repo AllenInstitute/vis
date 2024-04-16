@@ -11,7 +11,8 @@ import type { Camera } from "../../omezarr-viewer/src/camera";
 
 
 type RenderCallback = (event: { status: NormalStatus } | { status: 'error', error: unknown }) => void;
-
+const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
+const slide2 = "1F6E851BNSJTU6B2T3I"
 type Cache = AsyncDataCache<string, string, ColumnData>
 type Renderer = ReturnType<typeof buildScatterplotRenderer>
 export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: SlideViewDataset) {
@@ -21,7 +22,7 @@ export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: Sli
         const {view,screen} = camera;
         // get the size of 10px in data-space...
         const unitsPerPixel = Vec2.div(Box2D.size(view),screen)
-        const items = getVisibleItemsInSlide(dataset, "1F6E851BNSJTU6B2T3I", view, 10*unitsPerPixel[0]);
+        const items = getVisibleItemsInSlide(dataset, slide32, view, 10*unitsPerPixel[0]);
         const frame = beginLongRunningFrame(5, 33, items, cache, { view, dataset, target }, fetchItem, renderer, callback, (reqKey, item, _settings) => `${reqKey}:${item.content.name}`);
         return frame;
     }
