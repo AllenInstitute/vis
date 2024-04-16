@@ -215,11 +215,12 @@ export function getVisibleTiles(
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
   const { axes, datasets } = dataset.multiscales[0];
   const sliceSize = sizeInUnits(uvTable[plane], axes, datasets[0])!;
+
   const zIndex = indexOfDimension(axes, sliceDimension[plane]);
   const thingy = pickBestScale(
     dataset,
     uvTable[plane],
-    Box2D.scale(camera.view, Vec2.div([1, 1], sliceSize)),
+    camera.view,
     camera.screen
   );
   const thickness = thingy.shape[zIndex];

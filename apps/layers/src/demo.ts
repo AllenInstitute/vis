@@ -87,7 +87,7 @@ class Demo {
     private onCameraChanged() {
         for (const layer of this.layers) {
             if (layer instanceof ScLayer) {
-                layer.onChangeView(this.camera.view)
+                layer.onChangeView(this.camera)
             } else if (layer instanceof SliceLayer) {
                 layer.onChangeView(this.camera, 0.5)
             }

@@ -3,9 +3,9 @@
 import { AsyncDataCache, beginLongRunningFrame, type FrameLifecycle, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import type { Image } from "./types";
 import type REGL from "regl";
-import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { swapBuffers, type BufferPair } from "~/bufferPair";
-import type { ZarrDataset } from "~/loaders/ome-zarr/zarr-data";
+import { sizeInVoxels, type ZarrDataset } from "~/loaders/ome-zarr/zarr-data";
 import { cacheKeyFactory, getVisibleTiles, requestsForTile, type VoxelSliceRenderSettings, type VoxelTile, type buildVolumeSliceRenderer } from "../../omezarr-viewer/src/slice-renderer";
 import type { Camera } from "../../omezarr-viewer/src/camera";
 
@@ -18,14 +18,16 @@ export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: Zar
     return (camera: Camera, sliceParam: number, target: REGL.Framebuffer2D, callback: RenderCallback) => {
         // get the items:
         const items = getVisibleTiles(camera, 'xy', sliceParam, dataset);
+        const size = sizeInVoxels({u:'x',v:'y'},dataset.multiscales[0].axes,dataset.multiscales[0].datasets[items.layer])
         const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(5, 33,
-            items.tiles, cache, {
+            items.tiles, cache, 
+            {
             dataset,
             gamut: { min: 0, max: 500 },
             regl,
             rotation: (3 * Math.PI) / 2,
             target,
-            view: camera.view,
+            view: Box2D.translate(items.view,Vec2.scale(size??[0,0],0.5)), // note that this a camera converted into voxel space, but with the origin translated to the center of the volume.
             viewport: {
                 x: 0, y: 0,
                 width: camera.screen[0],
@@ -65,6 +67,7 @@ export class SliceLayer {
             // this.buffers = swapBuffers(this.buffers);
             this.regl.clear({ framebuffer: this.buffers.writeTo.texture, color: [0, 0, 0, 0], depth: 1 })
         }
+
         // mutate our write-to buffer:
         this.buffers.writeTo.bounds = view;
         this.runningFrame = this.frameMaker(camera, sliceParam, this.buffers.writeTo.texture, (event: { status: NormalStatus } | { status: 'error', error: unknown }) => {
