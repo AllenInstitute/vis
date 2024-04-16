@@ -67,7 +67,7 @@ export function buildRenderer(regl: REGL.Regl) {
                 count,
                 itemDepth,
                 position: position.data,
-                color: position.data,
+                color: color.data,
                 target: settings.target
             })
         } else {
