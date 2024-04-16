@@ -16,24 +16,23 @@ type Cache = AsyncDataCache<string, string, REGL.Texture2D>
 export function buildFrameFactory(cache: Cache, renderer: Renderer, dataset: ZarrDataset, regl: REGL.Regl) {
 
     return (camera: Camera, sliceParam: number, target: REGL.Framebuffer2D, callback: RenderCallback) => {
-        // get the items:
         const items = getVisibleTiles(camera, 'xy', sliceParam, dataset);
-        const size = sizeInVoxels({u:'x',v:'y'},dataset.multiscales[0].axes,dataset.multiscales[0].datasets[items.layer])
+        const size = sizeInVoxels({ u: 'x', v: 'y' }, dataset.multiscales[0].axes, dataset.multiscales[0].datasets[items.layer])
         const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(5, 33,
-            items.tiles, cache, 
+            items.tiles, cache,
             {
-            dataset,
-            gamut: { min: 0, max: 500 },
-            regl,
-            rotation: (3 * Math.PI) / 2,
-            target,
-            view: Box2D.translate(items.view,Vec2.scale(size??[0,0],0.5)), // note that this a camera converted into voxel space, but with the origin translated to the center of the volume.
-            viewport: {
-                x: 0, y: 0,
-                width: camera.screen[0],
-                height: camera.screen[1]
-            },
-        }, requestsForTile, renderer, callback, cacheKeyFactory);
+                dataset,
+                gamut: { min: 0, max: 500 },
+                regl,
+                rotation: (3 * Math.PI) / 2,
+                target,
+                view: items.view, // Box2D.translate(items.view,Vec2.scale(size??[0,0],0.5)), // note that this a camera converted into voxel space, but with the origin translated to the center of the volume.
+                viewport: {
+                    x: 0, y: 0,
+                    width: camera.screen[0],
+                    height: camera.screen[1]
+                },
+            }, requestsForTile, renderer, callback, cacheKeyFactory);
         return frame;
     }
 }
