@@ -18,7 +18,7 @@ importers:
         specifier: 2.12.0
         version: 2.12.0(typescript@5.3.3)
       typescript:
-        specifier: ^5.3.3
+        specifier: 5.3.3
         version: 5.3.3
 
   apps/common:
@@ -30,16 +30,16 @@ importers:
         specifier: workspace:*
         version: link:../../packages/scatterbrain
       '@types/lodash':
-        specifier: ^4.14.202
+        specifier: 4.14.202
         version: 4.14.202
       lodash:
-        specifier: ^4.17.21
+        specifier: 4.17.21
         version: 4.17.21
       regl:
-        specifier: ^2.1.0
+        specifier: 2.1.0
         version: 2.1.0
       zarr:
-        specifier: ^0.6.2
+        specifier: 0.6.2
         version: 0.6.2
 
   apps/layers:
@@ -51,20 +51,20 @@ importers:
         specifier: workspace:*
         version: link:../../packages/scatterbrain
       '@types/lodash':
-        specifier: ^4.14.202
+        specifier: 4.14.202
         version: 4.14.202
       lodash:
-        specifier: ^4.17.21
+        specifier: 4.17.21
         version: 4.17.21
       regl:
-        specifier: ^2.1.0
+        specifier: 2.1.0
         version: 2.1.0
     devDependencies:
       esbuild:
-        specifier: ^0.19.12
+        specifier: 0.19.12
         version: 0.19.12
       typescript:
-        specifier: ^5.3.3
+        specifier: 5.3.3
         version: 5.3.3
 
   apps/omezarr-viewer:
@@ -76,26 +76,26 @@ importers:
         specifier: workspace:*
         version: link:../../packages/scatterbrain
       '@types/lodash':
-        specifier: ^4.14.202
+        specifier: 4.14.202
         version: 4.14.202
       '@zhobo63/imgui-ts':
-        specifier: ^0.1.43
+        specifier: 0.1.43
         version: 0.1.43
       lodash:
-        specifier: ^4.17.21
+        specifier: 4.17.21
         version: 4.17.21
       regl:
-        specifier: ^2.1.0
+        specifier: 2.1.0
         version: 2.1.0
       zarr:
-        specifier: ^0.6.2
+        specifier: 0.6.2
         version: 0.6.2
     devDependencies:
       esbuild:
-        specifier: ^0.19.12
+        specifier: 0.19.12
         version: 0.19.12
       typescript:
-        specifier: ^5.3.3
+        specifier: 5.3.3
         version: 5.3.3
 
   apps/scatterplot:
@@ -107,66 +107,66 @@ importers:
         specifier: workspace:*
         version: link:../../packages/scatterbrain
       '@types/lodash':
-        specifier: ^4.14.202
+        specifier: 4.14.202
         version: 4.14.202
       '@zhobo63/imgui-ts':
-        specifier: ^0.1.43
+        specifier: 0.1.43
         version: 0.1.43
       lodash:
-        specifier: ^4.17.21
+        specifier: 4.17.21
         version: 4.17.21
       regl:
-        specifier: ^2.1.0
+        specifier: 2.1.0
         version: 2.1.0
     devDependencies:
       esbuild:
-        specifier: ^0.19.12
+        specifier: 0.19.12
         version: 0.19.12
       typescript:
-        specifier: ^5.3.3
+        specifier: 5.3.3
         version: 5.3.3
 
   packages/geometry:
     devDependencies:
       '@parcel/packager-ts':
-        specifier: ^2.12.0
+        specifier: 2.12.0
         version: 2.12.0(@parcel/core@2.12.0)
       '@parcel/transformer-typescript-types':
-        specifier: ^2.12.0
+        specifier: 2.12.0
         version: 2.12.0(@parcel/core@2.12.0)(typescript@5.3.3)
       parcel:
         specifier: 2.12.0
         version: 2.12.0(typescript@5.3.3)
       typescript:
-        specifier: ^5.3.3
+        specifier: 5.3.3
         version: 5.3.3
       vitest:
-        specifier: ^1.4.0
+        specifier: 1.4.0
         version: 1.4.0
 
   packages/scatterbrain:
     dependencies:
       lodash:
-        specifier: ^4.17.21
+        specifier: 4.17.21
         version: 4.17.21
     devDependencies:
       '@parcel/packager-ts':
-        specifier: ^2.12.0
+        specifier: 2.12.0
         version: 2.12.0(@parcel/core@2.12.0)
       '@parcel/transformer-typescript-types':
-        specifier: ^2.12.0
+        specifier: 2.12.0
         version: 2.12.0(@parcel/core@2.12.0)(typescript@5.3.3)
       '@types/lodash':
-        specifier: ^4.14.202
+        specifier: 4.14.202
         version: 4.14.202
       parcel:
         specifier: 2.12.0
         version: 2.12.0(typescript@5.3.3)
       typescript:
-        specifier: ^5.3.3
+        specifier: 5.3.3
         version: 5.3.3
       vitest:
-        specifier: ^1.4.0
+        specifier: 1.4.0
         version: 1.4.0
 
 packages:

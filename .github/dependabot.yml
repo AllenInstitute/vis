@@ -1,0 +1,69 @@
+version: 2
+updates:
+    # We need to point to each package.json, so this file will be a bit verbose
+
+    # Root package.json
+    - package-ecosystem: 'pnpm'
+      directory: '/'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+
+    # Packages
+    - package-ecosystem: 'pnpm'
+      directory: '/packages/geometry'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+    
+    - package-ecosystem: 'pnpm'
+      directory: '/packages/scatterbrain'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+
+    # Examples
+    - package-ecosystem: 'pnpm'
+      directory: '/apps/common'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+    
+    - package-ecosystem: 'pnpm'
+      directory: '/apps/layers'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+  
+    - package-ecosystem: 'pnpm'
+      directory: '/apps/omezarr-viewer'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+    
+    - package-ecosystem: 'pnpm'
+      directory: '/app/scatterplot'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'

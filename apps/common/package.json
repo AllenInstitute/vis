@@ -28,10 +28,10 @@
     "dependencies": {
       "@alleninstitute/vis-geometry": "workspace:*",
       "@alleninstitute/vis-scatterbrain": "workspace:*",
-      "@types/lodash": "^4.14.202",
-      "lodash": "^4.17.21",
-      "regl": "^2.1.0",
-      "zarr": "^0.6.2"
+      "@types/lodash": "4.14.202",
+      "lodash": "4.17.21",
+      "regl": "2.1.0",
+      "zarr": "0.6.2"
 
     }
-  }
+}
