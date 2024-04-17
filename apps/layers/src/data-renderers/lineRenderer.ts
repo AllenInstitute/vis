@@ -5,7 +5,7 @@ import type { TaggedFloat32Array } from '~/typed-array'
 
 type Attrs = {pos: REGL.AttributeConfig}
 type Unis = {view: vec4, color: vec4}
-type Props = {target:REGL.Framebuffer2D|null, view: box2D, color: vec4, pos: REGL.AttributeConfig, count: number}
+type Props = {target:REGL.Framebuffer2D|null, view: vec4, color: vec4, pos: REGL.AttributeConfig|REGL.BufferData, count: number}
 const frag = `
 precision highp float;
 
