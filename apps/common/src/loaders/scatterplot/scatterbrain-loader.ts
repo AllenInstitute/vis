@@ -201,8 +201,8 @@ function loadSlideViewDataset(metadata: SlideColumnarMetadata, _datasetUrl: stri
 export type SlideViewDataset = ReturnType<typeof loadSlideViewDataset>;
 
 export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
-    if(isSlideViewData(metadata)){
-        return loadSlideViewDataset(metadata,datasetUrl);
+    if (isSlideViewData(metadata)) {
+        return loadSlideViewDataset(metadata, datasetUrl);
     }
     const box = metadata.boundingBox;
     const spatialDimName = metadata.spatialColumn;
