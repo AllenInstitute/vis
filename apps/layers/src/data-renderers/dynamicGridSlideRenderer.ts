@@ -10,7 +10,6 @@ type CacheContentType = ColumnData
 type Renderer = ReturnType<typeof buildScatterplotRenderer>
 export type RenderSettings<C> = {
     camera: Camera;
-    target: REGL.Framebuffer2D
     cache: AsyncDataCache<string, string, C>;
     renderer: Renderer,
     callback: RenderCallback,
@@ -18,8 +17,8 @@ export type RenderSettings<C> = {
     queueInterval?: number,
     cpuLimit?: number,
 }
-export function renderSlide<C extends (CacheContentType | object)>(slide: DynamicGridSlide & OptionalTransform, settings: RenderSettings<C>) {
-    const { cache, target, camera: { view, screen }, renderer, callback } = settings;
+export function renderSlide<C extends (CacheContentType | object)>(target:REGL.Framebuffer2D|null, slide: DynamicGridSlide & OptionalTransform, settings: RenderSettings<C>) {
+    const { cache, camera: { view, screen }, renderer, callback } = settings;
     let { concurrentTasks, queueInterval, cpuLimit } = settings;
 
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5
