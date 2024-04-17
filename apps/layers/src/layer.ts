@@ -49,6 +49,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends { camera: Camera, ta
         this.buffers.writeTo.bounds = camera.view;
         this.runningFrame = this.renderFn(data, {
             ...settings,
+            target:this.buffers.writeTo.texture,
             callback: (ev: EventType) => {
                 const { status } = ev;
                 switch (status) {
