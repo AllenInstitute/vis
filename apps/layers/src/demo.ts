@@ -8,8 +8,9 @@ import { SliceLayer } from "./sliceLayer";
 import { load, sizeInUnits } from "~/loaders/ome-zarr/zarr-data";
 import { buildVolumeSliceRenderer } from "../../omezarr-viewer/src/slice-renderer";
 import { ReglLayer2D } from "./layer";
-import type { DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
+import type { AxisAlignedZarrSlice, DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
+import { renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -29,7 +30,13 @@ type ScatterPlotLayer = {
     render: ReglLayer2D<DynamicGridSlide&OptionalTransform, SlideRenderSettings<CacheEntry>>
 };
 
-type Layer = ScatterPlotLayer;
+type VolumetricSliceLayer = {
+    type:'volumeSlice'
+    data: AxisAlignedZarrSlice&OptionalTransform,
+    render: ReglLayer2D<AxisAlignedZarrSlice&OptionalTransform, SliceRenderSettings<CacheEntry>>
+};
+
+type Layer = ScatterPlotLayer|VolumetricSliceLayer;
 
 function destroyer(item:CacheEntry){
     if(item.type==='texture2D'){
@@ -75,9 +82,7 @@ class Demo {
         this.cache = new AsyncDataCache<string,string,CacheEntry>(destroyer,sizeOf,1000);
     }
     addScatterplot(url: string,slideId: string,color:ColumnRequest) {
-        
-        
-        loadJSON(url).then((metadata)=>{
+        return loadJSON(url).then((metadata)=>{
             if(isSlideViewData(metadata)){
                 const dataset = loadDataset(metadata,url) as SlideViewDataset
                 const [w, h] = this.camera.screen
@@ -100,14 +105,26 @@ class Demo {
         })
     }
     addVolumeSlice(url: string) {
-        // const [w, h] = this.camera.screen
-        // return load(url).then((dataset) => {
-        //     console.log('loaded up a layer: ', url)
-        //     console.log('volume slice size: ', sizeInUnits({u:'x',v:'y'},dataset.multiscales[0].axes,dataset.multiscales[0].datasets[0]));
-        //     this.layers.push(new SliceLayer(this.regl, this.textureCache, dataset, [w, h], this.sliceRenderer, () => {
-        //         this.requestReRender();
-        //     }))
-        // })
+        const [w, h] = this.camera.screen
+        return load(url).then((dataset) => {
+            console.log('loaded up a layer: ', url)
+            console.log('volume slice size: ', sizeInUnits({u:'x',v:'y'},dataset.multiscales[0].axes,dataset.multiscales[0].datasets[0]));
+            const layer = new ReglLayer2D<AxisAlignedZarrSlice&OptionalTransform,SliceRenderSettings<CacheEntry>>(
+                this.regl,renderSlice<CacheEntry>,[w,h]
+            );
+            this.layers.push({
+                type:'volumeSlice',
+                data:{
+                    dataset,
+                    dimensions:2,
+                    gamut:[{min:0,max:500}],
+                    plane:'xy',
+                    planeParameter:0.5,
+                    type:'AxisAlignedZarrSlice',
+                },
+                render:layer
+            });
+        })
     }
     private onCameraChanged() {
         const {cache,camera}=this;
@@ -131,6 +148,18 @@ class Demo {
                         camera,
                         callback:drawOnProgress,
                         renderer:this.plotRenderer,
+                        target:layer.render.getRenderResults('cur').texture,
+                    }
+                })
+            }else if(layer.type==='volumeSlice'){
+                layer.render.onChange({
+                    data:layer.data,
+                    settings:{
+                        cache,
+                        camera,
+                        regl:this.regl,
+                        callback:drawOnProgress,
+                        renderer:this.sliceRenderer,
                         target:layer.render.getRenderResults('cur').texture,
                     }
                 })
@@ -218,10 +247,8 @@ function demoTime() {
     });
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
     theDemo = new Demo(canvas, regl);
-    theDemo.addScatterplot(merfish,slide32,colorByGene);
-    // theDemo.addVolumeSlice(ccf).then(() => {
-    //     theDemo.addScatterplot(merfish)
-    // })
+    theDemo.addVolumeSlice(ccf).then(()=>
+    theDemo.addScatterplot(merfish,slide32,colorByGene))
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
 const colorByGene:ColumnRequest={name:'88',type:'QUANTITATIVE'}
