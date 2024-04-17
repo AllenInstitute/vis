@@ -10,8 +10,18 @@ import { ReglLayer2D } from "./layer";
 import type { AxisAlignedZarrSlice, DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
+import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/annotationRenderer";
+import { buildPathRenderer } from "./data-renderers/lineRenderer";
 const KB = 1000;
 const MB = 1000 * KB;
+
+
+type PtrState = {
+    type: 'pen' | 'touch' | 'mouse'
+    pressure: number;
+    location: vec2;
+}
+const UserInputSources = ['pen', 'touch', 'mouse'] as const;
 
 async function loadJSON(url: string) {
     // obviously, we should check or something
@@ -34,13 +44,18 @@ type VolumetricSliceLayer = {
     data: AxisAlignedZarrSlice&OptionalTransform,
     render: ReglLayer2D<AxisAlignedZarrSlice&OptionalTransform, SliceRenderSettings<CacheEntry>>
 };
-
-type Layer = ScatterPlotLayer|VolumetricSliceLayer;
+type AnnotationLayer = {
+    type:'annotationLayer',
+    data:SimpleAnnotation,
+    render: ReglLayer2D<SimpleAnnotation&OptionalTransform,AnnotationRenderSettings>
+}
+type Layer = ScatterPlotLayer|VolumetricSliceLayer|AnnotationLayer;
 
 function destroyer(item:CacheEntry){
     if(item.type==='texture2D'){
         item.data.destroy();
     }
+    // other types are GC'd like normal, no special destruction needed
 }
 function sizeOf(item:CacheEntry){
     // todo: care about bytes later!
@@ -60,7 +75,7 @@ class Demo {
     imgRenderer: ReturnType<typeof buildImageRenderer>;
     plotRenderer: ReturnType<typeof buildRenderer>;
     sliceRenderer: ReturnType<typeof buildVolumeSliceRenderer>;
-
+    pathRenderer: ReturnType<typeof buildPathRenderer>
     private refreshRequested: number = 0;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.canvas = canvas;
@@ -68,6 +83,7 @@ class Demo {
         this.regl = regl;
         this.mousePos = [0, 0]
         this.layers = [];
+        this.pathRenderer = buildPathRenderer(regl);
         this.plotRenderer = buildRenderer(regl);
         this.imgRenderer = buildImageRenderer(regl);
         this.sliceRenderer = buildVolumeSliceRenderer(regl);
@@ -79,6 +95,16 @@ class Demo {
         }
         this.initHandlers(canvas);
         this.cache = new AsyncDataCache<string,string,CacheEntry>(destroyer,sizeOf,1000);
+    }
+    addAnnotation(data:SimpleAnnotation){
+        const [w, h] = this.camera.screen
+        this.layers.push({
+            type:'annotationLayer',
+            data,
+            render: new ReglLayer2D<SimpleAnnotation,AnnotationRenderSettings>(
+                this.regl,renderAnnotationLayer,[w,h]
+            )
+        })
     }
     addScatterplot(url: string,slideId: string,color:ColumnRequest) {
         return loadJSON(url).then((metadata)=>{
@@ -158,6 +184,15 @@ class Demo {
                         regl:this.regl,
                         callback:drawOnProgress,
                         renderer:this.sliceRenderer,
+                    }
+                })
+            }else if(layer.type==='annotationLayer'){
+                layer.render.onChange({
+                    data:layer.data,
+                    settings: {
+                        cache,camera,regl:this.regl,
+                        callback:drawOnProgress,
+                        renderer: this.pathRenderer
                     }
                 })
             }
@@ -245,7 +280,18 @@ function demoTime() {
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
     theDemo = new Demo(canvas, regl);
     theDemo.addVolumeSlice(ccf).then(()=>
-    theDemo.addScatterplot(merfish,slide32,colorByGene))
+    theDemo.addScatterplot(merfish,slide32,colorByGene)).then(()=>{
+        theDemo.addAnnotation({
+            paths:[
+                {bounds:Box2D.create([0,0],[11,11]),color:[1,0,0,1], id:33,points:[
+                    [0,0],
+                    [3,7],
+                    [7,3],
+                    [11,11]
+                ]}
+            ]
+        })
+    })
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
 const colorByGene:ColumnRequest={name:'88',type:'QUANTITATIVE'}
