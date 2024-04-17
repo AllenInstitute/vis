@@ -108,7 +108,7 @@ class Demo {
         return load(url).then((dataset) => {
             console.log('loaded up a layer: ', url)
             console.log('volume slice size: ', sizeInUnits({u:'x',v:'y'},dataset.multiscales[0].axes,dataset.multiscales[0].datasets[0]));
-            const layer = new ReglLayer2D<AxisAlignedZarrSlice&OptionalTransform,SliceRenderSettings<CacheEntry>>(
+            const layer = new ReglLayer2D<AxisAlignedZarrSlice&OptionalTransform,Omit<SliceRenderSettings<CacheEntry>,'target'>>(
                 this.regl,renderSlice<CacheEntry>,[w,h]
             );
             this.layers.push({
@@ -147,7 +147,6 @@ class Demo {
                         camera,
                         callback:drawOnProgress,
                         renderer:this.plotRenderer,
-                        target:layer.render.getRenderResults('cur').texture,
                     }
                 })
             }else if(layer.type==='volumeSlice'){
@@ -159,7 +158,6 @@ class Demo {
                         regl:this.regl,
                         callback:drawOnProgress,
                         renderer:this.sliceRenderer,
-                        target:layer.render.getRenderResults('cur').texture,
                     }
                 })
             }

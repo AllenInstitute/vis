@@ -6,22 +6,22 @@ import type { FrameLifecycle, NormalStatus } from "@alleninstitute/vis-scatterbr
 import type { Framebuffer2D } from "regl";
 import type { Camera } from "./data-renderers/types";
 
-type RenderFn<Renderable, RenderSettings> =
-    (thing: Readonly<Renderable>, settings: Readonly<RenderSettings>) => FrameLifecycle;
+type RenderFn<R, S> =
+    (target: REGL.Framebuffer2D|null, thing: Readonly<R>, settings: Readonly<S>) => FrameLifecycle;
 
 type RenderCallback = (event: { status: NormalStatus } | { status: 'error', error: unknown }) => void;
 type EventType = Parameters<RenderCallback>[0]
-
+type RequiredSettings = { camera: Camera, callback: RenderCallback }
 /**
  * a class that makes it easy to manage rendering 2D layers using regl
  */
-export class ReglLayer2D<Renderable, RenderSettings extends { camera: Camera, target: Framebuffer2D | null, callback: RenderCallback }> {
+export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
     private buffers: BufferPair<Image>;
     private renderFn: RenderFn<Renderable, RenderSettings>
     private runningFrame: FrameLifecycle | null;
     private regl: REGL.Regl;
 
-    constructor(regl: REGL.Regl, renderFn: RenderFn<Renderable, RenderSettings>, resolution: vec2) {
+    constructor(regl: REGL.Regl, renderFn: RenderFn<Renderable, RenderSettings&RequiredSettings>, resolution: vec2) {
         this.buffers = {
             readFrom: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) },
             writeTo: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) }
@@ -31,25 +31,26 @@ export class ReglLayer2D<Renderable, RenderSettings extends { camera: Camera, ta
         this.renderFn = renderFn;
     }
     renderingInProgress() { return this.runningFrame !== null }
+
     getRenderResults(stage: 'prev' | 'cur') {
         return stage == 'cur' ? this.buffers.writeTo : this.buffers.readFrom
     }
     onChange(props: {
         readonly data: Readonly<Renderable>;
-        readonly settings: Readonly<RenderSettings>;
+        readonly settings: Readonly<RenderSettings>
     }) {
-        // todo: somehow figure out the diff...
+
         if (this.runningFrame) {
             this.runningFrame.cancelFrame();
             this.runningFrame = null;
             this.regl.clear({ framebuffer: this.buffers.writeTo.texture, color: [0, 0, 0, 0], depth: 1 })
         }
         const { data, settings } = props;
-        const { camera } = settings;
+        const { camera,callback } = settings;
         this.buffers.writeTo.bounds = camera.view;
-        this.runningFrame = this.renderFn(data, {
+        const wrapCallback: RenderSettings =
+        {
             ...settings,
-            target:this.buffers.writeTo.texture,
             callback: (ev: EventType) => {
                 const { status } = ev;
                 switch (status) {
@@ -60,10 +61,10 @@ export class ReglLayer2D<Renderable, RenderSettings extends { camera: Camera, ta
                         this.runningFrame = null;
                         break;
                 }
-                // pass the event up!
-                settings.callback(ev);
+                callback?.(ev);
             }
-        })
+        };
+        this.runningFrame = this.renderFn(this.buffers.writeTo.texture, data, wrapCallback);
     }
 
 }

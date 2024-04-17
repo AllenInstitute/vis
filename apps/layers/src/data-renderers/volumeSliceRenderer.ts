@@ -9,7 +9,6 @@ type CacheContentType = { type: 'texture2D', data: REGL.Texture2D };
 
 export type RenderSettings<C> = {
     camera: Camera;
-    target: REGL.Framebuffer2D
     cache: AsyncDataCache<string, string, C>;
     renderer: Renderer,
     callback: RenderCallback,
@@ -18,8 +17,8 @@ export type RenderSettings<C> = {
     queueInterval?: number,
     cpuLimit?: number,
 }
-export function renderSlice<C extends (CacheContentType | object)>(slice: AxisAlignedZarrSlice & OptionalTransform, settings: RenderSettings<C>) {
-    const { cache, target, camera, renderer, callback, regl } = settings;
+export function renderSlice<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D|null, slice: AxisAlignedZarrSlice & OptionalTransform, settings: RenderSettings<C>) {
+    const { cache, camera, renderer, callback, regl } = settings;
     let { concurrentTasks, queueInterval, cpuLimit } = settings;
     const { dataset, planeParameter, gamut } = slice
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5
