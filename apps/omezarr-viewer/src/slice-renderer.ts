@@ -90,23 +90,23 @@ export function buildVolumeSliceRenderer(regl: REGL.Regl) {
     // ... more!
   });
 
-  return (item: VoxelTile, settings: VoxelSliceRenderSettings, tasks: Record<string, Bfr | undefined>) => {
+  return (item: VoxelTile, settings: VoxelSliceRenderSettings, tasks: Record<string, Bfr | object | undefined>) => {
     const { view, viewport, gamut, target } = settings;
     const { bounds } = item;
     const img = tasks[LUMINANCE];
-    if (!img) return; // we cant render if the data for the positions is missing!
+    if (!img || !('type' in img && img.type === 'texture2D')) return; // we cant render if the data for the positions is missing!
     cmd({
       view: [...view.minCorner, ...view.maxCorner],
       tile: [...bounds.minCorner, ...bounds.maxCorner],
       // viewport,
       gamut: [gamut.min, gamut.max],
-      img,
+      img: img.data,
       rot: settings.rotation,
       target,
     });
   };
 }
-type Bfr = REGL.Texture2D;
+type Bfr = { type: 'texture2D', data: REGL.Texture2D };
 
 type Tile = { bounds: box2D };
 export type VoxelSliceRenderSettings = {
@@ -181,7 +181,7 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
         height: shape[0], // TODO this swap is sus
         format: "luminance",
       });
-      return tex;
+      return { type: 'texture2D', data: tex };
     },
   };
 }

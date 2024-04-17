@@ -57,11 +57,11 @@ export function buildRenderer(regl: REGL.Regl) {
         count: regl.prop<Props, 'count'>('count'),
         primitive: "points",
     })
-    const renderDots = (item: ColumnarTree<vec2>, settings: RenderSettings, columns: Record<string, ColumnData | undefined>) => {
+    const renderDots = (item: ColumnarTree<vec2>, settings: RenderSettings, columns: Record<string, ColumnData | object | undefined>) => {
         const { color, position } = columns;
         const count = item.content.count;
         const itemDepth = item.content.depth
-        if (color && position && color.type === 'float' && position.type === 'float') {
+        if (color && position && 'type' in color && 'type' in position && color.type === 'float' && position.type === 'float') {
             cmd({
                 view: Box2D.toFlatArray(settings.view),
                 count,
