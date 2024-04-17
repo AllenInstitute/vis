@@ -1,10 +1,9 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { isSlideViewData, loadDataset, type ColumnData, type ColumnRequest, type ColumnarMetadata, type SlideViewDataset } from "~/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
-import { AsyncDataCache, type FrameLifecycle, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
+import { AsyncDataCache, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
-import { SliceLayer } from "./sliceLayer";
 import { load, sizeInUnits } from "~/loaders/ome-zarr/zarr-data";
 import { buildVolumeSliceRenderer } from "../../omezarr-viewer/src/slice-renderer";
 import { ReglLayer2D } from "./layer";
