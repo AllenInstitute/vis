@@ -53,6 +53,9 @@ importers:
       '@thi.ng/imgui':
         specifier: ^2.2.54
         version: 2.2.54
+      '@thi.ng/layout':
+        specifier: ^3.0.36
+        version: 3.0.36
       '@thi.ng/rdom-canvas':
         specifier: ^0.5.83
         version: 0.5.83

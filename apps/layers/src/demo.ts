@@ -18,45 +18,20 @@ import { gridLayout } from "@thi.ng/layout";
 import { $canvas } from "@thi.ng/rdom-canvas";
 import { fromDOMEvent, fromRAF, } from "@thi.ng/rstream";
 import { gestureStream } from "@thi.ng/rstream-gestures";
+import type { AnnotationLayer, CacheEntry, Layer } from "./types";
+import { layerListUI } from "./ui/layer-list";
+import { volumeSliceLayer } from "./ui/volume-slice-layer";
+import { annotationUi } from "./ui/annotation-ui";
 
 const KB = 1000;
 const MB = 1000 * KB;
-
-
-type PtrState = {
-    type: 'pen' | 'touch' | 'mouse'
-    pressure: number;
-    location: vec2;
-}
-const UserInputSources = ['pen', 'touch', 'mouse'] as const;
 
 async function loadJSON(url: string) {
     // obviously, we should check or something
     return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetadata)
 }
 
-type CacheEntry = {
-    type: 'texture2D';
-    data: REGL.Texture2D
-} | ColumnData;
 
-type ScatterPlotLayer = {
-    type: 'scatterplot'
-    data: DynamicGridSlide & OptionalTransform,
-    render: ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>
-};
-
-type VolumetricSliceLayer = {
-    type: 'volumeSlice'
-    data: AxisAlignedZarrSlice & OptionalTransform,
-    render: ReglLayer2D<AxisAlignedZarrSlice & OptionalTransform, SliceRenderSettings<CacheEntry>>
-};
-type AnnotationLayer = {
-    type: 'annotationLayer',
-    data: SimpleAnnotation,
-    render: ReglLayer2D<SimpleAnnotation & OptionalTransform, AnnotationRenderSettings>
-}
-type Layer = ScatterPlotLayer | VolumetricSliceLayer | AnnotationLayer;
 
 function destroyer(item: CacheEntry) {
     if (item.type === 'texture2D') {
@@ -68,15 +43,23 @@ function sizeOf(item: CacheEntry) {
     // todo: care about bytes later!
     return 1;
 }
-class Demo {
-    pretend(): number {
-        for (const layer of this.layers) {
-            if (layer.type === 'volumeSlice') {
-                return layer.data.planeParameter
-            }
-        }
-        return 0.0;
+function appendPoint(layer: AnnotationLayer, p: vec2) {
+    const path = layer.data.paths[layer.data.paths.length - 1];
+    if (path) {
+        path.points.push(p);
+        path.bounds = Box2D.union(path.bounds, Box2D.create(p, p))
     }
+}
+function startStroke(layer: AnnotationLayer, p: vec2) {
+    layer.data.paths.push({
+        bounds: Box2D.create(p, p),
+        color: [1, 0, 0, 1],
+        id: Math.random(),
+        points: [p]
+    })
+}
+class Demo {
+
     setSlice(what: number) {
         for (const layer of this.layers) {
             if (layer.type === 'volumeSlice') {
@@ -92,8 +75,10 @@ class Demo {
     }
     layers: Layer[]
     regl: REGL.Regl;
+    selectedLayer: number;
     canvas: HTMLCanvasElement;
     mouse: 'up' | 'down'
+    mode: 'draw' | 'pan'
     mousePos: vec2;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
@@ -108,6 +93,8 @@ class Demo {
         this.regl = regl;
         this.mousePos = [0, 0]
         this.layers = [];
+        this.mode = 'pan'
+        this.selectedLayer = 0;
         this.pathRenderer = buildPathRenderer(regl);
         this.plotRenderer = buildRenderer(regl);
         this.imgRenderer = buildImageRenderer(regl);
@@ -120,12 +107,17 @@ class Demo {
         }
         this.initHandlers(canvas);
         this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 1000);
-        // window.setInterval(() => {
-        //     window.requestAnimationFrame(() => {
-        //         this.refreshScreen();
-        //     })
-        // }, 33)
-
+    }
+    pickLayer(i: number) {
+        if (i >= 0 && i < this.layers.length) {
+            this.selectedLayer = i;
+            if (this.layers[i].type !== 'annotationLayer') {
+                this.mode = 'pan'
+            }
+        }
+    }
+    uiChange() {
+        this.onCameraChanged();
     }
     addAnnotation(data: SimpleAnnotation) {
         const [w, h] = this.camera.screen
@@ -201,7 +193,6 @@ class Demo {
         for (const layer of this.layers) {
             // TODO all cases are identical - dry it up!
             if (layer.type === 'scatterplot') {
-                console.log('update scatterplot')
                 layer.render.onChange({
                     data: layer.data,
                     settings: {
@@ -210,7 +201,6 @@ class Demo {
                     }
                 })
             } else if (layer.type === 'volumeSlice') {
-                console.log('update vSlice')
                 layer.render.onChange({
                     data: layer.data,
                     settings: {
@@ -219,7 +209,6 @@ class Demo {
                     }
                 })
             } else if (layer.type === 'annotationLayer') {
-                console.log('update anno')
                 layer.render.onChange({
                     data: layer.data,
                     settings: {
@@ -238,18 +227,37 @@ class Demo {
             })
         }
     }
-    mouseButton(click: "up" | "down") {
+    mouseButton(click: "up" | "down", pos: vec2) {
         this.mouse = click;
-    }
-    mouseMove(delta: vec2) {
-        if (this.mouse === "down") {
-            // drag the view
-            const { screen, view } = this.camera;
-            const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
-            const c = Vec2.mul(p, Box2D.size(view));
-            this.camera = { view: Box2D.translate(view, c), screen };
-            this.onCameraChanged();
+        const curLayer = this.layers[this.selectedLayer]
+        if (click === 'down' && curLayer && curLayer.type === 'annotationLayer') {
+            startStroke(curLayer, this.toDataspace(pos));
         }
+    }
+    private toDataspace(px: vec2) {
+        const { screen, view } = this.camera;
+        const p = Vec2.div(px, [this.canvas.clientWidth, this.canvas.clientHeight]);
+        const c = Vec2.mul(p, Box2D.size(view));
+        return Vec2.add(view.minCorner, c);
+    }
+    mouseMove(delta: vec2, pos: vec2) {
+        const curLayer = this.layers[this.selectedLayer]
+        if (this.mode === 'pan') {
+            if (this.mouse === "down") {
+                // drag the view
+                const { screen, view } = this.camera;
+                const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
+                const c = Vec2.mul(p, Box2D.size(view));
+                this.camera = { view: Box2D.translate(view, c), screen };
+                this.onCameraChanged();
+            }
+        } else if (curLayer && curLayer.type === 'annotationLayer') {
+            if (this.mouse === "down") {
+                appendPoint(curLayer, this.toDataspace(pos))
+                this.onCameraChanged();
+            }
+        }
+
         this.mousePos = Vec2.add(this.mousePos, delta);
     }
     zoom(scale: number) {
@@ -263,14 +271,14 @@ class Demo {
     }
     private initHandlers(canvas: HTMLCanvasElement) {
         canvas.onmousedown = (e: MouseEvent) => {
-            this.mouseButton("down");
+            this.mouseButton("down", [e.offsetX, canvas.clientHeight - e.offsetY]);
         };
         canvas.onmouseup = (e: MouseEvent) => {
-            this.mouseButton("up");
+            this.mouseButton("up", [e.offsetX, canvas.clientHeight - e.offsetY]);
         };
         canvas.onmousemove = (e: MouseEvent) => {
             // account for gl-origin vs. screen origin:
-            this.mouseMove([-e.movementX, e.movementY]);
+            this.mouseMove([-e.movementX, e.movementY], [e.offsetX, canvas.clientHeight - e.offsetY]);
         };
         canvas.onwheel = (e: WheelEvent) => {
             this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
@@ -402,16 +410,27 @@ function buildGui(demo: Demo, sidebar: HTMLElement) {
         );
         // prep GUI for next frame
         gui.begin();
-        const what = sliderH(gui, grid, 'neat', 0, 1, 0.01, demo.pretend(), "slice")
-        if (what !== undefined) {
-            Promise.resolve(3).then(() => demo.setSlice(what))
+        layerListUI(gui, grid, demo.selectedLayer, demo.layers, (i) => demo.pickLayer(i));
+        const curLayer = demo.layers[demo.selectedLayer];
+        if (curLayer) {
+            switch (curLayer.type) {
+                case 'volumeSlice':
+                    volumeSliceLayer(gui, grid, curLayer,
+                        (i: number) => { curLayer.data = { ...curLayer.data, planeParameter: i }; demo.uiChange() },
+                        (p: AxisAlignedPlane) => { curLayer.data = { ...curLayer.data, plane: p }; demo.uiChange() })
+                    break;
+                case 'annotationLayer':
+                    annotationUi(gui, grid, demo.mode, curLayer,
+                        (p: 'draw' | 'pan') => { demo.mode = p; demo.uiChange() })
+                    break;
+            }
         }
         // end frame
         gui.end();
 
         return gui;
     };
-    const windowSize = fromDOMEvent(sidebar, "resize", false, {
+    const windowSize = fromDOMEvent(window, "resize", false, {
         init: <any>{},
     }).map(() => [sidebar.clientWidth, sidebar.clientHeight]);
 
