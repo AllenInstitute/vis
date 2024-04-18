@@ -1,11 +1,11 @@
-import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import { Box2D, Vec2, type Interval, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { isSlideViewData, loadDataset, type ColumnData, type ColumnRequest, type ColumnarMetadata, type SlideViewDataset } from "~/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
 import { AsyncDataCache, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 import { load, sizeInUnits } from "~/loaders/ome-zarr/zarr-data";
-import { buildVolumeSliceRenderer } from "../../omezarr-viewer/src/slice-renderer";
+import { buildVolumeSliceRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/slice-renderer";
 import { ReglLayer2D } from "./layer";
 import type { AxisAlignedZarrSlice, DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
@@ -129,11 +129,10 @@ class Demo {
 
         })
     }
-    addVolumeSlice(url: string) {
+    addVolumeSlice(url: string, plane: AxisAlignedPlane,param:number,gamut:Interval[]) {
         const [w, h] = this.camera.screen
         return load(url).then((dataset) => {
             console.log('loaded up a layer: ', url)
-            console.log('volume slice size: ', sizeInUnits({u:'x',v:'y'},dataset.multiscales[0].axes,dataset.multiscales[0].datasets[0]));
             const layer = new ReglLayer2D<AxisAlignedZarrSlice&OptionalTransform,Omit<SliceRenderSettings<CacheEntry>,'target'>>(
                 this.regl,renderSlice<CacheEntry>,[w,h]
             );
@@ -142,9 +141,9 @@ class Demo {
                 data:{
                     dataset,
                     dimensions:2,
-                    gamut:[{min:0,max:500}],
-                    plane:'xy',
-                    planeParameter:0.5,
+                    gamut,
+                    plane,
+                    planeParameter:param,
                     type:'AxisAlignedZarrSlice',
                 },
                 render:layer
@@ -164,35 +163,34 @@ class Demo {
                 break;
             }
         }
+        const settings = {
+            cache,camera,callback:drawOnProgress,regl:this.regl
+        }
+        const renderers = {volumeSlice:this.sliceRenderer,scatterplot:this.plotRenderer,annotationLayer:this.pathRenderer}
         for (const layer of this.layers) {
+            // TODO all cases are identical - dry it up!
             if(layer.type==='scatterplot'){
                 layer.render.onChange({
                     data:layer.data,
                     settings:{
-                        cache,
-                        camera,
-                        callback:drawOnProgress,
-                        renderer:this.plotRenderer,
+                        ...settings,
+                        renderer:renderers[layer.type],
                     }
                 })
             }else if(layer.type==='volumeSlice'){
                 layer.render.onChange({
                     data:layer.data,
                     settings:{
-                        cache,
-                        camera,
-                        regl:this.regl,
-                        callback:drawOnProgress,
-                        renderer:this.sliceRenderer,
+                        ...settings,
+                        renderer:renderers[layer.type],
                     }
                 })
             }else if(layer.type==='annotationLayer'){
                 layer.render.onChange({
                     data:layer.data,
                     settings: {
-                        cache,camera,regl:this.regl,
-                        callback:drawOnProgress,
-                        renderer: this.pathRenderer
+                        ...settings,
+                        renderer:renderers[layer.type],
                     }
                 })
             }
@@ -275,11 +273,12 @@ function demoTime() {
 
     const regl = REGL({
         gl,
-        extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
+        extensions:["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
     theDemo = new Demo(canvas, regl);
-    theDemo.addVolumeSlice(ccf).then(()=>
+    
+    theDemo.addVolumeSlice(ccf,'xy',0.5,[{min:0,max:500}]).then(()=>
     theDemo.addScatterplot(merfish,slide32,colorByGene)).then(()=>{
         theDemo.addAnnotation({
             paths:[

@@ -20,14 +20,14 @@ export type RenderSettings<C> = {
 export function renderSlice<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D|null, slice: AxisAlignedZarrSlice & OptionalTransform, settings: RenderSettings<C>) {
     const { cache, camera, renderer, callback, regl } = settings;
     let { concurrentTasks, queueInterval, cpuLimit } = settings;
-    const { dataset, planeParameter, gamut } = slice
+    const { dataset, planeParameter, gamut,plane } = slice
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined
 
     // TODO: handle optional transform!
 
-    const items = getVisibleTiles(camera, 'xy', planeParameter, dataset);
+    const items = getVisibleTiles(camera, plane, planeParameter, dataset);
     const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(5, 33,
         items.tiles, cache,
         {
