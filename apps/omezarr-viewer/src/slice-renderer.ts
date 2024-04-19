@@ -6,7 +6,7 @@ import {
   indexOfDimension,
   pickBestScale,
   sizeInUnits,
-  sizeInVoxels,
+  planeSizeInVoxels,
 } from "~/loaders/ome-zarr/zarr-data";;
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 import type { Camera } from "./camera";
@@ -207,6 +207,7 @@ const sliceDimension = {
   xz: "y",
   yz: "x",
 } as const;
+
 export function getVisibleTiles(
   camera: Camera,
   plane: AxisAlignedPlane,
@@ -227,7 +228,7 @@ export function getVisibleTiles(
   const planeIndex = Math.floor(thickness * sliceParam);
   // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
   const layerIndex = dataset.multiscales[0].datasets.indexOf(thingy);
-  const size = sizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
+  const size = planeSizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
   const realSize = sizeInUnits(uvTable[plane], dataset.multiscales[0].axes, thingy);
   if (!size || !realSize) return { layer: layerIndex, view: Box2D.create([0, 0], [1, 1]), tiles: [] };
   const scale = Vec2.div(realSize, size);
