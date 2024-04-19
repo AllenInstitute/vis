@@ -1,5 +1,5 @@
 import REGL, { type Framebuffer2D } from "regl";
-import { type ZarrDataset, type ZarrRequest, getSlice, pickBestScale, sizeInUnits, sizeInVoxels } from "~/loaders/ome-zarr/zarr-data";
+import { type ZarrDataset, type ZarrRequest, getSlice, pickBestScale, sizeInUnits, planeSizeInVoxels, indexOfDimension } from "~/loaders/ome-zarr/zarr-data";
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 import { omit, slice } from "lodash";
 import type { Camera } from "./camera";
@@ -9,6 +9,7 @@ type Props = {
   target: Framebuffer2D | null;
   tile: vec4;
   view: vec4;
+  rotation:number;
   Rgamut: vec2;
   Ggamut: vec2;
   Bgamut: vec2;
@@ -17,11 +18,15 @@ type Props = {
   G: REGL.Texture2D;
   B: REGL.Texture2D;
 };
+function isTexture(obj:object|undefined): obj is Bfr{
+  return (obj!==undefined && 'type' in obj && obj.type === 'texture2D')
+}
 export function buildVersaRenderer(regl: REGL.Regl) {
   const cmd = regl<
     {
       view: vec4;
       tile: vec4;
+      rot:number;
       R: REGL.Texture2D;
       G: REGL.Texture2D;
       B: REGL.Texture2D;
@@ -38,11 +43,29 @@ export function buildVersaRenderer(regl: REGL.Regl) {
         uniform vec4 view;
         uniform vec4 tile;
         varying vec2 texCoord;
-
+        uniform float rot;
+        vec2 rotateObj(vec2 obj, float radians){
+          return obj;
+          // mat2 R = mat2(
+          //   vec2(cos(radians),-sin(radians)), 
+          //   vec2(-sin(radians),cos(radians))
+          //   );
+          // return R*obj;
+        }
+        vec2 rotateTextureCoordinates(vec2 tx, float radians){
+          vec2 xy = tx-vec2(0.5,0.5);
+          mat2 R = mat2(
+            vec2(cos(radians),-sin(radians)), 
+            vec2(-sin(radians),cos(radians))
+            );
+          return ((R*xy)+vec2(0.5,0.5));
+        }
         void main(){
            vec2 tileSize = tile.zw-tile.xy;
-           texCoord = pos;
-           vec2 obj = (pos.xy*tileSize+tile.xy);
+
+           texCoord = rotateTextureCoordinates(pos,rot);
+           vec2 obj = rotateObj((pos.xy*tileSize+tile.xy),rot);
+
             vec2 p = (obj-view.xy)/(view.zw-view.xy);
             // now, to clip space
             p = (p*2.0)-1.0;
@@ -75,6 +98,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       pos: [0, 0, 1, 0, 1, 1, 0, 1],
     },
     uniforms: {
+      rot:regl.prop<Props, "rotation">("rotation"),
       tile: regl.prop<Props, "tile">("tile"),
       view: regl.prop<Props, "view">("view"),
       R: regl.prop<Props, "R">("R"),
@@ -93,38 +117,41 @@ export function buildVersaRenderer(regl: REGL.Regl) {
     // ... more!
   });
 
-  return (item: VoxelTile, settings: VoxelSliceRenderSettings, channels: Record<string, Bfr | undefined>) => {
-    const { view, viewport, gamut, target } = settings;
+  return (item: VoxelTile, settings: VoxelSliceRenderSettings, channels: Record<string, Bfr | object | undefined>) => {
+    const { view, viewport, gamut, target,rotation } = settings;
     const { bounds } = item;
     const { R, G, B } = channels;
 
-    if (!R || !G || !B) {
+    if (!isTexture(R) || !isTexture(G) || !isTexture(B)) {
       console.log("missing data: ", R, G, B);
       return;
     }
+
     cmd({
       target,
+      rotation,
       view: [...view.minCorner, ...view.maxCorner],
       tile: [...bounds.minCorner, ...bounds.maxCorner],
-      R,
-      G,
-      B,
+      R:R.data,
+      G:G.data,
+      B:B.data,
       Rgamut: [gamut.R.gamut.min, gamut.R.gamut.max],
       Ggamut: [gamut.G.gamut.min, gamut.G.gamut.max],
       Bgamut: [gamut.B.gamut.min, gamut.B.gamut.max],
     });
   };
 }
-type Bfr = REGL.Texture2D;
+type Bfr = {type:'texture2D', data: REGL.Texture2D};
 
 type Tile = { bounds: box2D };
 export type VoxelSliceRenderSettings = {
   regl: REGL.Regl;
   dataset: ZarrDataset;
   view: box2D;
+  rotation: number;
   gamut: Record<"R" | "G" | "B", { gamut: Interval; index: number }>;
   viewport: REGL.BoundingBox;
-  target: REGL.Framebuffer2D;
+  target: REGL.Framebuffer2D|null;
 };
 export type AxisAlignedPlane = "xy" | "yz" | "xz";
 export type VoxelTile = {
@@ -140,17 +167,35 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
   const { minCorner: min, maxCorner: max } = bounds;
   const u = { min: min[0], max: max[0] };
   const v = { min: min[1], max: max[1] };
-  // in this type of data, we only support xy slices!
-  return {
-    x: u,
-    y: v,
-    t: 0,
-    c: channel,
-    z: planeIndex,
-  };
+  switch (plane) {
+    case "xy":
+      return {
+        x: u,
+        y: v,
+        t: 0,
+        c: channel,
+        z: planeIndex,
+      };
+    case "xz":
+      return {
+        x: u,
+        z: v,
+        t: 0,
+        c: channel,
+        y: planeIndex,
+      };
+    case "yz":
+      return {
+        y: u,
+        z: v,
+        t: 0,
+        c: channel,
+        x: planeIndex,
+      };
+  }
 }
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-  return `${settings.dataset.url}_${JSON.stringify(omit(item, "desiredResolution"))}_${col}_ch=${settings.gamut[col as "R" | "G" | "B"].index
+  return `${settings.dataset.url}_${JSON.stringify(omit(item, "desiredResolution"))}_ch=${settings.gamut[col as "R" | "G" | "B"].index
     }`;
 }
 const LUMINANCE = "luminance";
@@ -158,7 +203,7 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
   const { dataset, regl } = settings;
   const handleResponse = (vxl: Awaited<ReturnType<typeof getSlice>>) => {
     const { shape, buffer } = vxl;
-    const R = buffer.flatten(); //(buffer.get([0, null, null]) as NestedArray<TypedArray>).flatten();
+    const R = buffer.dtype === '<f4' ? new Float32Array(buffer.flatten()) : buffer.flatten(); //(buffer.get([0, null, null]) as NestedArray<TypedArray>).flatten();
     const r = regl.texture({
       data: R, // new Float32Array(buffer),
       width: shape[1],
@@ -171,15 +216,15 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
   return {
     R: async () => {
       const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
-      return handleResponse(vxl);
+      return {type:'texture2D',data: handleResponse(vxl)}
     },
     G: async () => {
       const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
-      return handleResponse(vxl);
+      return {type:'texture2D',data: handleResponse(vxl)}
     },
     B: async () => {
       const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
-      return handleResponse(vxl);
+      return {type:'texture2D',data: handleResponse(vxl)}
     },
   };
 }
@@ -200,6 +245,12 @@ const uvTable = {
   xz: { u: "x", v: "z" },
   yz: { u: "y", v: "z" },
 } as const;
+const sliceDimension = {
+  xy: "z",
+  xz: "y",
+  yz: "x",
+} as const;
+
 
 export function getVisibleTiles(
   camera: Camera,
@@ -207,25 +258,19 @@ export function getVisibleTiles(
   planeIndex: number,
   dataset: ZarrDataset
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
-  const sliceSize = sizeInUnits(
-    {
-      u: "x",
-      v: "y",
-    },
-    dataset.multiscales[0].axes,
-    dataset.multiscales[0].datasets[0]
-  )!;
+  // const { axes, datasets } = dataset.multiscales[0];
+  // const zIndex = indexOfDimension(axes, sliceDimension[plane]);
 
   const thingy = pickBestScale(
     dataset,
     uvTable[plane],
-    Box2D.scale(camera.view, Vec2.div([1, 1], sliceSize)),
+    camera.view,
     camera.screen
   );
   // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
   const layerIndex = dataset.multiscales[0].datasets.indexOf(thingy);
 
-  const size = sizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
+  const size = planeSizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
   const realSize = sizeInUnits(uvTable[plane], dataset.multiscales[0].axes, thingy);
   if (!size || !realSize) return { layer: layerIndex, view: Box2D.create([0, 0], [1, 1]), tiles: [] };
   const scale = Vec2.div(realSize, size);

@@ -26,14 +26,22 @@ export type DynamicGridSlide = {
     slideId: string;
     colorBy: ColumnRequest;
 }
-
+type ChannelSettings = {
+    gamut: Interval;
+    index: number;
+}
+export type ColorMapping = {
+    R: ChannelSettings;
+    G: ChannelSettings;
+    B: ChannelSettings;
+}
 export type AxisAlignedZarrSlice = {
     type: 'AxisAlignedZarrSlice'
     dimensions: 2;
     dataset: ZarrDataset;
     plane: AxisAlignedPlane;
     planeParameter: number;
-    gamut: Interval[]; // one for each channel in the given dataset
+    gamut: ColorMapping;
 }
 
 

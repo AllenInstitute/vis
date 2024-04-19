@@ -5,9 +5,9 @@ import { AsyncDataCache, type NormalStatus } from "@alleninstitute/vis-scatterbr
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 import { load, sizeInUnits } from "~/loaders/ome-zarr/zarr-data";
-import { buildVolumeSliceRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/slice-renderer";
+// import { buildVolumeSliceRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/slice-renderer";
 import { ReglLayer2D } from "./layer";
-import type { AxisAlignedZarrSlice, DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
+import type { AxisAlignedZarrSlice, ColorMapping, DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/annotationRenderer";
@@ -22,6 +22,7 @@ import type { AnnotationLayer, CacheEntry, Layer } from "./types";
 import { layerListUI } from "./ui/layer-list";
 import { volumeSliceLayer } from "./ui/volume-slice-layer";
 import { annotationUi } from "./ui/annotation-ui";
+import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
 
 const KB = 1000;
 const MB = 1000 * KB;
@@ -83,7 +84,7 @@ class Demo {
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
     plotRenderer: ReturnType<typeof buildRenderer>;
-    sliceRenderer: ReturnType<typeof buildVolumeSliceRenderer>;
+    sliceRenderer: ReturnType<typeof buildVersaRenderer>;
     pathRenderer: ReturnType<typeof buildPathRenderer>
     private refreshRequested: number = 0;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
@@ -98,7 +99,7 @@ class Demo {
         this.pathRenderer = buildPathRenderer(regl);
         this.plotRenderer = buildRenderer(regl);
         this.imgRenderer = buildImageRenderer(regl);
-        this.sliceRenderer = buildVolumeSliceRenderer(regl);
+        this.sliceRenderer = buildVersaRenderer(regl);
         this.refreshRequested = 0;
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
@@ -152,7 +153,7 @@ class Demo {
 
         })
     }
-    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: Interval[]) {
+    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping) {
         const [w, h] = this.camera.screen
         return load(url).then((dataset) => {
             console.log('loaded up a layer: ', url)
@@ -325,19 +326,17 @@ function demoTime(thing: HTMLCanvasElement) {
         gl,
         extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
+    const pretend = {min:0,max:500}
     theDemo = new Demo(thing, regl);
-    theDemo.addVolumeSlice(ccf, 'xy', 0.5, [{ min: 0, max: 500 }]).then(() =>
+    theDemo.addVolumeSlice(ccf, 'xy', 0.5, {
+        R:{index:0,gamut:pretend},
+        G:{index:0,gamut:pretend},
+        B:{index:0,gamut:pretend}
+    }).then(() =>
         theDemo.addScatterplot(merfish, slide32, colorByGene)).then(() => {
             theDemo.addAnnotation({
                 paths: [
-                    {
-                        bounds: Box2D.create([0, 0], [11, 11]), color: [1, 0, 0, 1], id: 33, points: [
-                            [0, 0],
-                            [3, 7],
-                            [7, 3],
-                            [11, 11]
-                        ]
-                    }
+                    
                 ]
             })
         }).then(() => {

@@ -141,8 +141,8 @@ export function pickBestScale(
   // we assume the datasets are ordered... hmmm TODO
   const choice = datasets.reduce(
     (bestSoFar, cur) =>
-      dstToDesired(vxlPitch(sizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-        dstToDesired(vxlPitch(sizeInVoxels(plane, axes, cur)!), pxPitch)
+      dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
+        dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
         ? cur
         : bestSoFar,
     datasets[0]
@@ -152,6 +152,7 @@ export function pickBestScale(
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
   return axes.findIndex((axe) => axe.name === dim);
 }
+
 export function sizeInUnits(
   plane: {
     u: OmeDimension;
@@ -160,7 +161,7 @@ export function sizeInUnits(
   axes: readonly AxisDesc[],
   dataset: DatasetWithShape
 ): vec2 | undefined {
-  const vxls = sizeInVoxels(plane, axes, dataset);
+  const vxls = planeSizeInVoxels(plane, axes, dataset);
 
   if (vxls === undefined) return undefined;
   let size: vec2 = vxls;
@@ -177,6 +178,16 @@ export function sizeInUnits(
   return size;
 }
 export function sizeInVoxels(
+  dim:OmeDimension,
+  axes: readonly AxisDesc[],
+  dataset: DatasetWithShape
+){
+  const uI = indexFor(dim, axes);
+  if(uI===-1) return undefined
+
+  return dataset.shape[uI]
+}
+export function planeSizeInVoxels(
   plane: {
     u: OmeDimension;
     v: OmeDimension;
