@@ -10,7 +10,7 @@ type useFn<K extends RecordKey, D> = (items: Record<K, D>) => void;
 type cancelFn = () => void;
 type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> = {
     runner: useFn<SemanticKey, D>;
-    awaiting: Set<CacheKey>;
+    awaiting: Map<CacheKey,Set<SemanticKey>>;
     blocking: Set<CacheKey>; // these are the cache keys associated with the items in 'ready' - we keep them around to make it easy to make sure we dont delete something we assume we have
     // while an outstanding task is waiting on more data
     ready: Record<SemanticKey, D>;
@@ -18,7 +18,10 @@ type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends Recor
 // return true if the request is completely satisfied, false if its still awaiting more entries
 function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>(req: MutablePendingRequest<SemanticKey, CacheKey, D>, key: SemanticKey, cacheKey: CacheKey, item: D): boolean {
     if (req.awaiting.has(cacheKey)) {
-        req.awaiting.delete(cacheKey);
+        req.awaiting.get(cacheKey)?.delete(key);
+        if((req.awaiting.get(cacheKey)?.size??0) < 1){
+            req.awaiting.delete(cacheKey);
+        }
         req.blocking.add(cacheKey);
         req.ready[key] = item;
     }
@@ -75,7 +78,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     private countRequests() {
         const reqCounts: Record<CacheKey, number> = {} as Record<CacheKey, number>
         for (const req of this.pendingRequests) {
-            for (const key of [...req.blocking, ...req.awaiting]) {
+            for (const key of [...req.blocking, ...req.awaiting.keys()]) {
                 if (!reqCounts[key]) {
                     reqCounts[key] = 0;
                 }
@@ -198,12 +201,18 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     cacheAndUse(workingSet: Record<SemanticKey, () => Promise<D>>, use: (items: Record<SemanticKey, D>) => void, toCacheKey: (semanticKey: SemanticKey) => CacheKey, taskFinished?: () => void): cancelFn | undefined {
         const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[]
         const req: MutablePendingRequest<SemanticKey, CacheKey, D> = {
-            awaiting: new Set<CacheKey>(keys.map(toCacheKey)),
+            awaiting: new Map<CacheKey,Set<SemanticKey>>(),
             ready: {} as Record<SemanticKey, D>,
             runner: use,
             blocking: new Set<CacheKey>()
         }
-
+        keys.forEach((k)=>{
+            if(req.awaiting.has(toCacheKey(k))){
+                req.awaiting.get(toCacheKey(k))?.add(k);
+            }else{
+                req.awaiting.set(toCacheKey(k),new Set<SemanticKey>([k]))
+            }
+        })
         for (const semanticKey of keys) {
             const result = this.prepareCache(semanticKey, toCacheKey(semanticKey), workingSet[semanticKey])
             if (result instanceof Promise) {
