@@ -341,6 +341,7 @@ function demoTime(thing: HTMLCanvasElement) {
                 ]
             })
         }).then(() => {
+            theDemo.uiChange();
             buildGui(theDemo, document.getElementById('sidebar')!)
         })
 
