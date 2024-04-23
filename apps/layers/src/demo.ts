@@ -25,7 +25,6 @@ import { annotationUi } from "./ui/annotation-ui";
 import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
 import JSON5 from 'json5'
 import { isArray } from "lodash";
-import { textStateUI } from "./ui/raw-text-state";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -165,7 +164,7 @@ class Demo {
 
         })
     }
-    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number) {
+    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number,trn?:{offset:vec2}) {
         const [w, h] = this.camera.screen
         return load(url).then((dataset) => {
             console.log('loaded up a layer: ', url)
@@ -182,6 +181,7 @@ class Demo {
                     planeParameter: param,
                     type: 'AxisAlignedZarrSlice',
                     rotation,
+                    toModelSpace: trn ? {...trn, scale:[1,1]} : undefined
                 },
                 render: layer
             });
@@ -345,7 +345,7 @@ function demoTime(thing: HTMLCanvasElement) {
         R: { index: 0, gamut: pretend },
         G: { index: 1, gamut: pretend },
         B: { index: 2, gamut: pretend }
-    }, 0 * Math.PI).then(() =>
+    }, 0 * Math.PI, {offset:[-5,-5]}).then(() =>
         theDemo.addScatterplot(merfish, slide32, colorByGene)).then(() => {
             theDemo.addAnnotation({
                 paths: [
@@ -383,25 +383,6 @@ function buildGui(demo: Demo, sidebar: HTMLElement) {
                 gui.setMouse(e.pos, e.buttons);
             },
         });
-        // fromDOMEvent(window, "keydown").subscribe({
-        //     next(e) {
-        //         if (e.target !== document.body) return;
-        //         if (
-        //             e.key === Key.TAB ||
-        //             e.key === Key.SPACE ||
-        //             e.key === Key.UP ||
-        //             e.key === Key.DOWN
-        //         ) {
-        //             e.preventDefault();
-        //         }
-        //         gui.setKey(e);
-        //     },
-        // });
-        // fromDOMEvent(window, "keyup").subscribe({
-        //     next(e) {
-        //         gui.setKey(e);
-        //     },
-        // });
     };
 
     const updateGUI = () => {
@@ -423,7 +404,6 @@ function buildGui(demo: Demo, sidebar: HTMLElement) {
         );
         // prep GUI for next frame
         gui.begin();
-        textStateUI(gui,grid,[])
         layerListUI(gui, grid, demo.selectedLayer, demo.layers, (i) => demo.pickLayer(i));
         const curLayer = demo.layers[demo.selectedLayer];
         if (curLayer) {
