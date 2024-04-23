@@ -42,6 +42,7 @@ export type AxisAlignedZarrSlice = {
     plane: AxisAlignedPlane;
     planeParameter: number;
     gamut: ColorMapping;
+    rotation: number;
 }
 
 
