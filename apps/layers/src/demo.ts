@@ -153,7 +153,7 @@ class Demo {
 
         })
     }
-    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping) {
+    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number) {
         const [w, h] = this.camera.screen
         return load(url).then((dataset) => {
             console.log('loaded up a layer: ', url)
@@ -169,6 +169,7 @@ class Demo {
                     plane,
                     planeParameter: param,
                     type: 'AxisAlignedZarrSlice',
+                    rotation,
                 },
                 render: layer
             });
@@ -326,17 +327,17 @@ function demoTime(thing: HTMLCanvasElement) {
         gl,
         extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
-    const pretend = {min:0,max:500}
+    const pretend = { min: 0, max: 500 }
     theDemo = new Demo(thing, regl);
-    theDemo.addVolumeSlice(ccf, 'xy', 0.5, {
-        R:{index:0,gamut:pretend},
-        G:{index:0,gamut:pretend},
-        B:{index:0,gamut:pretend}
-    }).then(() =>
+    theDemo.addVolumeSlice(scottpoc, 'xy', 0.5, {
+        R: { index: 0, gamut: pretend },
+        G: { index: 1, gamut: pretend },
+        B: { index: 2, gamut: pretend }
+    }, 0 * Math.PI).then(() =>
         theDemo.addScatterplot(merfish, slide32, colorByGene)).then(() => {
             theDemo.addAnnotation({
                 paths: [
-                    
+
                 ]
             })
         }).then(() => {
@@ -351,7 +352,7 @@ const merfish = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_slide_
 const ccf = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/mouse3/230524_transposed_1501/avg_template/'
 const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/"
 const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json'
-
+const scottpoc = 'https://tissuecyte-ome-zarr-poc.s3.amazonaws.com/40_128_128/1145081396'
 
 function buildGui(demo: Demo, sidebar: HTMLElement) {
     const gui = defGUI({

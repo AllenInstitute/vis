@@ -134,10 +134,20 @@ export function pickBestScale(
 ) {
   const datasets = dataset.multiscales[0].datasets;
   const axes = dataset.multiscales[0].axes;
-  const vxlPitch = (size: vec2) => Vec2.div([1, 1], size);
+  const realSize = sizeInUnits(plane, axes, datasets[0])!
+
+  const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
   // size, in dataspace, of a pixel 1/res
   const pxPitch = Vec2.div(Box2D.size(relativeView), displayResolution);
-  const dstToDesired = (a: vec2, goal: vec2) => Vec2.length(Vec2.sub(a, goal));
+  const dstToDesired = (a: vec2, goal: vec2) => {
+    const diff = Vec2.sub(a, goal);
+    if (diff[0] * diff[1] > 0) {
+      // the res (a) is higher than our goal - 
+      // weight this heavily to prefer smaller than the goal
+      return 10 * Vec2.length(Vec2.sub(a, goal));
+    }
+    return Vec2.length(Vec2.sub(a, goal));
+  }
   // we assume the datasets are ordered... hmmm TODO
   const choice = datasets.reduce(
     (bestSoFar, cur) =>
@@ -147,6 +157,8 @@ export function pickBestScale(
         : bestSoFar,
     datasets[0]
   );
+  console.log('choose layer: ', choice.path);
+  console.log('---->', planeSizeInVoxels(plane, axes, choice))
   return choice ?? datasets[datasets.length - 1];
 }
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
@@ -178,12 +190,12 @@ export function sizeInUnits(
   return size;
 }
 export function sizeInVoxels(
-  dim:OmeDimension,
+  dim: OmeDimension,
   axes: readonly AxisDesc[],
   dataset: DatasetWithShape
-){
+) {
   const uI = indexFor(dim, axes);
-  if(uI===-1) return undefined
+  if (uI === -1) return undefined
 
   return dataset.shape[uI]
 }

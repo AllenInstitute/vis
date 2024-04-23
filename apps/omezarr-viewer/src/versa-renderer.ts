@@ -9,7 +9,7 @@ type Props = {
   target: Framebuffer2D | null;
   tile: vec4;
   view: vec4;
-  rotation:number;
+  rotation: number;
   Rgamut: vec2;
   Ggamut: vec2;
   Bgamut: vec2;
@@ -18,15 +18,15 @@ type Props = {
   G: REGL.Texture2D;
   B: REGL.Texture2D;
 };
-function isTexture(obj:object|undefined): obj is Bfr{
-  return (obj!==undefined && 'type' in obj && obj.type === 'texture2D')
+function isTexture(obj: object | undefined): obj is Bfr {
+  return (obj !== undefined && 'type' in obj && obj.type === 'texture2D')
 }
 export function buildVersaRenderer(regl: REGL.Regl) {
   const cmd = regl<
     {
       view: vec4;
       tile: vec4;
-      rot:number;
+      rot: number;
       R: REGL.Texture2D;
       G: REGL.Texture2D;
       B: REGL.Texture2D;
@@ -98,7 +98,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       pos: [0, 0, 1, 0, 1, 1, 0, 1],
     },
     uniforms: {
-      rot:regl.prop<Props, "rotation">("rotation"),
+      rot: regl.prop<Props, "rotation">("rotation"),
       tile: regl.prop<Props, "tile">("tile"),
       view: regl.prop<Props, "view">("view"),
       R: regl.prop<Props, "R">("R"),
@@ -118,7 +118,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
   });
 
   return (item: VoxelTile, settings: VoxelSliceRenderSettings, channels: Record<string, Bfr | object | undefined>) => {
-    const { view, viewport, gamut, target,rotation } = settings;
+    const { view, viewport, gamut, target, rotation } = settings;
     const { bounds } = item;
     const { R, G, B } = channels;
 
@@ -132,16 +132,16 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       rotation,
       view: [...view.minCorner, ...view.maxCorner],
       tile: [...bounds.minCorner, ...bounds.maxCorner],
-      R:R.data,
-      G:G.data,
-      B:B.data,
+      R: R.data,
+      G: G.data,
+      B: B.data,
       Rgamut: [gamut.R.gamut.min, gamut.R.gamut.max],
       Ggamut: [gamut.G.gamut.min, gamut.G.gamut.max],
       Bgamut: [gamut.B.gamut.min, gamut.B.gamut.max],
     });
   };
 }
-type Bfr = {type:'texture2D', data: REGL.Texture2D};
+type Bfr = { type: 'texture2D', data: REGL.Texture2D };
 
 type Tile = { bounds: box2D };
 export type VoxelSliceRenderSettings = {
@@ -151,7 +151,7 @@ export type VoxelSliceRenderSettings = {
   rotation: number;
   gamut: Record<"R" | "G" | "B", { gamut: Interval; index: number }>;
   viewport: REGL.BoundingBox;
-  target: REGL.Framebuffer2D|null;
+  target: REGL.Framebuffer2D | null;
 };
 export type AxisAlignedPlane = "xy" | "yz" | "xz";
 export type VoxelTile = {
@@ -203,7 +203,7 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
   const { dataset, regl } = settings;
   const handleResponse = (vxl: Awaited<ReturnType<typeof getSlice>>) => {
     const { shape, buffer } = vxl;
-    const R = buffer.dtype === '<f4' ? new Float32Array(buffer.flatten()) : buffer.flatten(); //(buffer.get([0, null, null]) as NestedArray<TypedArray>).flatten();
+    const R = new Float32Array(buffer.flatten());// buffer.dtype === '<f4' ? new Float32Array(buffer.flatten()) : buffer.flatten(); //(buffer.get([0, null, null]) as NestedArray<TypedArray>).flatten();
     const r = regl.texture({
       data: R, // new Float32Array(buffer),
       width: shape[1],
@@ -216,15 +216,15 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
   return {
     R: async () => {
       const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
-      return {type:'texture2D',data: handleResponse(vxl)}
+      return { type: 'texture2D', data: handleResponse(vxl) }
     },
     G: async () => {
       const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
-      return {type:'texture2D',data: handleResponse(vxl)}
+      return { type: 'texture2D', data: handleResponse(vxl) }
     },
     B: async () => {
       const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
-      return {type:'texture2D',data: handleResponse(vxl)}
+      return { type: 'texture2D', data: handleResponse(vxl) }
     },
   };
 }
@@ -260,11 +260,16 @@ export function getVisibleTiles(
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
   // const { axes, datasets } = dataset.multiscales[0];
   // const zIndex = indexOfDimension(axes, sliceDimension[plane]);
-
+  const sliceSize = sizeInUnits(
+    uvTable[plane],
+    dataset.multiscales[0].axes,
+    dataset.multiscales[0].datasets[0]
+  )!;
   const thingy = pickBestScale(
     dataset,
     uvTable[plane],
     camera.view,
+    // Box2D.scale(camera.view, Vec2.div([1, 1], sliceSize)),
     camera.screen
   );
   // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
