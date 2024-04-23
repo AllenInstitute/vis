@@ -23,7 +23,9 @@ import { layerListUI } from "./ui/layer-list";
 import { volumeSliceLayer } from "./ui/volume-slice-layer";
 import { annotationUi } from "./ui/annotation-ui";
 import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
-
+import JSON5 from 'json5'
+import { isArray } from "lodash";
+import { textStateUI } from "./ui/raw-text-state";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -119,6 +121,16 @@ class Demo {
     }
     uiChange() {
         this.onCameraChanged();
+    }
+    // control via direct state payload...
+    setLayerState(payload: string){
+        // a relaxed json parser - supposedly legit - TODO...
+        const obj= JSON5.parse(payload)
+        if(isArray(obj)){
+            // close enough...
+            this.layers = obj;
+            this.onCameraChanged();
+        }
     }
     addAnnotation(data: SimpleAnnotation) {
         const [w, h] = this.camera.screen
@@ -411,6 +423,7 @@ function buildGui(demo: Demo, sidebar: HTMLElement) {
         );
         // prep GUI for next frame
         gui.begin();
+        textStateUI(gui,grid,[])
         layerListUI(gui, grid, demo.selectedLayer, demo.layers, (i) => demo.pickLayer(i));
         const curLayer = demo.layers[demo.selectedLayer];
         if (curLayer) {
