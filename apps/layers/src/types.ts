@@ -18,6 +18,7 @@ export type CacheEntry = {
 } | ColumnData;
 
 
+
 export type ScatterPlotLayer = {
     type: 'scatterplot'
     data: DynamicGridSlide & OptionalTransform,
@@ -34,4 +35,10 @@ export type AnnotationLayer = {
     data: SimpleAnnotation,
     render: ReglLayer2D<SimpleAnnotation & OptionalTransform, AnnotationRenderSettings>
 }
-export type Layer = ScatterPlotLayer | VolumetricSliceLayer | AnnotationLayer;
+export type VolumeGridData = Omit<AxisAlignedZarrSlice, 'planeParameter'> & { slices: number } & OptionalTransform
+export type VolumetricGridLayer = {
+    type: 'volumeGrid';
+    data: VolumeGridData;
+    render: ReglLayer2D<VolumeGridData, SliceRenderSettings<CacheEntry>>
+}
+export type Layer = ScatterPlotLayer | VolumetricSliceLayer | AnnotationLayer | VolumetricGridLayer;

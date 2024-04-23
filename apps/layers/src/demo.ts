@@ -9,7 +9,7 @@ import { load, sizeInUnits } from "~/loaders/ome-zarr/zarr-data";
 import { ReglLayer2D } from "./layer";
 import type { AxisAlignedZarrSlice, ColorMapping, DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
-import { renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
+import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/annotationRenderer";
 import { buildPathRenderer } from "./data-renderers/lineRenderer";
 // gui stuff....
@@ -18,13 +18,11 @@ import { gridLayout } from "@thi.ng/layout";
 import { $canvas } from "@thi.ng/rdom-canvas";
 import { fromDOMEvent, fromRAF, } from "@thi.ng/rstream";
 import { gestureStream } from "@thi.ng/rstream-gestures";
-import type { AnnotationLayer, CacheEntry, Layer } from "./types";
+import type { AnnotationLayer, CacheEntry, Layer, VolumeGridData } from "./types";
 import { layerListUI } from "./ui/layer-list";
 import { volumeSliceLayer } from "./ui/volume-slice-layer";
 import { annotationUi } from "./ui/annotation-ui";
 import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
-import JSON5 from 'json5'
-import { isArray } from "lodash";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -121,16 +119,7 @@ class Demo {
     uiChange() {
         this.onCameraChanged();
     }
-    // control via direct state payload...
-    setLayerState(payload: string){
-        // a relaxed json parser - supposedly legit - TODO...
-        const obj= JSON5.parse(payload)
-        if(isArray(obj)){
-            // close enough...
-            this.layers = obj;
-            this.onCameraChanged();
-        }
-    }
+
     addAnnotation(data: SimpleAnnotation) {
         const [w, h] = this.camera.screen
         this.layers.push({
@@ -164,7 +153,7 @@ class Demo {
 
         })
     }
-    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number,trn?:{offset:vec2}) {
+    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2 }) {
         const [w, h] = this.camera.screen
         return load(url).then((dataset) => {
             console.log('loaded up a layer: ', url)
@@ -181,10 +170,36 @@ class Demo {
                     planeParameter: param,
                     type: 'AxisAlignedZarrSlice',
                     rotation,
-                    toModelSpace: trn ? {...trn, scale:[1,1]} : undefined
+                    toModelSpace: trn ? { ...trn, scale: [1, 1] } : undefined
                 },
                 render: layer
             });
+        })
+    }
+    addVolumeGrid(url: string, plane: AxisAlignedPlane, slices: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2 }) {
+        const [w, h] = this.camera.screen
+        const rowSize = Math.floor(Math.sqrt(slices));
+        return load(url).then((dataset) => {
+            const size = sizeInUnits(plane, dataset.multiscales[0].axes, dataset.multiscales[0].datasets[0]);
+            const layer = new ReglLayer2D<VolumeGridData, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
+                this.regl, renderGrid<CacheEntry>, [w, h]
+            );
+            this.layers.push({
+                type: 'volumeGrid',
+                data: {
+                    dataset,
+                    dimensions: 2,
+                    gamut,
+                    plane,
+                    slices,
+                    type: 'AxisAlignedZarrSlice',
+                    rotation,
+                    toModelSpace: trn ? { ...trn, scale: [1, 1] } : undefined
+                },
+                render: layer
+            });
+
+
         })
     }
     private onCameraChanged() {
@@ -203,7 +218,7 @@ class Demo {
         const settings = {
             cache, camera, callback: drawOnProgress, regl: this.regl
         }
-        const renderers = { volumeSlice: this.sliceRenderer, scatterplot: this.plotRenderer, annotationLayer: this.pathRenderer }
+        const renderers = { volumeSlice: this.sliceRenderer, scatterplot: this.plotRenderer, annotationLayer: this.pathRenderer, volumeGrid: this.sliceRenderer, }
         for (const layer of this.layers) {
             // TODO all cases are identical - dry it up!
             if (layer.type === 'scatterplot') {
@@ -223,6 +238,14 @@ class Demo {
                     }
                 })
             } else if (layer.type === 'annotationLayer') {
+                layer.render.onChange({
+                    data: layer.data,
+                    settings: {
+                        ...settings,
+                        renderer: renderers[layer.type],
+                    }
+                })
+            } else if (layer.type === 'volumeGrid') {
                 layer.render.onChange({
                     data: layer.data,
                     settings: {
@@ -341,21 +364,26 @@ function demoTime(thing: HTMLCanvasElement) {
     });
     const pretend = { min: 0, max: 500 }
     theDemo = new Demo(thing, regl);
-    theDemo.addVolumeSlice(scottpoc, 'xy', 0.5, {
+    // theDemo.addVolumeSlice(scottpoc, 'xy', 0.5, {
+    //     R: { index: 0, gamut: pretend },
+    //     G: { index: 1, gamut: pretend },
+    //     B: { index: 2, gamut: pretend }
+    // }, 0 * Math.PI, { offset: [-5, -5] }).then(() =>
+    //     theDemo.addScatterplot(merfish, slide32, colorByGene)).then(() => {
+    //         theDemo.addAnnotation({
+    //             paths: [
+
+    //             ]
+    //         })
+    //     }).then(() => {
+    //         theDemo.uiChange();
+    //         buildGui(theDemo, document.getElementById('sidebar')!)
+    //     })
+    theDemo.addVolumeGrid(scottpoc, 'xy', 142, {
         R: { index: 0, gamut: pretend },
         G: { index: 1, gamut: pretend },
         B: { index: 2, gamut: pretend }
-    }, 0 * Math.PI, {offset:[-5,-5]}).then(() =>
-        theDemo.addScatterplot(merfish, slide32, colorByGene)).then(() => {
-            theDemo.addAnnotation({
-                paths: [
-
-                ]
-            })
-        }).then(() => {
-            theDemo.uiChange();
-            buildGui(theDemo, document.getElementById('sidebar')!)
-        })
+    }, 0 * Math.PI);
 
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'

@@ -44,13 +44,9 @@ export function buildVersaRenderer(regl: REGL.Regl) {
         uniform vec4 tile;
         varying vec2 texCoord;
         uniform float rot;
+
         vec2 rotateObj(vec2 obj, float radians){
           return obj;
-          // mat2 R = mat2(
-          //   vec2(cos(radians),-sin(radians)), 
-          //   vec2(-sin(radians),cos(radians))
-          //   );
-          // return R*obj;
         }
         vec2 rotateTextureCoordinates(vec2 tx, float radians){
           vec2 xy = tx-vec2(0.5,0.5);
@@ -119,7 +115,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
 
   return (item: VoxelTile, settings: VoxelSliceRenderSettings, channels: Record<string, Bfr | object | undefined>) => {
     const { view, viewport, gamut, target, rotation } = settings;
-    const { bounds } = item;
+    const { realBounds } = item;
     const { R, G, B } = channels;
 
     if (!isTexture(R) || !isTexture(G) || !isTexture(B)) {
@@ -131,7 +127,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       target,
       rotation,
       view: [...view.minCorner, ...view.maxCorner],
-      tile: [...bounds.minCorner, ...bounds.maxCorner],
+      tile: [...realBounds.minCorner, ...realBounds.maxCorner],
       R: R.data,
       G: G.data,
       B: B.data,
@@ -156,6 +152,7 @@ export type VoxelSliceRenderSettings = {
 export type AxisAlignedPlane = "xy" | "yz" | "xz";
 export type VoxelTile = {
   plane: AxisAlignedPlane;
+  realBounds: box2D;
   bounds: box2D; // in voxels, in the plane
   planeIndex: number;
   layerIndex: number;
@@ -256,7 +253,8 @@ export function getVisibleTiles(
   camera: Camera,
   plane: AxisAlignedPlane,
   planeIndex: number,
-  dataset: ZarrDataset
+  dataset: ZarrDataset,
+  offset?: vec2
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
   // const { axes, datasets } = dataset.multiscales[0];
   // const zIndex = indexOfDimension(axes, sliceDimension[plane]);
@@ -269,7 +267,6 @@ export function getVisibleTiles(
     dataset,
     uvTable[plane],
     camera.view,
-    // Box2D.scale(camera.view, Vec2.div([1, 1], sliceSize)),
     camera.screen
   );
   // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
@@ -280,25 +277,21 @@ export function getVisibleTiles(
   if (!size || !realSize) return { layer: layerIndex, view: Box2D.create([0, 0], [1, 1]), tiles: [] };
   const scale = Vec2.div(realSize, size);
   // to go from a voxel-box to a real-box (easier than you think, as both have an origin at 0,0, because we only support scale...)
-  const vxlToReal = (vxl: box2D) => Box2D.scale(vxl, scale);
-  const realToVxl = (real: box2D) => Box2D.scale(real, Vec2.div(size, realSize));
+  const vxlToReal = (vxl: box2D) => Box2D.translate(Box2D.scale(vxl, scale), offset ?? [0, 0]);
+  // const realToVxl = (real: box2D) => Box2D.scale(real, Vec2.div(size, realSize));
 
-  const sliceBounds = Box2D.create([0, 0], realSize);
-  // const inView = Box2D.intersection(camera.view, sliceBounds);
-  // if (!inView) {
-  //   return { layer: layerIndex, view: Box2D.create([0, 0], [1, 1]), tiles: [] };
-  // }
   // find the tiles, in voxels, to request...
   const allTiles = getAllTiles([256, 256], size);
   const inView = allTiles.filter((tile) => !!Box2D.intersection(camera.view, vxlToReal(tile)));
   // camera.view is in a made up dataspace, where 1=height of the current dataset
   // thus, we have to convert it into a voxel-space camera for intersections
-  const voxelView = realToVxl(camera.view);
+  // const voxelView = realToVxl(camera.view);
   return {
     layer: layerIndex,
-    view: voxelView,
+    view: camera.view,
     tiles: inView.map((uv) => ({
       plane,
+      realBounds: vxlToReal(uv),
       bounds: uv,
       planeIndex,
       layerIndex,

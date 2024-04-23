@@ -2,6 +2,7 @@
 import { HTTPStore, NestedArray, type TypedArray, openArray, openGroup, slice } from "zarr";
 import { some } from "lodash";
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from "@alleninstitute/vis-geometry";
+import type { AxisAlignedPlane } from "../../../../omezarr-viewer/src/versa-renderer";
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
@@ -108,7 +109,22 @@ async function loadMetadata(store: HTTPStore, attrs: ZarrAttrs) {
 }
 
 type OmeDimension = "x" | "y" | "z" | "t" | "c";
-
+const uvTable = {
+  xy: { u: "x", v: "y" },
+  xz: { u: "x", v: "z" },
+  yz: { u: "y", v: "z" },
+} as const;
+const sliceDimension = {
+  xy: "z",
+  xz: "y",
+  yz: "x",
+} as const;
+export function uvForPlane(plane: AxisAlignedPlane) {
+  return uvTable[plane];
+}
+export function sliceDimensionForPlane(plane: AxisAlignedPlane) {
+  return sliceDimension[plane];
+}
 // function sizeOnScreen(full: box2D, relativeView: box2D, screen: vec2) {
 //   const pxView = Box2D.scale(relativeView, Box2D.size(full));
 //   const onScreen = Box2D.intersection(pxView, full);
@@ -144,7 +160,7 @@ export function pickBestScale(
     if (diff[0] * diff[1] > 0) {
       // the res (a) is higher than our goal - 
       // weight this heavily to prefer smaller than the goal
-      return 10 * Vec2.length(Vec2.sub(a, goal));
+      return 1000 * Vec2.length(Vec2.sub(a, goal));
     }
     return Vec2.length(Vec2.sub(a, goal));
   }
@@ -157,8 +173,8 @@ export function pickBestScale(
         : bestSoFar,
     datasets[0]
   );
-  console.log('choose layer: ', choice.path);
-  console.log('---->', planeSizeInVoxels(plane, axes, choice))
+  // console.log('choose layer: ', choice.path);
+  // console.log('---->', planeSizeInVoxels(plane, axes, choice))
   return choice ?? datasets[datasets.length - 1];
 }
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
@@ -166,13 +182,14 @@ function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
 }
 
 export function sizeInUnits(
-  plane: {
+  plane: AxisAlignedPlane | {
     u: OmeDimension;
     v: OmeDimension;
   },
   axes: readonly AxisDesc[],
   dataset: DatasetWithShape
 ): vec2 | undefined {
+  plane = typeof plane === 'string' ? uvForPlane(plane) : plane
   const vxls = planeSizeInVoxels(plane, axes, dataset);
 
   if (vxls === undefined) return undefined;
