@@ -46,6 +46,7 @@
     "@thi.ng/rstream": "^8.4.0",
     "@thi.ng/rstream-gestures": "^5.0.70",
     "@types/lodash": "^4.14.202",
+    "json5": "^2.2.3",
     "lodash": "^4.17.21",
     "regl": "^2.1.0"
   }
