@@ -16,7 +16,7 @@ export type OptionalTransform = {
     toModelSpace?: {
         offset: vec2;
         scale: vec2;
-    }
+    }|undefined
 }
 
 export type DynamicGridSlide = {
