@@ -1,28 +1,30 @@
-import { Box2D, Vec2, type Interval, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { isSlideViewData, loadDataset, type ColumnData, type ColumnRequest, type ColumnarMetadata, type SlideViewDataset } from "~/loaders/scatterplot/scatterbrain-loader";
+import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import { type ColumnRequest, type ColumnarMetadata } from "~/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
 import { AsyncDataCache, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
-import { load, sizeInUnits } from "~/loaders/ome-zarr/zarr-data";
-// import { buildVolumeSliceRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/slice-renderer";
 import { ReglLayer2D } from "./layer";
-import type { AxisAlignedZarrSlice, ColorMapping, DynamicGridSlide, OptionalTransform, RenderCallback } from "./data-renderers/types";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/annotationRenderer";
 import { buildPathRenderer } from "./data-renderers/lineRenderer";
 // gui stuff....
-import { buttonH, DEFAULT_THEME, defGUI, Key, sliderH } from "@thi.ng/imgui";
+import { DEFAULT_THEME, defGUI } from "@thi.ng/imgui";
 import { gridLayout } from "@thi.ng/layout";
 import { $canvas } from "@thi.ng/rdom-canvas";
 import { fromDOMEvent, fromRAF, } from "@thi.ng/rstream";
 import { gestureStream } from "@thi.ng/rstream-gestures";
-import type { AnnotationLayer, CacheEntry, Layer, VolumeGridData } from "./types";
 import { layerListUI } from "./ui/layer-list";
 import { volumeSliceLayer } from "./ui/volume-slice-layer";
 import { annotationUi } from "./ui/annotation-ui";
 import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
+import type { ColorMapping, RenderCallback } from "./data-renderers/types";
+import { createZarrSlice, type AxisAlignedZarrSlice } from "./data-sources/ome-zarr/planar-slice";
+import { createSlideDataset, type DynamicGridSlide } from "./data-sources/scatterplot/dynamic-grid";
+import type { OptionalTransform } from "./data-sources/types";
+import type { CacheEntry, AnnotationLayer, Layer } from "./types";
+import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid } from "./data-sources/ome-zarr/slice-grid";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -106,7 +108,8 @@ class Demo {
             screen: [w, h]
         }
         this.initHandlers(canvas);
-        this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 1000);
+        // each entry in the cache is about 250 kb - so 4000 means we get 1GB of data
+        this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 4000);
     }
     pickLayer(i: number) {
         if (i >= 0 && i < this.layers.length) {
@@ -131,71 +134,64 @@ class Demo {
         })
     }
     addScatterplot(url: string, slideId: string, color: ColumnRequest) {
-        return loadJSON(url).then((metadata) => {
-            if (isSlideViewData(metadata)) {
-                const dataset = loadDataset(metadata, url) as SlideViewDataset
+        return createSlideDataset({
+            colorBy: color,
+            slideId,
+            type: 'ScatterPlotGridSlideConfig',
+            url,
+        }).then((data) => {
+            if (data) {
                 const [w, h] = this.camera.screen
                 const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>(
                     this.regl, renderSlide<CacheEntry>, [w, h]
                 );
                 this.layers.push({
                     type: 'scatterplot',
-                    data: {
-                        colorBy: color,
-                        dataset,
-                        dimensions: 2,
-                        slideId,
-                        type: 'DynamicGridSlide'
-                    },
+                    data,
                     render: layer
                 });
             }
-
         })
+
     }
-    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2 }) {
+    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2, scale: vec2 }) {
         const [w, h] = this.camera.screen
-        return load(url).then((dataset) => {
-            console.log('loaded up a layer: ', url)
+        return createZarrSlice({
+            type: 'zarrSliceConfig',
+            gamut,
+            plane,
+            planeParameter: param,
+            url,
+            rotation,
+            trn
+        }).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSlice & OptionalTransform, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
                 this.regl, renderSlice<CacheEntry>, [w, h]
             );
             this.layers.push({
                 type: 'volumeSlice',
-                data: {
-                    dataset,
-                    dimensions: 2,
-                    gamut,
-                    plane,
-                    planeParameter: param,
-                    type: 'AxisAlignedZarrSlice',
-                    rotation,
-                    toModelSpace: trn ? { ...trn, scale: [1, 1] } : undefined
-                },
+                data,
                 render: layer
             });
         })
     }
-    addVolumeGrid(url: string, plane: AxisAlignedPlane, slices: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2 }) {
+    addVolumeGrid(url: string, plane: AxisAlignedPlane, slices: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2, scale: vec2 }) {
         const [w, h] = this.camera.screen
-        const rowSize = Math.floor(Math.sqrt(slices));
-        return load(url).then((dataset) => {
-            const size = sizeInUnits(plane, dataset.multiscales[0].axes, dataset.multiscales[0].datasets[0]);
-            const layer = new ReglLayer2D<VolumeGridData, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
+        return createZarrSliceGrid({
+            gamut,
+            plane,
+            slices,
+            type: 'ZarrSliceGridConfig',
+            url,
+            rotation,
+            trn
+        }).then((data) => {
+            const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
                 this.regl, renderGrid<CacheEntry>, [w, h]
             );
             this.layers.push({
                 type: 'volumeGrid',
-                data: {
-                    dataset,
-                    dimensions: 2,
-                    gamut,
-                    plane,
-                    slices,
-                    type: 'AxisAlignedZarrSlice',
-                    rotation,
-                    toModelSpace: trn ? { ...trn, scale: [1, 1] } : undefined
-                },
+                data: data,
                 render: layer
             });
 
@@ -211,7 +207,6 @@ class Demo {
                 case 'progress':
                 case 'finished_synchronously':
                 case 'begun':
-                    console.log(status)
                     this.requestReRender();
                     break;
             }
@@ -328,7 +323,7 @@ class Demo {
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
         for (const layer of this.layers) {
             const src = layer.render.getRenderResults('prev')
-            if(src.bounds){
+            if (src.bounds) {
                 this.imgRenderer({
                     box: Box2D.toFlatArray(src.bounds),
                     img: src.texture,
@@ -336,10 +331,10 @@ class Demo {
                     view: Box2D.toFlatArray(this.camera.view)
                 })
             }
-            if(layer.render.renderingInProgress()){
+            if (layer.render.renderingInProgress()) {
                 // draw our incoming frame overtop the old!
                 const cur = layer.render.getRenderResults('cur')
-                if(cur.bounds){
+                if (cur.bounds) {
                     this.imgRenderer({
                         box: Box2D.toFlatArray(cur.bounds),
                         img: cur.texture,
@@ -378,7 +373,7 @@ function demoTime(thing: HTMLCanvasElement) {
     });
     const pretend = { min: 0, max: 500 }
     theDemo = new Demo(thing, regl);
-    
+
     theDemo.addVolumeGrid(scottpoc, 'xy', 142, {
         R: { index: 0, gamut: pretend },
         G: { index: 1, gamut: pretend },

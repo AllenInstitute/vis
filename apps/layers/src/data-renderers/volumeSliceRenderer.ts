@@ -1,13 +1,12 @@
-// import { cacheKeyFactory, getVisibleTiles, requestsForTile, type VoxelTile, type buildVolumeSliceRenderer } from "../../../omezarr-viewer/src/slice-renderer";
-
 import type REGL from "regl";
 import { beginLongRunningFrame, type AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
-import type { AxisAlignedZarrSlice, Camera, OptionalTransform, RenderCallback } from "./types";
+import type { Camera, RenderCallback } from "./types";
 import { cacheKeyFactory, getVisibleTiles, requestsForTile, type buildVersaRenderer, type VoxelSliceRenderSettings, type VoxelTile } from "../../../omezarr-viewer/src/versa-renderer";
 import { pickBestScale, sizeInUnits, sizeInVoxels, sliceDimensionForPlane, uvForPlane } from "~/loaders/ome-zarr/zarr-data";
 import { applyOptionalTrn } from "./utils";
 import { Vec2, type vec2 } from "@alleninstitute/vis-geometry";
-import type { VolumeGridData } from "../types";
+import type { AxisAlignedZarrSlice } from "../data-sources/ome-zarr/planar-slice";
+import type { AxisAlignedZarrSliceGrid } from "../data-sources/ome-zarr/slice-grid";
 
 type Renderer = ReturnType<typeof buildVersaRenderer>;
 type CacheContentType = { type: 'texture2D', data: REGL.Texture2D };
@@ -23,7 +22,7 @@ export type RenderSettings<C> = {
     cpuLimit?: number,
 }
 
-export function renderGrid<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D | null, grid: VolumeGridData, settings: RenderSettings<C>) {
+export function renderGrid<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D | null, grid: AxisAlignedZarrSliceGrid, settings: RenderSettings<C>) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
     const { dataset, gamut, plane, slices } = grid
@@ -34,13 +33,13 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
     const halfRes = Vec2.scale(camera.screen, 0.5);
     const rowSize = Math.floor(Math.sqrt(slices));
     const allItems: VoxelTile[] = [];
-    const smokeAndMirrors:VoxelTile[]=[]
+    const smokeAndMirrors: VoxelTile[] = []
     const best = pickBestScale(dataset, uvForPlane(plane), camera.view, halfRes);
     for (let i = 0; i < slices; i++) {
         const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)]
 
         let param = i / slices;
-        const slice: AxisAlignedZarrSlice & OptionalTransform = { ...grid, planeParameter: param }
+        const slice: AxisAlignedZarrSlice = { ...grid, type: 'AxisAlignedZarrSlice', planeParameter: param }
         const curCam = { ...camera, view: applyOptionalTrn(camera.view, slice.toModelSpace, true) }
 
         const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
@@ -49,14 +48,14 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
 
         const planeIndex = Math.round(param * (dim ?? 0))
         // get all the items for the lowest level of detail:
-        const lowResItems = getVisibleTiles({ ...curCam, screen: [1,1] }, plane, planeIndex, dataset, offset);
+        const lowResItems = getVisibleTiles({ ...curCam, screen: [1, 1] }, plane, planeIndex, dataset, offset);
         smokeAndMirrors.push(...lowResItems.tiles)
         const items = getVisibleTiles({ ...curCam, screen: halfRes }, plane, planeIndex, dataset, offset);
         allItems.push(...items.tiles)
     }
     console.log(`start a frame on layer ${best.path} with ${allItems.length} tiles`)
     const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(5, 33,
-        [...smokeAndMirrors,...allItems], cache,
+        [...smokeAndMirrors, ...allItems], cache,
         {
             dataset,
             gamut,
@@ -73,7 +72,7 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
     return frame;
 }
 
-export function renderSlice<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D | null, slice: AxisAlignedZarrSlice & OptionalTransform, settings: RenderSettings<C>) {
+export function renderSlice<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D | null, slice: AxisAlignedZarrSlice, settings: RenderSettings<C>) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
     const { dataset, planeParameter, gamut, plane } = slice
