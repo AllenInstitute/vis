@@ -23,8 +23,8 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
 
     constructor(regl: REGL.Regl, renderFn: RenderFn<Renderable, RenderSettings&RequiredSettings>, resolution: vec2) {
         this.buffers = {
-            readFrom: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) },
-            writeTo: { texture: regl.framebuffer(...resolution), bounds: Box2D.create([0, 0], [10, 10]) }
+            readFrom: { texture: regl.framebuffer(...resolution), bounds:undefined },
+            writeTo: { texture: regl.framebuffer(...resolution), bounds: undefined }
         };
         this.regl = regl;
         this.runningFrame = null;
@@ -48,6 +48,8 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
         const { data, settings } = props;
         const { camera,callback } = settings;
         this.buffers.writeTo.bounds = camera.view;
+
+
         const wrapCallback: RenderSettings =
         {
             ...settings,

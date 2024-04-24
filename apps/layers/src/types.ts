@@ -10,7 +10,7 @@ import type { ColumnData } from "~/loaders/scatterplot/scatterbrain-loader";
 // note: right now, all layers should be considered 2D, and WebGL only...
 export type Image = {
     texture: REGL.Framebuffer2D
-    bounds: box2D;
+    bounds: box2D|undefined; // if undefined, it means we allocated the texture, but its empty and should not be used (except to fill it)
 }
 export type CacheEntry = {
     type: 'texture2D';

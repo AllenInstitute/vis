@@ -211,6 +211,7 @@ class Demo {
                 case 'progress':
                 case 'finished_synchronously':
                 case 'begun':
+                    console.log(status)
                     this.requestReRender();
                     break;
             }
@@ -323,18 +324,32 @@ class Demo {
     }
 
     refreshScreen() {
-
+        console.log('update screen!')
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
         for (const layer of this.layers) {
             const src = layer.render.getRenderResults('prev')
-            this.imgRenderer({
-                box: Box2D.toFlatArray(src.bounds),
-                img: src.texture,
-                target: null,
-                view: Box2D.toFlatArray(this.camera.view)
-            })
+            if(src.bounds){
+                this.imgRenderer({
+                    box: Box2D.toFlatArray(src.bounds),
+                    img: src.texture,
+                    target: null,
+                    view: Box2D.toFlatArray(this.camera.view)
+                })
+            }
+            if(layer.render.renderingInProgress()){
+                // draw our incoming frame overtop the old!
+                const cur = layer.render.getRenderResults('cur')
+                if(cur.bounds){
+                    this.imgRenderer({
+                        box: Box2D.toFlatArray(cur.bounds),
+                        img: cur.texture,
+                        target: null,
+                        view: Box2D.toFlatArray(this.camera.view)
+                    })
+                }
+            }
+
         }
-        // this.ctx.drawImage(this.regl._gl.canvas, 0, 0);
     }
 }
 
@@ -347,7 +362,6 @@ function demoTime(thing: HTMLCanvasElement) {
     thing.width = thing.clientWidth;
     thing.height = thing.clientHeight;
 
-    // const offscreen = new OffscreenCanvas(thing.width, thing.height);
     const offscreen = thing;
     const gl = offscreen.getContext("webgl", {
         alpha: true,
@@ -364,21 +378,7 @@ function demoTime(thing: HTMLCanvasElement) {
     });
     const pretend = { min: 0, max: 500 }
     theDemo = new Demo(thing, regl);
-    // theDemo.addVolumeSlice(scottpoc, 'xy', 0.5, {
-    //     R: { index: 0, gamut: pretend },
-    //     G: { index: 1, gamut: pretend },
-    //     B: { index: 2, gamut: pretend }
-    // }, 0 * Math.PI, { offset: [-5, -5] }).then(() =>
-    //     theDemo.addScatterplot(merfish, slide32, colorByGene)).then(() => {
-    //         theDemo.addAnnotation({
-    //             paths: [
-
-    //             ]
-    //         })
-    //     }).then(() => {
-    //         theDemo.uiChange();
-    //         buildGui(theDemo, document.getElementById('sidebar')!)
-    //     })
+    
     theDemo.addVolumeGrid(scottpoc, 'xy', 142, {
         R: { index: 0, gamut: pretend },
         G: { index: 1, gamut: pretend },
