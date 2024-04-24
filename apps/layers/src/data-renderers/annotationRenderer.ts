@@ -2,18 +2,19 @@ import { cacheKeyFactory, getVisibleTiles, requestsForTile, type VoxelSliceRende
 
 import type REGL from "regl";
 import { beginLongRunningFrame, type AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
-import type { Camera, OptionalTransform, RenderCallback } from "./types";
+import type { Camera, RenderCallback } from "./types";
 import type { ColumnData } from "~/loaders/scatterplot/scatterbrain-loader";
 import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 import type { Path, buildLineRenderer, buildPathRenderer } from "./lineRenderer";
 import type { TaggedFloat32Array } from "~/typed-array";
 import { flatten } from "lodash";
+import type { OptionalTransform } from "../data-sources/types";
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 
 export type SimpleAnnotation = {
     paths: Array<Path>
-}
+} & OptionalTransform
 export type RenderSettings = {
     camera: Camera;
     cache: AsyncDataCache<string, string, ColumnData | object>;
@@ -24,7 +25,7 @@ export type RenderSettings = {
     queueInterval?: number,
     cpuLimit?: number,
 }
-function getVisibleStrokes(camera: Camera, layer: SimpleAnnotation & OptionalTransform) {
+function getVisibleStrokes(camera: Camera, layer: SimpleAnnotation) {
     return layer.paths.filter((p) => !!Box2D.intersection(camera.view, p.bounds))
 }
 

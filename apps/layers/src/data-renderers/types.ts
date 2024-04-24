@@ -12,20 +12,9 @@ export type Camera = {
     screen: vec2;
 }
 
-export type OptionalTransform = {
-    toModelSpace?: {
-        offset: vec2;
-        scale: vec2;
-    }|undefined
-}
 
-export type DynamicGridSlide = {
-    type: 'DynamicGridSlide'
-    dimensions: 2;
-    dataset: SlideViewDataset;
-    slideId: string;
-    colorBy: ColumnRequest;
-}
+
+
 type ChannelSettings = {
     gamut: Interval;
     index: number;
@@ -35,15 +24,7 @@ export type ColorMapping = {
     G: ChannelSettings;
     B: ChannelSettings;
 }
-export type AxisAlignedZarrSlice = {
-    type: 'AxisAlignedZarrSlice'
-    dimensions: 2;
-    dataset: ZarrDataset;
-    plane: AxisAlignedPlane;
-    planeParameter: number;
-    gamut: ColorMapping;
-    rotation: number;
-}
+
 
 
 
