@@ -28,13 +28,13 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
     const { dataset, gamut, plane, slices } = grid
     const { axes } = dataset.multiscales[0];
-    //         const size = sizeInUnits(plane, dataset.multiscales[0].axes, dataset.multiscales[0].datasets[0]);
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined
     const halfRes = Vec2.scale(camera.screen, 0.5);
     const rowSize = Math.floor(Math.sqrt(slices));
     const allItems: VoxelTile[] = [];
+    const smokeAndMirrors:VoxelTile[]=[]
     const best = pickBestScale(dataset, uvForPlane(plane), camera.view, halfRes);
     for (let i = 0; i < slices; i++) {
         const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)]
@@ -43,18 +43,20 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
         const slice: AxisAlignedZarrSlice & OptionalTransform = { ...grid, planeParameter: param }
         const curCam = { ...camera, view: applyOptionalTrn(camera.view, slice.toModelSpace, true) }
 
-        const axes = dataset.multiscales[0].axes;
         const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
         const realSize = sizeInUnits(plane, axes, best)!;
         const offset = Vec2.mul(gridIndex, realSize)
 
         const planeIndex = Math.round(param * (dim ?? 0))
+        // get all the items for the lowest level of detail:
+        const lowResItems = getVisibleTiles({ ...curCam, screen: [1,1] }, plane, planeIndex, dataset, offset);
+        smokeAndMirrors.push(...lowResItems.tiles)
         const items = getVisibleTiles({ ...curCam, screen: halfRes }, plane, planeIndex, dataset, offset);
         allItems.push(...items.tiles)
     }
     console.log(`start a frame on layer ${best.path} with ${allItems.length} tiles`)
     const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(5, 33,
-        allItems, cache,
+        [...smokeAndMirrors,...allItems], cache,
         {
             dataset,
             gamut,
