@@ -1,5 +1,5 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { type ColumnRequest, type ColumnarMetadata } from "~/loaders/scatterplot/scatterbrain-loader";
+import { type ColumnRequest, type ColumnarMetadata } from "Common/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
 import { AsyncDataCache, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { buildRenderer } from "../../scatterplot/src/renderer";

@@ -1,9 +1,8 @@
 import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import type REGL from "regl";
-import { swapBuffers, type BufferPair } from "~/bufferPair";
+import { swapBuffers, type BufferPair } from "../../common/src/bufferPair";
 import type { Image } from "./types";
 import type { FrameLifecycle, NormalStatus } from "@alleninstitute/vis-scatterbrain";
-import type { Framebuffer2D } from "regl";
 import type { Camera } from "./data-renderers/types";
 
 type RenderFn<R, S> =

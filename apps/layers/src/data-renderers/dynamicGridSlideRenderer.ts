@@ -2,8 +2,8 @@ import { beginLongRunningFrame, type AsyncDataCache, type NormalStatus } from "@
 import type REGL from "regl";
 import { buildRenderer as buildScatterplotRenderer } from "../../../scatterplot/src/renderer";
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { fetchItem, getVisibleItemsInSlide } from "~/loaders/scatterplot/data";
-import type { ColumnData } from "~/loaders/scatterplot/scatterbrain-loader";
+import { fetchItem, getVisibleItemsInSlide } from "Common/loaders/scatterplot/data";
+import type { ColumnData } from "Common/loaders/scatterplot/scatterbrain-loader";
 import { applyOptionalTrn } from "./utils";
 import type { DynamicGridSlide } from "../data-sources/scatterplot/dynamic-grid";
 import type { Camera, RenderCallback } from "./types";

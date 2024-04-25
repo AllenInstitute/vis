@@ -2,6 +2,12 @@
     "extends": "../tsconfig.json",
     "include": ["./src/**/*", "../common/src/**/*",
      "../scatterplot/src/**/*",
-     "../omezarr-viewer/src/**/*"]
+     "../omezarr-viewer/src/**/*"],
+     "compilerOptions": {
+        "baseUrl": "./",
+        "paths": {
+            "Common/*":["../common/src/*"]
+        }
+     }
     
 }

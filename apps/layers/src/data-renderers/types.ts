@@ -3,8 +3,8 @@
 
 import type { Interval, box2D, vec2, vec4 } from "@alleninstitute/vis-geometry";
 import type { NormalStatus } from "@alleninstitute/vis-scatterbrain";
-import type { ZarrDataset } from "~/loaders/ome-zarr/zarr-data";
-import type { SlideViewDataset, ColumnRequest } from "~/loaders/scatterplot/scatterbrain-loader";
+import type { ZarrDataset } from "Common/loaders/ome-zarr/zarr-data";
+import type { SlideViewDataset, ColumnRequest } from "Common/loaders/scatterplot/scatterbrain-loader";
 import type { AxisAlignedPlane } from "../../../omezarr-viewer/src/slice-renderer";
 
 export type Camera = {

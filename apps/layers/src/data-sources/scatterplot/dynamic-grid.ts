@@ -1,4 +1,4 @@
-import { isSlideViewData, loadDataset, type ColumnRequest, type ColumnarMetadata, type SlideViewDataset } from "~/loaders/scatterplot/scatterbrain-loader";
+import { isSlideViewData, loadDataset, type ColumnRequest, type ColumnarMetadata, type SlideViewDataset } from "Common/loaders/scatterplot/scatterbrain-loader";
 import type { OptionalTransform, Simple2DTransform } from "../types";
 type MaybePromise<T> = T | Promise<T>;
 export type ScatterPlotGridSlideConfig = {
