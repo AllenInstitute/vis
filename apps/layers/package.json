@@ -31,7 +31,8 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "demo": "esbuild src/demo.ts --bundle --outfile=dst/demo.js && cp public/* dst/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start": "parcel public/demo.html"
   },
   "devDependencies": {
     "esbuild": "^0.19.12",
