@@ -351,6 +351,7 @@ class Demo {
 let theDemo: Demo;
 
 function demoTime(thing: HTMLCanvasElement) {
+    console.log('fire up the demo!')
     if (theDemo !== undefined) {
         return theDemo;
     }
@@ -378,7 +379,7 @@ function demoTime(thing: HTMLCanvasElement) {
         R: { index: 0, gamut: pretend },
         G: { index: 1, gamut: pretend },
         B: { index: 2, gamut: pretend }
-    }, 0 * Math.PI);
+    }, 0 * Math.PI).then(() => theDemo.uiChange())
 
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
