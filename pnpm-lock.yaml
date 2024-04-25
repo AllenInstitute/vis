@@ -14,33 +14,18 @@ importers:
       '@parcel/transformer-typescript-types':
         specifier: 2.12.0
         version: 2.12.0(@parcel/core@2.12.0)(typescript@5.3.3)
+      buffer:
+        specifier: ^5.5.0||^6.0.0
+        version: 6.0.3
       parcel:
         specifier: 2.12.0
         version: 2.12.0(typescript@5.3.3)
+      process:
+        specifier: ^0.11.10
+        version: 0.11.10
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
-
-  apps/common:
-    dependencies:
-      '@alleninstitute/vis-geometry':
-        specifier: workspace:*
-        version: link:../../packages/geometry
-      '@alleninstitute/vis-scatterbrain':
-        specifier: workspace:*
-        version: link:../../packages/scatterbrain
-      '@types/lodash':
-        specifier: ^4.14.202
-        version: 4.14.202
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      regl:
-        specifier: ^2.1.0
-        version: 2.1.0
-      zarr:
-        specifier: ^0.6.2
-        version: 0.6.2
 
   apps/layers:
     dependencies:
@@ -2594,6 +2579,10 @@ packages:
       safe-buffer: 5.2.1
     dev: true
 
+  /base64-js@1.5.1:
+    resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+    dev: true
+
   /boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
     dev: true
@@ -2614,6 +2603,13 @@ packages:
       electron-to-chromium: 1.4.650
       node-releases: 2.0.14
       update-browserslist-db: 1.0.13(browserslist@4.22.3)
+    dev: true
+
+  /buffer@6.0.3:
+    resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
+    dependencies:
+      base64-js: 1.5.1
+      ieee754: 1.2.1
     dev: true
 
   /cac@6.7.14:
@@ -3039,6 +3035,10 @@ packages:
   /human-signals@5.0.0:
     resolution: {integrity: sha512-AXcZb6vzzrFAUE61HnN4mpLqd/cSIwNQjtNWR0euPm6y0iqx3G4gOXaIDdtdDwZmhwe82LA6+zinmW4UBWVePQ==}
     engines: {node: '>=16.17.0'}
+    dev: true
+
+  /ieee754@1.2.1:
+    resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
     dev: true
 
   /import-fresh@3.3.0:
@@ -3546,6 +3546,11 @@ packages:
       '@jest/schemas': 29.6.3
       ansi-styles: 5.2.0
       react-is: 18.2.0
+    dev: true
+
+  /process@0.11.10:
+    resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==}
+    engines: {node: '>= 0.6.0'}
     dev: true
 
   /react-error-overlay@6.0.9:
