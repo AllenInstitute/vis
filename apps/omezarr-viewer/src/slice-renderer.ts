@@ -7,7 +7,7 @@ import {
   pickBestScale,
   sizeInUnits,
   planeSizeInVoxels,
-} from "~/loaders/ome-zarr/zarr-data";;
+} from "Common/loaders/ome-zarr/zarr-data";;
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 import type { Camera } from "./camera";
 

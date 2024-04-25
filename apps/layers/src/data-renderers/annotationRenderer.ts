@@ -3,10 +3,10 @@ import { cacheKeyFactory, getVisibleTiles, requestsForTile, type VoxelSliceRende
 import type REGL from "regl";
 import { beginLongRunningFrame, type AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
 import type { Camera, RenderCallback } from "./types";
-import type { ColumnData } from "~/loaders/scatterplot/scatterbrain-loader";
+import type { ColumnData } from "Common/loaders/scatterplot/scatterbrain-loader";
 import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 import type { Path, buildLineRenderer, buildPathRenderer } from "./lineRenderer";
-import type { TaggedFloat32Array } from "~/typed-array";
+import type { TaggedFloat32Array } from "Common/typed-array";
 import { flatten } from "lodash";
 import type { OptionalTransform } from "../data-sources/types";
 

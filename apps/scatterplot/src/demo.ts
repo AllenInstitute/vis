@@ -1,7 +1,7 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { beginLongRunningFrame, AsyncDataCache, type FrameLifecycle } from "@alleninstitute/vis-scatterbrain";
-import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from '~/loaders/scatterplot/data'
-import { loadDataset, type ColumnarMetadata, type ColumnData, type ColumnarTree } from "~/loaders/scatterplot/scatterbrain-loader";
+import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from 'Common/loaders/scatterplot/data'
+import { loadDataset, type ColumnarMetadata, type ColumnData, type ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
 
 import { buildRenderer } from "./renderer";
