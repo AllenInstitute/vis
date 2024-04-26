@@ -4,6 +4,7 @@
      "../scatterplot/src/**/*",
      "../omezarr-viewer/src/**/*"],
      "compilerOptions": {
+        "jsx": "react",
         "baseUrl": "./",
         "paths": {
             "Common/*":["../common/src/*"]

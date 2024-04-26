@@ -25,6 +25,9 @@ import { createSlideDataset, type DynamicGridSlide } from "./data-sources/scatte
 import type { OptionalTransform } from "./data-sources/types";
 import type { CacheEntry, AnnotationLayer, Layer } from "./types";
 import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid } from "./data-sources/ome-zarr/slice-grid";
+import ReactDOM from 'react-dom'
+import { AppUi } from "./app";
+import { createRoot } from "react-dom/client";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -465,3 +468,5 @@ function buildGui(demo: Demo, sidebar: HTMLElement) {
     }).mount(sidebar);
 }
 demoTime(document.getElementById('glCanvas') as HTMLCanvasElement)
+const uiroot = createRoot(document.getElementById('sidebar')!);
+uiroot.render(AppUi())
