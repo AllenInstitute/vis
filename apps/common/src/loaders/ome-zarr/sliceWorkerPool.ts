@@ -70,7 +70,7 @@ export class SliceWorkerPool {
 let slicePool: SliceWorkerPool;
 export function getSlicePool() {
     if (!slicePool) {
-        slicePool = new SliceWorkerPool(4);
+        slicePool = new SliceWorkerPool(8);
     }
     return slicePool;
 }

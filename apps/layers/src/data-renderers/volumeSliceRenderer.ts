@@ -62,7 +62,7 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
 
     }
     // console.log(`start a frame on layer ${best.path} with ${allItems.length} tiles`)
-    const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(5, 33,
+    const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(concurrentTasks, queueInterval,
         [...smokeAndMirrors, ...allItems], cache,
         {
             dataset,
@@ -76,7 +76,7 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
                 width: camera.screen[0],
                 height: camera.screen[1]
             },
-        }, requestsForTile, renderer, callback, cacheKeyFactory);
+        }, requestsForTile, renderer, callback, cacheKeyFactory, cpuLimit)
     return frame;
 }
 
@@ -97,7 +97,7 @@ export function renderSlice<C extends (CacheContentType | object)>(target: REGL.
     const planeIndex = Math.round(planeParameter * (dim ?? 0))
 
     const items = getVisibleTiles({ ...camera, screen: halfRes }, plane, planeIndex, dataset);
-    const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(5, 33,
+    const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(concurrentTasks, queueInterval,
         items.tiles, cache,
         {
             dataset,
@@ -111,6 +111,6 @@ export function renderSlice<C extends (CacheContentType | object)>(target: REGL.
                 width: camera.screen[0],
                 height: camera.screen[1]
             },
-        }, requestsForTile, renderer, callback, cacheKeyFactory);
+        }, requestsForTile, renderer, callback, cacheKeyFactory, cpuLimit);
     return frame;
 }

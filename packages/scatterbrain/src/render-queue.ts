@@ -129,7 +129,6 @@ export function beginLongRunningFrame<Column, Item, Settings>(
       // pass the error somewhere better:
       lifecycleCallback({ status: 'error', error: err });
     };
-
     while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
       if (queue.length < 1) {
         // we cant add anything to the in-flight staging area, the final task
