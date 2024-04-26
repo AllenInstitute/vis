@@ -252,7 +252,7 @@ class Demo {
                     data: layer.data,
                     settings: {
                         ...settings,
-                        concurrentTasks: 20,
+                        concurrentTasks: 2,
                         renderer: renderers[layer.type],
                     }
                 })
