@@ -4,6 +4,7 @@ import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from "@a
 import { omit, slice } from "lodash";
 import type { Camera } from "./camera";
 import type { NestedArray, TypedArray } from "zarr";
+import { getSlicePool } from "Common/loaders/ome-zarr/sliceWorkerPool";
 
 type Props = {
   target: Framebuffer2D | null;
@@ -195,14 +196,17 @@ export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSli
   return `${settings.dataset.url}_${JSON.stringify(omit(item, "desiredResolution"))}_ch=${settings.gamut[col as "R" | "G" | "B"].index
     }`;
 }
+
+function reqSlice(dataset: ZarrDataset, req: ZarrRequest, layerIndex: number) {
+  return getSlicePool().requestSlice(dataset, req, layerIndex)
+}
 const LUMINANCE = "luminance";
 export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, signal?: AbortSignal) {
   const { dataset, regl } = settings;
-  const handleResponse = (vxl: Awaited<ReturnType<typeof getSlice>>) => {
-    const { shape, buffer } = vxl;
-    const R = new Float32Array(buffer.flatten());// buffer.dtype === '<f4' ? new Float32Array(buffer.flatten()) : buffer.flatten(); //(buffer.get([0, null, null]) as NestedArray<TypedArray>).flatten();
+  const handleResponse = (vxl: Awaited<ReturnType<typeof reqSlice>>) => {
+    const { shape, data } = vxl;
     const r = regl.texture({
-      data: R, // new Float32Array(buffer),
+      data,
       width: shape[1],
       height: shape[0], // TODO this swap is sus
       format: LUMINANCE,
@@ -212,15 +216,15 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
   // lets hope the browser caches our 3x repeat calls to teh same data...
   return {
     R: async () => {
-      const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
+      const vxl = await reqSlice(dataset, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
       return { type: 'texture2D', data: handleResponse(vxl) }
     },
     G: async () => {
-      const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
+      const vxl = await reqSlice(dataset, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
       return { type: 'texture2D', data: handleResponse(vxl) }
     },
     B: async () => {
-      const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
+      const vxl = await reqSlice(dataset, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
       return { type: 'texture2D', data: handleResponse(vxl) }
     },
   };
