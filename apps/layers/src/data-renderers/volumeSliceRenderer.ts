@@ -4,7 +4,7 @@ import type { Camera, RenderCallback } from "./types";
 import { cacheKeyFactory, getVisibleTiles, requestsForTile, type buildVersaRenderer, type VoxelSliceRenderSettings, type VoxelTile } from "../../../omezarr-viewer/src/versa-renderer";
 import { pickBestScale, sizeInUnits, sizeInVoxels, sliceDimensionForPlane, uvForPlane } from "Common/loaders/ome-zarr/zarr-data";
 import { applyOptionalTrn } from "./utils";
-import { Vec2, type vec2 } from "@alleninstitute/vis-geometry";
+import { Box2D, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
 import type { AxisAlignedZarrSlice } from "../data-sources/ome-zarr/planar-slice";
 import type { AxisAlignedZarrSliceGrid } from "../data-sources/ome-zarr/slice-grid";
 
@@ -41,17 +41,21 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
         let param = i / slices;
         const slice: AxisAlignedZarrSlice = { ...grid, type: 'AxisAlignedZarrSlice', planeParameter: param }
         const curCam = { ...camera, view: applyOptionalTrn(camera.view, slice.toModelSpace, true) }
-
+        // const curCam = camera;
         const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
         const realSize = sizeInUnits(plane, axes, best)!;
         const offset = Vec2.mul(gridIndex, realSize)
+        // the bounds of this slice might not even be in view! 
+        // if we did this a bit different... we could know from the index, without having to conditionally test... TODO
+        if (Box2D.intersection(curCam.view, Box2D.translate(Box2D.create([0, 0], realSize), offset))) {
+            const planeIndex = Math.round(param * (dim ?? 0))
+            // get all the items for the lowest level of detail:
+            const lowResItems = getVisibleTiles({ ...curCam, screen: [1, 1] }, plane, planeIndex, dataset, offset);
+            smokeAndMirrors.push(...lowResItems.tiles)
+            const items = getVisibleTiles({ ...curCam, screen: halfRes }, plane, planeIndex, dataset, offset);
+            allItems.push(...items.tiles)
+        }
 
-        const planeIndex = Math.round(param * (dim ?? 0))
-        // get all the items for the lowest level of detail:
-        const lowResItems = getVisibleTiles({ ...curCam, screen: [1, 1] }, plane, planeIndex, dataset, offset);
-        smokeAndMirrors.push(...lowResItems.tiles)
-        const items = getVisibleTiles({ ...curCam, screen: halfRes }, plane, planeIndex, dataset, offset);
-        allItems.push(...items.tiles)
     }
     console.log(`start a frame on layer ${best.path} with ${allItems.length} tiles`)
     const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(5, 33,
