@@ -88,6 +88,7 @@ class Demo {
     sliceRenderer: ReturnType<typeof buildVersaRenderer>;
     pathRenderer: ReturnType<typeof buildPathRenderer>
     private refreshRequested: number = 0;
+    private redrawRequested: number = 0;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.canvas = canvas;
         // this.ctx = canvas.getContext('2d')!;
@@ -102,6 +103,7 @@ class Demo {
         this.imgRenderer = buildImageRenderer(regl);
         this.sliceRenderer = buildVersaRenderer(regl);
         this.refreshRequested = 0;
+        this.redrawRequested = 0;
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
             view: Box2D.create([0, 0], [(10 * w) / h, 10]),
@@ -129,7 +131,7 @@ class Demo {
             type: 'annotationLayer',
             data,
             render: new ReglLayer2D<SimpleAnnotation, AnnotationRenderSettings>(
-                this.regl, renderAnnotationLayer, [w, h]
+                this.regl, this.imgRenderer, renderAnnotationLayer, [w, h]
             )
         })
     }
@@ -143,7 +145,7 @@ class Demo {
             if (data) {
                 const [w, h] = this.camera.screen
                 const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>(
-                    this.regl, renderSlide<CacheEntry>, [w, h]
+                    this.regl, this.imgRenderer, renderSlide<CacheEntry>, [w, h]
                 );
                 this.layers.push({
                     type: 'scatterplot',
@@ -166,7 +168,7 @@ class Demo {
             trn
         }).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSlice & OptionalTransform, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
-                this.regl, renderSlice<CacheEntry>, [w, h]
+                this.regl, this.imgRenderer, renderSlice<CacheEntry>, [w, h]
             );
             this.layers.push({
                 type: 'volumeSlice',
@@ -187,7 +189,7 @@ class Demo {
             trn
         }).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
-                this.regl, renderGrid<CacheEntry>, [w, h]
+                this.regl, this.imgRenderer, renderGrid<CacheEntry>, [w, h]
             );
             this.layers.push({
                 type: 'volumeGrid',
@@ -198,7 +200,7 @@ class Demo {
 
         })
     }
-    private onCameraChanged() {
+    private doReRender() {
         const { cache, camera } = this;
         const drawOnProgress: RenderCallback = (e: { status: NormalStatus } | { status: 'error', error: unknown }) => {
             const { status } = e;
@@ -222,6 +224,7 @@ class Demo {
                     data: layer.data,
                     settings: {
                         ...settings,
+
                         renderer: renderers[layer.type],
                     }
                 })
@@ -246,10 +249,19 @@ class Demo {
                     data: layer.data,
                     settings: {
                         ...settings,
+                        concurrentTasks: 20,
                         renderer: renderers[layer.type],
                     }
                 })
             }
+        }
+    }
+    onCameraChanged() {
+        if (this.redrawRequested === 0) {
+            this.redrawRequested = window.requestAnimationFrame(() => {
+                this.doReRender();
+                this.redrawRequested = 0;
+            })
         }
     }
     requestReRender() {
