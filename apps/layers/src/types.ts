@@ -4,7 +4,7 @@ import type REGL from "regl";
 import type { ReglLayer2D } from "./layer";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
-import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/annotationRenderer";
+import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
 import type { ColumnData, ColumnRequest } from "Common/loaders/scatterplot/scatterbrain-loader";
 import type { AxisAlignedPlane } from "../../omezarr-viewer/src/slice-renderer";
 import type { AxisAlignedZarrSlice } from "./data-sources/ome-zarr/planar-slice";

@@ -7,7 +7,7 @@ import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 import { ReglLayer2D } from "./layer";
 import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
-import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/annotationRenderer";
+import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
 import { buildPathRenderer } from "./data-renderers/lineRenderer";
 // gui stuff....
 import { DEFAULT_THEME, defGUI } from "@thi.ng/imgui";
