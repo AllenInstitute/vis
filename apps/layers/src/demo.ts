@@ -331,7 +331,6 @@ class Demo {
     }
 
     refreshScreen() {
-        console.log('update screen!')
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
         for (const layer of this.layers) {
             const src = layer.render.getRenderResults('prev')

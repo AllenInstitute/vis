@@ -22,6 +22,10 @@ export type RenderSettings<C> = {
     cpuLimit?: number,
 }
 
+// todo: write a helper function that makes much smarter descisions about
+// what (already cached) tiles to use for this frame, given the view, the dataset,
+// and the cache (and the cache-key-factory...)
+
 export function renderGrid<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D | null, grid: AxisAlignedZarrSliceGrid, settings: RenderSettings<C>) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
@@ -57,7 +61,7 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
         }
 
     }
-    console.log(`start a frame on layer ${best.path} with ${allItems.length} tiles`)
+    // console.log(`start a frame on layer ${best.path} with ${allItems.length} tiles`)
     const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(5, 33,
         [...smokeAndMirrors, ...allItems], cache,
         {

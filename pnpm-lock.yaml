@@ -27,6 +27,27 @@ importers:
         specifier: ^5.3.3
         version: 5.3.3
 
+  apps/common:
+    dependencies:
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../../packages/geometry
+      '@alleninstitute/vis-scatterbrain':
+        specifier: workspace:*
+        version: link:../../packages/scatterbrain
+      '@types/lodash':
+        specifier: ^4.14.202
+        version: 4.14.202
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      regl:
+        specifier: ^2.1.0
+        version: 2.1.0
+      zarr:
+        specifier: ^0.6.2
+        version: 0.6.2
+
   apps/layers:
     dependencies:
       '@alleninstitute/vis-geometry':
@@ -62,6 +83,9 @@ importers:
       regl:
         specifier: ^2.1.0
         version: 2.1.0
+      zarr:
+        specifier: ^0.6.2
+        version: 0.6.2
     devDependencies:
       '@parcel/packager-ts':
         specifier: ^2.12.0
