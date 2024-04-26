@@ -77,6 +77,9 @@ importers:
       json5:
         specifier: ^2.2.3
         version: 2.2.3
+      kiwi-schema:
+        specifier: ^0.5.0
+        version: 0.5.0
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -3134,6 +3137,11 @@ packages:
   /jsonc-parser@3.2.1:
     resolution: {integrity: sha512-AilxAyFOAcK5wA1+LeaySVBrHsGQvUFCDWXKpZjzaL0PqW+xfBOttn8GNtWKFWqneyMZj41MWF9Kl6iPWLwgOA==}
     dev: true
+
+  /kiwi-schema@0.5.0:
+    resolution: {integrity: sha512-X+FpfU0yTEtc6aTHS7VwbOpvQwRt70+pXXWRI5fd6CvWhe7pSVC854TVo4Zo0x5/wwcWj+/9KUlXpdcP0dY9AA==}
+    hasBin: true
+    dev: false
 
   /lightningcss-darwin-arm64@1.24.0:
     resolution: {integrity: sha512-rTNPkEiynOu4CfGdd5ZfVOQe2gd2idfQd4EfX1l2ZUUwd+2SwSdbb7cG4rlwfnZckbzCAygm85xkpekRE5/wFw==}

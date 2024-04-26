@@ -34,9 +34,9 @@
     "start": "parcel public/demo.html"
   },
   "devDependencies": {
-    "esbuild": "^0.19.12",
     "@parcel/packager-ts": "^2.12.0",
     "@parcel/transformer-typescript-types": "^2.12.0",
+    "esbuild": "^0.19.12",
     "parcel": "2.12.0",
     "typescript": "^5.3.3"
   },
@@ -50,6 +50,7 @@
     "@thi.ng/rstream-gestures": "^5.0.70",
     "@types/lodash": "^4.14.202",
     "json5": "^2.2.3",
+    "kiwi-schema": "^0.5.0",
     "lodash": "^4.17.21",
     "regl": "^2.1.0",
     "zarr": "^0.6.2"
