@@ -171,8 +171,8 @@ export function renderAnnotationGrid(
         }
     })
     const frame = beginLongRunningFrame<CacheContentType | object | undefined, SlideAnnotations, Settings>(
-        5,
-        33,
+        concurrentTasks,
+        queueInterval,
         items,
         cache,
         {
@@ -201,7 +201,8 @@ export function renderAnnotationGrid(
         fetchAnnotationsForSlide,
         renderSlideAnnotations,
         callback,
-        (rq: string, item: SlideAnnotations, _settings: Settings) => `${rq}_${item.gridFeature}_${item.levelFeature}`
+        (rq: string, item: SlideAnnotations, _settings: Settings) => `${rq}_${item.gridFeature}_${item.levelFeature}`,
+        cpuLimit
     );
     return frame;
 }
