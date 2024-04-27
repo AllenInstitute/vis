@@ -469,7 +469,7 @@ class Demo {
         };
         canvas.onmousemove = (e: MouseEvent) => {
             // account for gl-origin vs. screen origin:
-            this.mouseMove([-e.movementX, e.movementY], [e.offsetX, canvas.clientHeight - e.offsetY]);
+            this.mouseMove([-e.movementX, -e.movementY], [e.offsetX, canvas.clientHeight - e.offsetY]);
         };
         canvas.onwheel = (e: WheelEvent) => {
             this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
@@ -477,6 +477,11 @@ class Demo {
     }
 
     refreshScreen() {
+        const flipBox = (box: box2D): box2D => {
+            const { minCorner, maxCorner } = box;
+            return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
+        }
+        const flipped = Box2D.toFlatArray(flipBox(this.camera.view))
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
         for (const layer of this.layers) {
             const src = layer.render.getRenderResults('prev')
@@ -485,7 +490,7 @@ class Demo {
                     box: Box2D.toFlatArray(src.bounds),
                     img: src.texture,
                     target: null,
-                    view: Box2D.toFlatArray(this.camera.view)
+                    view: flipped
                 })
             }
             if (layer.render.renderingInProgress()) {
@@ -496,7 +501,7 @@ class Demo {
                         box: Box2D.toFlatArray(cur.bounds),
                         img: cur.texture,
                         target: null,
-                        view: Box2D.toFlatArray(this.camera.view)
+                        view: flipped
                     })
                 }
             }

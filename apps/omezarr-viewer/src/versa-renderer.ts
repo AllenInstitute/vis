@@ -59,7 +59,6 @@ export function buildVersaRenderer(regl: REGL.Regl) {
         }
         void main(){
            vec2 tileSize = tile.zw-tile.xy;
-
            texCoord = rotateTextureCoordinates(pos,rot);
            vec2 obj = rotateObj((pos.xy*tileSize+tile.xy),rot);
 
