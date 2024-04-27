@@ -10,6 +10,7 @@ import type { AxisAlignedPlane } from "../../omezarr-viewer/src/slice-renderer";
 import type { AxisAlignedZarrSlice } from "./data-sources/ome-zarr/planar-slice";
 import type { DynamicGridSlide } from "./data-sources/scatterplot/dynamic-grid";
 import type { AxisAlignedZarrSliceGrid } from "./data-sources/ome-zarr/slice-grid";
+import type { AnnotationGrid, RenderSettings as AnnotationGridRenderSettings, CacheContentType as GpuMesh } from "./data-renderers/annotation-renderer";
 // note: right now, all layers should be considered 2D, and WebGL only...
 export type Image = {
     texture: REGL.Framebuffer2D
@@ -18,7 +19,8 @@ export type Image = {
 export type CacheEntry = {
     type: 'texture2D';
     data: REGL.Texture2D
-} | ColumnData;
+} | ColumnData
+    | GpuMesh
 
 
 
@@ -44,4 +46,9 @@ export type VolumetricGridLayer = {
     data: AxisAlignedZarrSliceGrid;
     render: ReglLayer2D<AxisAlignedZarrSliceGrid, SliceRenderSettings<CacheEntry>>
 }
-export type Layer = ScatterPlotLayer | VolumetricSliceLayer | AnnotationLayer | VolumetricGridLayer;
+export type SlideViewAnnotations = {
+    type: 'annotationGrid',
+    data: AnnotationGrid,
+    render: ReglLayer2D<AnnotationGrid, AnnotationGridRenderSettings<CacheEntry>>
+}
+export type Layer = ScatterPlotLayer | VolumetricSliceLayer | AnnotationLayer | VolumetricGridLayer | SlideViewAnnotations
