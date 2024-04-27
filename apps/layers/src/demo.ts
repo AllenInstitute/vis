@@ -90,6 +90,9 @@ class Demo {
     plotRenderer: ReturnType<typeof buildRenderer>;
     sliceRenderer: ReturnType<typeof buildVersaRenderer>;
     pathRenderer: ReturnType<typeof buildPathRenderer>
+    loopRenderer: LoopRenderer;
+    meshRenderer: MeshRenderer;
+    stencilMeshRenderer: MeshRenderer;
     private refreshRequested: number = 0;
     private redrawRequested: number = 0;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
@@ -105,6 +108,10 @@ class Demo {
         this.plotRenderer = buildRenderer(regl);
         this.imgRenderer = buildImageRenderer(regl);
         this.sliceRenderer = buildVersaRenderer(regl);
+        this.meshRenderer = buildMeshRenderer(regl, 'use-stencil');
+        this.stencilMeshRenderer = buildMeshRenderer(regl, 'draw-stencil');
+        this.loopRenderer = buildLoopRenderer(regl);
+
         this.refreshRequested = 0;
         this.redrawRequested = 0;
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
@@ -180,6 +187,32 @@ class Demo {
             });
         })
     }
+    addAnnotationGrid(url: string, levelFeature: string, annotationBaseUrl: string) {
+        return createSlideDataset({
+            colorBy: colorByGene,
+            slideId: slide32,
+            type: 'ScatterPlotGridSlideConfig',
+            url,
+        }).then((data) => {
+            if (data) {
+                const [w, h] = this.camera.screen
+                // const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
+                //     this.regl, this.imgRenderer, renderGrid<CacheEntry>, [w, h]
+                // );
+                this.layers.push({
+                    type: 'annotationGrid',
+                    data: {
+                        dataset: data?.dataset,
+                        annotationBaseUrl,
+                        levelFeature,
+                        type: 'AnnotationGrid'
+                    },
+                    render: new ReglLayer2D<AnnotationGrid, Omit<AnnotationGridRenderSettings<CacheEntry>, 'target'>>(
+                        this.regl, this.imgRenderer, renderAnnotationGrid, [w, h])
+                })
+            }
+        })
+    }
     addVolumeGrid(url: string, plane: AxisAlignedPlane, slices: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2, scale: vec2 }) {
         const [w, h] = this.camera.screen
         return createZarrSliceGrid({
@@ -219,7 +252,17 @@ class Demo {
         const settings = {
             cache, camera, callback: drawOnProgress, regl: this.regl
         }
-        const renderers = { volumeSlice: this.sliceRenderer, scatterplot: this.plotRenderer, annotationLayer: this.pathRenderer, volumeGrid: this.sliceRenderer, }
+        const renderers = {
+            volumeSlice: this.sliceRenderer,
+            scatterplot: this.plotRenderer,
+            annotationLayer: this.pathRenderer,
+            volumeGrid: this.sliceRenderer,
+            annotationGrid: {
+                loopRenderer: this.loopRenderer,
+                meshRenderer: this.meshRenderer,
+                stencilMeshRenderer: this.stencilMeshRenderer
+            }
+        }
         for (const layer of this.layers) {
             // TODO all cases are identical - dry it up!
             if (layer.type === 'scatterplot') {
@@ -254,6 +297,15 @@ class Demo {
                         ...settings,
                         concurrentTasks: 2,
                         renderer: renderers[layer.type],
+                    }
+                })
+            } else if (layer.type === 'annotationGrid') {
+                layer.render.onChange({
+                    data: layer.data,
+                    settings: {
+                        ...settings,
+                        concurrentTasks: 2,
+                        renderers: renderers[layer.type],
                     }
                 })
             }
@@ -393,7 +445,10 @@ function demoTime(thing: HTMLCanvasElement) {
         R: { index: 0, gamut: pretend },
         G: { index: 1, gamut: pretend },
         B: { index: 2, gamut: pretend }
-    }, 0 * Math.PI).then(() => theDemo.uiChange())
+    }, 0 * Math.PI).then(() => {
+        const { dataset, level, base } = structureAnnotation
+        theDemo.addAnnotationGrid(dataset, level, base).then(() => theDemo.uiChange())
+    })
 
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
@@ -403,81 +458,86 @@ const ccf = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/mouse3/230524_t
 const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/"
 const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json'
 const scottpoc = 'https://tissuecyte-ome-zarr-poc.s3.amazonaws.com/40_128_128/1145081396'
-
-function buildGui(demo: Demo, sidebar: HTMLElement) {
-    const gui = defGUI({
-        theme: {
-            ...DEFAULT_THEME,
-            font: "16px 'IBM Plex Mono', monospace",
-            baseLine: 6,
-            focus: "#000",
-        },
-    });
-
-    const initGUI = (el: HTMLCanvasElement) => {
-        // unified mouse & touch event handling
-        gestureStream(el).subscribe({
-            next(e: any) {
-                gui.setMouse(e.pos, e.buttons);
-            },
-        });
-    };
-
-    const updateGUI = () => {
-        // create grid layout using https://thi.ng/layout
-        // position grid centered in window
-        const rowHeight = 32;
-        const gap = 4;
-        const grid = gridLayout(
-            // start X position
-            16,
-            // start Y position (centered)
-            (sidebar.clientHeight - (2 * rowHeight + gap)) / 2,
-            // layout width
-            sidebar.clientWidth - 32,
-            // single column
-            1,
-            rowHeight,
-            gap
-        );
-        // prep GUI for next frame
-        gui.begin();
-        layerListUI(gui, grid, demo.selectedLayer, demo.layers, (i) => demo.pickLayer(i));
-        const curLayer = demo.layers[demo.selectedLayer];
-        if (curLayer) {
-            switch (curLayer.type) {
-                case 'volumeSlice':
-                    volumeSliceLayer(gui, grid, curLayer,
-                        (i: number) => { curLayer.data = { ...curLayer.data, planeParameter: i }; demo.uiChange() },
-                        (p: AxisAlignedPlane) => { curLayer.data = { ...curLayer.data, plane: p }; demo.uiChange() })
-                    break;
-                case 'annotationLayer':
-                    annotationUi(gui, grid, demo.mode, curLayer,
-                        (p: 'draw' | 'pan') => { demo.mode = p; demo.uiChange() })
-                    break;
-            }
-        }
-        // end frame
-        gui.end();
-
-        return gui;
-    };
-    const windowSize = fromDOMEvent(window, "resize", false, {
-        init: <any>{},
-    }).map(() => [sidebar.clientWidth, sidebar.clientHeight]);
-
-    // canvas component
-    $canvas(fromRAF().map(updateGUI), windowSize, {
-        // execute above init handler when canvas has been mounted
-        onmount: initGUI,
-        style: {
-            background: gui.theme.globalBg,
-            // update cursor value each frame
-            cursor: fromRAF().map(() => gui.cursor),
-        },
-        ...gui.attribs,
-    }).mount(sidebar);
+const structureAnnotation = {
+    dataset: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
+    // gridFeature: '7IJI7W3FOGYCTGOH0MO',//'V78U3GI18LIA0UHBLAL',
+    level: '73GVTDXDEGE27M2XJMT',
+    base: 'https://stage-sfs.brain.devlims.org/api/v1/Annotation/4STCSZBXHYOI0JUUA3M/v3/TLOKWCL95RU03D9PETG/'
 }
+// function buildGui(demo: Demo, sidebar: HTMLElement) {
+//     const gui = defGUI({
+//         theme: {
+//             ...DEFAULT_THEME,
+//             font: "16px 'IBM Plex Mono', monospace",
+//             baseLine: 6,
+//             focus: "#000",
+//         },
+//     });
+
+//     const initGUI = (el: HTMLCanvasElement) => {
+//         // unified mouse & touch event handling
+//         gestureStream(el).subscribe({
+//             next(e: any) {
+//                 gui.setMouse(e.pos, e.buttons);
+//             },
+//         });
+//     };
+
+//     const updateGUI = () => {
+//         // create grid layout using https://thi.ng/layout
+//         // position grid centered in window
+//         const rowHeight = 32;
+//         const gap = 4;
+//         const grid = gridLayout(
+//             // start X position
+//             16,
+//             // start Y position (centered)
+//             (sidebar.clientHeight - (2 * rowHeight + gap)) / 2,
+//             // layout width
+//             sidebar.clientWidth - 32,
+//             // single column
+//             1,
+//             rowHeight,
+//             gap
+//         );
+//         // prep GUI for next frame
+//         gui.begin();
+//         layerListUI(gui, grid, demo.selectedLayer, demo.layers, (i) => demo.pickLayer(i));
+//         const curLayer = demo.layers[demo.selectedLayer];
+//         if (curLayer) {
+//             switch (curLayer.type) {
+//                 case 'volumeSlice':
+//                     volumeSliceLayer(gui, grid, curLayer,
+//                         (i: number) => { curLayer.data = { ...curLayer.data, planeParameter: i }; demo.uiChange() },
+//                         (p: AxisAlignedPlane) => { curLayer.data = { ...curLayer.data, plane: p }; demo.uiChange() })
+//                     break;
+//                 case 'annotationLayer':
+//                     annotationUi(gui, grid, demo.mode, curLayer,
+//                         (p: 'draw' | 'pan') => { demo.mode = p; demo.uiChange() })
+//                     break;
+//             }
+//         }
+//         // end frame
+//         gui.end();
+
+//         return gui;
+//     };
+//     const windowSize = fromDOMEvent(window, "resize", false, {
+//         init: <any>{},
+//     }).map(() => [sidebar.clientWidth, sidebar.clientHeight]);
+
+//     // canvas component
+//     $canvas(fromRAF().map(updateGUI), windowSize, {
+//         // execute above init handler when canvas has been mounted
+//         onmount: initGUI,
+//         style: {
+//             background: gui.theme.globalBg,
+//             // update cursor value each frame
+//             cursor: fromRAF().map(() => gui.cursor),
+//         },
+//         ...gui.attribs,
+//     }).mount(sidebar);
+// }
 demoTime(document.getElementById('glCanvas') as HTMLCanvasElement)
 const uiroot = createRoot(document.getElementById('sidebar')!);
 uiroot.render(AppUi())

@@ -18,13 +18,14 @@ type SlideAnnotations = {
     bounds: box2D;
 } & OptionalTransform;
 
-type LoopRenderer = ReturnType<typeof buildLoopRenderer>;
-type MeshRenderer = ReturnType<typeof buildMeshRenderer>;
-type CacheContentType = { type: 'mesh', data: GPUAnnotationMesh }
+export type LoopRenderer = ReturnType<typeof buildLoopRenderer>;
+export type MeshRenderer = ReturnType<typeof buildMeshRenderer>;
+export type CacheContentType = { type: 'mesh', data: GPUAnnotationMesh }
 type Settings = {
     regl: REGL.Regl;
     loopRenderer: LoopRenderer,
     meshRenderer: MeshRenderer,
+    stencilMeshRenderer: MeshRenderer,
     camera: Camera;
     viewport: REGL.BoundingBox;
     target: REGL.Framebuffer | null;
@@ -66,16 +67,16 @@ function fetchAnnotationsForSlide(
 type RProps = Parameters<ReturnType<typeof buildLoopRenderer>>[0];
 
 function renderSlideAnnotations(item: SlideAnnotations, settings: Settings, columns: Record<string, GPUAnnotationMesh | object | undefined>) {
-    const { camera, viewport, target, regl, loopRenderer, meshRenderer } = settings;
+    const { camera, viewport, target, regl, loopRenderer, meshRenderer, stencilMeshRenderer } = settings;
     const { view } = camera;
-    const { gridFeature } = item;
     const offset = item.toModelSpace?.offset ?? [0, 0];
     const flatView = Box2D.toFlatArray(view);
     // gather all the props into an array for batching
     const { mesh } = columns;
     if (!mesh || !isMesh(mesh)) return;
 
-    if (!(mesh.data.polygons.length < 1)) return;
+    if (mesh.data.polygons.length < 1) return;
+
     const { polygons, points } = mesh.data;
     const fadedColor = (clr: vec4, opacity: number) => [clr[0], clr[1], clr[2], opacity] as vec4;
     if (settings.fill.opacity > 0.0) {
@@ -94,7 +95,7 @@ function renderSlideAnnotations(item: SlideAnnotations, settings: Settings, colu
                     color,
                     offset,
                 }));
-                meshRenderer(...stencilBatch);
+                stencilMeshRenderer(...stencilBatch);
                 meshRenderer(...stencilBatch);
             }
         });
@@ -129,6 +130,7 @@ export type RenderSettings<C> = {
     renderers: {
         loopRenderer: LoopRenderer,
         meshRenderer: MeshRenderer,
+        stencilMeshRenderer: MeshRenderer,
     },
     callback: RenderCallback,
     concurrentTasks?: number,
@@ -136,17 +138,16 @@ export type RenderSettings<C> = {
     cpuLimit?: number,
 }
 export type AnnotationGrid = {
-    types: 'AnnotationGrid',
+    type: 'AnnotationGrid',
     dataset: SlideViewDataset;
     annotationBaseUrl: string;
     levelFeature: string;
-    gridFeature: SlideId;
 }
 
 export function renderAnnotationGrid(
-    target: REGL.Framebuffer2D | null, grid: AnnotationGrid, settings: RenderSettings<CacheContentType>): FrameLifecycle {
-    const { dataset, annotationBaseUrl, gridFeature, levelFeature } = grid;
-    const { regl, cache, camera: { view, screen }, renderers: { loopRenderer, meshRenderer }, callback } = settings;
+    target: REGL.Framebuffer2D | null, grid: AnnotationGrid, settings: RenderSettings<CacheContentType | object | undefined>): FrameLifecycle {
+    const { dataset, annotationBaseUrl, levelFeature } = grid;
+    const { regl, cache, camera: { view, screen }, renderers: { loopRenderer, meshRenderer, stencilMeshRenderer }, callback } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
 
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5
@@ -157,17 +158,19 @@ export function renderAnnotationGrid(
 
     Object.keys(dataset.slides).forEach((slideId, i) => {
         const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)]
-        const slide = dataset.slides[slideId];
-        const { bounds } = slide.tree.content;
+        const { bounds } = dataset;
         const offset = Vec2.mul(gridIndex, Box2D.size(bounds))
-        const realBounds = Box2D.translate(slide.tree.content.bounds, offset)
+        const realBounds = Box2D.translate(bounds, offset)
         if (Box2D.intersection(view, realBounds)) {
             items.push({
-                annotationBaseUrl, gridFeature, levelFeature, bounds: realBounds
+                annotationBaseUrl, gridFeature: slideId, levelFeature, bounds, toModelSpace: {
+                    offset,
+                    scale: [1, 1]
+                }
             })
         }
     })
-    const frame = beginLongRunningFrame<CacheContentType | undefined, SlideAnnotations, Settings>(
+    const frame = beginLongRunningFrame<CacheContentType | object | undefined, SlideAnnotations, Settings>(
         5,
         33,
         items,
@@ -175,13 +178,14 @@ export function renderAnnotationGrid(
         {
             ...settings,
             fill: {
-                opacity: 0.7,
+                opacity: 1,
             },
             loopRenderer,
             meshRenderer,
+            stencilMeshRenderer,
             regl,
             stroke: {
-                opacity: 0.7,
+                opacity: 1,
                 overrideColor: [1, 0, 0, 1],
                 width: 1,
             },
