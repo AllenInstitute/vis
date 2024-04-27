@@ -6,7 +6,8 @@ import { fetchItem, getVisibleItemsInSlide } from "Common/loaders/scatterplot/da
 import type { ColumnData } from "Common/loaders/scatterplot/scatterbrain-loader";
 import { applyOptionalTrn } from "./utils";
 import type { DynamicGridSlide } from "../data-sources/scatterplot/dynamic-grid";
-import type { Camera, RenderCallback } from "./types";
+import type { RenderCallback } from "./types";
+import { type Camera } from "../../../omezarr-viewer/src/camera";
 type CacheContentType = ColumnData
 
 type Renderer = ReturnType<typeof buildScatterplotRenderer>
@@ -31,6 +32,7 @@ export function renderSlide<C extends (CacheContentType | object)>(target: REGL.
     const unitsPerPixel = Vec2.div(Box2D.size(view), screen);
 
     camera = { ...camera, view: applyOptionalTrn(camera.view, slide.toModelSpace, true) }
+    // camera = camera.projection === 'webImage' ? flipY(camera) : camera;
     const items = getVisibleItemsInSlide(slide.dataset, slide.slideId, settings.camera.view, 10 * unitsPerPixel[0])
     // make the frame, return some junk
     return beginLongRunningFrame(concurrentTasks, queueInterval, items, cache,
