@@ -1,5 +1,5 @@
 import type REGL from "regl";
-import type { Camera, RenderCallback } from "./types";
+import type { RenderCallback } from "./types";
 import { Box2D, Vec2, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 import type { AnnotationMesh, GPUAnnotationMesh } from "src/data-sources/annotation/types";
 import type { buildLoopRenderer, buildMeshRenderer } from "./mesh-renderer";
@@ -8,6 +8,7 @@ import { AsyncDataCache, beginLongRunningFrame, type FrameLifecycle } from "@all
 import { fetchAnnotation } from "src/data-sources/annotation/fetch-annotation";
 import { MeshFromAnnotation } from "src/data-sources/annotation/annotation-to-mesh";
 import type { SlideViewDataset } from "Common/loaders/scatterplot/scatterbrain-loader";
+import { type Camera } from "../../../omezarr-viewer/src/camera";
 
 type SlideId = string;
 
@@ -68,6 +69,7 @@ type RProps = Parameters<ReturnType<typeof buildLoopRenderer>>[0];
 
 function renderSlideAnnotations(item: SlideAnnotations, settings: Settings, columns: Record<string, GPUAnnotationMesh | object | undefined>) {
     const { camera, viewport, target, regl, loopRenderer, meshRenderer, stencilMeshRenderer } = settings;
+    // const { view } = camera.projection === 'webImage' ? flipY(camera) : camera
     const { view } = camera;
     const offset = item.toModelSpace?.offset ?? [0, 0];
     const flatView = Box2D.toFlatArray(view);

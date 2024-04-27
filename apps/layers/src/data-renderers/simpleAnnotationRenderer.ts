@@ -1,12 +1,13 @@
 
 import type REGL from "regl";
 import { beginLongRunningFrame, type AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
-import type { Camera, RenderCallback } from "./types";
+import type { RenderCallback } from "./types";
 import type { ColumnData } from "Common/loaders/scatterplot/scatterbrain-loader";
 import { Box2D, type box2D } from "@alleninstitute/vis-geometry";
 import type { Path, buildPathRenderer } from "./lineRenderer";
 import { flatten } from "lodash";
 import type { OptionalTransform } from "../data-sources/types";
+import type { Camera } from "../../../omezarr-viewer/src/camera";
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 

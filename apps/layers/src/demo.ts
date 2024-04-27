@@ -70,10 +70,7 @@ class Demo {
             }
         }
     }
-    camera: {
-        readonly view: box2D;
-        readonly screen: vec2;
-    }
+    camera: Camera;
     layers: Layer[]
     regl: REGL.Regl;
     selectedLayer: number;
@@ -113,7 +110,8 @@ class Demo {
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
             view: Box2D.create([0, 0], [(10 * w) / h, 10]),
-            screen: [w, h]
+            screen: [w, h],
+            projection: 'webImage'
         }
         this.initHandlers(canvas);
         // each entry in the cache is about 250 kb - so 4000 means we get 1GB of data
@@ -232,16 +230,17 @@ class Demo {
 
         })
     }
-    async requestSnapshot() {
+    async requestSnapshot(pxWidth: number) {
         // TODO: using a canvas to build a png is very fast (the browser does it for us)
         // however, it does require that the whole image be in memory at once - if you want truely high-res snapshots,
         // we should trade out some speed and use pngjs, which lets us pass in as little as a single ROW of pixels at a time
         // this would let us go slow(er), but use WAAAY less memory (consider the cost of a 12000x8000 pixel image is (before compression)) about 300 MB...
-        const w = 12000;
-        const { view, screen } = this.camera;
+        const w = Math.max(8, Math.min(16000, Math.abs(Number.isFinite(pxWidth) ? pxWidth : 4000)));
+        const { view, screen, projection } = this.camera;
         const aspect = screen[1] / screen[0];
         const h = w * aspect;
-        const pixels = await this.takeSnapshot({ view, screen: [w, h] }, this.layers)
+        // make it be upside down!
+        const pixels = await this.takeSnapshot({ view, screen: [w, h], projection: projection === 'webImage' ? 'cartesian' : 'webImage' }, this.layers)
         // create an offscreen canvas...
         const cnvs = new OffscreenCanvas(w, h);
         const imgData = new ImageData(new Uint8ClampedArray(pixels.buffer), w, h);
@@ -425,7 +424,7 @@ class Demo {
         }
     }
     private toDataspace(px: vec2) {
-        const { screen, view } = this.camera;
+        const { view } = this.camera;
         const p = Vec2.div(px, [this.canvas.clientWidth, this.canvas.clientHeight]);
         const c = Vec2.mul(p, Box2D.size(view));
         return Vec2.add(view.minCorner, c);
@@ -438,7 +437,7 @@ class Demo {
                 const { screen, view } = this.camera;
                 const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
                 const c = Vec2.mul(p, Box2D.size(view));
-                this.camera = { view: Box2D.translate(view, c), screen };
+                this.camera = { ...this.camera, view: Box2D.translate(view, c), screen };
                 this.onCameraChanged();
             }
         } else if (curLayer && curLayer.type === 'annotationLayer') {
@@ -454,6 +453,7 @@ class Demo {
         const { view, screen } = this.camera;
         const m = Box2D.midpoint(view);
         this.camera = {
+            ...this.camera,
             view: Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m),
             screen,
         };
