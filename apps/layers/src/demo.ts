@@ -1,7 +1,7 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { type ColumnRequest, type ColumnarMetadata } from "Common/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
-import { AsyncDataCache, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
+import { AsyncDataCache, type FrameLifecycle, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 import { ReglLayer2D } from "./layer";
@@ -28,13 +28,10 @@ import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid } from "./data-sourc
 import ReactDOM from 'react-dom'
 import { AppUi } from "./app";
 import { createRoot } from "react-dom/client";
+import type { Camera } from "../../omezarr-viewer/src/camera";
+import { saveAs } from 'file-saver'
 const KB = 1000;
 const MB = 1000 * KB;
-
-async function loadJSON(url: string) {
-    // obviously, we should check or something
-    return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetadata)
-}
 
 
 
@@ -75,8 +72,8 @@ class Demo {
         }
     }
     camera: {
-        view: box2D;
-        screen: vec2;
+        readonly view: box2D;
+        readonly screen: vec2;
     }
     layers: Layer[]
     regl: REGL.Regl;
@@ -234,6 +231,100 @@ class Demo {
             });
 
 
+        })
+    }
+    async requestSnapshot() {
+        // TODO: using a canvas to build a png is very fast (the browser does it for us)
+        // however, it does require that the whole image be in memory at once - if you want truely high-res snapshots,
+        // we should trade out some speed and use pngjs, which lets us pass in as little as a single ROW of pixels at a time
+        // this would let us go slow(er), but use WAAAY less memory (consider the cost of a 12000x8000 pixel image is (before compression)) about 300 MB...
+        const w = 12000;
+        const { view, screen } = this.camera;
+        const aspect = screen[1] / screen[0];
+        const h = w * aspect;
+        const pixels = await this.takeSnapshot({ view, screen: [w, h] }, this.layers)
+        // create an offscreen canvas...
+        const cnvs = new OffscreenCanvas(w, h);
+        const imgData = new ImageData(new Uint8ClampedArray(pixels.buffer), w, h);
+        const ctx = cnvs.getContext('2d');
+        ctx?.putImageData(imgData, 0, 0);
+        const blob = await cnvs.convertToBlob();
+        saveAs(blob, 'neat.png');
+    }
+    private takeSnapshot(camera: Camera, layers: readonly Layer[]) {
+        // render each layer, in order, given a snapshot buffer
+        // once done, regl.read the whole thing, turn it to a png
+        return new Promise<Uint8Array>((resolve, reject) => {
+
+            const [width, height] = camera.screen
+            const target = this.regl.framebuffer(width, height);
+            this.regl.clear({ framebuffer: target, color: [0, 0, 0, 1], depth: 1 })
+            const renderers = {
+                volumeSlice: this.sliceRenderer,
+                scatterplot: this.plotRenderer,
+                annotationLayer: this.pathRenderer,
+                volumeGrid: this.sliceRenderer,
+                annotationGrid: {
+                    loopRenderer: this.loopRenderer,
+                    meshRenderer: this.meshRenderer,
+                    stencilMeshRenderer: this.stencilMeshRenderer
+                }
+            }
+
+
+            const layerPromises: Array<() => FrameLifecycle> = []
+            const nextLayerWhenFinished: RenderCallback = (e: { status: NormalStatus } | { status: 'error', error: unknown }) => {
+                const { status } = e;
+                switch (status) {
+                    case 'cancelled':
+                        reject('one of the layer tasks was cancelled')
+                        break;
+                    case 'progress':
+                        if (Math.random() > 0.7) {
+                            console.log('...')
+                        }
+                        break;
+                    case 'finished':
+                    case 'finished_synchronously':
+                        // start the next layer
+                        const next = layerPromises.shift()
+                        if (!next) {
+                            // do the final read!
+                            const bytes = this.regl.read({ framebuffer: target })
+                            resolve(bytes);
+                        } else {
+                            // do the next layer
+                            next();
+                        }
+                }
+            }
+            const settings = {
+                cache: this.cache, camera, callback: nextLayerWhenFinished, regl: this.regl
+            }
+            for (const layer of layers) {
+                switch (layer.type) {
+                    case 'volumeGrid':
+                        layerPromises.push(() => renderGrid<CacheEntry>(target, layer.data, { ...settings, renderer: renderers[layer.type] }))
+                        break;
+                    case 'annotationGrid':
+                        layerPromises.push(() => renderAnnotationGrid(target, layer.data, { ...settings, renderers: renderers[layer.type] }));
+                        break;
+                    case 'volumeSlice':
+                        layerPromises.push(() => renderSlice(target, layer.data, { ...settings, renderer: renderers[layer.type] }));
+                        break;
+                    case 'scatterplot':
+                        layerPromises.push(() => renderSlide(target, layer.data, { ...settings, renderer: renderers[layer.type] }));
+                        break;
+                    case 'annotationLayer':
+                        layerPromises.push(() => renderAnnotationLayer(target, layer.data, { ...settings, renderer: renderers[layer.type] }))
+                        break;
+                }
+            }
+            // start it up!
+            const first = layerPromises.shift();
+            if (first) {
+                first();
+            }
         })
     }
     private doReRender() {
@@ -449,7 +540,7 @@ function demoTime(thing: HTMLCanvasElement) {
         const { dataset, level, base } = structureAnnotation
         theDemo.addAnnotationGrid(dataset, level, base).then(() => theDemo.uiChange())
     })
-
+    window['theDemo'] = theDemo;
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
 const colorByGene: ColumnRequest = { name: '88', type: 'QUANTITATIVE' }
