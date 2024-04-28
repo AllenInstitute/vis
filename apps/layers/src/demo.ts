@@ -20,15 +20,17 @@ import { volumeSliceLayer } from "./ui/volume-slice-layer";
 import { annotationUi } from "./ui/annotation-ui";
 import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
 import type { ColorMapping, RenderCallback } from "./data-renderers/types";
-import { createZarrSlice, type AxisAlignedZarrSlice } from "./data-sources/ome-zarr/planar-slice";
-import { createSlideDataset, type DynamicGridSlide } from "./data-sources/scatterplot/dynamic-grid";
+import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from "./data-sources/ome-zarr/planar-slice";
+import { createSlideDataset, type DynamicGridSlide, type ScatterPlotGridSlideConfig } from "./data-sources/scatterplot/dynamic-grid";
 import type { OptionalTransform } from "./data-sources/types";
 import type { CacheEntry, AnnotationLayer, Layer } from "./types";
-import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid } from "./data-sources/ome-zarr/slice-grid";
-import { renderAnnotationGrid, type AnnotationGrid, type LoopRenderer, type MeshRenderer, type RenderSettings as AnnotationGridRenderSettings } from "./data-renderers/annotation-renderer";
+import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid, type ZarrSliceGridConfig } from "./data-sources/ome-zarr/slice-grid";
+import { renderAnnotationGrid, type LoopRenderer, type MeshRenderer, type RenderSettings as AnnotationGridRenderSettings } from "./data-renderers/annotation-renderer";
 import { buildLoopRenderer, buildMeshRenderer } from "./data-renderers/mesh-renderer";
 import type { Camera } from "../../omezarr-viewer/src/camera";
 import { saveAs } from 'file-saver'
+import type { AnnotationGrid, AnnotationGridConfig } from "./data-sources/annotation/annotation-grid";
+import { planeSizeInVoxels, sizeInUnits } from "Common/loaders/ome-zarr/zarr-data";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -139,13 +141,8 @@ class Demo {
             )
         })
     }
-    addScatterplot(url: string, slideId: string, color: ColumnRequest) {
-        return createSlideDataset({
-            colorBy: color,
-            slideId,
-            type: 'ScatterPlotGridSlideConfig',
-            url,
-        }).then((data) => {
+    addScatterplot(config: ScatterPlotGridSlideConfig) {
+        return createSlideDataset(config).then((data) => {
             if (data) {
                 const [w, h] = this.camera.screen
                 const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>(
@@ -156,21 +153,16 @@ class Demo {
                     data,
                     render: layer
                 });
+                this.camera = { ...this.camera, view: data.dataset.bounds }
+                this.uiChange();
             }
         })
 
+
     }
-    addVolumeSlice(url: string, plane: AxisAlignedPlane, param: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2, scale: vec2 }) {
+    addVolumeSlice(config: ZarrSliceConfig) {
         const [w, h] = this.camera.screen
-        return createZarrSlice({
-            type: 'zarrSliceConfig',
-            gamut,
-            plane,
-            planeParameter: param,
-            url,
-            rotation,
-            trn
-        }).then((data) => {
+        return createZarrSlice(config).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSlice & OptionalTransform, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
                 this.regl, this.imgRenderer, renderSlice<CacheEntry>, [w, h]
             );
@@ -179,46 +171,43 @@ class Demo {
                 data,
                 render: layer
             });
+            const s = sizeInUnits(data.plane, data.dataset.multiscales[0].axes, data.dataset.multiscales[0].datasets[0])
+            this.camera = { ...this.camera, view: Box2D.create([0, 0], s!) }
+            this.uiChange();
         })
     }
-    addAnnotationGrid(url: string, levelFeature: string, annotationBaseUrl: string, stroke: AnnotationGrid['stroke'], fill: AnnotationGrid['fill']) {
+    addAnnotationGrid(config: AnnotationGridConfig) {
         return createSlideDataset({
-            colorBy: colorByGene,
             slideId: slide32,
+            colorBy: colorByGene,
             type: 'ScatterPlotGridSlideConfig',
-            url,
+            url: config.url,
         }).then((data) => {
             if (data) {
+                const { stroke, fill, levelFeature, annotationUrl } = config;
                 const [w, h] = this.camera.screen
-                // const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
-                //     this.regl, this.imgRenderer, renderGrid<CacheEntry>, [w, h]
-                // );
+                const grid: AnnotationGrid = {
+                    dataset: data?.dataset,
+                    levelFeature,
+                    annotationBaseUrl: annotationUrl,
+                    stroke: { ...stroke, width: 1 }, fill,
+                    type: 'AnnotationGrid',
+                }
                 this.layers.push({
                     type: 'annotationGrid',
-                    data: {
-                        dataset: data?.dataset,
-                        annotationBaseUrl,
-                        levelFeature,
-                        stroke, fill,
-                        type: 'AnnotationGrid'
-                    },
+                    data: grid,
                     render: new ReglLayer2D<AnnotationGrid, Omit<AnnotationGridRenderSettings<CacheEntry>, 'target'>>(
                         this.regl, this.imgRenderer, renderAnnotationGrid, [w, h])
                 })
+                // look at it!
+                this.camera = { ...this.camera, view: data.dataset.bounds }
+                this.uiChange();
             }
         })
     }
-    addVolumeGrid(url: string, plane: AxisAlignedPlane, slices: number, gamut: ColorMapping, rotation: number, trn?: { offset: vec2, scale: vec2 }) {
+    addVolumeGrid(config: ZarrSliceGridConfig) {
         const [w, h] = this.camera.screen
-        return createZarrSliceGrid({
-            gamut,
-            plane,
-            slices,
-            type: 'ZarrSliceGridConfig',
-            url,
-            rotation,
-            trn
-        }).then((data) => {
+        return createZarrSliceGrid(config).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
                 this.regl, this.imgRenderer, renderGrid<CacheEntry>, [w, h]
             );
@@ -409,6 +398,7 @@ class Demo {
                 this.redrawRequested = 0;
             })
         }
+        this.requestReRender();
     }
     requestReRender() {
         if (this.refreshRequested === 0) {
@@ -536,18 +526,29 @@ function demoTime(thing: HTMLCanvasElement) {
         gl,
         extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
-    const pretend = { min: 0, max: 500 }
     theDemo = new Demo(thing, regl);
 
-    theDemo.addVolumeGrid(scottpoc, 'xy', 142, {
-        R: { index: 0, gamut: pretend },
-        G: { index: 1, gamut: pretend },
-        B: { index: 2, gamut: pretend }
-    }, 0 * Math.PI).then(() => {
-        const { dataset, level, base, stroke, fill } = structureAnnotation
-        theDemo.addAnnotationGrid(dataset, level, base, stroke, fill).then(() => theDemo.uiChange())
-    })
-    window['theDemo'] = theDemo;
+    // theDemo.addVolumeGrid(scottpoc, 'xy', 142, {
+    //     R: { index: 0, gamut: pretend },
+    //     G: { index: 1, gamut: pretend },
+    //     B: { index: 2, gamut: pretend }
+    // }, 0 * Math.PI).then(() => {
+    //     const { dataset, level, base, stroke, fill } = structureAnnotation
+    //     theDemo.addAnnotationGrid(dataset, level, base, stroke, fill).then(() => theDemo.uiChange())
+    // })
+    window['demo'] = theDemo;
+    setupExampleData();
+}
+function setupExampleData() {
+    // add a bunch of pre-selected layers to the window object for selection during demo time
+    window.examples = {};
+    const prep = (key: string, thing: any) => {
+        window.examples[key] = thing;
+    }
+    prep('structureAnnotation', structureAnnotation);
+    prep('tissuecyte396', tissuecyte396);
+    prep('slide32', oneSlide)
+
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
 const colorByGene: ColumnRequest = { name: '88', type: 'QUANTITATIVE' }
@@ -556,14 +557,33 @@ const ccf = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/mouse3/230524_t
 const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/"
 const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json'
 const scottpoc = 'https://tissuecyte-ome-zarr-poc.s3.amazonaws.com/40_128_128/1145081396'
-const structureAnnotation = {
-    dataset: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
-    level: '73GVTDXDEGE27M2XJMT',
-    base: 'https://stage-sfs.brain.devlims.org/api/v1/Annotation/4STCSZBXHYOI0JUUA3M/v3/TLOKWCL95RU03D9PETG/',
+const pretend = { min: 0, max: 500 }
+
+const oneSlide: ScatterPlotGridSlideConfig = {
+    colorBy: colorByGene,
+    slideId: slide32,
+    type: 'ScatterPlotGridSlideConfig',
+    url: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
+}
+const tissuecyte396: ZarrSliceGridConfig = {
+    type: 'ZarrSliceGridConfig',
+    gamut: {
+        R: { index: 0, gamut: pretend },
+        G: { index: 1, gamut: pretend },
+        B: { index: 2, gamut: pretend }
+    },
+    plane: 'xy',
+    slices: 142,
+    url: scottpoc
+}
+const structureAnnotation: AnnotationGridConfig = {
+    type: 'AnnotationGridConfig',
+    url: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
+    levelFeature: '73GVTDXDEGE27M2XJMT',
+    annotationUrl: 'https://stage-sfs.brain.devlims.org/api/v1/Annotation/4STCSZBXHYOI0JUUA3M/v3/TLOKWCL95RU03D9PETG/',
     stroke: {
         opacity: 1,
         overrideColor: [1, 0, 0, 1] as const,
-        width: 1,
     },
     fill: {
         opacity: 0.7

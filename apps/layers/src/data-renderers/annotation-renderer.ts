@@ -9,6 +9,7 @@ import { fetchAnnotation } from "src/data-sources/annotation/fetch-annotation";
 import { MeshFromAnnotation } from "src/data-sources/annotation/annotation-to-mesh";
 import type { SlideViewDataset } from "Common/loaders/scatterplot/scatterbrain-loader";
 import { type Camera } from "../../../omezarr-viewer/src/camera";
+import type { AnnotationGrid } from "src/data-sources/annotation/annotation-grid";
 
 type SlideId = string;
 
@@ -139,21 +140,7 @@ export type RenderSettings<C> = {
     queueInterval?: number,
     cpuLimit?: number,
 }
-export type AnnotationGrid = {
-    type: 'AnnotationGrid',
-    dataset: SlideViewDataset;
-    annotationBaseUrl: string;
-    levelFeature: string;
-    stroke: {
-        overrideColor?: vec4,
-        opacity: number,
-        width: number,
-    },
-    fill: {
-        overrideColor?: vec4,
-        opacity: number
-    }
-}
+
 
 export function renderAnnotationGrid(
     target: REGL.Framebuffer2D | null, grid: AnnotationGrid, settings: RenderSettings<CacheContentType | object | undefined>): FrameLifecycle {
