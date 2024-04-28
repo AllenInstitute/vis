@@ -144,11 +144,20 @@ export type AnnotationGrid = {
     dataset: SlideViewDataset;
     annotationBaseUrl: string;
     levelFeature: string;
+    stroke: {
+        overrideColor?: vec4,
+        opacity: number,
+        width: number,
+    },
+    fill: {
+        overrideColor?: vec4,
+        opacity: number
+    }
 }
 
 export function renderAnnotationGrid(
     target: REGL.Framebuffer2D | null, grid: AnnotationGrid, settings: RenderSettings<CacheContentType | object | undefined>): FrameLifecycle {
-    const { dataset, annotationBaseUrl, levelFeature } = grid;
+    const { dataset, annotationBaseUrl, levelFeature, stroke, fill } = grid;
     const { regl, cache, camera: { view, screen }, renderers: { loopRenderer, meshRenderer, stencilMeshRenderer }, callback } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
 
@@ -179,18 +188,12 @@ export function renderAnnotationGrid(
         cache,
         {
             ...settings,
-            fill: {
-                opacity: 1,
-            },
             loopRenderer,
             meshRenderer,
             stencilMeshRenderer,
             regl,
-            stroke: {
-                opacity: 1,
-                overrideColor: [1, 0, 0, 1],
-                width: 1,
-            },
+            stroke,
+            fill,
             target,
             viewport: {
                 x: 0,
