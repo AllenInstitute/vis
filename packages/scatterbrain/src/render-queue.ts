@@ -151,7 +151,6 @@ export function beginLongRunningFrame<Column, Item, Settings>(
           // put this cancel callback in a list where we can invoke if something goes wrong
           // note that it is harmless to cancel a task that was completed
           taskCancelCallbacks.push(result);
-          result
         }
       } catch (err) {
         cleanupOnError(err);

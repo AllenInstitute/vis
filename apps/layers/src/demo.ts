@@ -182,7 +182,7 @@ class Demo {
             });
         })
     }
-    addAnnotationGrid(url: string, levelFeature: string, annotationBaseUrl: string) {
+    addAnnotationGrid(url: string, levelFeature: string, annotationBaseUrl: string, stroke: AnnotationGrid['stroke'], fill: AnnotationGrid['fill']) {
         return createSlideDataset({
             colorBy: colorByGene,
             slideId: slide32,
@@ -200,6 +200,7 @@ class Demo {
                         dataset: data?.dataset,
                         annotationBaseUrl,
                         levelFeature,
+                        stroke, fill,
                         type: 'AnnotationGrid'
                     },
                     render: new ReglLayer2D<AnnotationGrid, Omit<AnnotationGridRenderSettings<CacheEntry>, 'target'>>(
@@ -385,7 +386,8 @@ class Demo {
                     data: layer.data,
                     settings: {
                         ...settings,
-                        concurrentTasks: 2,
+                        concurrentTasks: 3,
+                        cpuLimit: 25,
                         renderer: renderers[layer.type],
                     }
                 })
@@ -493,7 +495,8 @@ class Demo {
                     view: flipped
                 })
             }
-            if (layer.render.renderingInProgress()) {
+            // annotations are often transparent and dont do well...
+            if (layer.render.renderingInProgress() && layer.type !== 'annotationGrid') {
                 // draw our incoming frame overtop the old!
                 const cur = layer.render.getRenderResults('cur')
                 if (cur.bounds) {
@@ -542,8 +545,8 @@ function demoTime(thing: HTMLCanvasElement) {
         G: { index: 1, gamut: pretend },
         B: { index: 2, gamut: pretend }
     }, 0 * Math.PI).then(() => {
-        const { dataset, level, base } = structureAnnotation
-        theDemo.addAnnotationGrid(dataset, level, base).then(() => theDemo.uiChange())
+        const { dataset, level, base, stroke, fill } = structureAnnotation
+        theDemo.addAnnotationGrid(dataset, level, base, stroke, fill).then(() => theDemo.uiChange())
     })
     window['theDemo'] = theDemo;
 }
@@ -556,9 +559,16 @@ const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_0117
 const scottpoc = 'https://tissuecyte-ome-zarr-poc.s3.amazonaws.com/40_128_128/1145081396'
 const structureAnnotation = {
     dataset: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
-    // gridFeature: '7IJI7W3FOGYCTGOH0MO',//'V78U3GI18LIA0UHBLAL',
     level: '73GVTDXDEGE27M2XJMT',
-    base: 'https://stage-sfs.brain.devlims.org/api/v1/Annotation/4STCSZBXHYOI0JUUA3M/v3/TLOKWCL95RU03D9PETG/'
+    base: 'https://stage-sfs.brain.devlims.org/api/v1/Annotation/4STCSZBXHYOI0JUUA3M/v3/TLOKWCL95RU03D9PETG/',
+    stroke: {
+        opacity: 1,
+        overrideColor: [1, 0, 0, 1] as const,
+        width: 1,
+    },
+    fill: {
+        opacity: 0.7
+    }
 }
 // function buildGui(demo: Demo, sidebar: HTMLElement) {
 //     const gui = defGUI({

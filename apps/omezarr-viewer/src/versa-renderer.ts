@@ -87,6 +87,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
                 texture2D(G, texCoord).r,
                 texture2D(B, texCoord).r
             )-mins) /span;
+           
             gl_FragColor = vec4(color, 1.0);
         }`,
     framebuffer: regl.prop<Props, "target">("target"),
@@ -251,7 +252,6 @@ const sliceDimension = {
   yz: "x",
 } as const;
 
-
 export function getVisibleTiles(
   camera: Camera,
   plane: AxisAlignedPlane,
@@ -266,17 +266,17 @@ export function getVisibleTiles(
     dataset.multiscales[0].axes,
     dataset.multiscales[0].datasets[0]
   )!;
-  const thingy = pickBestScale(
+  const layer = pickBestScale(
     dataset,
     uvTable[plane],
     camera.view,
     camera.screen
   );
   // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
-  const layerIndex = dataset.multiscales[0].datasets.indexOf(thingy);
+  const layerIndex = dataset.multiscales[0].datasets.indexOf(layer);
 
-  const size = planeSizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
-  const realSize = sizeInUnits(uvTable[plane], dataset.multiscales[0].axes, thingy);
+  const size = planeSizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, layer);
+  const realSize = sizeInUnits(uvTable[plane], dataset.multiscales[0].axes, layer);
   if (!size || !realSize) return { layer: layerIndex, view: Box2D.create([0, 0], [1, 1]), tiles: [] };
   const scale = Vec2.div(realSize, size);
   // to go from a voxel-box to a real-box (easier than you think, as both have an origin at 0,0, because we only support scale...)
