@@ -549,6 +549,7 @@ function setupExampleData() {
     prep('structureAnnotation', structureAnnotation);
     prep('tissuecyte396', tissuecyte396);
     prep('slide32', oneSlide)
+    prep('versa1', versa1)
 
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
@@ -569,13 +570,24 @@ const oneSlide: ScatterPlotGridSlideConfig = {
 const tissuecyte396: ZarrSliceGridConfig = {
     type: 'ZarrSliceGridConfig',
     gamut: {
-        R: { index: 0, gamut: pretend },
-        G: { index: 1, gamut: pretend },
-        B: { index: 2, gamut: pretend }
+        R: { index: 0, gamut: { max: 600, min: 0 } },
+        G: { index: 1, gamut: { max: 500, min: 0 } },
+        B: { index: 2, gamut: { max: 400, min: 0 } }
     },
     plane: 'xy',
     slices: 142,
     url: scottpoc
+}
+const versa1: ZarrSliceGridConfig = {
+    url: "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/",
+    type: 'ZarrSliceGridConfig',
+    gamut: {
+        R: { index: 0, gamut: { max: 20, min: 0 } },
+        G: { index: 1, gamut: { max: 20, min: 0 } },
+        B: { index: 2, gamut: { max: 20, min: 0 } }
+    },
+    plane: 'xy',
+    slices: 4,
 }
 const structureAnnotation: AnnotationGridConfig = {
     type: 'AnnotationGridConfig',
