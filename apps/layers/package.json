@@ -38,6 +38,7 @@
     "@parcel/transformer-typescript-types": "^2.12.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "@types/file-saver": "^2.0.7",
     "esbuild": "^0.19.12",
     "parcel": "2.12.0",
     "typescript": "^5.3.3"
@@ -58,6 +59,7 @@
     "regl": "^2.1.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "regl": "^2.1.0"
+    "regl": "^2.1.0",
+    "zarr": "^0.6.2"
   }
 }

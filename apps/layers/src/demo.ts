@@ -16,10 +16,12 @@ import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from
 import { createGridDataset, createSlideDataset, type DynamicGrid, type DynamicGridSlide, type ScatterPlotGridSlideConfig, type ScatterplotGridConfig } from "./data-sources/scatterplot/dynamic-grid";
 import type { OptionalTransform } from "./data-sources/types";
 import type { CacheEntry, AnnotationLayer, Layer } from "./types";
-import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid } from "./data-sources/ome-zarr/slice-grid";
 import ReactDOM from 'react-dom'
 import { AppUi } from "./app";
 import { createRoot } from "react-dom/client";
+import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid, type ZarrSliceGridConfig } from "./data-sources/ome-zarr/slice-grid";
+import { renderAnnotationGrid, type LoopRenderer, type MeshRenderer, type RenderSettings as AnnotationGridRenderSettings } from "./data-renderers/annotation-renderer";
+import { buildLoopRenderer, buildMeshRenderer } from "./data-renderers/mesh-renderer";
 import type { Camera } from "../../omezarr-viewer/src/camera";
 import { saveAs } from 'file-saver'
 import type { AnnotationGrid, AnnotationGridConfig } from "./data-sources/annotation/annotation-grid";
