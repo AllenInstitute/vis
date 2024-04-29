@@ -1,5 +1,5 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { type ColumnRequest, type ColumnarMetadata } from "Common/loaders/scatterplot/scatterbrain-loader";
+import { type ColumnRequest } from "Common/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
 import { AsyncDataCache, type FrameLifecycle, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { buildRenderer } from "../../scatterplot/src/renderer";
@@ -9,28 +9,20 @@ import { renderDynamicGrid, renderSlide, type RenderSettings as SlideRenderSetti
 import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
 import { buildPathRenderer } from "./data-renderers/lineRenderer";
-// gui stuff....
-import { DEFAULT_THEME, defGUI } from "@thi.ng/imgui";
-import { gridLayout } from "@thi.ng/layout";
-import { $canvas } from "@thi.ng/rdom-canvas";
-import { fromDOMEvent, fromRAF, } from "@thi.ng/rstream";
-import { gestureStream } from "@thi.ng/rstream-gestures";
-import { layerListUI } from "./ui/layer-list";
-import { volumeSliceLayer } from "./ui/volume-slice-layer";
-import { annotationUi } from "./ui/annotation-ui";
-import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
-import type { ColorMapping, RenderCallback } from "./data-renderers/types";
+
+import { buildVersaRenderer } from "../../omezarr-viewer/src/versa-renderer";
+import type { RenderCallback } from "./data-renderers/types";
 import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from "./data-sources/ome-zarr/planar-slice";
 import { createGridDataset, createSlideDataset, type DynamicGrid, type DynamicGridSlide, type ScatterPlotGridSlideConfig, type ScatterplotGridConfig } from "./data-sources/scatterplot/dynamic-grid";
 import type { OptionalTransform } from "./data-sources/types";
-import type { CacheEntry, AnnotationLayer, Layer, ScatterPlotGridLayer } from "./types";
+import type { CacheEntry, AnnotationLayer, Layer } from "./types";
 import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid, type ZarrSliceGridConfig } from "./data-sources/ome-zarr/slice-grid";
 import { renderAnnotationGrid, type LoopRenderer, type MeshRenderer, type RenderSettings as AnnotationGridRenderSettings } from "./data-renderers/annotation-renderer";
 import { buildLoopRenderer, buildMeshRenderer } from "./data-renderers/mesh-renderer";
 import type { Camera } from "../../omezarr-viewer/src/camera";
 import { saveAs } from 'file-saver'
 import type { AnnotationGrid, AnnotationGridConfig } from "./data-sources/annotation/annotation-grid";
-import { planeSizeInVoxels, sizeInUnits } from "Common/loaders/ome-zarr/zarr-data";
+import { sizeInUnits } from "Common/loaders/ome-zarr/zarr-data";
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -147,6 +139,30 @@ class Demo {
             }
         })
     }
+    selectLayer(layer: number) {
+        this.selectedLayer = Math.min(this.layers.length - 1, Math.max(0, layer));
+        const yay = this.layers[this.selectedLayer];
+        console.log('selected:', yay.data)
+    }
+    deleteSelectedLayer() {
+        const removed = this.layers.splice(this.selectedLayer, 1)
+        removed.forEach(l => l.render.destroy())
+        this.uiChange();
+    }
+    addLayer(config: ScatterplotGridConfig | ZarrSliceConfig | ZarrSliceGridConfig | ScatterPlotGridSlideConfig | AnnotationGridConfig) {
+        switch (config.type) {
+            case 'AnnotationGridConfig':
+                return this.addAnnotationGrid(config);
+            case 'ScatterPlotGridConfig':
+                return this.addDynamicGrid(config);
+            case 'ScatterPlotGridSlideConfig':
+                return this.addScatterplot(config)
+            case 'ZarrSliceGridConfig':
+                return this.addVolumeGrid(config);
+            case 'zarrSliceConfig':
+                return this.addVolumeSlice(config);
+        }
+    }
     addAnnotation(data: SimpleAnnotation) {
         const [w, h] = this.camera.screen
         this.layers.push({
@@ -157,7 +173,7 @@ class Demo {
             )
         })
     }
-    addScatterplot(config: ScatterPlotGridSlideConfig) {
+    private addScatterplot(config: ScatterPlotGridSlideConfig) {
         return createSlideDataset(config).then((data) => {
             if (data) {
                 const [w, h] = this.camera.screen
@@ -176,7 +192,7 @@ class Demo {
 
 
     }
-    addVolumeSlice(config: ZarrSliceConfig) {
+    private addVolumeSlice(config: ZarrSliceConfig) {
         const [w, h] = this.camera.screen
         return createZarrSlice(config).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSlice & OptionalTransform, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
@@ -192,7 +208,7 @@ class Demo {
             this.uiChange();
         })
     }
-    addAnnotationGrid(config: AnnotationGridConfig) {
+    private addAnnotationGrid(config: AnnotationGridConfig) {
         return createSlideDataset({
             slideId: slide32,
             colorBy: colorByGene,
@@ -221,7 +237,7 @@ class Demo {
             }
         })
     }
-    addVolumeGrid(config: ZarrSliceGridConfig) {
+    private addVolumeGrid(config: ZarrSliceGridConfig) {
         const [w, h] = this.camera.screen
         return createZarrSliceGrid(config).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
@@ -558,15 +574,6 @@ function demoTime(thing: HTMLCanvasElement) {
         extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
     theDemo = new Demo(thing, regl);
-
-    // theDemo.addVolumeGrid(scottpoc, 'xy', 142, {
-    //     R: { index: 0, gamut: pretend },
-    //     G: { index: 1, gamut: pretend },
-    //     B: { index: 2, gamut: pretend }
-    // }, 0 * Math.PI).then(() => {
-    //     const { dataset, level, base, stroke, fill } = structureAnnotation
-    //     theDemo.addAnnotationGrid(dataset, level, base, stroke, fill).then(() => theDemo.uiChange())
-    // })
     window['demo'] = theDemo;
     setupExampleData();
 }
@@ -637,78 +644,4 @@ const structureAnnotation: AnnotationGridConfig = {
         opacity: 0.7
     }
 }
-// function buildGui(demo: Demo, sidebar: HTMLElement) {
-//     const gui = defGUI({
-//         theme: {
-//             ...DEFAULT_THEME,
-//             font: "16px 'IBM Plex Mono', monospace",
-//             baseLine: 6,
-//             focus: "#000",
-//         },
-//     });
-
-//     const initGUI = (el: HTMLCanvasElement) => {
-//         // unified mouse & touch event handling
-//         gestureStream(el).subscribe({
-//             next(e: any) {
-//                 gui.setMouse(e.pos, e.buttons);
-//             },
-//         });
-//     };
-
-//     const updateGUI = () => {
-//         // create grid layout using https://thi.ng/layout
-//         // position grid centered in window
-//         const rowHeight = 32;
-//         const gap = 4;
-//         const grid = gridLayout(
-//             // start X position
-//             16,
-//             // start Y position (centered)
-//             (sidebar.clientHeight - (2 * rowHeight + gap)) / 2,
-//             // layout width
-//             sidebar.clientWidth - 32,
-//             // single column
-//             1,
-//             rowHeight,
-//             gap
-//         );
-//         // prep GUI for next frame
-//         gui.begin();
-//         layerListUI(gui, grid, demo.selectedLayer, demo.layers, (i) => demo.pickLayer(i));
-//         const curLayer = demo.layers[demo.selectedLayer];
-//         if (curLayer) {
-//             switch (curLayer.type) {
-//                 case 'volumeSlice':
-//                     volumeSliceLayer(gui, grid, curLayer,
-//                         (i: number) => { curLayer.data = { ...curLayer.data, planeParameter: i }; demo.uiChange() },
-//                         (p: AxisAlignedPlane) => { curLayer.data = { ...curLayer.data, plane: p }; demo.uiChange() })
-//                     break;
-//                 case 'annotationLayer':
-//                     annotationUi(gui, grid, demo.mode, curLayer,
-//                         (p: 'draw' | 'pan') => { demo.mode = p; demo.uiChange() })
-//                     break;
-//             }
-//         }
-//         // end frame
-//         gui.end();
-
-//         return gui;
-//     };
-//     const windowSize = fromDOMEvent(window, "resize", false, {
-//         init: <any>{},
-//     }).map(() => [sidebar.clientWidth, sidebar.clientHeight]);
-
-//     // canvas component
-//     $canvas(fromRAF().map(updateGUI), windowSize, {
-//         // execute above init handler when canvas has been mounted
-//         onmount: initGUI,
-//         style: {
-//             background: gui.theme.globalBg,
-//             // update cursor value each frame
-//             cursor: fromRAF().map(() => gui.cursor),
-//         },
-//         ...gui.attribs,
-//     }).mount(sidebar);
-// }
 demoTime(document.getElementById('glCanvas') as HTMLCanvasElement)
