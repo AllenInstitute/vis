@@ -8,12 +8,13 @@ type Props = {
     itemDepth: number;
     count: number;
     position: Float32Array,
-    color: Float32Array
+    color: Float32Array,
+    offset?: vec2 | undefined,
     target: Framebuffer2D | null;
 }
 export function buildRenderer(regl: REGL.Regl) {
     // build the regl command first
-    const cmd = regl<{ view: vec4, itemDepth: number }, { position: Float32Array, color: Float32Array }, Props>({
+    const cmd = regl<{ view: vec4, itemDepth: number, offset: vec2 }, { position: Float32Array, color: Float32Array }, Props>({
         vert: `
     precision highp float;
     attribute vec2 position;
@@ -21,12 +22,14 @@ export function buildRenderer(regl: REGL.Regl) {
 
     uniform vec4 view;
     uniform float itemDepth;
-    varying vec4 clr;
+    uniform vec2 offset;
 
+    varying vec4 clr;
+    
     void main(){
         gl_PointSize=4.0;
         vec2 size = view.zw-view.xy;
-        vec2 pos = (position-view.xy)/size;
+        vec2 pos = ((position+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
 
         // todo: gradients are cool
@@ -48,6 +51,7 @@ export function buildRenderer(regl: REGL.Regl) {
         uniforms: {
             itemDepth: regl.prop<Props, "itemDepth">("itemDepth"),
             view: regl.prop<Props, "view">("view"),
+            offset: regl.prop<Props, "offset">("offset"),
         },
 
         blend: {
@@ -57,7 +61,7 @@ export function buildRenderer(regl: REGL.Regl) {
         count: regl.prop<Props, 'count'>('count'),
         primitive: "points",
     })
-    const renderDots = (item: ColumnarTree<vec2>, settings: RenderSettings, columns: Record<string, ColumnData | object | undefined>) => {
+    const renderDots = (item: ColumnarTree<vec2> & { offset?: vec2 | undefined }, settings: RenderSettings, columns: Record<string, ColumnData | object | undefined>) => {
         const { color, position } = columns;
         const count = item.content.count;
         const itemDepth = item.content.depth
@@ -68,6 +72,7 @@ export function buildRenderer(regl: REGL.Regl) {
                 itemDepth,
                 position: position.data,
                 color: color.data,
+                offset: item.offset ?? [0, 0],
                 target: settings.target
             })
         } else {

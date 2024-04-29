@@ -5,7 +5,7 @@ import { AsyncDataCache, type FrameLifecycle, type NormalStatus } from "@allenin
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 import { ReglLayer2D } from "./layer";
-import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
+import { renderDynamicGrid, renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
 import { buildPathRenderer } from "./data-renderers/lineRenderer";
@@ -21,9 +21,9 @@ import { annotationUi } from "./ui/annotation-ui";
 import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
 import type { ColorMapping, RenderCallback } from "./data-renderers/types";
 import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from "./data-sources/ome-zarr/planar-slice";
-import { createSlideDataset, type DynamicGridSlide, type ScatterPlotGridSlideConfig } from "./data-sources/scatterplot/dynamic-grid";
+import { createGridDataset, createSlideDataset, type DynamicGrid, type DynamicGridSlide, type ScatterPlotGridSlideConfig, type ScatterplotGridConfig } from "./data-sources/scatterplot/dynamic-grid";
 import type { OptionalTransform } from "./data-sources/types";
-import type { CacheEntry, AnnotationLayer, Layer } from "./types";
+import type { CacheEntry, AnnotationLayer, Layer, ScatterPlotGridLayer } from "./types";
 import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid, type ZarrSliceGridConfig } from "./data-sources/ome-zarr/slice-grid";
 import { renderAnnotationGrid, type LoopRenderer, type MeshRenderer, type RenderSettings as AnnotationGridRenderSettings } from "./data-renderers/annotation-renderer";
 import { buildLoopRenderer, buildMeshRenderer } from "./data-renderers/mesh-renderer";
@@ -130,7 +130,23 @@ class Demo {
     uiChange() {
         this.onCameraChanged();
     }
-
+    addDynamicGrid(config: ScatterplotGridConfig) {
+        return createGridDataset(config).then((data) => {
+            if (data) {
+                const [w, h] = this.camera.screen
+                const layer = new ReglLayer2D<DynamicGrid & OptionalTransform, SlideRenderSettings<CacheEntry>>(
+                    this.regl, this.imgRenderer, renderDynamicGrid<CacheEntry>, [w, h]
+                );
+                this.layers.push({
+                    type: 'scatterplotGrid',
+                    data,
+                    render: layer
+                });
+                this.camera = { ...this.camera, view: data.dataset.bounds }
+                this.uiChange();
+            }
+        })
+    }
     addAnnotation(data: SimpleAnnotation) {
         const [w, h] = this.camera.screen
         this.layers.push({
@@ -252,6 +268,7 @@ class Demo {
                 scatterplot: this.plotRenderer,
                 annotationLayer: this.pathRenderer,
                 volumeGrid: this.sliceRenderer,
+                scatterplotGrid: this.plotRenderer,
                 annotationGrid: {
                     loopRenderer: this.loopRenderer,
                     meshRenderer: this.meshRenderer,
@@ -306,6 +323,9 @@ class Demo {
                     case 'annotationLayer':
                         layerPromises.push(() => renderAnnotationLayer(target, layer.data, { ...settings, renderer: renderers[layer.type] }))
                         break;
+                    case 'scatterplotGrid':
+                        layerPromises.push(() => renderDynamicGrid<CacheEntry>(target, layer.data, { ...settings, renderer: renderers[layer.type] }))
+                        break;
                 }
             }
             // start it up!
@@ -336,6 +356,7 @@ class Demo {
             scatterplot: this.plotRenderer,
             annotationLayer: this.pathRenderer,
             volumeGrid: this.sliceRenderer,
+            scatterplotGrid: this.plotRenderer,
             annotationGrid: {
                 loopRenderer: this.loopRenderer,
                 meshRenderer: this.meshRenderer,
@@ -386,6 +407,16 @@ class Demo {
                         ...settings,
                         concurrentTasks: 2,
                         renderers: renderers[layer.type],
+                    }
+                })
+            } else if (layer.type === 'scatterplotGrid') {
+                layer.render.onChange({
+                    data: layer.data,
+                    settings: {
+                        ...settings,
+                        concurrentTasks: 3,
+                        cpuLimit: 25,
+                        renderer: renderers[layer.type],
                     }
                 })
             }
@@ -549,6 +580,7 @@ function setupExampleData() {
     prep('tissuecyte396', tissuecyte396);
     prep('slide32', oneSlide)
     prep('versa1', versa1)
+    prep('reconstructed', reconstructed);
 
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
@@ -559,7 +591,11 @@ const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/2301
 const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json'
 const scottpoc = 'https://tissuecyte-ome-zarr-poc.s3.amazonaws.com/40_128_128/1145081396'
 const pretend = { min: 0, max: 500 }
-
+const reconstructed: ScatterplotGridConfig = {
+    colorBy: colorByGene,
+    type: 'ScatterPlotGridConfig',
+    url: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
+}
 const oneSlide: ScatterPlotGridSlideConfig = {
     colorBy: colorByGene,
     slideId: slide32,
