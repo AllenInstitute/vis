@@ -1,7 +1,7 @@
 import type REGL from "regl";
 import { beginLongRunningFrame, type AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
 import type { RenderCallback } from "./types";
-import { cacheKeyFactory, getVisibleTiles, requestsForTile, searchForCachedTiles, type AxisAlignedPlane, type buildVersaRenderer, type VoxelSliceRenderSettings, type VoxelTile } from "../../../omezarr-viewer/src/versa-renderer";
+import { cacheKeyFactory, getVisibleTiles, requestsForTile, type AxisAlignedPlane, type buildVersaRenderer, type VoxelSliceRenderSettings, type VoxelTile } from "../../../omezarr-viewer/src/versa-renderer";
 import { pickBestScale, sizeInUnits, sizeInVoxels, sliceDimensionForPlane, uvForPlane } from "Common/loaders/ome-zarr/zarr-data";
 import { applyOptionalTrn } from "./utils";
 import { Box2D, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
