@@ -7,11 +7,6 @@ import type { ZarrDataset } from "Common/loaders/ome-zarr/zarr-data";
 import type { SlideViewDataset, ColumnRequest } from "Common/loaders/scatterplot/scatterbrain-loader";
 import type { AxisAlignedPlane } from "../../../omezarr-viewer/src/slice-renderer";
 
-export type Camera = {
-    view: box2D;
-    screen: vec2;
-}
-
 
 
 

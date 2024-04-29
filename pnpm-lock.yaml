@@ -27,6 +27,27 @@ importers:
         specifier: ^5.3.3
         version: 5.3.3
 
+  apps/common:
+    dependencies:
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../../packages/geometry
+      '@alleninstitute/vis-scatterbrain':
+        specifier: workspace:*
+        version: link:../../packages/scatterbrain
+      '@types/lodash':
+        specifier: ^4.14.202
+        version: 4.14.202
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      regl:
+        specifier: ^2.1.0
+        version: 2.1.0
+      zarr:
+        specifier: ^0.6.2
+        version: 0.6.2
+
   apps/layers:
     dependencies:
       '@alleninstitute/vis-geometry':
@@ -53,9 +74,15 @@ importers:
       '@types/lodash':
         specifier: ^4.14.202
         version: 4.14.202
+      file-saver:
+        specifier: ^2.0.5
+        version: 2.0.5
       json5:
         specifier: ^2.2.3
         version: 2.2.3
+      kiwi-schema:
+        specifier: ^0.5.0
+        version: 0.5.0
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -68,6 +95,9 @@ importers:
       regl:
         specifier: ^2.1.0
         version: 2.1.0
+      zarr:
+        specifier: ^0.6.2
+        version: 0.6.2
     devDependencies:
       '@parcel/packager-ts':
         specifier: ^2.12.0
@@ -75,6 +105,9 @@ importers:
       '@parcel/transformer-typescript-types':
         specifier: ^2.12.0
         version: 2.12.0(@parcel/core@2.12.0)(typescript@5.3.3)
+      '@types/file-saver':
+        specifier: ^2.0.7
+        version: 2.0.7
       '@types/react':
         specifier: ^18.3.0
         version: 18.3.0
@@ -2495,6 +2528,10 @@ packages:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: true
 
+  /@types/file-saver@2.0.7:
+    resolution: {integrity: sha512-dNKVfHd/jk0SkR/exKGj2ggkB45MAkzvWCaqLUUgkyjITkGNzH8H+yUwr+BLJUBjZOe9w8X3wgmXhZDRg1ED6A==}
+    dev: true
+
   /@types/lodash@4.14.202:
     resolution: {integrity: sha512-OvlIYQK9tNneDlS0VN54LLd5uiPCBOp7gS5Z0f1mjoJYBrtStzgmJBxONW3U6OZqdtNzZPmn9BS/7WI7BFFcFQ==}
 
@@ -2973,6 +3010,10 @@ packages:
       strip-final-newline: 3.0.0
     dev: true
 
+  /file-saver@2.0.5:
+    resolution: {integrity: sha512-P9bmyZ3h/PRG+Nzga+rbdI4OEpNDzAVyy74uVO9ATgzLK6VtAsYybF/+TOCvrc0MO793d6+42lLyZTw7/ArVzA==}
+    dev: false
+
   /fill-range@7.0.1:
     resolution: {integrity: sha512-qOo9F+dMUmC2Lcb4BbVvnKJxTPjCm+RRpe4gDuGrzkL7mEVl/djYSu2OdQ2Pa302N4oqkSg9ir6jaLWJ2USVpQ==}
     engines: {node: '>=8'}
@@ -3142,6 +3183,11 @@ packages:
   /jsonc-parser@3.2.1:
     resolution: {integrity: sha512-AilxAyFOAcK5wA1+LeaySVBrHsGQvUFCDWXKpZjzaL0PqW+xfBOttn8GNtWKFWqneyMZj41MWF9Kl6iPWLwgOA==}
     dev: true
+
+  /kiwi-schema@0.5.0:
+    resolution: {integrity: sha512-X+FpfU0yTEtc6aTHS7VwbOpvQwRt70+pXXWRI5fd6CvWhe7pSVC854TVo4Zo0x5/wwcWj+/9KUlXpdcP0dY9AA==}
+    hasBin: true
+    dev: false
 
   /lightningcss-darwin-arm64@1.24.0:
     resolution: {integrity: sha512-rTNPkEiynOu4CfGdd5ZfVOQe2gd2idfQd4EfX1l2ZUUwd+2SwSdbb7cG4rlwfnZckbzCAygm85xkpekRE5/wFw==}
