@@ -5,8 +5,8 @@ This is a demo for generating Neuroglancer URLs like a python POC [here](https:/
 ### How to build / run
 1. `pnpm build` from the root directory of this project
 2. `pnpm install` in this directory
-3. `pnpm run demo` in this directory - this will produce `dst/demo.html`
-4. navigate to `dev/demo.html` and open it in your browser - its simply a static html page with a single js script import
+3. `pnpm run demo` in this directory - this will produce `dst/neuroglancer-url.html`
+4. navigate to `dst/neuroglancer-url.html` and open it in your browser
 
 ### The Code
  -- TBD --
