@@ -7,7 +7,6 @@ import type { OptionalTransform } from "src/data-sources/types";
 import { AsyncDataCache, beginLongRunningFrame, type FrameLifecycle } from "@alleninstitute/vis-scatterbrain";
 import { fetchAnnotation } from "src/data-sources/annotation/fetch-annotation";
 import { MeshFromAnnotation } from "src/data-sources/annotation/annotation-to-mesh";
-import type { SlideViewDataset } from "Common/loaders/scatterplot/scatterbrain-loader";
 import { type Camera } from "../../../omezarr-viewer/src/camera";
 import type { AnnotationGrid } from "src/data-sources/annotation/annotation-grid";
 
