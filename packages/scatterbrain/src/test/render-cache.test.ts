@@ -254,5 +254,17 @@ describe('async cache', () => {
             expect(cache.isCached(cacheKey({ id: 1 }, 'color'))).toBeFalsy()
             expect(cache.isCached(cacheKey({ id: 1 }, 'position'))).toBeFalsy()
         })
+        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task: ', () => {
+            // a nice edge-case.
+            // real-world version: imagine a 1-channel ome-zarr image, in which the user wants to render with a 3-channel (RGB) shader
+            // they want a grayscale version, so they want to map that singular data-channel to each color, like so:
+            // {red: ()=>fetch(http://blah.channel0),
+            // green: ()=>fetch(http://blah.channel0),
+            // blue: ()=>fetch(http://blah.channel0),
+            // }
+            // prior to this fix, the cache assumed that any incoming data would map to exactly one (per-task) semantic output - 
+            // the result would be that the task would resolve itself early, with several keys being undefined
+            // TODO
+        })
     })
 })
