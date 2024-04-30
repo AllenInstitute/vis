@@ -17,10 +17,14 @@ export type Image = {
     texture: REGL.Framebuffer2D
     bounds: box2D | undefined; // if undefined, it means we allocated the texture, but its empty and should not be used (except to fill it)
 }
+type ColumnBuffer = {
+    type: 'vbo';
+    data: REGL.Buffer;
+}
 export type CacheEntry = {
     type: 'texture2D';
     data: REGL.Texture2D
-} | ColumnData
+} | ColumnBuffer
     | GpuMesh
 
 
