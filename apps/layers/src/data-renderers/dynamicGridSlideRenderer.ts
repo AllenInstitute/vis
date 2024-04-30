@@ -3,7 +3,7 @@ import type REGL from "regl";
 import { buildRenderer as buildScatterplotRenderer } from "../../../scatterplot/src/renderer";
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { fetchItem, getVisibleItemsInSlide } from "Common/loaders/scatterplot/data";
-import type { ColumnData, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
+import type { ColumnData, ColumnRequest, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
 import { applyOptionalTrn } from "./utils";
 import type { DynamicGrid, DynamicGridSlide } from "../data-sources/scatterplot/dynamic-grid";
 import type { RenderCallback } from "./types";
@@ -24,6 +24,7 @@ export type RenderSettings<C> = {
     queueInterval?: number,
     cpuLimit?: number,
 }
+const cacheKey = (reqKey:string, item:ColumnarTree<vec2>, settings:{colorBy:ColumnRequest}) => `${reqKey}:${item.content.name}:${settings.colorBy.name}|${settings.colorBy.type}`
 export function renderSlide<C extends (CacheContentType | object)>(target: REGL.Framebuffer2D | null, slide: DynamicGridSlide, settings: RenderSettings<C>) {
     const { cache, camera: { view, screen }, renderer, callback,regl} = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
@@ -32,7 +33,7 @@ export function renderSlide<C extends (CacheContentType | object)>(target: REGL.
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined
 
-    const { dataset,colorBy} = slide;
+    const { dataset,colorBy,pointSize} = slide;
     const unitsPerPixel = Vec2.div(Box2D.size(view), screen);
     
     camera = { ...camera, view: applyOptionalTrn(camera.view, slide.toModelSpace, true) }
@@ -40,8 +41,8 @@ export function renderSlide<C extends (CacheContentType | object)>(target: REGL.
     const items = getVisibleItemsInSlide(slide.dataset, slide.slideId, settings.camera.view, 10 * unitsPerPixel[0])
     // make the frame, return some junk
     return beginLongRunningFrame(concurrentTasks, queueInterval, items, cache,
-        { view, dataset, target,colorBy,regl }, fetchItem, renderer, callback,
-        (reqKey, item, _settings) => `${reqKey}:${item.content.name}`,
+        { view, dataset, target,colorBy,regl,pointSize }, fetchItem, renderer, callback,
+        cacheKey,
         cpuLimit);
 }
 
@@ -53,7 +54,7 @@ export function renderDynamicGrid<C extends (CacheContentType | object)>(target:
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined
     const items: ColumnarTree<vec2>[] = []
-    const { dataset } = grid;
+    const { dataset,pointSize } = grid;
     const unitsPerPixel = Vec2.div(Box2D.size(view), screen);
     const rowSize = Math.floor(Math.sqrt(Object.keys(dataset.slides).length));
     camera = { ...camera, view: applyOptionalTrn(camera.view, grid.toModelSpace, true) }
@@ -70,7 +71,7 @@ export function renderDynamicGrid<C extends (CacheContentType | object)>(target:
     const {colorBy} = grid
     // make the frame, return some junk
     return beginLongRunningFrame(concurrentTasks, queueInterval, items, cache,
-        { view, dataset, target,colorBy,regl}, fetchItem, renderer, callback,
-        (reqKey, item, _settings) => `${reqKey}:${item.content.name}`,
+        { view, dataset, target,colorBy,regl,pointSize}, fetchItem, renderer, callback,
+        cacheKey,
         cpuLimit);
 }

@@ -9,6 +9,7 @@ export type RenderSettings = {
     dataset: Dataset;
     view: box2D;
     colorBy:ColumnRequest;
+    pointSize:number;
     target: REGL.Framebuffer2D | null;
     regl:REGL.Regl;
 }
@@ -52,7 +53,6 @@ function fetchAndUpload(settings:{dataset:Dataset, regl:REGL.Regl},node:Columnar
 }
 export function fetchItem(item: ColumnarTree<vec2>, settings: RenderSettings, signal?: AbortSignal) {
     const {dataset,colorBy} = settings;
-    
     const position = () => fetchAndUpload(settings, item.content, { type:'METADATA',name:dataset.spatialColumn}, signal);
     const color = () => fetchAndUpload(settings, item.content, colorBy, signal)
     return {

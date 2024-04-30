@@ -7,6 +7,7 @@ type Props = {
     view: vec4;
     itemDepth: number;
     count: number;
+    pointSize:number;
     position: Float32Array,
     color: Float32Array,
     offset?: vec2 | undefined,
@@ -14,12 +15,13 @@ type Props = {
 }
 export function buildRenderer(regl: REGL.Regl) {
     // build the regl command first
-    const cmd = regl<{ view: vec4, itemDepth: number, offset: vec2 }, { position: Float32Array, color: Float32Array }, Props>({
+    const cmd = regl<{ view: vec4, itemDepth: number, offset: vec2,pointSize:number }, { position: Float32Array, color: Float32Array }, Props>({
         vert: `
     precision highp float;
     attribute vec2 position;
     attribute float color;
-
+    
+    uniform float pointSize;
     uniform vec4 view;
     uniform float itemDepth;
     uniform vec2 offset;
@@ -27,7 +29,7 @@ export function buildRenderer(regl: REGL.Regl) {
     varying vec4 clr;
     
     void main(){
-        gl_PointSize=4.0;
+        gl_PointSize=pointSize;
         vec2 size = view.zw-view.xy;
         vec2 pos = ((position+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
@@ -52,6 +54,7 @@ export function buildRenderer(regl: REGL.Regl) {
             itemDepth: regl.prop<Props, "itemDepth">("itemDepth"),
             view: regl.prop<Props, "view">("view"),
             offset: regl.prop<Props, "offset">("offset"),
+            pointSize: regl.prop<Props, "pointSize">("pointSize"),
         },
 
         blend: {
@@ -72,6 +75,7 @@ export function buildRenderer(regl: REGL.Regl) {
                 count,
                 itemDepth,
                 position: position.data,
+                pointSize:settings.pointSize,
                 color: color.data,
                 offset: item.offset ?? [0, 0],
                 target: settings.target
