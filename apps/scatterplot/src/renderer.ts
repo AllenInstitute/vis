@@ -1,5 +1,5 @@
 import REGL, { type Framebuffer2D } from "regl";
-import type { ColumnData, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
+import type { ColumnBuffer, ColumnData, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
 import type { RenderSettings } from "Common/loaders/scatterplot/data";
 import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 
@@ -61,11 +61,12 @@ export function buildRenderer(regl: REGL.Regl) {
         count: regl.prop<Props, 'count'>('count'),
         primitive: "points",
     })
-    const renderDots = (item: ColumnarTree<vec2> & { offset?: vec2 | undefined }, settings: RenderSettings, columns: Record<string, ColumnData | object | undefined>) => {
+    const renderDots = (item: ColumnarTree<vec2> & { offset?: vec2 | undefined }, settings: RenderSettings, columns: Record<string, ColumnBuffer | object | undefined>) => {
         const { color, position } = columns;
         const count = item.content.count;
         const itemDepth = item.content.depth
-        if (color && position && 'type' in color && 'type' in position && color.type === 'float' && position.type === 'float') {
+        if (color && position && 'type' in color && 'type' in position && color.type === 'vbo' && position.type === 'vbo') {
+        // if (color && position && 'type' in color && 'type' in position && color.type === 'float' && position.type === 'float') {
             cmd({
                 view: Box2D.toFlatArray(settings.view),
                 count,
