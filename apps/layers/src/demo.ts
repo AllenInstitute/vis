@@ -118,9 +118,16 @@ export class Demo {
     uiChange() {
         this.onCameraChanged();
     }
+    setOpacity(what:'fill'|'stroke', value:number){
+        const layer = this.layers[this.selectedLayer];
+        if(layer && layer.type==='annotationGrid'){
+            layer.data[what].opacity=value;
+            this.uiChange();
+        }
+    }
     setGamutChannel(channel: keyof ColorMapping, value: number[]) {
         const layer = this.layers[this.selectedLayer];
-        if (layer && layer.type === 'volumeSlice') {
+        if (layer && (layer.type === 'volumeSlice' || layer.type==='volumeGrid')) {
             layer.data.gamut[channel].gamut.min = value[0];
             layer.data.gamut[channel].gamut.max = value[1];
             this.uiChange();
@@ -135,8 +142,22 @@ export class Demo {
     }
     setPlane(param: AxisAlignedPlane) {
         const layer = this.layers[this.selectedLayer];
-        if (layer && layer.type === 'volumeSlice') {
+        if (layer && (layer.type === 'volumeSlice' || layer.type==='volumeGrid')) {
             layer.data.plane = param;
+            this.uiChange();
+        }
+    }
+    setPointSize(s:number){
+        const layer = this.layers[this.selectedLayer];
+        if (layer && (layer.type === 'scatterplot' || layer.type==='scatterplotGrid')) {
+            layer.data.pointSize=s;
+            this.uiChange();
+        }
+    }
+    setColorByIndex(s:number){
+        const layer = this.layers[this.selectedLayer];
+        if (layer && (layer.type === 'scatterplot' || layer.type==='scatterplotGrid')) {
+            layer.data.colorBy.name=`${s.toFixed(0)}`;
             this.uiChange();
         }
     }
@@ -161,7 +182,9 @@ export class Demo {
         this.selectedLayer = Math.min(this.layers.length - 1, Math.max(0, layer));
         const yay = this.layers[this.selectedLayer];
         console.log('selected:', yay.data)
+        this.uiChange();
     }
+
     deleteSelectedLayer() {
         const removed = this.layers.splice(this.selectedLayer, 1)
         removed.forEach(l => l.render.destroy())

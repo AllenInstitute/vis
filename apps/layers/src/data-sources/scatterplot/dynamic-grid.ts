@@ -21,6 +21,7 @@ export type DynamicGridSlide = {
     dataset: SlideViewDataset;
     slideId: string;
     colorBy: ColumnRequest;
+    pointSize:number;
 } & OptionalTransform;
 
 
@@ -28,6 +29,7 @@ export type DynamicGrid = {
     type: 'DynamicGrid'
     dataset: SlideViewDataset;
     colorBy: ColumnRequest;
+    pointSize:number;
 } & OptionalTransform;
 
 async function loadJSON(url: string) {
@@ -43,6 +45,7 @@ function assembleSlideConfig(config: ScatterPlotGridSlideConfig, dataset: SlideV
         colorBy,
         dataset,
         slideId,
+        pointSize:4,
         toModelSpace: trn,
     }
 }
@@ -63,6 +66,7 @@ function assembleGridConfig(config: ScatterplotGridConfig, dataset: SlideViewDat
         type: 'DynamicGrid',
         colorBy,
         dataset,
+        pointSize:4,
         toModelSpace: trn,
     }
 }
