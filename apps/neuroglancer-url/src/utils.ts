@@ -1,4 +1,4 @@
-function finalizeConfig(
+export function finalizeConfig(
     imgLayer: any,
     imgName: string,
     xMm: number,
@@ -24,9 +24,9 @@ function finalizeConfig(
     return config;
 }
 
-const baseUrl = 'https://neuroglancer-demo.appspot.com/';
+export const neuroglancerUrl = 'https://neuroglancer-demo.appspot.com/';
 
-function getSourceConfig(srcUrl: string, xMm: number, yMm: number, zMm: number): Record<string, any> {
+export function getSourceConfig(srcUrl: string, xMm: number, yMm: number, zMm: number): Record<string, any> {
     const source: Record<string, any> = {};
     source.url = srcUrl;
     source.transform = {
@@ -40,7 +40,7 @@ function getSourceConfig(srcUrl: string, xMm: number, yMm: number, zMm: number):
     return source;
 }
 
-function getImageLayer(layerName: string, source: any, shaderCode: string, shaderControls: any): any {
+export function getImageLayer(layerName: string, source: any, shaderCode: string, shaderControls: any): any {
     const layer: Record<string, any> = {};
     layer.type = 'image';
     layer.tab = 'rendering';
@@ -62,7 +62,7 @@ type NeuroglancerControls = {
     blue_max: number;
 };
 
-function getShaderCode(
+export function getShaderCode(
     redMin: number,
     redMax: number,
     greenMin: number,
@@ -147,7 +147,7 @@ function getShaderCode(
     return [code, controls];
 }
 
-function getNeuroglancerConfig(
+export function getNeuroglancerConfig(
     srcUrl: string,
     imgName: string,
     xMm: number,
@@ -171,7 +171,7 @@ function getNeuroglancerConfig(
     return finalizeConfig(imgLayer, imgName, xMm, yMm, zMm, crossSectionScale, layout);
 }
 
-function urlFromConfig(url: string, config: Record<string, any>): string {
+export function urlFromConfig(url: string, config: Record<string, any>): string {
     return `${url}#!${encodeURIComponent(JSON.stringify(config))}`;
 }
 
@@ -206,5 +206,5 @@ export function getNeuroglancerUrl(
         layout
     );
 
-    return urlFromConfig(baseUrl, config);
+    return urlFromConfig(neuroglancerUrl, config);
 }

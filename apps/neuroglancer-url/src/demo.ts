@@ -16,6 +16,25 @@ interface NeuroglancerUrl {
     layout?: string;
 }
 
+const jsonFormat = {
+    input: {
+        srcUrl: '',
+        imgName: '',
+        xMm: 0,
+        yMm: 0,
+        zMm: 0,
+        redMin: 0,
+        redMax: 255,
+        greenMin: 0,
+        greenMax: 255,
+        blueMin: 0,
+        blueMax: 255,
+        crossSectionScale: 50.0,
+        layout: '4panel',
+    },
+    output: 'neuroglancer.com/urlstuff',
+};
+
 const defaultNeuroglancerUrl: NeuroglancerUrl = {
     srcUrl: '',
     imgName: '',
