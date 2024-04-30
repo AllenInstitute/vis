@@ -10,8 +10,8 @@ import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } f
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
 import { buildPathRenderer } from "./data-renderers/lineRenderer";
 
-import { buildVersaRenderer } from "../../omezarr-viewer/src/versa-renderer";
-import type { RenderCallback } from "./data-renderers/types";
+import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
+import type { ColorMapping, RenderCallback } from "./data-renderers/types";
 import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from "./data-sources/ome-zarr/planar-slice";
 import { createGridDataset, createSlideDataset, type DynamicGrid, type DynamicGridSlide, type ScatterPlotGridSlideConfig, type ScatterplotGridConfig } from "./data-sources/scatterplot/dynamic-grid";
 import type { OptionalTransform } from "./data-sources/types";
@@ -56,17 +56,10 @@ function startStroke(layer: AnnotationLayer, p: vec2) {
         points: [p]
     })
 }
-class Demo {
+export class Demo {
 
-    setSlice(what: number) {
-        for (const layer of this.layers) {
-            if (layer.type === 'volumeSlice') {
-                layer.data = { ...layer.data, planeParameter: what }
-                this.onCameraChanged();
-                break;
-            }
-        }
-    }
+
+
     camera: Camera;
     layers: Layer[]
     regl: REGL.Regl;
@@ -124,6 +117,28 @@ class Demo {
     }
     uiChange() {
         this.onCameraChanged();
+    }
+    setGamutChannel(channel: keyof ColorMapping, value: number[]) {
+        const layer = this.layers[this.selectedLayer];
+        if (layer && layer.type === 'volumeSlice') {
+            layer.data.gamut[channel].gamut.min = value[0];
+            layer.data.gamut[channel].gamut.max = value[1];
+            this.uiChange();
+        }
+    }
+    setSlice(param: number) {
+        const layer = this.layers[this.selectedLayer];
+        if (layer && layer.type === 'volumeSlice') {
+            layer.data = { ...layer.data, planeParameter: param }
+            this.uiChange();
+        }
+    }
+    setPlane(param: AxisAlignedPlane) {
+        const layer = this.layers[this.selectedLayer];
+        if (layer && layer.type === 'volumeSlice') {
+            layer.data.plane = param;
+            this.uiChange();
+        }
     }
     addDynamicGrid(config: ScatterplotGridConfig) {
         return createGridDataset(config).then((data) => {
@@ -455,6 +470,7 @@ class Demo {
             this.refreshRequested = window.requestAnimationFrame(() => {
                 this.refreshScreen();
                 this.refreshRequested = 0;
+                uiroot?.render(AppUi({ demo: this }))
             })
         }
     }
@@ -579,6 +595,8 @@ function demoTime(thing: HTMLCanvasElement) {
     theDemo = new Demo(thing, regl);
     window['demo'] = theDemo;
     setupExampleData();
+    uiroot.render(AppUi({ demo: theDemo }))
+
 }
 function setupExampleData() {
     // add a bunch of pre-selected layers to the window object for selection during demo time
@@ -591,6 +609,7 @@ function setupExampleData() {
     prep('slide32', oneSlide)
     prep('versa1', versa1)
     prep('reconstructed', reconstructed);
+    prep('tissuecyte', tissueCyteSlice)
 
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ'
@@ -623,6 +642,17 @@ const tissuecyte396: ZarrSliceGridConfig = {
     slices: 142,
     url: scottpoc
 }
+const tissueCyteSlice: ZarrSliceConfig = {
+    type: 'zarrSliceConfig',
+    gamut: {
+        R: { index: 0, gamut: { max: 600, min: 0 } },
+        G: { index: 1, gamut: { max: 500, min: 0 } },
+        B: { index: 2, gamut: { max: 400, min: 0 } }
+    },
+    plane: 'xy',
+    planeParameter: 0.5,
+    url: scottpoc
+}
 const versa1: ZarrSliceGridConfig = {
     url: "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/",
     type: 'ZarrSliceGridConfig',
@@ -647,6 +677,6 @@ const structureAnnotation: AnnotationGridConfig = {
         opacity: 0.7
     }
 }
-demoTime(document.getElementById('glCanvas') as HTMLCanvasElement)
 const uiroot = createRoot(document.getElementById('sidebar')!);
-uiroot.render(AppUi())
+
+demoTime(document.getElementById('glCanvas') as HTMLCanvasElement)
