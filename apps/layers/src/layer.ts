@@ -44,9 +44,9 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
     onChange(props: {
         readonly data: Readonly<Renderable>;
         readonly settings: Readonly<RenderSettings>
-    }) {
+    }, cancel:boolean=true) {
 
-        if (this.runningFrame) {
+        if (cancel && this.runningFrame) {
             this.runningFrame.cancelFrame();
             this.runningFrame = null;
             const { readFrom, writeTo } = this.buffers;
@@ -75,7 +75,10 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
                     case 'finished':
                     case 'finished_synchronously':
                         this.buffers = swapBuffers(this.buffers);
-                        this.regl.clear({ framebuffer: this.buffers.writeTo.texture, color: [0, 0, 0, 0], depth: 1 })
+                        // only erase... if we would have cancelled...
+                        if(cancel){
+                            this.regl.clear({ framebuffer: this.buffers.writeTo.texture, color: [0, 0, 0, 0], depth: 1 })
+                        }
                         this.runningFrame = null;
                         break;
                 }

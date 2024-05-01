@@ -67,6 +67,7 @@ export class Demo {
     canvas: HTMLCanvasElement;
     mouse: 'up' | 'down'
     mode: 'draw' | 'pan'
+    // drawSrc:'cur'|'prev';
     mousePos: vec2;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
@@ -86,6 +87,7 @@ export class Demo {
         this.mousePos = [0, 0]
         this.layers = [];
         this.mode = 'pan'
+        // this.drawSrc = 'cur';
         this.selectedLayer = 0;
         this.pathRenderer = buildPathRenderer(regl);
         this.plotRenderer = buildRenderer(regl);
@@ -460,7 +462,7 @@ export class Demo {
                         ...settings,
                         renderer: renderers[layer.type],
                     }
-                })
+                },this.mode==='pan') // dont cancel while drawing
             } else if (layer.type === 'volumeGrid') {
                 layer.render.onChange({
                     data: layer.data,
@@ -586,6 +588,13 @@ export class Demo {
                     this.uiChange();
                 }
             }
+            // if(e.key==='c'){
+            //     this.drawSrc='cur'
+            //     this.requestReRender();
+            // }else if(e.key==='p'){
+            //     this.drawSrc='prev'
+            //     this.requestReRender();
+            // }
         }
     }
 
@@ -607,7 +616,8 @@ export class Demo {
                 })
             }
             // annotations are often transparent and dont do well...
-            if (layer.render.renderingInProgress() && layer.type !== 'annotationGrid') {
+            if (
+                layer.render.renderingInProgress() && layer.type !== 'annotationGrid') {
                 // draw our incoming frame overtop the old!
                 const cur = layer.render.getRenderResults('cur')
                 if (cur.bounds) {
