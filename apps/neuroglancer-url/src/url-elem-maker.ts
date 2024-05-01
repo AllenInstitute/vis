@@ -3,13 +3,6 @@ import { getImageSeriesGridUrl } from './image-series';
 import type { ImageSeriesData, RegularData } from './types';
 import { getNeuroglancerUrl } from './utils';
 
-function addValidP(parent: HTMLElement, valid: boolean) {
-    const p = document.createElement('p');
-    p.innerText = valid ? 'true' : 'false';
-    p.style.color = valid ? 'green' : 'red';
-    parent.appendChild(p);
-}
-
 export function makeImageSeriesElems(imageSeries: ImageSeriesData[], parent: HTMLElement) {
     imageSeries.forEach((item, idx) => {
         const configs = item.params.src_config_list;
@@ -22,7 +15,6 @@ export function makeImageSeriesElems(imageSeries: ImageSeriesData[], parent: HTM
         elem.style.textOverflow = 'ellipsis';
         parent.appendChild(elem);
         console.log(url.length, imageSeries[idx].url.length);
-        addValidP(parent, url.valueOf() === imageSeries[idx].url.valueOf());
     });
 }
 
@@ -68,7 +60,6 @@ export function makeNgUrlElems(ngUrls: RegularData[], parent: HTMLElement) {
         elem.style.textOverflow = 'ellipsis';
         parent.appendChild(elem);
         console.log(url.length, ngUrls[idx].url.length);
-        addValidP(parent, url.valueOf() === ngUrls[idx].url.valueOf());
     });
 }
 
@@ -116,7 +107,6 @@ export function makeContactSheetElems(contactSheets: RegularData[], parent: HTML
             elem.style.textOverflow = 'ellipsis';
             parent.appendChild(elem);
             console.log(url.length, contactSheets[idx].url.length);
-            addValidP(parent, url.length === contactSheets[idx].url.length);
         }
     });
 }

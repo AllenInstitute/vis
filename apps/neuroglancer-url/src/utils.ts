@@ -1,5 +1,5 @@
 export function finalizeConfig(
-    imgLayer: any,
+    imgLayer: Record<string, any>,
     imgName: string,
     xMm: number,
     yMm: number,
