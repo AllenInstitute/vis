@@ -213,6 +213,20 @@ export class Demo {
                 this.regl, this.imgRenderer, renderAnnotationLayer, [w, h]
             )
         })
+        this.uiChange();
+    }
+    addEmptyAnnotation(){
+        const [w, h] = this.camera.screen
+        this.layers.push({
+            type: 'annotationLayer',
+            data:{
+                paths:[]
+            },
+            render: new ReglLayer2D<SimpleAnnotation, AnnotationRenderSettings>(
+                this.regl, this.imgRenderer, renderAnnotationLayer, [w, h]
+            )
+        })
+        this.uiChange();
     }
     private addScatterplot(config: ScatterPlotGridSlideConfig) {
         return createSlideDataset(config).then((data) => {
@@ -506,7 +520,8 @@ export class Demo {
     }
     private toDataspace(px: vec2) {
         const { view } = this.camera;
-        const p = Vec2.div(px, [this.canvas.clientWidth, this.canvas.clientHeight]);
+        const o:vec2 = [px[0],this.canvas.clientHeight-px[1]];
+        const p = Vec2.div(o, [this.canvas.clientWidth, this.canvas.clientHeight]);
         const c = Vec2.mul(p, Box2D.size(view));
         return Vec2.add(view.minCorner, c);
     }
@@ -554,6 +569,24 @@ export class Demo {
         canvas.onwheel = (e: WheelEvent) => {
             this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
         };
+        window.onkeyup=(e:KeyboardEvent)=>{
+            const layer = this.layers[this.selectedLayer];
+            if(e.key===' '){
+                if(layer && layer.type==='annotationLayer'){
+                    // toggle the mode
+                    this.mode = this.mode === 'draw' ? 'pan':'draw';
+                    this.uiChange();
+                }
+            }if(e.key==='d'){
+                // start a new drawing!
+                if(this.layers.length===0 || (layer && layer.type!=='annotationLayer')){
+                    this.addEmptyAnnotation();
+                    this.selectLayer(this.layers.length-1);
+                    this.mode='draw';
+                    this.uiChange();
+                }
+            }
+        }
     }
 
     refreshScreen() {

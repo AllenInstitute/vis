@@ -61,4 +61,7 @@ export type SlideViewAnnotations = {
     data: AnnotationGrid,
     render: ReglLayer2D<AnnotationGrid, AnnotationGridRenderSettings<CacheEntry>>
 }
-export type Layer = ScatterPlotLayer | ScatterPlotGridLayer | VolumetricSliceLayer | AnnotationLayer | VolumetricGridLayer | SlideViewAnnotations
+export type Layer = 
+ScatterPlotLayer | ScatterPlotGridLayer 
+| VolumetricSliceLayer | VolumetricGridLayer 
+| SlideViewAnnotations | AnnotationLayer
