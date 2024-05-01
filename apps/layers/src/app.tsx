@@ -9,6 +9,9 @@ import { Button } from '@czi-sds/components';
 export function AppUi(props: { demo: Demo }) {
   const {demo}=props;
   return (<div>
+     <Button onClick={()=>{
+      demo.requestSnapshot(3000)
+    }}>{'📸'}</Button>
     <label>{`Layer ${demo.selectedLayer}`}</label>
     <Button onClick={()=>{
       demo.selectLayer(demo.selectedLayer-1)
