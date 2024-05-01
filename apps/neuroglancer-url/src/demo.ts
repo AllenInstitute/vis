@@ -1,4 +1,8 @@
+import type { ImageSeriesData, NGData, RegularData } from './types';
 import { getNeuroglancerUrl } from './utils';
+import { data } from './data';
+import { getContactSheetUrl } from './contact-sheet';
+import { makeContactSheetElems, makeImageSeriesElems, makeNgUrlElems } from './url-elem-maker';
 
 interface NeuroglancerUrl {
     srcUrl: string;
@@ -51,11 +55,32 @@ const defaultNeuroglancerUrl: NeuroglancerUrl = {
     layout: '4panel',
 };
 function demoTime() {
+    let imageSeries: ImageSeriesData[] = [];
+    let contactSheets: RegularData[] = [];
+    let ngURLs: RegularData[] = [];
+
+    data.forEach((item) => {
+        switch (item.function) {
+            case 'get_image_series_grid_url':
+                imageSeries.push(item as ImageSeriesData);
+                break;
+            case 'get_contact_sheet_url':
+                contactSheets.push(item as RegularData);
+                break;
+            case 'get_neuroglancer_url':
+                ngURLs.push(item as RegularData);
+                break;
+        }
+    });
+
     const argEl = document.getElementById('urlArgEl');
     const btnEl = document.getElementById('urlBtn');
     const outUrl = document.getElementById('goodUrl');
     const copyBtn = document.getElementById('copyBtn');
-    if (argEl && btnEl && outUrl && copyBtn) {
+    const ngUrlParent = document.getElementById('ngUrls');
+    const contactParent = document.getElementById('contacts');
+    const imageParent = document.getElementById('imageSeries');
+    if (argEl && btnEl && outUrl && copyBtn && ngUrlParent && contactParent && imageParent) {
         const fields = document.createElement('ol');
         const fieldItems = Object.entries(defaultNeuroglancerUrl).map(([name, val]) => {
             const listEl = document.createElement('li');
@@ -109,6 +134,10 @@ function demoTime() {
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(outUrl.innerText);
         });
+
+        makeNgUrlElems(ngURLs, ngUrlParent);
+        makeContactSheetElems(contactSheets, contactParent);
+        makeImageSeriesElems(imageSeries, imageParent);
     }
 }
 

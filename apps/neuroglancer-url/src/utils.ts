@@ -40,7 +40,12 @@ export function getSourceConfig(srcUrl: string, xMm: number, yMm: number, zMm: n
     return source;
 }
 
-export function getImageLayer(layerName: string, source: any, shaderCode: string, shaderControls: any): any {
+export function getImageLayer(
+    layerName: string,
+    source: any,
+    shaderCode: string,
+    shaderControls: any
+): Record<string, any> {
     const layer: Record<string, any> = {};
     layer.type = 'image';
     layer.tab = 'rendering';

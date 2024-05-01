@@ -48,7 +48,7 @@ function getContactSheetConfig(
     blueMin: number,
     blueMax: number,
     crossSectionScale: number = 0.5
-): any {
+): Record<string, any> {
     const [shaderCode, shaderControls] = getShaderCode(redMin, redMax, greenMin, greenMax, blueMin, blueMax);
 
     const source = createSourceGrid(srcUrl, omeZarrShape, xMm, yMm, zMm);
@@ -71,18 +71,18 @@ function getContactSheetConfig(
 }
 
 function createSourceGrid(srcUrl: string, omeZarrShape: number[], xMm: number, yMm: number, zMm: number): any[] {
-    const nz = omeZarrShape[-3];
-    const ny = omeZarrShape[-2];
-    const nx = omeZarrShape[-1];
+    const nz = omeZarrShape[omeZarrShape.length - 3];
+    const ny = omeZarrShape[omeZarrShape.length - 2];
+    const nx = omeZarrShape[omeZarrShape.length - 1];
     const sqrtNz = Math.ceil(Math.sqrt(nz));
-    const izToDxDy: Record<number, [number, number]> = {};
+    const izToDxDy: { [key: number]: [number, number] } = {};
     let dx = 0;
     let dy = 0;
     for (let iz = 0; iz < nz; iz++) {
         izToDxDy[iz] = [dx, dy];
-        dx += 1;
+        dx++;
         if (dx >= sqrtNz) {
-            dy += 1;
+            dy++;
             dx = 0;
         }
     }
@@ -96,7 +96,7 @@ function createSourceGrid(srcUrl: string, omeZarrShape: number[], xMm: number, y
 
     const srcList = [];
     for (let iz = 0; iz < nz; iz++) {
-        const src: any = { url: srcUrl };
+        const src = { url: srcUrl };
         const [dx, dy] = izToDxDy[iz];
         const matrix = [
             [1, 0, 0, 0, 0],
@@ -104,13 +104,17 @@ function createSourceGrid(srcUrl: string, omeZarrShape: number[], xMm: number, y
             [0, 0, 1, 0, dy * ny],
             [0, 0, 0, 1, dx * nx],
         ];
+        // @ts-expect-error
         src['transform'] = {
             outputDimensions: dimensions,
             matrix: matrix,
         };
+
+        // @ts-expect-error
         src['subsources'] = {
             default: true,
         };
+        // @ts-expect-error
         src['enableDefaultSubsources'] = false;
 
         srcList.push(src);
