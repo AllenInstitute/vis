@@ -97,7 +97,7 @@ export function makeContactSheetElems(contactSheets: RegularData[], parent: HTML
                 green_max,
                 blue_min,
                 blue_max,
-                cross_section_scale
+                cross_section_scale ?? 0.5
             );
 
             elem.innerText = url;

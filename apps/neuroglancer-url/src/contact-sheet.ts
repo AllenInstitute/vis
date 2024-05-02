@@ -31,6 +31,7 @@ export function getContactSheetUrl(
         crossSectionScale
     );
 
+    console.log(config);
     return urlFromConfig(neuroglancerUrl, config);
 }
 
@@ -60,10 +61,10 @@ function getContactSheetConfig(
     config['layout'] = 'xy';
     config['velocity'] = { z: { velocity: -10, atBoundary: 'reverse' } };
 
-    const nz = omeZarrShape[-3];
+    const nz = omeZarrShape[omeZarrShape.length - 3];
     const sqrtNz = Math.round(Math.sqrt(nz));
-    const ny = omeZarrShape[-2];
-    const nx = omeZarrShape[-1];
+    const ny = omeZarrShape[omeZarrShape.length - 2];
+    const nx = omeZarrShape[omeZarrShape.length - 1];
     config['position'] = [(nx * sqrtNz) / 2, (ny * sqrtNz) / 2, -(nz - 1)];
     config['crossSectionScale'] = crossSectionScale;
 

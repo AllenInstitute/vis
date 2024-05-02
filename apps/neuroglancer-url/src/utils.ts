@@ -177,7 +177,7 @@ export function getNeuroglancerConfig(
 }
 
 export function urlFromConfig(url: string, config: Record<string, any>): string {
-    return `${url}#!${encodeURIComponent(JSON.stringify(config))}`;
+    return encodeURI(`${url}#!${JSON.stringify(config)}`);
 }
 
 export function getNeuroglancerUrl(
