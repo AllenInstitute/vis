@@ -84,19 +84,13 @@ export function getShaderCode(
 
     let code = '';
     code += `
-    #uicontrol float red_min slider(min=${redMinStr}, max=${2.0 * redMaxStr})`;
-    code += `
-    #uicontrol float red_max slider(min=${redMinStr}, max=${2.0 * redMaxStr})`;
+    #uicontrol invlerp red_scale(range=[${redMinStr},${2 * redMaxStr}], channel=0)`;
 
     code += `
-    #uicontrol float green_min slider(min=${greenMinStr}, max=${2.0 * greenMaxStr})`;
-    code += `
-    #uicontrol float green_max slider(min=${greenMinStr}, max=${2.0 * greenMaxStr})`;
+    #uicontrol invlerp green_scale(range=[${greenMinStr}, ${2 * greenMaxStr}], channel=1)`;
 
     code += `
-    #uicontrol float blue_min slider(min=${blueMinStr}, max=${2.0 * blueMaxStr})`;
-    code += `
-    #uicontrol float blue_max slider(min=${blueMinStr}, max=${2.0 * blueMaxStr})`;
+    #uicontrol invlerp blue_scale(range=[${blueMinStr}, ${2 * blueMaxStr}], channel=2)`;
 
     code += `
     #uicontrol bool red_visible checkbox(default=true);
@@ -107,32 +101,32 @@ export function getShaderCode(
     code += `
     void main() {
         float r;
-        float r_scale=red_max-red_min;
+        float r_scale=red_scale();
         if(!red_visible || (r_scale<=0.0) ){
             r=0.0;
          }
          else{
-              r=(float(getDataValue(0).value)-red_min)/r_scale;
+              r=r_scale;
          }
          if(r>1.0)r=1.0;
 
          float g;
-         float g_scale=green_max-green_min;
+         float g_scale=green_scale();
          if(!green_visible || (g_scale<=0.0)){
              g=0.0;
          }
          else{
-              g=(float(getDataValue(1).value)-green_min)/g_scale;
+              g=g_scale;
          }
          if(g>1.0)g=1.0;
 
          float b;
-         float b_scale=blue_max-blue_min;
+         float b_scale=blue_scale();
          if(!blue_visible || (b_scale<=0.0)){
              b=0.0;
          }
          else{
-             b=(float(getDataValue(2).value)-blue_min)/b_scale;
+             b=b_scale;
          }
          if(b>1.0)b=1.0;
 

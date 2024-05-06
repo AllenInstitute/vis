@@ -1,6 +1,6 @@
 ## Neuroglancer URL Generator
 
-This is a demo for generating Neuroglancer URLs like a python POC [here](https://github.com/AllenInstitute/ome_zarr_converter/blob/main/src/ome_zarr_converter/neuroglancer/utils.py).
+This is a demo for generating Neuroglancer URLs like the python POC [here](https://github.com/AllenInstitute/ome_zarr_converter/blob/main/src/ome_zarr_converter/neuroglancer/utils.py).
 
 ### How to build / run
 1. `pnpm build` from the root directory of this project
