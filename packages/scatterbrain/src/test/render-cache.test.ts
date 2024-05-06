@@ -68,6 +68,17 @@ describe('async cache', () => {
             id
         } as const;
     }
+    const fetchTheSameThingTwice = (id: number, color: vec3, _pos: vec3) => {
+        const c = mockPromises.promiseMe({ pretend: color })
+        return {
+            fetchers: {
+                color: () => c,
+                position: () => c,
+            },
+            spies: [c, c],
+            id
+        } as const;
+    }
     const resolveFakePromises = async (lies: readonly Promise<unknown>[]): Promise<void> => {
         lies.forEach((p) => { mockPromises.mockResolve(p) })
         // because the promises are mega hackified, even though we call resolve, the event system hasn't had a chance to catch up
@@ -104,6 +115,7 @@ describe('async cache', () => {
             expect(cache.getNumPendingTasks()).toBe(0)
             expect(rendered.length).toBe(1);
         })
+
         it('behaves correctly when a fetch fails', async () => {
             const { fetchers, id, spies } = fetchFakeItem(1, [255, 0, 0], [1, 2, 3])
             const toCacheKey = partial(cacheKey, { id });
@@ -254,7 +266,7 @@ describe('async cache', () => {
             expect(cache.isCached(cacheKey({ id: 1 }, 'color'))).toBeFalsy()
             expect(cache.isCached(cacheKey({ id: 1 }, 'position'))).toBeFalsy()
         })
-        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task: ', () => {
+        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task: ', async () => {
             // a nice edge-case.
             // real-world version: imagine a 1-channel ome-zarr image, in which the user wants to render with a 3-channel (RGB) shader
             // they want a grayscale version, so they want to map that singular data-channel to each color, like so:
@@ -264,7 +276,26 @@ describe('async cache', () => {
             // }
             // prior to this fix, the cache assumed that any incoming data would map to exactly one (per-task) semantic output - 
             // the result would be that the task would resolve itself early, with several keys being undefined
-            // TODO
+            const clr: vec3 = [255, 0, 0]
+            const { fetchers, id, spies } = fetchTheSameThingTwice(1, clr, [1, 2, 3])
+            // in this case, we want to test what happens when one cache key is associated with multiple semantic keys:
+            const toCacheKey = () => `http://blah.channel0`
+            const result = cache.cacheAndUse(fetchers, render, toCacheKey)
+
+            expect(result).toBeDefined();
+            expect(cache.getNumPendingTasks()).toBe(1)
+            expect(rendered.length).toBe(0);
+            // the point of this test is that one promise ends up fullfilling multiple "semantic" entries
+            // thus, we need only resolve one fake promise for the whole thing to be ready (both elements of 'spies' are the same promise)
+            await resolveFakePromises([spies[0]]);
+
+            expect(cache.getNumPendingTasks()).toBe(0)
+            expect(rendered.length).toBe(1);
+            // expect that all the parts of the response did show up:
+            const renderedData = rendered[0];
+            // each entry (position and color) are the same value - which we put in at the beginning of the test (clr)
+            expect(renderedData.data.color.pretend).toEqual(clr)
+            expect(renderedData.data.position.pretend).toEqual(clr)
         })
     })
 })
