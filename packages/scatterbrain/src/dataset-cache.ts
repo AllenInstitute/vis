@@ -18,8 +18,10 @@ type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends Recor
 // return true if the request is completely satisfied, false if its still awaiting more entries
 function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>(req: MutablePendingRequest<SemanticKey, CacheKey, D>, key: SemanticKey, cacheKey: CacheKey, item: D): boolean {
     if (req.awaiting.has(cacheKey)) {
-        req.awaiting.get(cacheKey)?.delete(key);
-        if ((req.awaiting.get(cacheKey)?.size ?? 0) < 1) {
+        const remaningAwaited = req.awaiting.get(cacheKey);
+        // we just fullfilled one - remove it from awaiting
+        remaningAwaited?.delete(key);
+        if ((remaningAwaited?.size ?? 0) < 1) {
             req.awaiting.delete(cacheKey);
         }
         req.blocking.add(cacheKey);
