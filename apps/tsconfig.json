@@ -2,7 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
-    "moduleResolution": "Bundler",
+    "moduleResolution": "Node",
     "module": "ES2022",
     "target": "ES2022",
     "lib": [
