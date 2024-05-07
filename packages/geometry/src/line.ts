@@ -6,6 +6,9 @@ export type line = { start: vec2; end: vec2 };
  * Given two line segments, determine if they intersect. If they do, we return a 1, otherwise we return a 0. This
  * is so we can count up how many hits there are across a number of lines to determine if a point is inside
  * a polygon.
+ * 
+ * WARNING: For our purposes, we don't consider colinear and coincident line segments to intersect. This is technically
+ * incorrect, but is good enough for our usage. If/when this assumption changes, feel free to update the math here.
  *
  * This is accomplished by using determinants to compare the two lines in an efficient manner. We don't need
  * the actual point of intersection, just whether or not the lines intersect, so we do not do the final step in the
@@ -32,6 +35,12 @@ export function lineSegmentsIntersect(firstLine: line, secondLine: line): 1 | 0 
     // now use vec2.sub to group the points into vectors:
     // this is the common denominator:
     const BAxDC = Vec2.det(AB, CD);
+
+    if (BAxDC === 0) {
+        // if the determinant is 0, the lines are parallel or coincidental
+        return 0;
+    }
+
     const t = Vec2.det(AC, CD) / BAxDC;
     const u = Vec2.det(AC, AB) / BAxDC;
 
