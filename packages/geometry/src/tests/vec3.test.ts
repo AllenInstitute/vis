@@ -1,11 +1,6 @@
 import { Vec3 } from '../vec3';
 import { describe, expect, test } from 'vitest'
 describe('Vec3', () => {
-    test('new', () => {
-        const result = Vec3.new(2, 3, 4);
-        expect(result).toStrictEqual([2, 3, 4]);
-    });
-
     test('add', () => {
         const result = Vec3.add([2, 3, 4], [4, 5, 6]);
         expect(result).toStrictEqual([6, 8, 10]);

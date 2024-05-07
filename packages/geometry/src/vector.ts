@@ -82,7 +82,6 @@ function anyCmp<T extends VectorConstraint>(op: predOp<number>): predOp<T> {
 }
 
 export type VectorLib<T> = Readonly<{
-    new: (...a: number[]) => T;
     add: binOp<T>;
     sub: binOp<T>;
     mul: binOp<T>;
@@ -112,7 +111,6 @@ export type VectorLib<T> = Readonly<{
 // note that this function will generate a library suitable for any length of vector -
 // just pass its type (eg. readonly [number,number,number]) as the generic V
 export function VectorLibFactory<V extends VectorConstraint>(): VectorLib<V> {
-    const newVec = (...a: number[]) => [...a] as unknown as V;
     const add = componentOpFn<V>((a, b) => a + b);
     const sub = componentOpFn<V>((a, b) => a - b);
     const mul = componentOpFn<V>((a, b) => a * b);
@@ -139,7 +137,6 @@ export function VectorLibFactory<V extends VectorConstraint>(): VectorLib<V> {
     // note that passing invalid indexes will result in values of undefined in affected components of the result
     const swizzle = (v: V, index: V) => index.map((i) => v[i]) as unknown as V;
     return {
-        new: newVec,
         add,
         sub,
         mul,
