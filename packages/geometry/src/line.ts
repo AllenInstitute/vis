@@ -9,6 +9,9 @@ export type line = { start: vec2; end: vec2 };
  * 
  * WARNING: For our purposes, we don't consider colinear and coincident line segments to intersect. This is technically
  * incorrect, but is good enough for our usage. If/when this assumption changes, feel free to update the math here.
+ * 
+ * WARNING: For our purposes, we don't consider a line segment that ends on the other line segment as intersecting so
+ * that we can use this function in a point-in-polygon test.
  *
  * This is accomplished by using determinants to compare the two lines in an efficient manner. We don't need
  * the actual point of intersection, just whether or not the lines intersect, so we do not do the final step in the
@@ -45,5 +48,6 @@ export function lineSegmentsIntersect(firstLine: line, secondLine: line): 1 | 0 
     const u = Vec2.det(AC, AB) / BAxDC;
 
     // Once we have t and u, we know that the lines intersect if t and u are both between 0 and 1
-    return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? 1 : 0;
+    // NOTE: This is modified to not include the upper bounds, for use in a point-in-polygon test
+    return t >= 0 && t < 1 && u >= 0 && u < 1 ? 1 : 0;
 }
