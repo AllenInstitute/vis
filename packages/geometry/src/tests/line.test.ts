@@ -14,7 +14,13 @@ describe('line', () => {
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
-    test('lineSegmentsIntersect finds no intersection for coincident line segments (start of one is at end of other)', () => {
+    test('lineSegmentsIntersect finds intersection for segment that starts on the end of another one', () => {
+        const firstLine = { start: [0, 0] as const, end: [2, 2] as const };
+        const secondLine = { start: [2, 2] as const, end: [2, 4] as const };
+        expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(1);
+    });
+
+    test('lineSegmentsIntersect finds no intersection for coincident line segments when start of one is at end of other', () => {
         const firstLine = { start: [0, 0] as const, end: [2, 2] as const };
         const secondLine = { start: [2, 2] as const, end: [3, 3] as const };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
