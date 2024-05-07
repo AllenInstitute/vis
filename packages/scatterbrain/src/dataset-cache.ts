@@ -195,7 +195,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
             } else {
                 // we could simply "return data"
                 // however getCachedUnsafe updates its "last-requested timestamp"
-                return this.getCachedUNSAFE(cacheKey)
+                return this.getCachedUNSAFE(cacheKey)!
             }
         } else {
             promise = getter();
