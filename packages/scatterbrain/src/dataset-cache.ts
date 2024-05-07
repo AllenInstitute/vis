@@ -10,7 +10,7 @@ type useFn<K extends RecordKey, D> = (items: Record<K, D>) => void;
 type cancelFn = () => void;
 type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> = {
     runner: useFn<SemanticKey, D>;
-    awaiting: Map<CacheKey,Set<SemanticKey>>;
+    awaiting: Map<CacheKey, Set<SemanticKey>>;
     blocking: Set<CacheKey>; // these are the cache keys associated with the items in 'ready' - we keep them around to make it easy to make sure we dont delete something we assume we have
     // while an outstanding task is waiting on more data
     ready: Record<SemanticKey, D>;
@@ -19,7 +19,7 @@ type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends Recor
 function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>(req: MutablePendingRequest<SemanticKey, CacheKey, D>, key: SemanticKey, cacheKey: CacheKey, item: D): boolean {
     if (req.awaiting.has(cacheKey)) {
         req.awaiting.get(cacheKey)?.delete(key);
-        if((req.awaiting.get(cacheKey)?.size??0) < 1){
+        if ((req.awaiting.get(cacheKey)?.size ?? 0) < 1) {
             req.awaiting.delete(cacheKey);
         }
         req.blocking.add(cacheKey);
@@ -102,7 +102,6 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
                 }
             });
             const priority = candidates.sort((a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp);
-
             for (const evictMe of priority) {
                 used -= this.size(evictMe.data);
                 this.destroyer(evictMe.data);
@@ -184,33 +183,44 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         removeUs.forEach(finished => this.pendingRequests.delete(finished));
     }
     private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
-        if (this.isCached(cacheKey)) {
-            // note also the (!) operator - we just checked that it exists
-            return this.getCachedUNSAFE(cacheKey)! // note: mutates the entry to indicate that we requested it - this helps with prioritization during eviction
+        let promise: Promise<D>
+        let entry = this.entries.get(cacheKey);
+        const data = entry?.data;
+        // we either return early (data is cached)
+        // or we initialize promise (either getter() or a pre-existing request for the same cachekey)
+        // if we dont return early, we hook up a call to dataArrived to promise
+        if (data) {
+            if (data instanceof Promise) {
+                promise = data;
+            } else {
+                // we could simply "return data"
+                // however getCachedUnsafe updates its "last-requested timestamp"
+                return this.getCachedUNSAFE(cacheKey)
+            }
         } else {
-            const promiseData = getter();
+            promise = getter();
             this.entries.set(cacheKey, {
-                data: promiseData,
+                data: promise,
                 lastRequestedTimestamp: performance.now(),
             })
-            return promiseData.then((data) => {
-                this.dataArrived(semanticKey, cacheKey, data);
-            })
         }
+        return promise.then((data) => {
+            this.dataArrived(semanticKey, cacheKey, data);
+        })
     }
     cacheAndUse(workingSet: Record<SemanticKey, () => Promise<D>>, use: (items: Record<SemanticKey, D>) => void, toCacheKey: (semanticKey: SemanticKey) => CacheKey, taskFinished?: () => void): cancelFn | undefined {
         const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[]
         const req: MutablePendingRequest<SemanticKey, CacheKey, D> = {
-            awaiting: new Map<CacheKey,Set<SemanticKey>>(),
+            awaiting: new Map<CacheKey, Set<SemanticKey>>(),
             ready: {} as Record<SemanticKey, D>,
             runner: use,
             blocking: new Set<CacheKey>()
         }
-        keys.forEach((k)=>{
-            if(req.awaiting.has(toCacheKey(k))){
+        keys.forEach((k) => {
+            if (req.awaiting.has(toCacheKey(k))) {
                 req.awaiting.get(toCacheKey(k))?.add(k);
-            }else{
-                req.awaiting.set(toCacheKey(k),new Set<SemanticKey>([k]))
+            } else {
+                req.awaiting.set(toCacheKey(k), new Set<SemanticKey>([k]))
             }
         })
         for (const semanticKey of keys) {

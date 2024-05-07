@@ -70,6 +70,18 @@ describe('async cache', () => {
     }
     const fetchTheSameThingTwice = (id: number, color: vec3, _pos: vec3) => {
         const c = mockPromises.promiseMe({ pretend: color })
+        const c2 = mockPromises.promiseMe({ pretend: [...color] as vec3 })
+        return {
+            fetchers: {
+                color: () => c,
+                position: () => c2,
+            },
+            spies: [c, c2],
+            id
+        } as const;
+    }
+    const fetchTheSameThingTwiceOnePromise = (id: number, color: vec3, _pos: vec3) => {
+        const c = mockPromises.promiseMe({ pretend: color })
         return {
             fetchers: {
                 color: () => c,
@@ -278,6 +290,29 @@ describe('async cache', () => {
             // the result would be that the task would resolve itself early, with several keys being undefined
             const clr: vec3 = [255, 0, 0]
             const { fetchers, id, spies } = fetchTheSameThingTwice(1, clr, [1, 2, 3])
+            // in this case, we want to test what happens when one cache key is associated with multiple semantic keys:
+            const toCacheKey = () => `http://blah.channel0`
+            const result = cache.cacheAndUse(fetchers, render, toCacheKey)
+
+            expect(result).toBeDefined();
+            expect(cache.getNumPendingTasks()).toBe(1)
+            expect(rendered.length).toBe(0);
+            // the point of this test is that one promise ends up fullfilling multiple "semantic" entries
+            // thus, we need only resolve one fake promise for the whole thing to be ready (both elements of 'spies' are the same promise)
+            await resolveFakePromises([spies[0]]);
+
+            expect(cache.getNumPendingTasks()).toBe(0)
+            expect(rendered.length).toBe(1);
+            // expect that all the parts of the response did show up:
+            const renderedData = rendered[0];
+            // each entry (position and color) are the same value - which we put in at the beginning of the test (clr)
+            expect(renderedData.data.color.pretend).toEqual(clr)
+            expect(renderedData.data.position.pretend).toEqual(clr)
+        })
+        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task (and also the promises beneath are the same promise): ', async () => {
+            // same as above, but internally returns the same promise twice...
+            const clr: vec3 = [255, 0, 0]
+            const { fetchers, id, spies } = fetchTheSameThingTwiceOnePromise(1, clr, [1, 2, 3])
             // in this case, we want to test what happens when one cache key is associated with multiple semantic keys:
             const toCacheKey = () => `http://blah.channel0`
             const result = cache.cacheAndUse(fetchers, render, toCacheKey)
