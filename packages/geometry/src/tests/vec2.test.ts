@@ -1,6 +1,11 @@
 import { Vec2 } from '../vec2';
 import { describe, expect, test } from 'vitest'
 describe('vec2', () => {
+    test('new', () => {
+        const result = Vec2.new(2, 3);
+        expect(result).toStrictEqual([2, 3]);
+    });
+
     test('add', () => {
         const result = Vec2.add([2, 3], [4, 5]);
         expect(result).toStrictEqual([6, 8]);
@@ -127,5 +132,9 @@ describe('vec2', () => {
 
         const nonVec2 = Vec2.isVec2([1, 2, 3]);
         expect(nonVec2).toBeFalsy();
+    });
+    test('det', () => {
+        const result = Vec2.det([2, 3], [4, 5]);
+        expect(result).toBe(-2);
     });
 });
