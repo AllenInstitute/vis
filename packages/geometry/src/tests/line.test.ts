@@ -16,7 +16,7 @@ describe('line', () => {
 
     test('lineSegmentsIntersect finds no intersection for coincident line segments (start of one is at end of other)', () => {
         const firstLine = { start: [0, 0] as const, end: [2, 2] as const };
-        const secondLine = { start: [1, 1] as const, end: [3, 3] as const };
+        const secondLine = { start: [2, 2] as const, end: [3, 3] as const };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
