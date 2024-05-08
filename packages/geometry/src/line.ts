@@ -10,8 +10,9 @@ export type line = { start: vec2; end: vec2 };
  * WARNING: For our purposes, we don't consider colinear and coincident line segments to intersect. This is technically
  * incorrect, but is good enough for our usage. If/when this assumption changes, feel free to update the math here.
  * 
- * WARNING: For our purposes, we don't consider a line segment that ends on the other line segment as intersecting so
- * that we can use this function in a point-in-polygon test.
+ * WARNING: Our line segments are interpreted to be half-closed (the start point intersects but not the end point). This is
+ * a convenient (and common) practices when we make larger structures out of conjoined line-segments. There is a unit test
+ * proving that it is half-closed, so don't be surprised if you change that and tests start failing!
  *
  * This is accomplished by using determinants to compare the two lines in an efficient manner. We don't need
  * the actual point of intersection, just whether or not the lines intersect, so we do not do the final step in the
@@ -40,7 +41,7 @@ export function lineSegmentsIntersect(firstLine: line, secondLine: line): 1 | 0 
     const BAxDC = Vec2.det(AB, CD);
 
     if (BAxDC === 0) {
-        // if the determinant is 0, the lines are parallel or coincidental
+        // if the determinant is 0, the lines are parallel
         return 0;
     }
 
@@ -48,6 +49,10 @@ export function lineSegmentsIntersect(firstLine: line, secondLine: line): 1 | 0 
     const u = Vec2.det(AC, AB) / BAxDC;
 
     // Once we have t and u, we know that the lines intersect if t and u are both between 0 and 1
-    // NOTE: This is modified to not include the upper bounds, for use in a point-in-polygon test
+    // NOTE: This is a slight modification from the Wikipedia algorithm linked in the JSDoc.
+    // t and u are each checked against the half closed interval [0,1). Each represents the
+    // (bezier) parameter of the intersection point in terms of the other - that is to say where
+    // on the first line does the second line (if it were infinite) hit, and where on the second
+    // line does the first line hit (if it were infinite).
     return t >= 0 && t < 1 && u >= 0 && u < 1 ? 1 : 0;
 }
