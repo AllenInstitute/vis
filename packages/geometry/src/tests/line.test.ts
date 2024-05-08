@@ -14,7 +14,7 @@ describe('line', () => {
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
-    test('lineSegmentsIntersect finds intersection for segment that starts on the end of another one', () => {
+    test('lineSegmentsIntersect finds no intersection for segment that starts on the end of another one', () => {
         const firstLine: line = { start: [0, 0] , end: [2, 2]  };
         const secondLine: line = { start: [2, 2] , end: [2, 4]  };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
