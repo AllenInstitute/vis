@@ -9,14 +9,12 @@ import { renderDynamicGrid, renderSlide, type RenderSettings as SlideRenderSetti
 import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
 import { buildPathRenderer } from "./data-renderers/lineRenderer";
-
 import { buildVersaRenderer, type AxisAlignedPlane } from "../../omezarr-viewer/src/versa-renderer";
 import type { ColorMapping, RenderCallback } from "./data-renderers/types";
 import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from "./data-sources/ome-zarr/planar-slice";
 import { createGridDataset, createSlideDataset, type DynamicGrid, type DynamicGridSlide, type ScatterPlotGridSlideConfig, type ScatterplotGridConfig } from "./data-sources/scatterplot/dynamic-grid";
 import type { OptionalTransform } from "./data-sources/types";
 import type { CacheEntry, AnnotationLayer, Layer } from "./types";
-import ReactDOM from 'react-dom'
 import { AppUi } from "./app";
 import { createRoot } from "react-dom/client";
 import { createZarrSliceGrid, type AxisAlignedZarrSliceGrid, type ZarrSliceGridConfig } from "./data-sources/ome-zarr/slice-grid";
@@ -29,7 +27,12 @@ import { sizeInUnits } from "Common/loaders/ome-zarr/zarr-data";
 const KB = 1000;
 const MB = 1000 * KB;
 
-
+declare global {
+    interface Window {
+        examples: Record<string, any>;
+        demo: Demo;
+    }
+}
 
 function destroyer(item: CacheEntry) {
     if (item.type === 'texture2D') {
@@ -120,16 +123,16 @@ export class Demo {
     uiChange() {
         this.onCameraChanged();
     }
-    setOpacity(what:'fill'|'stroke', value:number){
+    setOpacity(what: 'fill' | 'stroke', value: number) {
         const layer = this.layers[this.selectedLayer];
-        if(layer && layer.type==='annotationGrid'){
-            layer.data[what].opacity=value;
+        if (layer && layer.type === 'annotationGrid') {
+            layer.data[what].opacity = value;
             this.uiChange();
         }
     }
     setGamutChannel(channel: keyof ColorMapping, value: number[]) {
         const layer = this.layers[this.selectedLayer];
-        if (layer && (layer.type === 'volumeSlice' || layer.type==='volumeGrid')) {
+        if (layer && (layer.type === 'volumeSlice' || layer.type === 'volumeGrid')) {
             layer.data.gamut[channel].gamut.min = value[0];
             layer.data.gamut[channel].gamut.max = value[1];
             this.uiChange();
@@ -144,22 +147,22 @@ export class Demo {
     }
     setPlane(param: AxisAlignedPlane) {
         const layer = this.layers[this.selectedLayer];
-        if (layer && (layer.type === 'volumeSlice' || layer.type==='volumeGrid')) {
+        if (layer && (layer.type === 'volumeSlice' || layer.type === 'volumeGrid')) {
             layer.data.plane = param;
             this.uiChange();
         }
     }
-    setPointSize(s:number){
+    setPointSize(s: number) {
         const layer = this.layers[this.selectedLayer];
-        if (layer && (layer.type === 'scatterplot' || layer.type==='scatterplotGrid')) {
-            layer.data.pointSize=s;
+        if (layer && (layer.type === 'scatterplot' || layer.type === 'scatterplotGrid')) {
+            layer.data.pointSize = s;
             this.uiChange();
         }
     }
-    setColorByIndex(s:number){
+    setColorByIndex(s: number) {
         const layer = this.layers[this.selectedLayer];
-        if (layer && (layer.type === 'scatterplot' || layer.type==='scatterplotGrid')) {
-            layer.data.colorBy.name=`${s.toFixed(0)}`;
+        if (layer && (layer.type === 'scatterplot' || layer.type === 'scatterplotGrid')) {
+            layer.data.colorBy.name = `${s.toFixed(0)}`;
             this.uiChange();
         }
     }
@@ -217,12 +220,12 @@ export class Demo {
         })
         this.uiChange();
     }
-    addEmptyAnnotation(){
+    addEmptyAnnotation() {
         const [w, h] = this.camera.screen
         this.layers.push({
             type: 'annotationLayer',
-            data:{
-                paths:[]
+            data: {
+                paths: []
             },
             render: new ReglLayer2D<SimpleAnnotation, AnnotationRenderSettings>(
                 this.regl, this.imgRenderer, renderAnnotationLayer, [w, h]
@@ -462,7 +465,7 @@ export class Demo {
                         ...settings,
                         renderer: renderers[layer.type],
                     }
-                },this.mode==='pan') // dont cancel while drawing
+                }, this.mode === 'pan') // dont cancel while drawing
             } else if (layer.type === 'volumeGrid') {
                 layer.render.onChange({
                     data: layer.data,
@@ -522,7 +525,7 @@ export class Demo {
     }
     private toDataspace(px: vec2) {
         const { view } = this.camera;
-        const o:vec2 = [px[0],this.canvas.clientHeight-px[1]];
+        const o: vec2 = [px[0], this.canvas.clientHeight - px[1]];
         const p = Vec2.div(o, [this.canvas.clientWidth, this.canvas.clientHeight]);
         const c = Vec2.mul(p, Box2D.size(view));
         return Vec2.add(view.minCorner, c);
@@ -571,20 +574,20 @@ export class Demo {
         canvas.onwheel = (e: WheelEvent) => {
             this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
         };
-        window.onkeyup=(e:KeyboardEvent)=>{
+        window.onkeyup = (e: KeyboardEvent) => {
             const layer = this.layers[this.selectedLayer];
-            if(e.key===' '){
-                if(layer && layer.type==='annotationLayer'){
+            if (e.key === ' ') {
+                if (layer && layer.type === 'annotationLayer') {
                     // toggle the mode
-                    this.mode = this.mode === 'draw' ? 'pan':'draw';
+                    this.mode = this.mode === 'draw' ? 'pan' : 'draw';
                     this.uiChange();
                 }
-            }if(e.key==='d'){
+            } if (e.key === 'd') {
                 // start a new drawing!
-                if(this.layers.length===0 || (layer && layer.type!=='annotationLayer')){
+                if (this.layers.length === 0 || (layer && layer.type !== 'annotationLayer')) {
                     this.addEmptyAnnotation();
-                    this.selectLayer(this.layers.length-1);
-                    this.mode='draw';
+                    this.selectLayer(this.layers.length - 1);
+                    this.mode = 'draw';
                     this.uiChange();
                 }
             }
@@ -659,6 +662,7 @@ function demoTime(thing: HTMLCanvasElement) {
         extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
     });
     theDemo = new Demo(thing, regl);
+
     window['demo'] = theDemo;
     setupExampleData();
     uiroot.render(AppUi({ demo: theDemo }))
