@@ -128,4 +128,8 @@ describe('vec2', () => {
         const nonVec2 = Vec2.isVec2([1, 2, 3]);
         expect(nonVec2).toBeFalsy();
     });
+    test('det', () => {
+        const result = Vec2.det([2, 3], [4, 5]);
+        expect(result).toBe(-2);
+    });
 });
