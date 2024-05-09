@@ -1,7 +1,7 @@
 import { load, type ZarrDataset } from "Common/loaders/ome-zarr/zarr-data";
 import type { AxisAlignedPlane } from "../../../../omezarr-viewer/src/versa-renderer";
 import type { ColorMapping } from "../../data-renderers/types";
-import type { MaybePromise, OptionalTransform, Simple2DTransform } from "../types";
+import type { OptionalTransform, Simple2DTransform } from "../types";
 
 
 export type ZarrSliceGridConfig = {

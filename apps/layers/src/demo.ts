@@ -35,13 +35,21 @@ declare global {
 }
 
 function destroyer(item: CacheEntry) {
-    if (item.type === 'texture2D') {
-        item.data.destroy();
+    switch (item.type) {
+        case 'texture2D':
+        case 'vbo':
+            item.data.destroy();
+            break;
+        case 'mesh':
+            item.data.points.destroy();
+            break;
+        default:
+            // @ts-expect-error
+            console.error(item.data, 'implement a destroyer for this case!')
+            break;
     }
-    // other types are GC'd like normal, no special destruction needed
 }
 function sizeOf(item: CacheEntry) {
-    // todo: care about bytes later!
     return 1;
 }
 function appendPoint(layer: AnnotationLayer, p: vec2) {
@@ -70,7 +78,6 @@ export class Demo {
     canvas: HTMLCanvasElement;
     mouse: 'up' | 'down'
     mode: 'draw' | 'pan'
-    // drawSrc:'cur'|'prev';
     mousePos: vec2;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
@@ -84,13 +91,11 @@ export class Demo {
     private redrawRequested: number = 0;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.canvas = canvas;
-        // this.ctx = canvas.getContext('2d')!;
         this.mouse = 'up'
         this.regl = regl;
         this.mousePos = [0, 0]
         this.layers = [];
         this.mode = 'pan'
-        // this.drawSrc = 'cur';
         this.selectedLayer = 0;
         this.pathRenderer = buildPathRenderer(regl);
         this.plotRenderer = buildRenderer(regl);
@@ -591,13 +596,6 @@ export class Demo {
                     this.uiChange();
                 }
             }
-            // if(e.key==='c'){
-            //     this.drawSrc='cur'
-            //     this.requestReRender();
-            // }else if(e.key==='p'){
-            //     this.drawSrc='prev'
-            //     this.requestReRender();
-            // }
         }
     }
 
@@ -640,7 +638,6 @@ export class Demo {
 let theDemo: Demo;
 
 function demoTime(thing: HTMLCanvasElement) {
-    console.log('fire up the demo!')
     if (theDemo !== undefined) {
         return theDemo;
     }

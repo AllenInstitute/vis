@@ -1,12 +1,9 @@
-import type { box2D, vec2 } from "@alleninstitute/vis-geometry";
-import type { NormalStatus } from "@alleninstitute/vis-scatterbrain";
+import type { box2D } from "@alleninstitute/vis-geometry";
 import type REGL from "regl";
 import type { ReglLayer2D } from "./layer";
-import { renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
-import { renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
-import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
-import type { ColumnData, ColumnRequest } from "Common/loaders/scatterplot/scatterbrain-loader";
-import type { AxisAlignedPlane } from "../../omezarr-viewer/src/slice-renderer";
+import { type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
+import { type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
+import { type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
 import type { AxisAlignedZarrSlice } from "./data-sources/ome-zarr/planar-slice";
 import type { DynamicGrid, DynamicGridSlide } from "./data-sources/scatterplot/dynamic-grid";
 import type { AxisAlignedZarrSliceGrid } from "./data-sources/ome-zarr/slice-grid";
@@ -61,7 +58,7 @@ export type SlideViewAnnotations = {
     data: AnnotationGrid,
     render: ReglLayer2D<AnnotationGrid, AnnotationGridRenderSettings<CacheEntry>>
 }
-export type Layer = 
-ScatterPlotLayer | ScatterPlotGridLayer 
-| VolumetricSliceLayer | VolumetricGridLayer 
-| SlideViewAnnotations | AnnotationLayer
+export type Layer =
+    ScatterPlotLayer | ScatterPlotGridLayer
+    | VolumetricSliceLayer | VolumetricGridLayer
+    | SlideViewAnnotations | AnnotationLayer

@@ -1,6 +1,3 @@
-// in normal times, I would connect simple components with a map state to props function
-// but - this is a janky demo, and I am already going real slow - so lets just do this the gross way
-
 import React from 'react';
 import type { Demo } from 'src/demo';
 import { InputSlider, Button } from '@czi-sds/components';

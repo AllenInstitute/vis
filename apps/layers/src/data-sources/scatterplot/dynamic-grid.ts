@@ -1,6 +1,5 @@
 import { isSlideViewData, loadDataset, type ColumnRequest, type ColumnarMetadata, type SlideViewDataset } from "Common/loaders/scatterplot/scatterbrain-loader";
 import type { OptionalTransform, Simple2DTransform } from "../types";
-type MaybePromise<T> = T | Promise<T>;
 
 export type ScatterplotGridConfig = {
     type: 'ScatterPlotGridConfig';
@@ -21,7 +20,7 @@ export type DynamicGridSlide = {
     dataset: SlideViewDataset;
     slideId: string;
     colorBy: ColumnRequest;
-    pointSize:number;
+    pointSize: number;
 } & OptionalTransform;
 
 
@@ -29,7 +28,7 @@ export type DynamicGrid = {
     type: 'DynamicGrid'
     dataset: SlideViewDataset;
     colorBy: ColumnRequest;
-    pointSize:number;
+    pointSize: number;
 } & OptionalTransform;
 
 async function loadJSON(url: string) {
@@ -45,7 +44,7 @@ function assembleSlideConfig(config: ScatterPlotGridSlideConfig, dataset: SlideV
         colorBy,
         dataset,
         slideId,
-        pointSize:4,
+        pointSize: 4,
         toModelSpace: trn,
     }
 }
@@ -66,7 +65,7 @@ function assembleGridConfig(config: ScatterplotGridConfig, dataset: SlideViewDat
         type: 'DynamicGrid',
         colorBy,
         dataset,
-        pointSize:4,
+        pointSize: 4,
         toModelSpace: trn,
     }
 }

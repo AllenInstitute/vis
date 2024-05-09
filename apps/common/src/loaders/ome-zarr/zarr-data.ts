@@ -42,47 +42,6 @@ type ZarrAttrs = {
   multiscales: ReadonlyArray<ZarrAttr>;
 };
 
-// function getSpatialDimensionShape(dataset: DatasetWithShape, axes: readonly AxisDesc[]) {
-//   const dims = axes.reduce(
-//     (shape, ax, i) => (ax.type === "spatial" ? { ...shape, [ax.name]: dataset.shape[i] } : shape),
-//     {} as Record<string, number>
-//   );
-//   return dims;
-// }
-// function getSpatialOrdering
-// function getBoundsInMillimeters(data: ZarrDataset) {
-//   if (data.multiscales.length !== 1) {
-//     throw new Error("cant support multi-scene zarr file...");
-//   }
-//   const scene = data.multiscales[0];
-//   const { axes, datasets } = scene;
-//   if (datasets.length < 1) {
-//     throw new Error("malformed dataset - no voxels!");
-//   }
-//   const dataset = datasets[0];
-//   const spatialResolution = getSpatialDimensionShape(dataset, axes);
-//   // apply transforms
-//   dataset.coordinateTransformations.forEach((trn) => {});
-//   const dimensions = getNumVoxelsInXYZ(getXYZIndexing(axes), dataset.shape);
-
-//   let bounds: box3D = Box3D.create([0, 0, 0], dimensions);
-//   dataset.coordinateTransformations.forEach((trn) => {
-//     // specification for coordinate transforms given here: https://ngff.openmicroscopy.org/latest/#trafo-md
-//     // from the above doc, its not super clear if the given transformation is in the order of the axes metadata (https://ngff.openmicroscopy.org/latest/#axes-md)
-//     // or some other order
-//     // all files I've seen so far have both in xyz order, so its a bit ambiguous.
-//     if (isScaleTransform(trn) && trn.scale.length >= 3) {
-//       bounds = applyScaleToXYZBounds(bounds, trn, axes);
-//     } else {
-//       throw new Error(`unsupported coordinate transformation type - please implement`);
-//     }
-//   });
-//   // finally - convert whatever the axes units are to millimeters, or risk crashing into mars
-//   // get the units of each axis in xyz order...
-
-//   return Box3D.map(bounds, (corner) => unitsToMillimeters(corner, axes));
-// }
-
 async function getRawInfo(store: HTTPStore) {
   const group = await openGroup(store);
   // TODO HACK ALERT: I am once again doing the thing that I hate, in which I promise to my friend Typescript that
@@ -125,18 +84,6 @@ export function uvForPlane(plane: AxisAlignedPlane) {
 export function sliceDimensionForPlane(plane: AxisAlignedPlane) {
   return sliceDimension[plane];
 }
-// function sizeOnScreen(full: box2D, relativeView: box2D, screen: vec2) {
-//   const pxView = Box2D.scale(relativeView, Box2D.size(full));
-//   const onScreen = Box2D.intersection(pxView, full);
-//   if (!onScreen) return [0, 0];
-
-//   const effective = Box2D.size(onScreen);
-//   // as a parameter, how much is on screen?
-//   const p = Vec2.div(effective, Box2D.size(full));
-//   const limit = Vec2.mul(p, screen);
-
-//   return limit[0] * limit[1] < effective[0] * effective[1] ? limit : effective
-// }
 export type ZarrRequest = Record<OmeDimension, number | Interval | null>;
 export function pickBestScale(
   dataset: ZarrDataset,
@@ -173,8 +120,6 @@ export function pickBestScale(
         : bestSoFar,
     datasets[0]
   );
-  // console.log('choose layer: ', choice.path);
-  // console.log('---->', planeSizeInVoxels(plane, axes, choice))
   return choice ?? datasets[datasets.length - 1];
 }
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
@@ -287,24 +232,6 @@ export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex
     buffer: result,
   };
 }
-// export async function getRGBSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex: number) {
-//   dieIfMalformed(r);
-//   // put the request in native order
-//   const store = new HTTPStore(metadata.url);
-//   const scene = metadata.multiscales[0];
-//   const { axes } = scene;
-//   const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
-//   const arr = await openArray({ store, path: level.path, mode: "r" });
-//   const result = await arr.get(buildQuery(r, axes, level.shape));
-//   if (typeof result == "number" || result.shape.length !== 2) {
-//     throw new Error("oh noes, slice came back all weird");
-//   }
-//   return {
-//     shape: result.shape as unknown as vec2,
-//     buffer: result.flatten(),
-//   };
-// }
-
 export async function load(url: string) {
   const store = new HTTPStore(url);
   return loadMetadata(store, await getRawInfo(store));

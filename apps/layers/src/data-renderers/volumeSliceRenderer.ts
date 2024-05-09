@@ -85,7 +85,6 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
         let param = i / slices;
         const slice: AxisAlignedZarrSlice = { ...grid, type: 'AxisAlignedZarrSlice', planeParameter: param }
         const curCam = { ...camera, view: applyOptionalTrn(camera.view, slice.toModelSpace, true) }
-        // const curCam = camera;
         const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
         const realSize = sizeInUnits(plane, axes, best)!;
         const offset = Vec2.mul(gridIndex, realSize)
@@ -98,15 +97,12 @@ export function renderGrid<C extends (CacheContentType | object)>(target: REGL.F
                 planeIndex
             });
             // get all the items for the lowest level of detail:
-            // const lowResItems = getVisibleTiles({ ...curCam, screen: [1, 1] }, plane, planeIndex, dataset, offset);
             smokeAndMirrors.push(...fake)
-            // const items = getVisibleTiles({ ...curCam }, plane, planeIndex, dataset, offset);
             allItems.push(...ideal.tiles)
 
         }
 
     }
-    // console.log(`start a frame on layer ${best.path} with ${allItems.length} tiles`)
     const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(concurrentTasks, queueInterval,
         [...smokeAndMirrors, ...allItems],
         cache,
@@ -122,8 +118,6 @@ export function renderSlice<C extends (CacheContentType | object)>(target: REGL.
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined
     const desiredResolution = camera.screen;
-    // const halfRes = Vec2.scale(camera.screen, 0.5);
-    // TODO: handle optional transform!
     // convert planeParameter to planeIndex - which requires knowing the bounds of the appropriate dimension
     camera = { ...camera, view: applyOptionalTrn(camera.view, slice.toModelSpace, true) }
     const best = pickBestScale(dataset, uvForPlane(plane), camera.view, desiredResolution);
