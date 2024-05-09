@@ -1,5 +1,5 @@
 import REGL, { type Framebuffer2D } from "regl";
-import type { ColumnBuffer, ColumnData, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
+import type { ColumnBuffer, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
 import type { RenderSettings } from "Common/loaders/scatterplot/data";
 import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 
@@ -7,7 +7,7 @@ type Props = {
     view: vec4;
     itemDepth: number;
     count: number;
-    pointSize:number;
+    pointSize: number;
     position: Float32Array,
     color: Float32Array,
     offset?: vec2 | undefined,
@@ -15,7 +15,7 @@ type Props = {
 }
 export function buildRenderer(regl: REGL.Regl) {
     // build the regl command first
-    const cmd = regl<{ view: vec4, itemDepth: number, offset: vec2,pointSize:number }, { position: Float32Array, color: Float32Array }, Props>({
+    const cmd = regl<{ view: vec4, itemDepth: number, offset: vec2, pointSize: number }, { position: Float32Array, color: Float32Array }, Props>({
         vert: `
     precision highp float;
     attribute vec2 position;
@@ -69,13 +69,12 @@ export function buildRenderer(regl: REGL.Regl) {
         const count = item.content.count;
         const itemDepth = item.content.depth
         if (color && position && 'type' in color && 'type' in position && color.type === 'vbo' && position.type === 'vbo') {
-        // if (color && position && 'type' in color && 'type' in position && color.type === 'float' && position.type === 'float') {
             cmd({
                 view: Box2D.toFlatArray(settings.view),
                 count,
                 itemDepth,
                 position: position.data,
-                pointSize:settings.pointSize,
+                pointSize: settings.pointSize,
                 color: color.data,
                 offset: item.offset ?? [0, 0],
                 target: settings.target

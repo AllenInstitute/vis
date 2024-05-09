@@ -246,12 +246,16 @@ type QuantitativeColumn = {
 };
 export type ColumnRequest = MetadataColumn | QuantitativeColumn;
 export type ColumnBuffer = {
-    type:'vbo',
-    data:REGL.Buffer
+    type: 'vbo',
+    data: REGL.Buffer
 }
 export type ColumnData = TaggedTypedArray & {
     elements: number; // per vector entry - for example 'xy' would have elements: 2
 };
+export async function loadScatterbrainJson(url: string) {
+    // obviously, we should check or something
+    return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetadata)
+}
 
 export async function fetchColumn(
     node: ColumnarNode<ReadonlyArray<number>>,
