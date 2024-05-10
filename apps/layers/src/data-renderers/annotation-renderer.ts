@@ -55,7 +55,7 @@ function fetchAnnotationsForSlide(
             ? {
                 type: 'mesh', data: {
                     points: regl.buffer(m.points),
-                    polygons: m.closedPolygons,
+                    annotation: m
                 }
             }
             : undefined;
@@ -77,9 +77,9 @@ function renderSlideAnnotations(item: SlideAnnotations, settings: Settings, colu
     const { mesh } = columns;
     if (!mesh || !isMesh(mesh)) return;
 
-    if (mesh.data.polygons.length < 1) return;
-
-    const { polygons, points } = mesh.data;
+    if (mesh.data.annotation.closedPolygons.length < 1) return;
+    const { annotation, points } = mesh.data;
+    const { closedPolygons: polygons } = annotation;
     const fadedColor = (clr: vec4, opacity: number) => [clr[0], clr[1], clr[2], opacity] as vec4;
     if (settings.fill.opacity > 0.0) {
         polygons.forEach((polygon) => {

@@ -13,6 +13,7 @@ export interface PathCommand {
 
 export interface Path {
     ftvIndex?: number;
+    hoverText?: string;
     color?: Color;
     commands?: PathCommand[];
 }
