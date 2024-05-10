@@ -1,6 +1,6 @@
 
 // a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
-import type { NestedArray } from 'zarr'
+import type { NestedArray, TypedArray } from 'zarr'
 import { getSlice, type ZarrDataset, type ZarrRequest } from "./zarr-data";
 
 const ctx = self;
@@ -12,7 +12,6 @@ type ZarrSliceRequest = {
     layerIndex: number
 }
 function isSliceRequest(payload: any): payload is ZarrSliceRequest {
-    // TODO!!!
     return typeof payload === 'object' && payload['type'] === 'ZarrSliceRequest';
 }
 ctx.onmessage = (msg: MessageEvent<unknown>) => {
@@ -21,7 +20,7 @@ ctx.onmessage = (msg: MessageEvent<unknown>) => {
         const { metadata, req, layerIndex, id } = data;
         getSlice(metadata, req, layerIndex).then((result: {
             shape: number[],
-            buffer: NestedArray
+            buffer: NestedArray<TypedArray>
         }) => {
             const { shape, buffer } = result;
             const R = new Float32Array(buffer.flatten());

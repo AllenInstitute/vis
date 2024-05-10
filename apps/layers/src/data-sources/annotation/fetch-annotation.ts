@@ -18,8 +18,7 @@ export async function fetchAnnotation(payload: {
     }
 
     try {
-        const yay = await fetch(url);
-        const buffer = await yay.arrayBuffer();
+        const buffer = await (await fetch(url)).arrayBuffer();
         const codec = getAnnotationCodec();
         if (codec && buffer) {
             const annotation = codec.decodeAnnotation(new Uint8Array(buffer));

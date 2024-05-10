@@ -25,7 +25,6 @@ export class SliceWorkerPool {
     constructor(size: number) {
         this.workers = new Array(size);
         for (let i = 0; i < size; i++) {
-            // this.worker = new Worker(new URL('./server/server.worker.ts', import.meta.url)
             this.workers[i] = new Worker(new URL('./fetchSlice.worker.ts', import.meta.url), { type: 'module' });
             this.workers[i].onmessage = (msg) => this.handleResponse(msg)
         }

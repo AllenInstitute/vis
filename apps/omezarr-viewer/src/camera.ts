@@ -7,8 +7,3 @@ export type Camera = {
     readonly projection: 'webImage' | 'cartesian'
 }
 
-// export function flipY(camera: Camera): Camera {
-//     const { view, projection } = camera;
-//     const { minCorner, maxCorner } = view;
-//     return { ...camera, view: { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] }, projection: projection === 'webImage' ? 'cartesian' : 'webImage' }
-// }
