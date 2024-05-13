@@ -1,5 +1,6 @@
 import { Box2D, Box3D, Vec3, type box, type box3D, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
 import { MakeTaggedBufferView, type TaggedTypedArray, type WebGLSafeBasicType } from "../../typed-array";
+import type REGL from "regl";
 
 type volumeBound = {
     lx: number;
@@ -244,9 +245,17 @@ type QuantitativeColumn = {
     name: string;
 };
 export type ColumnRequest = MetadataColumn | QuantitativeColumn;
+export type ColumnBuffer = {
+    type: 'vbo',
+    data: REGL.Buffer
+}
 export type ColumnData = TaggedTypedArray & {
     elements: number; // per vector entry - for example 'xy' would have elements: 2
 };
+export async function loadScatterbrainJson(url: string) {
+    // obviously, we should check or something
+    return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetadata)
+}
 
 export async function fetchColumn(
     node: ColumnarNode<ReadonlyArray<number>>,

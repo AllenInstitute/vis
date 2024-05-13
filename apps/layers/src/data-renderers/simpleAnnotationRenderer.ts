@@ -1,14 +1,13 @@
-import { cacheKeyFactory, getVisibleTiles, requestsForTile, type VoxelSliceRenderSettings, type VoxelTile, type buildVolumeSliceRenderer } from "../../../omezarr-viewer/src/slice-renderer";
 
 import type REGL from "regl";
 import { beginLongRunningFrame, type AsyncDataCache } from "@alleninstitute/vis-scatterbrain";
-import type { Camera, RenderCallback } from "./types";
+import type { RenderCallback } from "./types";
 import type { ColumnData } from "Common/loaders/scatterplot/scatterbrain-loader";
-import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
-import type { Path, buildLineRenderer, buildPathRenderer } from "./lineRenderer";
-import type { TaggedFloat32Array } from "Common/typed-array";
+import { Box2D, type box2D } from "@alleninstitute/vis-geometry";
+import type { Path, buildPathRenderer } from "./lineRenderer";
 import { flatten } from "lodash";
 import type { OptionalTransform } from "../data-sources/types";
+import type { Camera } from "../../../omezarr-viewer/src/camera";
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 

@@ -1,7 +1,7 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { beginLongRunningFrame, AsyncDataCache, type FrameLifecycle } from "@alleninstitute/vis-scatterbrain";
 import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from 'Common/loaders/scatterplot/data'
-import { loadDataset, type ColumnarMetadata, type ColumnData, type ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
+import { loadDataset, loadScatterbrainJson, type ColumnarMetadata, type ColumnarTree, type ColumnBuffer } from "Common/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
 
 import { buildRenderer } from "./renderer";
@@ -20,7 +20,7 @@ class Demo {
     renderer: ReturnType<typeof buildRenderer>;
     mouse: 'up' | 'down'
     mousePos: vec2;
-    cache: AsyncDataCache<string, string, ColumnData>;
+    cache: AsyncDataCache<string, string, ColumnBuffer>;
     curFrame: FrameLifecycle | null;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl, url: string) {
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
@@ -29,11 +29,11 @@ class Demo {
             screen: [w, h]
         }
         this.curFrame = null;
-        this.cache = new AsyncDataCache<string, string, ColumnData>((_data) => {
-            // no op destroyer - GC will clean up for us
-        }, (data: ColumnData) => data.data.byteLength, 500 * MB);
+        this.cache = new AsyncDataCache<string, string, ColumnBuffer>((entry) => {
+            entry.data.destroy();
+        }, (_data: ColumnBuffer) => 1, 1000);
 
-        loadJSON(url).then((metadata) => {
+        loadScatterbrainJson(url).then((metadata) => {
             this.dataset = loadDataset(metadata, url)
             this.rerender();
         })
@@ -77,11 +77,17 @@ class Demo {
             // lets only draw a box of points if its 90px wide:
             const sizeThreshold = 90 * px;
             const items = getVisibleItems(this.dataset, this.camera.view, sizeThreshold);
-            this.curFrame = beginLongRunningFrame<ColumnData, ColumnarTree<vec2>, RenderSettings>(
+            this.curFrame = beginLongRunningFrame<ColumnBuffer, ColumnarTree<vec2>, RenderSettings>(
                 5, 33, items, this.cache, {
                 dataset: this.dataset,
                 view: this.camera.view,
                 target: null,
+                colorBy: {
+                    name: '88',
+                    type: 'QUANTITATIVE',
+                },
+                pointSize: 3,
+                regl: this.regl
             },
                 fetchItem,
                 this.renderer,
@@ -147,8 +153,5 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
     };
 }
 
-async function loadJSON(url: string) {
-    // obviously, we should check or something
-    return fetch(url).then(stuff => stuff.json() as unknown as ColumnarMetadata)
-}
+
 demoTime();
