@@ -2,6 +2,7 @@
 import { HTTPStore, NestedArray, type TypedArray, openArray, openGroup, slice } from "zarr";
 import { some } from "lodash";
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from "@alleninstitute/vis-geometry";
+import type { AxisAlignedPlane } from "../../../../omezarr-viewer/src/versa-renderer";
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
@@ -41,47 +42,6 @@ type ZarrAttrs = {
   multiscales: ReadonlyArray<ZarrAttr>;
 };
 
-// function getSpatialDimensionShape(dataset: DatasetWithShape, axes: readonly AxisDesc[]) {
-//   const dims = axes.reduce(
-//     (shape, ax, i) => (ax.type === "spatial" ? { ...shape, [ax.name]: dataset.shape[i] } : shape),
-//     {} as Record<string, number>
-//   );
-//   return dims;
-// }
-// function getSpatialOrdering
-// function getBoundsInMillimeters(data: ZarrDataset) {
-//   if (data.multiscales.length !== 1) {
-//     throw new Error("cant support multi-scene zarr file...");
-//   }
-//   const scene = data.multiscales[0];
-//   const { axes, datasets } = scene;
-//   if (datasets.length < 1) {
-//     throw new Error("malformed dataset - no voxels!");
-//   }
-//   const dataset = datasets[0];
-//   const spatialResolution = getSpatialDimensionShape(dataset, axes);
-//   // apply transforms
-//   dataset.coordinateTransformations.forEach((trn) => {});
-//   const dimensions = getNumVoxelsInXYZ(getXYZIndexing(axes), dataset.shape);
-
-//   let bounds: box3D = Box3D.create([0, 0, 0], dimensions);
-//   dataset.coordinateTransformations.forEach((trn) => {
-//     // specification for coordinate transforms given here: https://ngff.openmicroscopy.org/latest/#trafo-md
-//     // from the above doc, its not super clear if the given transformation is in the order of the axes metadata (https://ngff.openmicroscopy.org/latest/#axes-md)
-//     // or some other order
-//     // all files I've seen so far have both in xyz order, so its a bit ambiguous.
-//     if (isScaleTransform(trn) && trn.scale.length >= 3) {
-//       bounds = applyScaleToXYZBounds(bounds, trn, axes);
-//     } else {
-//       throw new Error(`unsupported coordinate transformation type - please implement`);
-//     }
-//   });
-//   // finally - convert whatever the axes units are to millimeters, or risk crashing into mars
-//   // get the units of each axis in xyz order...
-
-//   return Box3D.map(bounds, (corner) => unitsToMillimeters(corner, axes));
-// }
-
 async function getRawInfo(store: HTTPStore) {
   const group = await openGroup(store);
   // TODO HACK ALERT: I am once again doing the thing that I hate, in which I promise to my friend Typescript that
@@ -108,19 +68,22 @@ async function loadMetadata(store: HTTPStore, attrs: ZarrAttrs) {
 }
 
 type OmeDimension = "x" | "y" | "z" | "t" | "c";
-
-// function sizeOnScreen(full: box2D, relativeView: box2D, screen: vec2) {
-//   const pxView = Box2D.scale(relativeView, Box2D.size(full));
-//   const onScreen = Box2D.intersection(pxView, full);
-//   if (!onScreen) return [0, 0];
-
-//   const effective = Box2D.size(onScreen);
-//   // as a parameter, how much is on screen?
-//   const p = Vec2.div(effective, Box2D.size(full));
-//   const limit = Vec2.mul(p, screen);
-
-//   return limit[0] * limit[1] < effective[0] * effective[1] ? limit : effective
-// }
+const uvTable = {
+  xy: { u: "x", v: "y" },
+  xz: { u: "x", v: "z" },
+  yz: { u: "y", v: "z" },
+} as const;
+const sliceDimension = {
+  xy: "z",
+  xz: "y",
+  yz: "x",
+} as const;
+export function uvForPlane(plane: AxisAlignedPlane) {
+  return uvTable[plane];
+}
+export function sliceDimensionForPlane(plane: AxisAlignedPlane) {
+  return sliceDimension[plane];
+}
 export type ZarrRequest = Record<OmeDimension, number | Interval | null>;
 export function pickBestScale(
   dataset: ZarrDataset,
@@ -134,15 +97,25 @@ export function pickBestScale(
 ) {
   const datasets = dataset.multiscales[0].datasets;
   const axes = dataset.multiscales[0].axes;
-  const vxlPitch = (size: vec2) => Vec2.div([1, 1], size);
+  const realSize = sizeInUnits(plane, axes, datasets[0])!
+
+  const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
   // size, in dataspace, of a pixel 1/res
   const pxPitch = Vec2.div(Box2D.size(relativeView), displayResolution);
-  const dstToDesired = (a: vec2, goal: vec2) => Vec2.length(Vec2.sub(a, goal));
+  const dstToDesired = (a: vec2, goal: vec2) => {
+    const diff = Vec2.sub(a, goal);
+    if (diff[0] * diff[1] > 0) {
+      // the res (a) is higher than our goal - 
+      // weight this heavily to prefer smaller than the goal
+      return 1000 * Vec2.length(Vec2.sub(a, goal));
+    }
+    return Vec2.length(Vec2.sub(a, goal));
+  }
   // we assume the datasets are ordered... hmmm TODO
   const choice = datasets.reduce(
     (bestSoFar, cur) =>
-      dstToDesired(vxlPitch(sizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-        dstToDesired(vxlPitch(sizeInVoxels(plane, axes, cur)!), pxPitch)
+      dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
+        dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
         ? cur
         : bestSoFar,
     datasets[0]
@@ -152,15 +125,17 @@ export function pickBestScale(
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
   return axes.findIndex((axe) => axe.name === dim);
 }
+
 export function sizeInUnits(
-  plane: {
+  plane: AxisAlignedPlane | {
     u: OmeDimension;
     v: OmeDimension;
   },
   axes: readonly AxisDesc[],
   dataset: DatasetWithShape
 ): vec2 | undefined {
-  const vxls = sizeInVoxels(plane, axes, dataset);
+  plane = typeof plane === 'string' ? uvForPlane(plane) : plane
+  const vxls = planeSizeInVoxels(plane, axes, dataset);
 
   if (vxls === undefined) return undefined;
   let size: vec2 = vxls;
@@ -177,6 +152,16 @@ export function sizeInUnits(
   return size;
 }
 export function sizeInVoxels(
+  dim: OmeDimension,
+  axes: readonly AxisDesc[],
+  dataset: DatasetWithShape
+) {
+  const uI = indexFor(dim, axes);
+  if (uI === -1) return undefined
+
+  return dataset.shape[uI]
+}
+export function planeSizeInVoxels(
   plane: {
     u: OmeDimension;
     v: OmeDimension;
@@ -247,24 +232,6 @@ export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex
     buffer: result,
   };
 }
-// export async function getRGBSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex: number) {
-//   dieIfMalformed(r);
-//   // put the request in native order
-//   const store = new HTTPStore(metadata.url);
-//   const scene = metadata.multiscales[0];
-//   const { axes } = scene;
-//   const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
-//   const arr = await openArray({ store, path: level.path, mode: "r" });
-//   const result = await arr.get(buildQuery(r, axes, level.shape));
-//   if (typeof result == "number" || result.shape.length !== 2) {
-//     throw new Error("oh noes, slice came back all weird");
-//   }
-//   return {
-//     shape: result.shape as unknown as vec2,
-//     buffer: result.flatten(),
-//   };
-// }
-
 export async function load(url: string) {
   const store = new HTTPStore(url);
   return loadMetadata(store, await getRawInfo(store));

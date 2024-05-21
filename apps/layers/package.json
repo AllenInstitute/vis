@@ -1,47 +1,67 @@
 {
-    "name": "@alleninstitute/layer-demo",
-    "version": "0.0.1",
-    "contributors": [
-      {
-        "name": "Lane Sawyer",
-        "email": "lane.sawyer@alleninstitute.org"
-      },
-      {
-        "name": "James Gerstenberger",
-        "email": "james.gerstenberger@alleninstitute.org"
-      },
-      {
-        "name": "Noah Shepard",
-        "email": "noah.shepard@alleninstitute.org"
-      },
-      {
-        "name": "Skyler Moosman",
-        "email": "skyler.moosman@alleninstitute.org"
-      },
-      {
-        "name": "Su Li",
-        "email": "su.li@alleninstitute.org"
-      }
-    ],
-    "license": "TBD",
-    "type": "module",
-    "main": "lib/index.js",
-    "types": "lib/index.d.ts",
-    "private": true,
-    "scripts": {
-      "preinstall": "npx only-allow pnpm",
-      "demo": "esbuild src/demo.ts --bundle --outfile=dst/demo.js && cp public/* dst/",
-      "typecheck": "tsc --noEmit"
+  "name": "@alleninstitute/layer-demo",
+  "version": "0.0.1",
+  "contributors": [
+    {
+      "name": "Lane Sawyer",
+      "email": "lane.sawyer@alleninstitute.org"
     },
-    "devDependencies": {
-      "esbuild": "^0.19.12",
-      "typescript": "^5.3.3"
+    {
+      "name": "James Gerstenberger",
+      "email": "james.gerstenberger@alleninstitute.org"
     },
-    "dependencies": {
-      "@alleninstitute/vis-geometry": "workspace:*",
-      "@alleninstitute/vis-scatterbrain": "workspace:*",
-      "@types/lodash": "^4.14.202",
-      "lodash": "^4.17.21",
-      "regl": "^2.1.0"
+    {
+      "name": "Noah Shepard",
+      "email": "noah.shepard@alleninstitute.org"
+    },
+    {
+      "name": "Skyler Moosman",
+      "email": "skyler.moosman@alleninstitute.org"
+    },
+    {
+      "name": "Su Li",
+      "email": "su.li@alleninstitute.org"
     }
+  ],
+  "license": "TBD",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "private": true,
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "typecheck": "tsc --noEmit",
+    "start": "parcel public/demo.html"
+  },
+  "devDependencies": {
+    "@parcel/packager-ts": "^2.12.0",
+    "@parcel/transformer-typescript-types": "^2.12.0",
+    "@types/file-saver": "^2.0.7",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.19.12",
+    "parcel": "2.12.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@alleninstitute/vis-geometry": "workspace:*",
+    "@alleninstitute/vis-scatterbrain": "workspace:*",
+    "@czi-sds/components": "^20.0.1",
+    "@emotion/css": "^11.11.2",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/base": "5.0.0-beta.40",
+    "@mui/icons-material": "^5.15.15",
+    "@mui/lab": "5.0.0-alpha.170",
+    "@mui/material": "^5.15.15",
+    "@types/lodash": "^4.14.202",
+    "file-saver": "^2.0.5",
+    "json5": "^2.2.3",
+    "kiwi-schema": "^0.5.0",
+    "lodash": "^4.17.21",
+    "regl": "^2.1.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "zarr": "^0.6.2"
   }
+}

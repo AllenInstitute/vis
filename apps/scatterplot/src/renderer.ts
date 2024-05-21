@@ -1,31 +1,37 @@
-import REGL from "regl";
-import type { ColumnData, ColumnarTree } from "~/loaders/scatterplot/scatterbrain-loader";
-import type { RenderSettings } from "~/loaders/scatterplot/data";
+import REGL, { type Framebuffer2D } from "regl";
+import type { ColumnBuffer, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
+import type { RenderSettings } from "Common/loaders/scatterplot/data";
 import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
 
 type Props = {
     view: vec4;
     itemDepth: number;
     count: number;
+    pointSize: number;
     position: Float32Array,
-    color: Float32Array
+    color: Float32Array,
+    offset?: vec2 | undefined,
+    target: Framebuffer2D | null;
 }
 export function buildRenderer(regl: REGL.Regl) {
     // build the regl command first
-    const cmd = regl<{ view: vec4, itemDepth: number }, { position: Float32Array, color: Float32Array }, Props>({
+    const cmd = regl<{ view: vec4, itemDepth: number, offset: vec2, pointSize: number }, { position: Float32Array, color: Float32Array }, Props>({
         vert: `
     precision highp float;
     attribute vec2 position;
     attribute float color;
-
+    
+    uniform float pointSize;
     uniform vec4 view;
     uniform float itemDepth;
-    varying vec4 clr;
+    uniform vec2 offset;
 
+    varying vec4 clr;
+    
     void main(){
-        gl_PointSize=4.0;
+        gl_PointSize=pointSize;
         vec2 size = view.zw-view.xy;
-        vec2 pos = (position-view.xy)/size;
+        vec2 pos = ((position+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
 
         // todo: gradients are cool
@@ -47,25 +53,31 @@ export function buildRenderer(regl: REGL.Regl) {
         uniforms: {
             itemDepth: regl.prop<Props, "itemDepth">("itemDepth"),
             view: regl.prop<Props, "view">("view"),
+            offset: regl.prop<Props, "offset">("offset"),
+            pointSize: regl.prop<Props, "pointSize">("pointSize"),
         },
 
         blend: {
             enable: false,
         },
+        framebuffer: regl.prop<Props, 'target'>('target'),
         count: regl.prop<Props, 'count'>('count'),
         primitive: "points",
     })
-    const renderDots = (item: ColumnarTree<vec2>, settings: RenderSettings, columns: Record<string, ColumnData | undefined>) => {
+    const renderDots = (item: ColumnarTree<vec2> & { offset?: vec2 | undefined }, settings: RenderSettings, columns: Record<string, ColumnBuffer | object | undefined>) => {
         const { color, position } = columns;
         const count = item.content.count;
         const itemDepth = item.content.depth
-        if (color && position && color.type === 'float' && position.type === 'float') {
+        if (color && position && 'type' in color && 'type' in position && color.type === 'vbo' && position.type === 'vbo') {
             cmd({
                 view: Box2D.toFlatArray(settings.view),
                 count,
                 itemDepth,
                 position: position.data,
-                color: position.data
+                pointSize: settings.pointSize,
+                color: color.data,
+                offset: item.offset ?? [0, 0],
+                target: settings.target
             })
         } else {
             // todo freak out!
