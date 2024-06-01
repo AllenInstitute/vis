@@ -25,7 +25,7 @@ export type FrameLifecycle = {
  * `progress` - The frame is still running and has not finished
  */
 export type NormalStatus = 'begun' | 'finished' | 'cancelled' | 'finished_synchronously' | 'progress';
-
+export type RenderCallback = (event: { status: NormalStatus } | { status: 'error', error: unknown }) => void;
 /**
  * `beingLongRunningFrame` starts a long-running frame that will render a list of items asynchronously based on
  * the provided data, settings, and rendering functions.
@@ -59,7 +59,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
   settings: Settings,
   requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
   render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
-  lifecycleCallback: (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void,
+  lifecycleCallback: RenderCallback,
   cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key,
   queueTimeBudgetMS: number = queueProcessingIntervalMS / 3
 ): FrameLifecycle {
