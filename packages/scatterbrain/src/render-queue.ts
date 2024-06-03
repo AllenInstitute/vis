@@ -64,12 +64,18 @@ export function beginLongRunningFrame<Column, Item, Settings>(
   queueTimeBudgetMS: number = queueProcessingIntervalMS / 3
 ): FrameLifecycle {
   const abort = new AbortController();
-  const reportNormalStatus = (status: NormalStatus) => {
-    lifecycleCallback({ status });
-  };
   const queue: Item[] = [];
   const taskCancelCallbacks: Array<() => void> = [];
 
+  const reportNormalStatus = (status: NormalStatus) => {
+    // we want to report our status, however the flow of events can be confusing -
+    // our callers anticipate an asynchronous (long running) frame to be started,
+    // but there are scenarios in which the whole thing is completely synchronous
+    // callers who are scheduling things may be surprised that their frame finished
+    // before the code that handles it appears to start. thus, we make the entire lifecycle callback
+    // system async, to prevent surprises.
+    Promise.resolve().then(() => lifecycleCallback({ status }));
+  };
   // when starting a frame, we greedily attempt to render any tasks that are already in the cache
   // however, if there is too much overhead (or too many tasks) we would risk hogging the main thread
   // thus - obey the limit (its a soft limit)
