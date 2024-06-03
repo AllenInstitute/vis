@@ -1,10 +1,9 @@
 import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
 import { type ColumnRequest } from "Common/loaders/scatterplot/scatterbrain-loader";
 import REGL from "regl";
-import { AsyncDataCache, type FrameLifecycle, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
+import { AsyncDataCache, ReglLayer2D, type FrameLifecycle, type NormalStatus } from "@alleninstitute/vis-scatterbrain";
 import { buildRenderer } from "../../scatterplot/src/renderer";
 import { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
-import { ReglLayer2D } from "./layer";
 import { renderDynamicGrid, renderSlide, type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { renderGrid, renderSlice, type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { renderAnnotationLayer, type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";

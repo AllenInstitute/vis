@@ -1,20 +1,14 @@
-import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import type REGL from "regl";
-import { swapBuffers, type BufferPair } from "../../common/src/bufferPair";
-import type { Image } from "./types";
-import type { FrameLifecycle, NormalStatus } from "@alleninstitute/vis-scatterbrain";
-import type { Camera } from "./data-renderers/types";
-import type { buildImageRenderer } from "../../omezarr-viewer/src/image-renderer";
 
-type RenderFn<R, S> =
-    (target: REGL.Framebuffer2D | null, thing: Readonly<R>, settings: Readonly<S>) => FrameLifecycle;
-type ImageRenderer = ReturnType<typeof buildImageRenderer>
-type RenderCallback = (event: { status: NormalStatus } | { status: 'error', error: unknown }) => void;
+// a helper to render a 2D layer, using regl
+import type { Image, ImageRenderer, RenderFn } from "./types";
+import { type BufferPair, swapBuffers } from "./buffer-pair";
+import type REGL from "regl";
+import type { FrameLifecycle, RenderCallback } from "../render-queue";
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry'
+
 type EventType = Parameters<RenderCallback>[0]
-type RequiredSettings = { camera: Camera, callback: RenderCallback }
-/**
- * a class that makes it easy to manage rendering 2D layers using regl
- */
+type RequiredSettings = { camera: { view: box2D }, callback: RenderCallback }
+
 export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
     private buffers: BufferPair<Image>;
     private renderFn: RenderFn<Renderable, RenderSettings>
@@ -23,8 +17,8 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
     private renderImg: ImageRenderer
     constructor(regl: REGL.Regl, imgRenderer: ImageRenderer, renderFn: RenderFn<Renderable, RenderSettings & RequiredSettings>, resolution: vec2) {
         this.buffers = {
-            readFrom: { texture: regl.framebuffer(...resolution), bounds: undefined },
-            writeTo: { texture: regl.framebuffer(...resolution), bounds: undefined }
+            readFrom: { resolution, texture: regl.framebuffer(...resolution), bounds: undefined },
+            writeTo: { resolution, texture: regl.framebuffer(...resolution), bounds: undefined }
         };
         this.renderImg = imgRenderer
         this.regl = regl;
@@ -44,7 +38,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
     onChange(props: {
         readonly data: Readonly<Renderable>;
         readonly settings: Readonly<RenderSettings>
-    }, cancel:boolean=true) {
+    }, cancel: boolean = true) {
 
         if (cancel && this.runningFrame) {
             this.runningFrame.cancelFrame();
@@ -52,10 +46,14 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
             const { readFrom, writeTo } = this.buffers;
             // copy our work to the prev-buffer...
             if (readFrom.bounds && writeTo.bounds && Box2D.intersection(readFrom.bounds, writeTo.bounds)) {
+                const [width, height] = writeTo.resolution;
                 this.renderImg({
                     box: Box2D.toFlatArray(writeTo.bounds),
                     img: writeTo.texture,
                     target: readFrom.texture,
+                    viewport: {
+                        x: 0, y: 0, width, height
+                    },
                     view: Box2D.toFlatArray(readFrom.bounds)
                 })
             }
@@ -76,7 +74,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
                     case 'finished_synchronously':
                         this.buffers = swapBuffers(this.buffers);
                         // only erase... if we would have cancelled...
-                        if(cancel){
+                        if (cancel) {
                             this.regl.clear({ framebuffer: this.buffers.writeTo.texture, color: [0, 0, 0, 0], depth: 1 })
                         }
                         this.runningFrame = null;

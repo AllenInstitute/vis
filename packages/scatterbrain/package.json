@@ -1,6 +1,6 @@
 {
   "name": "@alleninstitute/vis-scatterbrain",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "contributors": [
     {
       "name": "Lane Sawyer",
@@ -55,7 +55,8 @@
     "vitest": "^1.4.0"
   },
   "dependencies": {
-    "lodash": "^4.17.21"
-
+    "@alleninstitute/vis-geometry": "workspace:*",
+    "lodash": "^4.17.21",
+    "regl": "^2.1.0"
   }
 }
