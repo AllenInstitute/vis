@@ -14,6 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
@@ -30,6 +35,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
 
     - name: Use Node.js
       uses: actions/setup-node@v3
@@ -48,6 +58,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
@@ -64,6 +79,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
 
     - name: Use Node.js
       uses: actions/setup-node@v3
@@ -82,6 +102,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
 
     - name: Use Node.js
       uses: actions/setup-node@v3
