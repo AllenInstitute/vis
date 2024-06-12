@@ -135,6 +135,7 @@ function demoTime() {
             navigator.clipboard.writeText(outUrl.innerText);
         });
 
+        // These URLs are example URLs that acted as test cases for my formatting
         makeNgUrlElems(ngURLs, ngUrlParent);
         makeContactSheetElems(contactSheets, contactParent);
         makeImageSeriesElems(imageSeries, imageParent);

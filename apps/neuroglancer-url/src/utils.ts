@@ -1,3 +1,7 @@
+/* 
+    The code here and the code that utilizes this is partially adapted from
+    https://github.com/AllenInstitute/ome_zarr_converter/blob/main/src/ome_zarr_converter/neuroglancer/utils.py
+*/
 export function finalizeConfig(
     imgLayer: Record<string, any>,
     imgName: string,
