@@ -1,6 +1,5 @@
 import type { box2D } from "@alleninstitute/vis-geometry";
 import type REGL from "regl";
-import type { ReglLayer2D } from "./layer";
 import { type RenderSettings as SlideRenderSettings } from "./data-renderers/dynamicGridSlideRenderer";
 import { type RenderSettings as SliceRenderSettings } from "./data-renderers/volumeSliceRenderer";
 import { type RenderSettings as AnnotationRenderSettings, type SimpleAnnotation } from "./data-renderers/simpleAnnotationRenderer";
@@ -9,6 +8,7 @@ import type { DynamicGrid, DynamicGridSlide } from "./data-sources/scatterplot/d
 import type { AxisAlignedZarrSliceGrid } from "./data-sources/ome-zarr/slice-grid";
 import type { RenderSettings as AnnotationGridRenderSettings, CacheContentType as GpuMesh } from "./data-renderers/annotation-renderer";
 import type { AnnotationGrid } from "./data-sources/annotation/annotation-grid";
+import type { ReglLayer2D } from "@alleninstitute/vis-scatterbrain";
 // note: right now, all layers should be considered 2D, and WebGL only...
 export type Image = {
     texture: REGL.Framebuffer2D
