@@ -1,5 +1,5 @@
 import { Vec3 } from '../vec3';
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest';
 describe('Vec3', () => {
     test('add', () => {
         const result = Vec3.add([2, 3, 4], [4, 5, 6]);

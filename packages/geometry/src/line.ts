@@ -1,4 +1,4 @@
-import { Vec2, vec2 } from "./vec2";
+import { Vec2, vec2 } from './vec2';
 
 export type line = { start: vec2; end: vec2 };
 
@@ -6,10 +6,10 @@ export type line = { start: vec2; end: vec2 };
  * Given two line segments, determine if they intersect. If they do, we return a 1, otherwise we return a 0. This
  * is so we can count up how many hits there are across a number of lines to determine if a point is inside
  * a polygon.
- * 
+ *
  * WARNING: For our purposes, we don't consider colinear and coincident line segments to intersect. This is technically
  * incorrect, but is good enough for our usage. If/when this assumption changes, feel free to update the math here.
- * 
+ *
  * WARNING: Our line segments are interpreted to be half-closed (the start point intersects but not the end point). This is
  * a convenient (and common) practices when we make larger structures out of conjoined line-segments. There is a unit test
  * proving that it is half-closed, so don't be surprised if you change that and tests start failing!
