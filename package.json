@@ -2,8 +2,10 @@
     "name": "@alleninstitute/vis",
     "scripts": {
         "preinstall": "npx only-allow pnpm",
-        "build": "pnpm -r run build",
-        "watch": "pnpm -r run watch"
+        "build": "pnpm -r run --no-bail build",
+        "watch": "pnpm -r run watch",
+        "fmt": "pnpm -r run fmt",
+        "fmt:check": "pnpm -r run --no-bail fmt:check"
     },
     "devDependencies": {
         "@parcel/packager-ts": "2.12.0",

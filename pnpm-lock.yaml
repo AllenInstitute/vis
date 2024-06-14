@@ -212,6 +212,9 @@ importers:
       parcel:
         specifier: 2.12.0
         version: 2.12.0(typescript@5.3.3)
+      prettier:
+        specifier: 3.3.2
+        version: 3.3.2
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -243,6 +246,9 @@ importers:
       parcel:
         specifier: 2.12.0
         version: 2.12.0(typescript@5.3.3)
+      prettier:
+        specifier: 3.3.2
+        version: 3.3.2
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -3597,6 +3603,12 @@ packages:
     dependencies:
       posthtml-parser: 0.11.0
       posthtml-render: 3.0.0
+    dev: true
+
+  /prettier@3.3.2:
+    resolution: {integrity: sha512-rAVeHYMcv8ATV5d508CFdn+8/pHPpXeIid1DdrPwXnaAdH7cqjVbpJaT5eq4yRAFU/lsbwYwSF/n5iNrdJHPQA==}
+    engines: {node: '>=14'}
+    hasBin: true
     dev: true
 
   /pretty-format@29.7.0:
