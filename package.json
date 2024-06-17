@@ -1,5 +1,19 @@
 {
     "name": "@alleninstitute/vis",
+    "contributors": [
+        {
+            "name": "Noah Shepard",
+            "email": "noah.shepard@alleninstitute.org"
+        },
+        {
+            "name": "Lane Sawyer",
+            "email": "lane.sawyer@alleninstitute.org"
+        },
+        {
+            "name": "Skyler Moosman",
+            "email": "skyler.moosman@alleninstitute.org"
+        }
+    ],
     "scripts": {
         "preinstall": "npx only-allow pnpm",
         "build": "pnpm -r run build",
@@ -12,5 +26,9 @@
         "parcel": "2.12.0",
         "process": "^0.11.10",
         "typescript": "^5.3.3"
+    },
+    "packageManager": "pnpm@8.7.5",
+    "engines": {
+        "node": ">=18 || >=20 || >=22"
     }
 }
