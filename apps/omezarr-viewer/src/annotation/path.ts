@@ -1,9 +1,9 @@
-import type { vec2, vec4 } from "@alleninstitute/vis-geometry"
+import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
 
 export type Point = {
     point: vec2;
     pressure?: number;
-}
+};
 // type SLLNode<T> = {
 //     item: T;
 //     next: SLLNode<T> | null;
@@ -16,14 +16,13 @@ export type Point = {
 export type Pen = {
     color: vec4;
     strokeWidth: number;
-}
+};
 export type PathAnnotation = {
     path: Point[];
     pen: Pen;
-}
+};
 
 // make a set of handlers that make a thing drawable...
-
 
 // how would we generify drawing on top of something...
 export type DrawingHost = {
@@ -34,7 +33,7 @@ export type DrawingHost = {
     pan: (screenDelta: vec2) => void;
     screenToDataSpace: (screen: vec2) => vec2;
     screenWidthToDataWidth: (w: number) => number;
-}
+};
 
 export function initDrawableInterface(surface: HTMLElement, host: DrawingHost) {
     let buttonDown: boolean = false;
@@ -44,16 +43,16 @@ export function initDrawableInterface(surface: HTMLElement, host: DrawingHost) {
         if (buttonDown && ev.pointerId === curPointerId) {
             if (host.currentTool() == 'camera') {
                 // pan that camera!
-                host.pan([ev.movementX, ev.movementY])
+                host.pan([ev.movementX, ev.movementY]);
             } else {
                 // draw with our current pen... hmmmm
                 host.updateCurrentStroke({
                     point: host.screenToDataSpace([ev.x, ev.y]),
-                    pressure: ev.pressure
-                })
+                    pressure: ev.pressure,
+                });
             }
         }
-    }
+    };
     surface.onpointerdown = (ev: PointerEvent) => {
         if (curPointerId === null) {
             curPointerId = ev.pointerId;
@@ -61,23 +60,22 @@ export function initDrawableInterface(surface: HTMLElement, host: DrawingHost) {
             if (host.currentTool() !== 'camera') {
                 host.newStroke({
                     point: host.screenToDataSpace([ev.x, ev.y]),
-                    pressure: ev.pressure
-                })
+                    pressure: ev.pressure,
+                });
             }
         }
-    }
+    };
     surface.onpointerup = (ev: PointerEvent) => {
         if (curPointerId === ev.pointerId) {
             curPointerId = null;
             buttonDown = false;
         }
-    }
-
+    };
 
     return () => {
         // cleanup!
         // todo!
-    }
+    };
 }
 
 // export function beginDrawing(pen: Pen, p: vec2, pressure?: number): PathAnnotation {

@@ -6,27 +6,28 @@ function groupLoops(path: Path) {
     // collect each closed polygon from the path - because path commands are very flexible,
     // there could be multiple overlapping polygons in a single path!
     const { commands } = path;
-    const closed = commands?.reduce(
-        (loops: PathCommand[][], command) => {
-            const curLoop = loops[loops.length - 1];
-            switch (command.type) {
-                case 'ClosePolygon':
-                    curLoop.push(command);
-                    // start a new loop
-                    loops.push([]);
-                    break;
-                case 'LineTo':
-                case 'MoveTo':
-                case 'CurveTo':
-                    curLoop.push(command);
-                    break;
-                default:
-                    break;
-            }
-            return loops;
-        },
-        [[]] as PathCommand[][]
-    ) ?? []
+    const closed =
+        commands?.reduce(
+            (loops: PathCommand[][], command) => {
+                const curLoop = loops[loops.length - 1];
+                switch (command.type) {
+                    case 'ClosePolygon':
+                        curLoop.push(command);
+                        // start a new loop
+                        loops.push([]);
+                        break;
+                    case 'LineTo':
+                    case 'MoveTo':
+                    case 'CurveTo':
+                        curLoop.push(command);
+                        break;
+                    default:
+                        break;
+                }
+                return loops;
+            },
+            [[]] as PathCommand[][]
+        ) ?? [];
     return closed.filter((loop) => loop.length > 0);
 }
 // helper function for computing a bounding box of a bunch of uncertain stuff in a reasonably performant way
@@ -71,16 +72,15 @@ function closedPolygon(loop: PathCommand[]) {
             default:
         }
         return acc;
-    }, initialState)
+    }, initialState);
 }
 function onlyDefined<T>(collection: ReadonlyArray<T | undefined>): ReadonlyArray<T> {
     return collection.reduce((defined, cur) => {
-        return cur !== undefined ? [...defined, cur] : defined
+        return cur !== undefined ? [...defined, cur] : defined;
     }, [] as ReadonlyArray<T>);
 }
 
 // intersection stuff:
-
 
 type line = { a: vec2; b: vec2 };
 
@@ -175,11 +175,10 @@ export function findFirstHit(annotation: AnnotationMesh, p: vec2): AnnotationPol
     return undefined;
 }
 
-
-
 export function MeshFromAnnotation(annotation: Annotation): AnnotationMesh | undefined {
     const groups =
-        annotation.closedPolygons?.map((path) => ({ path, loops: onlyDefined(groupLoops(path).map(closedPolygon)) })) ?? [];
+        annotation.closedPolygons?.map((path) => ({ path, loops: onlyDefined(groupLoops(path).map(closedPolygon)) })) ??
+        [];
 
     if (groups.length < 1) {
         return {
@@ -210,7 +209,7 @@ export function MeshFromAnnotation(annotation: Annotation): AnnotationMesh | und
         if (group.loops.length < 1) continue;
 
         for (const loop of group.loops) {
-            if (!loop) continue
+            if (!loop) continue;
 
             const closedLoop: ClosedLoop = {
                 start: outIndex / 2,
@@ -229,9 +228,11 @@ export function MeshFromAnnotation(annotation: Annotation): AnnotationMesh | und
         });
     }
 
-    return totalBounds === undefined ? undefined : {
-        bounds: totalBounds,
-        closedPolygons,
-        points,
-    };
+    return totalBounds === undefined
+        ? undefined
+        : {
+              bounds: totalBounds,
+              closedPolygons,
+              points,
+          };
 }

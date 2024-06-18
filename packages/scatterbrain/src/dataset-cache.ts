@@ -1,9 +1,13 @@
 type MaybePromise<D> = D | Promise<D>;
-type RecordKey = string | number | symbol
+type RecordKey = string | number | symbol;
 export interface AsyncCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> {
     isCached(k: CacheKey): boolean;
     getCachedUNSAFE(k: CacheKey): D | undefined;
-    cacheAndUse(workingSet: Record<SemanticKey, () => Promise<D>>, use: (items: Record<SemanticKey, D>) => void, cacheKey: (semantic: SemanticKey) => CacheKey): cancelFn | undefined;
+    cacheAndUse(
+        workingSet: Record<SemanticKey, () => Promise<D>>,
+        use: (items: Record<SemanticKey, D>) => void,
+        cacheKey: (semantic: SemanticKey) => CacheKey
+    ): cancelFn | undefined;
 }
 
 type useFn<K extends RecordKey, D> = (items: Record<K, D>) => void;
@@ -14,9 +18,14 @@ type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends Recor
     blocking: Set<CacheKey>; // these are the cache keys associated with the items in 'ready' - we keep them around to make it easy to make sure we dont delete something we assume we have
     // while an outstanding task is waiting on more data
     ready: Record<SemanticKey, D>;
-}
+};
 // return true if the request is completely satisfied, false if its still awaiting more entries
-function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>(req: MutablePendingRequest<SemanticKey, CacheKey, D>, key: SemanticKey, cacheKey: CacheKey, item: D): boolean {
+function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>(
+    req: MutablePendingRequest<SemanticKey, CacheKey, D>,
+    key: SemanticKey,
+    cacheKey: CacheKey,
+    item: D
+): boolean {
     if (req.awaiting.has(cacheKey)) {
         const remaningAwaited = req.awaiting.get(cacheKey);
         // we just fullfilled one - remove it from awaiting
@@ -27,7 +36,7 @@ function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends Re
         req.blocking.add(cacheKey);
         req.ready[key] = item;
     }
-    return req.awaiting.size === 0
+    return req.awaiting.size === 0;
 }
 type MutableCacheEntry<D> = {
     data: MaybePromise<D>;
@@ -47,7 +56,9 @@ type MutableCacheEntry<D> = {
  * }
  
  */
-export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> implements AsyncCache<SemanticKey, CacheKey, D> {
+export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>
+    implements AsyncCache<SemanticKey, CacheKey, D>
+{
     private limit: number;
     private size: (d: D) => number;
     private destroyer: (d: D) => void;
@@ -78,7 +89,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         return sum;
     }
     private countRequests() {
-        const reqCounts: Record<CacheKey, number> = {} as Record<CacheKey, number>
+        const reqCounts: Record<CacheKey, number> = {} as Record<CacheKey, number>;
         for (const req of this.pendingRequests) {
             for (const key of [...req.blocking, ...req.awaiting.keys()]) {
                 if (!reqCounts[key]) {
@@ -147,15 +158,15 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
      * const otherStuff = await fetch('....')
      * ... more code
      * doSomethingCool(entry, otherStuff)
-     * 
+     *
      * by the time the caller gets to the doSomethingCool call, the resources bound to the cache entry
      * may have been disposed!
      * do note that if you use a cache-entry synchronously (no awaits!) after requesting it, you're likely to not
      * encounter any issues, however its a much more robust practice to simply refactor like so:
-     * 
+     *
      * const otherStuff = await fetch('...')
      * cache.cacheAndUse({...}, (...args)=>doSomethingCool(otherStuff, ..args), ...)
-     * 
+     *
      * @param key Entry key to look up in the cache
      * @returns The entry (D) if it is present, or undefined if it is not
      */
@@ -175,17 +186,17 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         if (mutableEntry) {
             mutableEntry.data = data;
         }
-        const removeUs: MutablePendingRequest<SemanticKey, CacheKey, D>[] = []
+        const removeUs: MutablePendingRequest<SemanticKey, CacheKey, D>[] = [];
         for (const req of this.pendingRequests) {
             if (updatePendingRequest(req, key, cacheKey, data)) {
                 req.runner(req.ready);
                 removeUs.push(req);
             }
         }
-        removeUs.forEach(finished => this.pendingRequests.delete(finished));
+        removeUs.forEach((finished) => this.pendingRequests.delete(finished));
     }
     private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
-        let promise: Promise<D>
+        let promise: Promise<D>;
         let entry = this.entries.get(cacheKey);
         const data = entry?.data;
         // we either return early (data is cached)
@@ -197,36 +208,41 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
             } else {
                 // we could simply "return data"
                 // however getCachedUnsafe updates its "last-requested timestamp"
-                return this.getCachedUNSAFE(cacheKey)!
+                return this.getCachedUNSAFE(cacheKey)!;
             }
         } else {
             promise = getter();
             this.entries.set(cacheKey, {
                 data: promise,
                 lastRequestedTimestamp: performance.now(),
-            })
+            });
         }
         return promise.then((data) => {
             this.dataArrived(semanticKey, cacheKey, data);
-        })
+        });
     }
-    cacheAndUse(workingSet: Record<SemanticKey, () => Promise<D>>, use: (items: Record<SemanticKey, D>) => void, toCacheKey: (semanticKey: SemanticKey) => CacheKey, taskFinished?: () => void): cancelFn | undefined {
-        const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[]
+    cacheAndUse(
+        workingSet: Record<SemanticKey, () => Promise<D>>,
+        use: (items: Record<SemanticKey, D>) => void,
+        toCacheKey: (semanticKey: SemanticKey) => CacheKey,
+        taskFinished?: () => void
+    ): cancelFn | undefined {
+        const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[];
         const req: MutablePendingRequest<SemanticKey, CacheKey, D> = {
             awaiting: new Map<CacheKey, Set<SemanticKey>>(),
             ready: {} as Record<SemanticKey, D>,
             runner: use,
-            blocking: new Set<CacheKey>()
-        }
+            blocking: new Set<CacheKey>(),
+        };
         keys.forEach((k) => {
             if (req.awaiting.has(toCacheKey(k))) {
                 req.awaiting.get(toCacheKey(k))?.add(k);
             } else {
-                req.awaiting.set(toCacheKey(k), new Set<SemanticKey>([k]))
+                req.awaiting.set(toCacheKey(k), new Set<SemanticKey>([k]));
             }
-        })
+        });
         for (const semanticKey of keys) {
-            const result = this.prepareCache(semanticKey, toCacheKey(semanticKey), workingSet[semanticKey])
+            const result = this.prepareCache(semanticKey, toCacheKey(semanticKey), workingSet[semanticKey]);
             if (result instanceof Promise) {
                 const prom = taskFinished !== undefined ? result.then(taskFinished) : result;
                 prom.catch((_reason) => {
@@ -236,12 +252,12 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
                     this.pendingRequests.delete(req);
                     // note that catches get chained - so any catch handlers that came in with this promise
                     // still get called
-                })
+                });
             } else {
                 if (updatePendingRequest(req, semanticKey, toCacheKey(semanticKey), result)) {
                     use(req.ready);
                     if (taskFinished !== undefined) {
-                        Promise.resolve().then(taskFinished); // we did the task synchronously... 
+                        Promise.resolve().then(taskFinished); // we did the task synchronously...
                     }
 
                     // early return in the case that everything was cached!
@@ -254,7 +270,6 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         this.pendingRequests.add(req);
         return () => {
             this.pendingRequests.delete(req);
-        }
+        };
     }
-
 }

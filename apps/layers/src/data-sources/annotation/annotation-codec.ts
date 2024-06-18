@@ -1,4 +1,4 @@
-import type { AnnotationCodec } from "./annotation-schema-type";
+import type { AnnotationCodec } from './annotation-schema-type';
 import { parseSchema, compileSchema } from 'kiwi-schema';
 
 export const AnnotationSchema = `

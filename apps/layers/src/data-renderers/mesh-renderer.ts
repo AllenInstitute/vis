@@ -95,39 +95,39 @@ export function buildMeshRenderer(regl: REGL.Regl, mode: 'draw-stencil' | 'use-s
         },
         ...(mode === 'draw-stencil'
             ? {
-                colorMask: [false, false, false, false],
-                stencil: {
-                    enable: true,
-                    mask: -1,
-                    func: {
-                        cmp: 'always',
-                        mask: -1,
-                        ref: 0,
-                    },
-                    op: {
-                        fail: 'invert', // cmp is always - thus never fails...
-                        zfail: 'invert',
-                        zpass: 'invert',
-                    },
-                },
-            }
+                  colorMask: [false, false, false, false],
+                  stencil: {
+                      enable: true,
+                      mask: -1,
+                      func: {
+                          cmp: 'always',
+                          mask: -1,
+                          ref: 0,
+                      },
+                      op: {
+                          fail: 'invert', // cmp is always - thus never fails...
+                          zfail: 'invert',
+                          zpass: 'invert',
+                      },
+                  },
+              }
             : {
-                // use-stencil
-                stencil: {
-                    enable: true,
-                    mask: 0,
-                    func: {
-                        cmp: 'lequal',
-                        mask: -1,
-                        ref: 1,
-                    },
-                    op: {
-                        fail: 'keep',
-                        zfail: 'keep',
-                        zpass: 'keep',
-                    },
-                },
-            }),
+                  // use-stencil
+                  stencil: {
+                      enable: true,
+                      mask: 0,
+                      func: {
+                          cmp: 'lequal',
+                          mask: -1,
+                          ref: 1,
+                      },
+                      op: {
+                          fail: 'keep',
+                          zfail: 'keep',
+                          zpass: 'keep',
+                      },
+                  },
+              }),
     });
     return (
         ...batches: {

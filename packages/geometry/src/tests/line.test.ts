@@ -9,14 +9,14 @@ describe('line', () => {
     });
 
     test('lineSegmentsIntersect finds no intersection', () => {
-        const firstLine: line= { start: [0, 0] , end: [1, 1] };
-        const secondLine: line = { start: [1, 0] , end: [2, 1] };
+        const firstLine: line = { start: [0, 0], end: [1, 1] };
+        const secondLine: line = { start: [1, 0], end: [2, 1] };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
     test('lineSegmentsIntersect finds no intersection for segment that starts on the end of another one', () => {
-        const firstLine: line = { start: [0, 0] , end: [2, 2]  };
-        const secondLine: line = { start: [2, 2] , end: [2, 4]  };
+        const firstLine: line = { start: [0, 0], end: [2, 2] };
+        const secondLine: line = { start: [2, 2], end: [2, 4] };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
@@ -31,9 +31,9 @@ describe('line', () => {
         // Test line        ----------
         // First line           /
         //                     /
-        const testLine: line = { start: [0, 1] , end: [2, 1]  };
-        const firstLine: line = { start: [0, 0] , end: [1, 1]  };
-        const secondLine: line = { start: [1, 1] , end: [1, 2]  };
+        const testLine: line = { start: [0, 1], end: [2, 1] };
+        const firstLine: line = { start: [0, 0], end: [1, 1] };
+        const secondLine: line = { start: [1, 1], end: [1, 2] };
 
         const firstTest = lineSegmentsIntersect(testLine, firstLine);
         const secondTest = lineSegmentsIntersect(testLine, secondLine);
@@ -44,27 +44,27 @@ describe('line', () => {
     });
 
     test('lineSegmentsIntersect finds no intersection for coincident line segments when start of one is at end of other', () => {
-        const firstLine: line = { start: [0, 0] , end: [2, 2]  };
-        const secondLine: line = { start: [2, 2] , end: [3, 3]  };
+        const firstLine: line = { start: [0, 0], end: [2, 2] };
+        const secondLine: line = { start: [2, 2], end: [3, 3] };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
     test('lineSegmentsIntersect finds no intersection for collinear line segments', () => {
-        const firstLine: line = { start: [0, 0] , end: [1, 1]  };
-        const secondLine: line = { start: [2, 2] , end: [3, 3]  };
+        const firstLine: line = { start: [0, 0], end: [1, 1] };
+        const secondLine: line = { start: [2, 2], end: [3, 3] };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
     test('lineSegmentsIntersect finds no intersection for parallel line segments', () => {
-        const firstLine: line = { start: [0, 0] , end: [1, 1]  };
-        const secondLine: line = { start: [0, 1] , end: [1, 2]  };
+        const firstLine: line = { start: [0, 0], end: [1, 1] };
+        const secondLine: line = { start: [0, 1], end: [1, 2] };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 
     // For our purposes, we don't consider colinear and coincident line segments to intersect
     test('lineSegmentsIntersect finds 0 intersection for coincident & colinear line segments (WARNING: technically incorrect)', () => {
-        const firstLine: line = { start: [0, 0] , end: [2, 2]  };
-        const secondLine: line = { start: [1, 1] , end: [3, 3]  };
+        const firstLine: line = { start: [0, 0], end: [2, 2] };
+        const secondLine: line = { start: [1, 1], end: [3, 3] };
         expect(lineSegmentsIntersect(firstLine, secondLine)).toBe(0);
     });
 });

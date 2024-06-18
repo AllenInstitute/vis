@@ -1,24 +1,32 @@
-import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { beginLongRunningFrame, AsyncDataCache, type FrameLifecycle } from "@alleninstitute/vis-scatterbrain";
-import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from 'Common/loaders/scatterplot/data'
-import { loadDataset, loadScatterbrainJson, type ColumnarMetadata, type ColumnarTree, type ColumnBuffer } from "Common/loaders/scatterplot/scatterbrain-loader";
-import REGL from "regl";
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { beginLongRunningFrame, AsyncDataCache, type FrameLifecycle } from '@alleninstitute/vis-scatterbrain';
+import { getVisibleItems, type Dataset, type RenderSettings, fetchItem } from 'Common/loaders/scatterplot/data';
+import {
+    loadDataset,
+    loadScatterbrainJson,
+    type ColumnarMetadata,
+    type ColumnarTree,
+    type ColumnBuffer,
+} from 'Common/loaders/scatterplot/scatterbrain-loader';
+import REGL from 'regl';
 
-import { buildRenderer } from "./renderer";
-const better = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
-const busted = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
+import { buildRenderer } from './renderer';
+const better =
+    'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
+const busted =
+    'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
 const KB = 1000;
 const MB = 1000 * KB;
 class Demo {
     camera: {
         view: box2D;
         screen: vec2;
-    }
+    };
     dataset: Dataset | undefined;
     regl: REGL.Regl;
     canvas: HTMLCanvasElement;
     renderer: ReturnType<typeof buildRenderer>;
-    mouse: 'up' | 'down'
+    mouse: 'up' | 'down';
     mousePos: vec2;
     cache: AsyncDataCache<string, string, ColumnBuffer>;
     curFrame: FrameLifecycle | null;
@@ -26,28 +34,32 @@ class Demo {
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
             view: Box2D.create([0, 0], [(10 * w) / h, 10]),
-            screen: [w, h]
-        }
+            screen: [w, h],
+        };
         this.curFrame = null;
-        this.cache = new AsyncDataCache<string, string, ColumnBuffer>((entry) => {
-            entry.data.destroy();
-        }, (_data: ColumnBuffer) => 1, 1000);
+        this.cache = new AsyncDataCache<string, string, ColumnBuffer>(
+            (entry) => {
+                entry.data.destroy();
+            },
+            (_data: ColumnBuffer) => 1,
+            1000
+        );
 
         loadScatterbrainJson(url).then((metadata) => {
-            this.dataset = loadDataset(metadata, url)
+            this.dataset = loadDataset(metadata, url);
             this.rerender();
-        })
+        });
         this.renderer = buildRenderer(regl);
         this.canvas = canvas;
-        this.mouse = 'up'
+        this.mouse = 'up';
         this.regl = regl;
-        this.mousePos = [0, 0]
+        this.mousePos = [0, 0];
     }
-    mouseButton(click: "up" | "down") {
+    mouseButton(click: 'up' | 'down') {
         this.mouse = click;
     }
     mouseMove(delta: vec2) {
-        if (this.mouse === "down") {
+        if (this.mouse === 'down') {
             // drag the view
             const { screen, view } = this.camera;
             const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
@@ -68,58 +80,63 @@ class Demo {
     }
     rerender() {
         if (this.curFrame) {
-            this.curFrame.cancelFrame('whatever')
+            this.curFrame.cancelFrame('whatever');
         }
-        this.regl.clear({ color: [0.25, 0.25, 0.25, 1], depth: 1 })
+        this.regl.clear({ color: [0.25, 0.25, 0.25, 1], depth: 1 });
         if (this.dataset) {
             // how big is one px in data-units?
-            const px = Box2D.size(this.camera.view)[0] / this.camera.screen[0]
+            const px = Box2D.size(this.camera.view)[0] / this.camera.screen[0];
             // lets only draw a box of points if its 90px wide:
             const sizeThreshold = 90 * px;
             const items = getVisibleItems(this.dataset, this.camera.view, sizeThreshold);
             this.curFrame = beginLongRunningFrame<ColumnBuffer, ColumnarTree<vec2>, RenderSettings>(
-                5, 33, items, this.cache, {
-                dataset: this.dataset,
-                view: this.camera.view,
-                target: null,
-                colorBy: {
-                    name: '88',
-                    type: 'QUANTITATIVE',
+                5,
+                33,
+                items,
+                this.cache,
+                {
+                    dataset: this.dataset,
+                    view: this.camera.view,
+                    target: null,
+                    colorBy: {
+                        name: '88',
+                        type: 'QUANTITATIVE',
+                    },
+                    pointSize: 3,
+                    regl: this.regl,
                 },
-                pointSize: 3,
-                regl: this.regl
-            },
                 fetchItem,
                 this.renderer,
                 (event) => {
                     switch (event.status) {
-                        case "error":
+                        case 'error':
                             throw event.error; // error boundary might catch this
-                        case "progress":
+                        case 'progress':
                             break;
-                        case "finished_synchronously":
-                        case "finished":
+                        case 'finished_synchronously':
+                        case 'finished':
                             this.curFrame = null;
                             break;
-                        case "begun":
+                        case 'begun':
                             break;
-                        case "cancelled":
+                        case 'cancelled':
                             break;
                         default:
                             break;
                     }
                 },
-                (reqKey, item, settings) => `${reqKey}:${item.content.name}`)
+                (reqKey, item, settings) => `${reqKey}:${item.content.name}`
+            );
         }
     }
 }
 let theDemo: Demo;
 
 function demoTime() {
-    const thing = document.getElementById("glCanvas") as HTMLCanvasElement;
+    const thing = document.getElementById('glCanvas') as HTMLCanvasElement;
     thing.width = thing.clientWidth;
     thing.height = thing.clientHeight;
-    const gl = thing.getContext("webgl", {
+    const gl = thing.getContext('webgl', {
         alpha: true,
         preserveDrawingBuffer: true,
         antialias: true,
@@ -128,7 +145,7 @@ function demoTime() {
     const regl = REGL({
         gl,
         // attributes: {},
-        extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
+        extensions: ['ANGLE_instanced_arrays', 'OES_texture_float', 'WEBGL_color_buffer_float'],
     });
     const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
     theDemo = new Demo(canvas, regl, better);
@@ -136,13 +153,12 @@ function demoTime() {
     setupEventHandlers(canvas, theDemo);
 }
 
-
 function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
     canvas.onmousedown = (e: MouseEvent) => {
-        demo.mouseButton("down");
+        demo.mouseButton('down');
     };
     canvas.onmouseup = (e: MouseEvent) => {
-        demo.mouseButton("up");
+        demo.mouseButton('up');
     };
     canvas.onmousemove = (e: MouseEvent) => {
         // account for gl-origin vs. screen origin:
@@ -152,6 +168,5 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
         demo.zoom(e.deltaY > 0 ? 1.1 : 0.9);
     };
 }
-
 
 demoTime();
