@@ -1,21 +1,25 @@
-import REGL, { type Framebuffer2D } from "regl";
-import type { ColumnBuffer, ColumnarTree } from "Common/loaders/scatterplot/scatterbrain-loader";
-import type { RenderSettings } from "Common/loaders/scatterplot/data";
-import { Box2D, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
+import REGL, { type Framebuffer2D } from 'regl';
+import type { ColumnBuffer, ColumnarTree } from 'Common/loaders/scatterplot/scatterbrain-loader';
+import type { RenderSettings } from 'Common/loaders/scatterplot/data';
+import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 
 type Props = {
     view: vec4;
     itemDepth: number;
     count: number;
     pointSize: number;
-    position: Float32Array,
-    color: Float32Array,
-    offset?: vec2 | undefined,
+    position: Float32Array;
+    color: Float32Array;
+    offset?: vec2 | undefined;
     target: Framebuffer2D | null;
-}
+};
 export function buildRenderer(regl: REGL.Regl) {
     // build the regl command first
-    const cmd = regl<{ view: vec4, itemDepth: number, offset: vec2, pointSize: number }, { position: Float32Array, color: Float32Array }, Props>({
+    const cmd = regl<
+        { view: vec4; itemDepth: number; offset: vec2; pointSize: number },
+        { position: Float32Array; color: Float32Array },
+        Props
+    >({
         vert: `
     precision highp float;
     attribute vec2 position;
@@ -51,10 +55,10 @@ export function buildRenderer(regl: REGL.Regl) {
             position: regl.prop<Props, 'position'>('position'),
         },
         uniforms: {
-            itemDepth: regl.prop<Props, "itemDepth">("itemDepth"),
-            view: regl.prop<Props, "view">("view"),
-            offset: regl.prop<Props, "offset">("offset"),
-            pointSize: regl.prop<Props, "pointSize">("pointSize"),
+            itemDepth: regl.prop<Props, 'itemDepth'>('itemDepth'),
+            view: regl.prop<Props, 'view'>('view'),
+            offset: regl.prop<Props, 'offset'>('offset'),
+            pointSize: regl.prop<Props, 'pointSize'>('pointSize'),
         },
 
         blend: {
@@ -62,13 +66,24 @@ export function buildRenderer(regl: REGL.Regl) {
         },
         framebuffer: regl.prop<Props, 'target'>('target'),
         count: regl.prop<Props, 'count'>('count'),
-        primitive: "points",
-    })
-    const renderDots = (item: ColumnarTree<vec2> & { offset?: vec2 | undefined }, settings: RenderSettings, columns: Record<string, ColumnBuffer | object | undefined>) => {
+        primitive: 'points',
+    });
+    const renderDots = (
+        item: ColumnarTree<vec2> & { offset?: vec2 | undefined },
+        settings: RenderSettings,
+        columns: Record<string, ColumnBuffer | object | undefined>
+    ) => {
         const { color, position } = columns;
         const count = item.content.count;
-        const itemDepth = item.content.depth
-        if (color && position && 'type' in color && 'type' in position && color.type === 'vbo' && position.type === 'vbo') {
+        const itemDepth = item.content.depth;
+        if (
+            color &&
+            position &&
+            'type' in color &&
+            'type' in position &&
+            color.type === 'vbo' &&
+            position.type === 'vbo'
+        ) {
             cmd({
                 view: Box2D.toFlatArray(settings.view),
                 count,
@@ -77,13 +92,12 @@ export function buildRenderer(regl: REGL.Regl) {
                 pointSize: settings.pointSize,
                 color: color.data,
                 offset: item.offset ?? [0, 0],
-                target: settings.target
-            })
+                target: settings.target,
+            });
         } else {
             // todo freak out!
-            throw new Error('omg the internet lied to me')
+            throw new Error('omg the internet lied to me');
         }
-
-    }
+    };
     return renderDots;
 }

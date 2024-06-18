@@ -1,4 +1,4 @@
-import { getAnnotationCodec } from "./annotation-codec";
+import { getAnnotationCodec } from './annotation-codec';
 
 export async function fetchAnnotation(payload: {
     annotationBaseUrl: string;

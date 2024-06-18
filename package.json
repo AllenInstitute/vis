@@ -4,14 +4,15 @@
         "preinstall": "npx only-allow pnpm",
         "build": "pnpm -r run --no-bail build",
         "watch": "pnpm -r run watch",
-        "fmt": "pnpm -r run fmt",
-        "fmt:check": "pnpm -r run --no-bail fmt:check"
+        "fmt": "npx prettier . --write",
+        "fmt:check": "npx prettier . --check"
     },
     "devDependencies": {
         "@parcel/packager-ts": "2.12.0",
         "@parcel/transformer-typescript-types": "2.12.0",
         "buffer": "^5.5.0||^6.0.0",
         "parcel": "2.12.0",
+        "prettier": "3.3.2",
         "process": "^0.11.10",
         "typescript": "^5.3.3"
     }

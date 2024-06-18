@@ -36,9 +36,7 @@
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
         "watch": "parcel watch",
-        "test": "vitest --watch",
-        "fmt": "npx prettier . --write",
-        "fmt:check": "npx prettier . --check"
+        "test": "vitest --watch"
     },
     "repository": {
         "type": "git",
@@ -52,7 +50,6 @@
         "@parcel/transformer-typescript-types": "^2.12.0",
         "@types/lodash": "^4.14.202",
         "parcel": "2.12.0",
-        "prettier": "3.3.2",
         "typescript": "^5.3.3",
         "vitest": "^1.4.0"
     },

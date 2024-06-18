@@ -1,5 +1,5 @@
-import type { vec4 } from "@alleninstitute/vis-geometry";
-import type { SlideViewDataset } from "Common/loaders/scatterplot/scatterbrain-loader";
+import type { vec4 } from '@alleninstitute/vis-geometry';
+import type { SlideViewDataset } from 'Common/loaders/scatterplot/scatterbrain-loader';
 
 export type AnnotationGridConfig = {
     type: 'AnnotationGridConfig';
@@ -7,26 +7,26 @@ export type AnnotationGridConfig = {
     annotationUrl: string;
     levelFeature: string;
     stroke: {
-        overrideColor?: vec4,
-        opacity: number,
+        overrideColor?: vec4;
+        opacity: number;
     };
     fill: {
-        overrideColor?: vec4,
-        opacity: number
+        overrideColor?: vec4;
+        opacity: number;
     };
-}
+};
 export type AnnotationGrid = {
-    type: 'AnnotationGrid',
+    type: 'AnnotationGrid';
     dataset: SlideViewDataset;
     annotationBaseUrl: string;
     levelFeature: string;
     stroke: {
-        overrideColor?: vec4,
-        opacity: number,
-        width: number,
-    },
+        overrideColor?: vec4;
+        opacity: number;
+        width: number;
+    };
     fill: {
-        overrideColor?: vec4,
-        opacity: number
-    }
-}
+        overrideColor?: vec4;
+        opacity: number;
+    };
+};

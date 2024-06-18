@@ -1,5 +1,5 @@
-import type { vec4, box2D } from "@alleninstitute/vis-geometry";
-import type REGL from "regl";
+import type { vec4, box2D } from '@alleninstitute/vis-geometry';
+import type REGL from 'regl';
 
 export type ClosedLoop = {
     start: number;

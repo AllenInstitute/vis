@@ -1,14 +1,14 @@
-import type REGL from "regl";
-import type { RenderCallback } from "./types";
-import { Box2D, Vec2, type box2D, type vec2, type vec4 } from "@alleninstitute/vis-geometry";
-import type { AnnotationMesh, GPUAnnotationMesh } from "src/data-sources/annotation/types";
-import type { buildLoopRenderer, buildMeshRenderer } from "./mesh-renderer";
-import type { OptionalTransform } from "src/data-sources/types";
-import { AsyncDataCache, beginLongRunningFrame, type FrameLifecycle } from "@alleninstitute/vis-scatterbrain";
-import { fetchAnnotation } from "src/data-sources/annotation/fetch-annotation";
-import { MeshFromAnnotation } from "src/data-sources/annotation/annotation-to-mesh";
-import { type Camera } from "../../../omezarr-viewer/src/camera";
-import type { AnnotationGrid } from "src/data-sources/annotation/annotation-grid";
+import type REGL from 'regl';
+import type { RenderCallback } from './types';
+import { Box2D, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import type { AnnotationMesh, GPUAnnotationMesh } from 'src/data-sources/annotation/types';
+import type { buildLoopRenderer, buildMeshRenderer } from './mesh-renderer';
+import type { OptionalTransform } from 'src/data-sources/types';
+import { AsyncDataCache, beginLongRunningFrame, type FrameLifecycle } from '@alleninstitute/vis-scatterbrain';
+import { fetchAnnotation } from 'src/data-sources/annotation/fetch-annotation';
+import { MeshFromAnnotation } from 'src/data-sources/annotation/annotation-to-mesh';
+import { type Camera } from '../../../omezarr-viewer/src/camera';
+import type { AnnotationGrid } from 'src/data-sources/annotation/annotation-grid';
 
 type SlideId = string;
 
@@ -21,12 +21,12 @@ type SlideAnnotations = {
 
 export type LoopRenderer = ReturnType<typeof buildLoopRenderer>;
 export type MeshRenderer = ReturnType<typeof buildMeshRenderer>;
-export type CacheContentType = { type: 'mesh', data: GPUAnnotationMesh }
+export type CacheContentType = { type: 'mesh'; data: GPUAnnotationMesh };
 type Settings = {
     regl: REGL.Regl;
-    loopRenderer: LoopRenderer,
-    meshRenderer: MeshRenderer,
-    stencilMeshRenderer: MeshRenderer,
+    loopRenderer: LoopRenderer;
+    meshRenderer: MeshRenderer;
+    stencilMeshRenderer: MeshRenderer;
     camera: Camera;
     viewport: REGL.BoundingBox;
     target: REGL.Framebuffer | null;
@@ -42,7 +42,7 @@ type Settings = {
 };
 
 function isMesh(obj: object | undefined): obj is CacheContentType {
-    return !!(obj && 'type' in obj && obj.type === 'mesh')
+    return !!(obj && 'type' in obj && obj.type === 'mesh');
 }
 function fetchAnnotationsForSlide(
     item: SlideAnnotations,
@@ -53,21 +53,28 @@ function fetchAnnotationsForSlide(
     const toCacheEntry = (m: AnnotationMesh | undefined): CacheContentType | undefined =>
         m
             ? {
-                type: 'mesh', data: {
-                    points: regl.buffer(m.points),
-                    annotation: m
-                }
-            }
+                  type: 'mesh',
+                  data: {
+                      points: regl.buffer(m.points),
+                      annotation: m,
+                  },
+              }
             : undefined;
     const getMesh = () => {
-        return fetchAnnotation(item).then((anno) => anno ? MeshFromAnnotation(anno) : undefined).then(toCacheEntry)
+        return fetchAnnotation(item)
+            .then((anno) => (anno ? MeshFromAnnotation(anno) : undefined))
+            .then(toCacheEntry);
     };
     return { mesh: getMesh };
 }
 
 type RProps = Parameters<ReturnType<typeof buildLoopRenderer>>[0];
 
-function renderSlideAnnotations(item: SlideAnnotations, settings: Settings, columns: Record<string, GPUAnnotationMesh | object | undefined>) {
+function renderSlideAnnotations(
+    item: SlideAnnotations,
+    settings: Settings,
+    columns: Record<string, GPUAnnotationMesh | object | undefined>
+) {
     const { camera, viewport, target, regl, loopRenderer, meshRenderer, stencilMeshRenderer } = settings;
     // const { view } = camera.projection === 'webImage' ? flipY(camera) : camera
     const { view } = camera;
@@ -127,46 +134,58 @@ function renderSlideAnnotations(item: SlideAnnotations, settings: Settings, colu
 
 export type RenderSettings<C> = {
     camera: Camera;
-    regl: REGL.Regl
+    regl: REGL.Regl;
     cache: AsyncDataCache<string, string, C>;
     renderers: {
-        loopRenderer: LoopRenderer,
-        meshRenderer: MeshRenderer,
-        stencilMeshRenderer: MeshRenderer,
-    },
-    callback: RenderCallback,
-    concurrentTasks?: number,
-    queueInterval?: number,
-    cpuLimit?: number,
-}
-
+        loopRenderer: LoopRenderer;
+        meshRenderer: MeshRenderer;
+        stencilMeshRenderer: MeshRenderer;
+    };
+    callback: RenderCallback;
+    concurrentTasks?: number;
+    queueInterval?: number;
+    cpuLimit?: number;
+};
 
 export function renderAnnotationGrid(
-    target: REGL.Framebuffer2D | null, grid: AnnotationGrid, settings: RenderSettings<CacheContentType | object | undefined>): FrameLifecycle {
+    target: REGL.Framebuffer2D | null,
+    grid: AnnotationGrid,
+    settings: RenderSettings<CacheContentType | object | undefined>
+): FrameLifecycle {
     const { dataset, annotationBaseUrl, levelFeature, stroke, fill } = grid;
-    const { regl, cache, camera: { view, screen }, renderers: { loopRenderer, meshRenderer, stencilMeshRenderer }, callback } = settings;
+    const {
+        regl,
+        cache,
+        camera: { view, screen },
+        renderers: { loopRenderer, meshRenderer, stencilMeshRenderer },
+        callback,
+    } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
 
-    concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5
-    queueInterval = queueInterval ? Math.abs(queueInterval) : 33
-    cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined
+    concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5;
+    queueInterval = queueInterval ? Math.abs(queueInterval) : 33;
+    cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined;
     const items: SlideAnnotations[] = [];
     const rowSize = Math.floor(Math.sqrt(Object.keys(dataset.slides).length));
 
     Object.keys(dataset.slides).forEach((slideId, i) => {
-        const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)]
+        const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)];
         const { bounds } = dataset;
-        const offset = Vec2.mul(gridIndex, Box2D.size(bounds))
-        const realBounds = Box2D.translate(bounds, offset)
+        const offset = Vec2.mul(gridIndex, Box2D.size(bounds));
+        const realBounds = Box2D.translate(bounds, offset);
         if (Box2D.intersection(view, realBounds)) {
             items.push({
-                annotationBaseUrl, gridFeature: slideId, levelFeature, bounds, toModelSpace: {
+                annotationBaseUrl,
+                gridFeature: slideId,
+                levelFeature,
+                bounds,
+                toModelSpace: {
                     offset,
-                    scale: [1, 1]
-                }
-            })
+                    scale: [1, 1],
+                },
+            });
         }
-    })
+    });
     const frame = beginLongRunningFrame<CacheContentType | object | undefined, SlideAnnotations, Settings>(
         concurrentTasks,
         queueInterval,
@@ -187,7 +206,7 @@ export function renderAnnotationGrid(
                 width: screen[0],
                 height: screen[1],
             },
-            camera
+            camera,
         },
         fetchAnnotationsForSlide,
         renderSlideAnnotations,
