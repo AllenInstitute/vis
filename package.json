@@ -4,10 +4,10 @@
         "preinstall": "npx only-allow pnpm",
         "build": "pnpm -r run --no-bail build",
         "watch": "pnpm -r run watch",
-        "test": "pnpm -r run --no-bail test:ci",
-        "typecheck": "pnpm -r --no-bail run typecheck",
         "fmt": "npx prettier . --write",
-        "fmt:check": "npx prettier . --check"
+        "fmt:check": "npx prettier . --check",
+        "test": "pnpm -r run --no-bail test:ci",
+        "typecheck": "pnpm -r --no-bail run typecheck"
     },
     "devDependencies": {
         "@parcel/packager-ts": "2.12.0",
