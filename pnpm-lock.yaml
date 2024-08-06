@@ -86,9 +86,9 @@ importers:
       regl:
         specifier: ^2.1.0
         version: 2.1.0
-      zarr:
-        specifier: ^0.6.2
-        version: 0.6.2
+      zarrita:
+        specifier: 0.4.0-next.14
+        version: 0.4.0-next.14
     devDependencies:
       '@parcel/packager-ts':
         specifier: ^2.12.0
@@ -2773,6 +2773,33 @@ packages:
       pretty-format: 29.7.0
     dev: true
 
+  /@zarrita/core@0.1.0-next.12:
+    resolution: {integrity: sha512-Y3TsUBqyQ86Z7Z/1uI9CllI8clm0fFGi0URlVn+YrSfuoZV377DBfYwksoycyb2KtPyo/tfRvwahYXW71RrWhQ==}
+    dependencies:
+      '@zarrita/storage': 0.1.0-next.5
+      '@zarrita/typedarray': 0.1.0-next.3
+      numcodecs: 0.3.1
+    dev: false
+
+  /@zarrita/indexing@0.1.0-next.14:
+    resolution: {integrity: sha512-13Af1eQgdkp9Cw+tQf3jQ5YYirkR2YEIiPFRcwNuHV3u2ycM1okuY2lilIjQ1hgeJzrmIc3q/y72ioT4bgiwcQ==}
+    dependencies:
+      '@zarrita/core': 0.1.0-next.12
+      '@zarrita/storage': 0.1.0-next.5
+      '@zarrita/typedarray': 0.1.0-next.3
+    dev: false
+
+  /@zarrita/storage@0.1.0-next.5:
+    resolution: {integrity: sha512-E1VSxhNGZHL4RsKfIuyaz0HRsDk7hOU8Y7R+8yvKolaHDjK31XQsUgu97oaR24qS1j1OOg5vGyFyd+y0q7FNOA==}
+    dependencies:
+      reference-spec-reader: 0.2.0
+      unzipit: 1.4.3
+    dev: false
+
+  /@zarrita/typedarray@0.1.0-next.3:
+    resolution: {integrity: sha512-DpSaU3Cr6HmYDC/v8oM+e219cHU/kzKma309Z9E+QbpRnZycKNbSTKcxFR7FqB6HgB9640gzNUVFG5P+wzX5Xg==}
+    dev: false
+
   /abortcontroller-polyfill@1.7.5:
     resolution: {integrity: sha512-JMJ5soJWP18htbbxJjG7bG6yuI6pRhgJ0scHHTfkUjf6wjP912xZWvM+A4sJK3gqd9E8fcPbDnOefbA9Th/FIQ==}
     dev: true
@@ -3231,10 +3258,6 @@ packages:
       '@types/estree': 1.0.5
     dev: true
 
-  /eventemitter3@5.0.1:
-    resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
-    dev: false
-
   /execa@8.0.1:
     resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
     engines: {node: '>=16.17'}
@@ -3249,6 +3272,10 @@ packages:
       signal-exit: 4.1.0
       strip-final-newline: 3.0.0
     dev: true
+
+  /fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
+    dev: false
 
   /file-saver@2.0.5:
     resolution: {integrity: sha512-P9bmyZ3h/PRG+Nzga+rbdI4OEpNDzAVyy74uVO9ATgzLK6VtAsYybF/+TOCvrc0MO793d6+42lLyZTw7/ArVzA==}
@@ -3717,9 +3744,10 @@ packages:
     resolution: {integrity: sha512-2vPPEi+Z7WqML2jZYddDIfy5Dqb0r2fze2zTxNNknZaFpVHU3mFB3R+DWeJWGVx0ecvttSGlJTI+WG+8Z4cDWw==}
     dev: true
 
-  /numcodecs@0.2.2:
-    resolution: {integrity: sha512-Y5K8mv80yb4MgVpcElBkUeMZqeE4TrovxRit/dTZvoRl6YkB6WEjY+fiUjGCblITnt3T3fmrDg8yRWu0gOLjhQ==}
-    engines: {node: '>=12'}
+  /numcodecs@0.3.1:
+    resolution: {integrity: sha512-ywIyGpJ+c6Ojktq9a8jsWSy12ZSUcW/W+I3jlH0q0zv9aR/ZiMsN7IrWaNq9YV2FRdLu6r/M6lp35jMA6fug/A==}
+    dependencies:
+      fflate: 0.8.2
     dev: false
 
   /object-assign@4.1.1:
@@ -3744,19 +3772,6 @@ packages:
     dependencies:
       yocto-queue: 1.0.0
     dev: true
-
-  /p-queue@7.4.1:
-    resolution: {integrity: sha512-vRpMXmIkYF2/1hLBKisKeVYJZ8S2tZ0zEAmIJgdVKP2nq0nh4qCdf8bgw+ZgKrkh71AOCaqzwbJJk1WtdcF3VA==}
-    engines: {node: '>=12'}
-    dependencies:
-      eventemitter3: 5.0.1
-      p-timeout: 5.1.0
-    dev: false
-
-  /p-timeout@5.1.0:
-    resolution: {integrity: sha512-auFDyzzzGZZZdHz3BtET9VEz0SE/uMEAx7uWfGPucfzEwwe/xH0iVeZibQmANYE/hp9T2+UUZT5m+BKyrDp3Ew==}
-    engines: {node: '>=12'}
-    dev: false
 
   /parcel@2.12.0(typescript@5.3.3):
     resolution: {integrity: sha512-W+gxAq7aQ9dJIg/XLKGcRT0cvnStFAQHPaI0pvD0U2l6IVLueUAm3nwN7lkY62zZNmlvNx6jNtE4wlbS+CyqSg==}
@@ -3978,6 +3993,10 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       loose-envify: 1.4.0
+    dev: false
+
+  /reference-spec-reader@0.2.0:
+    resolution: {integrity: sha512-q0mfCi5yZSSHXpCyxjgQeaORq3tvDsxDyzaadA/5+AbAUwRyRuuTh0aRQuE/vAOt/qzzxidJ5iDeu1cLHaNBlQ==}
     dev: false
 
   /regenerator-runtime@0.13.11:
@@ -4212,6 +4231,13 @@ packages:
     resolution: {integrity: sha512-xtFJHudx8S2DSoujjMd1WeWvn7KKWFRESZTMeL1RptAYERu29D6jphMjjY+vn96jvN3kVPDNxU/E13VTaXj6jg==}
     dev: true
 
+  /unzipit@1.4.3:
+    resolution: {integrity: sha512-gsq2PdJIWWGhx5kcdWStvNWit9FVdTewm4SEG7gFskWs+XCVaULt9+BwuoBtJiRE8eo3L1IPAOrbByNLtLtIlg==}
+    engines: {node: '>=12'}
+    dependencies:
+      uzip-module: 1.0.3
+    dev: false
+
   /update-browserslist-db@1.0.13(browserslist@4.22.3):
     resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
     hasBin: true
@@ -4227,6 +4253,10 @@ packages:
     resolution: {integrity: sha512-6Z7Ma2aVEWisaL6TvBCy7P8rm2LQoPv6dJ7ecIaIixHcwfbJ0x7mWdbcwlIM5IGQxPZSFYeqRCqlOOeKoJYMkw==}
     engines: {node: '>= 4'}
     dev: true
+
+  /uzip-module@1.0.3:
+    resolution: {integrity: sha512-AMqwWZaknLM77G+VPYNZLEruMGWGzyigPK3/Whg99B3S6vGHuqsyl5ZrOv1UUF3paGK1U6PM0cnayioaryg/fA==}
+    dev: false
 
   /vite-node@1.4.0:
     resolution: {integrity: sha512-VZDAseqjrHgNd4Kh8icYHWzTKSCZMhia7GyHfhtzLW33fZlG9SwsB6CEhgyVOWkJfJ2pFLrp/Gj1FSfAiqH9Lw==}
@@ -4410,10 +4440,10 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
-  /zarr@0.6.2:
-    resolution: {integrity: sha512-3gtxrnpziRlDtrz0hz/M+hreCC5YexppeCVHK62Pmb2FSn947h14GHMDj9rQFkY2mPhRKDHhtB+AUGa8wqJW6Q==}
-    engines: {node: '>=12'}
+  /zarrita@0.4.0-next.14:
+    resolution: {integrity: sha512-B5a3Nw31EEaxjI0yh+CJuSdqDo3f0KnCrf8aZiDj4Nhrsi/Jau7Mtc7Yo6T3SmM6AInTmA/VNv/FKT5ZLfADTQ==}
     dependencies:
-      numcodecs: 0.2.2
-      p-queue: 7.4.1
+      '@zarrita/core': 0.1.0-next.12
+      '@zarrita/indexing': 0.1.0-next.14
+      '@zarrita/storage': 0.1.0-next.5
     dev: false
