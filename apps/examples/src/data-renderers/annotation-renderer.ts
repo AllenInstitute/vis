@@ -1,14 +1,14 @@
 import type REGL from 'regl';
 import type { RenderCallback } from './types';
 import { Box2D, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
-import type { AnnotationMesh, GPUAnnotationMesh } from 'src/data-sources/annotation/types';
+import type { AnnotationMesh, GPUAnnotationMesh } from '~/data-sources/annotation/types';
 import type { buildLoopRenderer, buildMeshRenderer } from './mesh-renderer';
-import type { OptionalTransform } from 'src/data-sources/types';
+import type { OptionalTransform } from '~/data-sources/types';
 import { AsyncDataCache, beginLongRunningFrame, type FrameLifecycle } from '@alleninstitute/vis-scatterbrain';
-import { fetchAnnotation } from 'src/data-sources/annotation/fetch-annotation';
-import { MeshFromAnnotation } from 'src/data-sources/annotation/annotation-to-mesh';
-import type { AnnotationGrid } from 'src/data-sources/annotation/annotation-grid';
-import type { Camera } from 'src/common/camera';
+import { fetchAnnotation } from '~/data-sources/annotation/fetch-annotation';
+import { MeshFromAnnotation } from '~/data-sources/annotation/annotation-to-mesh';
+import type { AnnotationGrid } from '~/data-sources/annotation/annotation-grid';
+import type { Camera } from '~/common/camera';
 
 type SlideId = string;
 

@@ -1,11 +1,12 @@
 {
     "extends": "../tsconfig.json",
-    "include": ["./src/**/*", "../common/src/**/*", "../scatterplot/src/**/*", "../omezarr-viewer/src/**/*"],
+    "include": ["./src/**/*"],
+    
     "compilerOptions": {
         "jsx": "react",
         "baseUrl": "./",
         "paths": {
-            "Common/*": ["../common/src/*"]
-        }
+            "~/*": ["./src/*"]
+        },
     }
 }

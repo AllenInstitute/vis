@@ -5,9 +5,9 @@ import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import { applyOptionalTrn } from './utils';
 import type { DynamicGrid, DynamicGridSlide } from '../data-sources/scatterplot/dynamic-grid';
 import type { RenderCallback } from './types';
-import { fetchItem, getVisibleItemsInSlide } from 'src/common/loaders/scatterplot/data';
-import type { ColumnarTree, ColumnRequest } from 'src/common/loaders/scatterplot/scatterbrain-loader';
-import type { Camera } from 'src/common/camera';
+import { fetchItem, getVisibleItemsInSlide } from '~/common/loaders/scatterplot/data';
+import type { ColumnarTree, ColumnRequest } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type { Camera } from '~/common/camera';
 type CacheContentType = {
     type: 'vbo';
     data: REGL.Buffer;

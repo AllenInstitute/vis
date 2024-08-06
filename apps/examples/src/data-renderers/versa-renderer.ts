@@ -1,9 +1,9 @@
 import REGL, { type Framebuffer2D } from 'regl';
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import { omit } from 'lodash';
-import { pickBestScale, planeSizeInVoxels, sizeInUnits, type ZarrDataset, type ZarrRequest } from 'src/common/loaders/ome-zarr/zarr-data';
-import { getSlicePool } from 'src/common/loaders/ome-zarr/sliceWorkerPool';
-import type { Camera } from '../../../omezarr-viewer/src/camera';
+import { pickBestScale, planeSizeInVoxels, sizeInUnits, type ZarrDataset, type ZarrRequest } from '~/common/loaders/ome-zarr/zarr-data';
+import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
+import type { Camera } from '~/common/camera';
 
 
 type Props = {

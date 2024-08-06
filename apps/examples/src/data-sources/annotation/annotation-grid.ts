@@ -1,5 +1,5 @@
 import type { vec4 } from '@alleninstitute/vis-geometry';
-import type { SlideViewDataset } from 'src/common/loaders/scatterplot/scatterbrain-loader';
+import type { SlideViewDataset } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 export type AnnotationGridConfig = {
     type: 'AnnotationGridConfig';

@@ -2,7 +2,7 @@
 import { HTTPStore, NestedArray, type TypedArray, openArray, openGroup, slice } from 'zarr';
 import { some } from 'lodash';
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
-import type { AxisAlignedPlane } from 'src/data-renderers/versa-renderer';
+import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md

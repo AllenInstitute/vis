@@ -5,8 +5,8 @@ import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
 import type { Path, buildPathRenderer } from './lineRenderer';
 import { flatten } from 'lodash';
 import type { OptionalTransform } from '../data-sources/types';
-import type { Camera } from 'src/common/camera';
-import type { ColumnData } from 'src/common/loaders/scatterplot/scatterbrain-loader';
+import type { Camera } from '~/common/camera';
+import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 
