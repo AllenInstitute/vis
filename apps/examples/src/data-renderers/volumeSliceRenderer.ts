@@ -74,7 +74,7 @@ export function renderGrid<C extends CacheContentType | object>(
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
     const { dataset, gamut, plane, slices } = grid;
     const { axes } = dataset.multiscales[0];
-    concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5;
+    concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 10;
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33;
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined;
     const rowSize = Math.floor(Math.sqrt(slices));

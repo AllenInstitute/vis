@@ -5,6 +5,7 @@ import { pickBestScale, planeSizeInVoxels, sizeInUnits, type ZarrDataset, type Z
 import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
 import type { Camera } from '~/common/camera';
 
+const TILE_SIZE = 256
 
 type Props = {
     target: Framebuffer2D | null;
@@ -279,7 +280,7 @@ export function getVisibleTiles(
     // const realToVxl = (real: box2D) => Box2D.scale(real, Vec2.div(size, realSize));
 
     // find the tiles, in voxels, to request...
-    const allTiles = getAllTiles([256, 256], size);
+    const allTiles = getAllTiles([TILE_SIZE, TILE_SIZE], size);
     const inView = allTiles.filter((tile) => !!Box2D.intersection(camera.view, vxlToReal(tile)));
     // camera.view is in a made up dataspace, where 1=height of the current dataset
     // thus, we have to convert it into a voxel-space camera for intersections
