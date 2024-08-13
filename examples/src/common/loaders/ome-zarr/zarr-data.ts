@@ -45,12 +45,10 @@ type ZarrAttrs = {
 };
 
 async function getRawInfo(store: zarr.FetchStore) {
-    // const group = await openGroup(store);
     const group = await zarr.open(store, { kind: 'group' });
     return group.attrs as ZarrAttrs;
     // TODO HACK ALERT: I am once again doing the thing that I hate, in which I promise to my friend Typescript that
     // the junk I just pulled out of this internet file is exactly what I expect it to be: :fingers_crossed:
-    // return group.attrs.asObject() as Promise<ZarrAttrs>;
 }
 
 async function mapAsync<T, R>(arr: ReadonlyArray<T>, fn: (t: T, index: number) => Promise<R>) {
@@ -64,7 +62,6 @@ async function loadMetadata(url: string) {
     const addShapeToDesc = async (d: DatasetDesc) => ({
         ...d,
         shape: (await zarr.open(root.resolve(d.path), { kind: 'array' })).shape,
-        // shape: (await openArray({ store, mode: "r", path: d.path })).shape,
     });
     return {
         url,
@@ -204,17 +201,12 @@ function buildQuery(r: Readonly<ZarrRequest>, axes: readonly AxisDesc[], shape: 
         return zarr.slice(limit(bounds, d.min), limit(bounds, d.max));
     });
 }
-function dieIfMalformed(r: ZarrRequest) {
-    // deal with me later
-    // TODO
-}
+
 export async function explain(z: ZarrDataset) {
     console.dir(z);
     const root = zarr.root(new zarr.FetchStore(z.url));
-    // const store = new HTTPStore(z.url);
     for (const d of z.multiscales[0].datasets) {
         zarr.open(root.resolve(d.path), { kind: 'array' }).then((arr) => {
-            // openArray({ store, path: d.path, mode: "r" }).then((arr) => {
             console.dir(arr);
         });
     }
@@ -224,16 +216,12 @@ export function indexOfDimension(axes: readonly AxisDesc[], dim: OmeDimension) {
     return axes.findIndex((ax) => ax.name === dim);
 }
 export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex: number) {
-    dieIfMalformed(r);
     // put the request in native order
-    // const store = new HTTPStore(metadata.url);
     const root = zarr.root(new zarr.FetchStore(metadata.url));
     const scene = metadata.multiscales[0];
     const { axes } = scene;
     const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
     const arr = await zarr.open(root.resolve(level.path), { kind: 'array' });
-    // const arr = await openArray({ store, path: level.path, mode: "r" });
-    // const result = await arr.get(buildQuery(r, axes, level.shape));
     const result = await zarr.get(arr, buildQuery(r, axes, level.shape));
     if (typeof result == 'number') {
         throw new Error('oh noes, slice came back all weird');
@@ -244,6 +232,5 @@ export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex
     };
 }
 export async function load(url: string) {
-    // const store = new HTTPStore(url);
     return loadMetadata(url);
 }
