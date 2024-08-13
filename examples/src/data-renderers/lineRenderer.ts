@@ -1,7 +1,6 @@
 import type { box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
 import REGL, { type AttributeConfig } from 'regl';
-import type { ColumnData } from 'Common/loaders/scatterplot/scatterbrain-loader';
-import type { TaggedFloat32Array } from 'Common/typed-array';
+import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 type Attrs = { pos: REGL.AttributeConfig };
 type Unis = { view: vec4; color: vec4 };

@@ -123,7 +123,7 @@ export function pickBestScale(
     const choice = datasets.reduce(
         (bestSoFar, cur) =>
             dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
+                dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
                 ? cur
                 : bestSoFar,
         datasets[0]
@@ -138,14 +138,14 @@ export function sizeInUnits(
     plane:
         | AxisAlignedPlane
         | {
-              u: OmeDimension;
-              v: OmeDimension;
-          },
+            u: OmeDimension;
+            v: OmeDimension;
+        },
     axes: readonly AxisDesc[],
     dataset: DatasetWithShape
 ): vec2 | undefined {
-    plane = typeof plane === 'string' ? uvForPlane(plane) : plane;
-    const vxls = planeSizeInVoxels(plane, axes, dataset);
+    const planeUV = typeof plane === 'string' ? uvForPlane(plane) : plane;
+    const vxls = planeSizeInVoxels(planeUV, axes, dataset);
 
     if (vxls === undefined) return undefined;
     let size: vec2 = vxls;
@@ -154,8 +154,8 @@ export function sizeInUnits(
     dataset.coordinateTransformations.forEach((trn) => {
         if (isScaleTransform(trn)) {
             // try to apply it!
-            const uIndex = indexOfDimension(axes, plane.u);
-            const vIndex = indexOfDimension(axes, plane.v);
+            const uIndex = indexOfDimension(axes, planeUV.u);
+            const vIndex = indexOfDimension(axes, planeUV.v);
             size = Vec2.mul(size, [trn.scale[uIndex], trn.scale[vIndex]]);
         }
     });

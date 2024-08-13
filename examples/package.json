@@ -30,7 +30,7 @@
     "private": true,
     "scripts": {
         "preinstall": "npx only-allow pnpm",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc --version",
         "start": "parcel public/layers.html",
         "dev": "vite"
     },

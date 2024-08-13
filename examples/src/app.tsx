@@ -1,6 +1,6 @@
 import React from 'react';
 import { SliceViewLayer } from './ui/slice-ui';
-import type { Demo } from './demo';
+import type { Demo } from './layers';
 import { AnnotationGrid } from './ui/annotation-grid';
 import { ContactSheetUI } from './ui/contact-sheet';
 import { ScatterplotUI } from './ui/scatterplot-ui';

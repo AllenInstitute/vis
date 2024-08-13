@@ -8,8 +8,8 @@ type Props = {
     itemDepth: number;
     count: number;
     pointSize: number;
-    position: Float32Array;
-    color: Float32Array;
+    position: REGL.Buffer;
+    color: REGL.Buffer;
     offset?: vec2 | undefined;
     target: Framebuffer2D | null;
 };
@@ -17,7 +17,7 @@ export function buildRenderer(regl: REGL.Regl) {
     // build the regl command first
     const cmd = regl<
         { view: vec4; itemDepth: number; offset: vec2; pointSize: number },
-        { position: Float32Array; color: Float32Array },
+        { position: REGL.Buffer; color: REGL.Buffer },
         Props
     >({
         vert: `

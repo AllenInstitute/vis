@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Demo } from 'src/demo';
+import type { Demo } from 'src/layers';
 import { InputSlider } from '@czi-sds/components';
 export function AnnotationGrid(props: { demo: Demo }) {
     const { demo } = props;
