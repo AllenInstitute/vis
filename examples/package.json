@@ -30,7 +30,6 @@
     "private": true,
     "scripts": {
         "preinstall": "npx only-allow pnpm",
-        "demo": "esbuild src/layers.ts --bundle --outfile=dst/demo.js --format=esm",
         "typecheck": "tsc --noEmit",
         "start": "parcel public/layers.html",
         "dev": "vite"
