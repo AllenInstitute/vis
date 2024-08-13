@@ -53,12 +53,12 @@ function fetchAnnotationsForSlide(
     const toCacheEntry = (m: AnnotationMesh | undefined): CacheContentType | undefined =>
         m
             ? {
-                type: 'mesh',
-                data: {
-                    points: regl.buffer(m.points),
-                    annotation: m,
-                },
-            }
+                  type: 'mesh',
+                  data: {
+                      points: regl.buffer(m.points),
+                      annotation: m,
+                  },
+              }
             : undefined;
     const getMesh = () => {
         return fetchAnnotation(item)

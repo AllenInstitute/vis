@@ -20,12 +20,11 @@ ctx.onmessage = (msg: MessageEvent<unknown>) => {
             const { metadata, req, layerIndex, id } = data;
             getSlice(metadata, req, layerIndex).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
                 const { shape, buffer } = result;
-                const flaots = new Float32Array(buffer.data)
+                const flaots = new Float32Array(buffer.data);
                 ctx.postMessage({ type: 'slice', id, shape, data: flaots }, { transfer: [flaots.buffer] });
             });
         }
     } catch (err) {
-        console.error(err)
+        console.error(err);
     }
-
 };

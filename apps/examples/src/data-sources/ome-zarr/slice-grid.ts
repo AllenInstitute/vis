@@ -1,4 +1,3 @@
-
 import { type ZarrDataset, load } from '~/common/loaders/ome-zarr/zarr-data';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';

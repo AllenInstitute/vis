@@ -2,13 +2,26 @@ import type REGL from 'regl';
 import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
 import type { RenderCallback } from './types';
 
-
 import { applyOptionalTrn } from './utils';
 import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
 import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
-import { pickBestScale, sizeInUnits, sizeInVoxels, sliceDimensionForPlane, uvForPlane } from '~/common/loaders/ome-zarr/zarr-data';
-import { cacheKeyFactory, getVisibleTiles, requestsForTile, type AxisAlignedPlane, type buildVersaRenderer, type VoxelSliceRenderSettings, type VoxelTile } from './versa-renderer';
+import {
+    pickBestScale,
+    sizeInUnits,
+    sizeInVoxels,
+    sliceDimensionForPlane,
+    uvForPlane,
+} from '~/common/loaders/ome-zarr/zarr-data';
+import {
+    cacheKeyFactory,
+    getVisibleTiles,
+    requestsForTile,
+    type AxisAlignedPlane,
+    type buildVersaRenderer,
+    type VoxelSliceRenderSettings,
+    type VoxelTile,
+} from './versa-renderer';
 import type { Camera } from '~/common/camera';
 
 type Renderer = ReturnType<typeof buildVersaRenderer>;

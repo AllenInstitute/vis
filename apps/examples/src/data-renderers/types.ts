@@ -3,7 +3,6 @@
 import type { Interval, box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
 import type { NormalStatus } from '@alleninstitute/vis-scatterbrain';
 
-
 type ChannelSettings = {
     gamut: Interval;
     index: number;

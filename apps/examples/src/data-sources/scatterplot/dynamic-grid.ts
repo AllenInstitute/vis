@@ -1,4 +1,10 @@
-import { type ColumnRequest, type SlideViewDataset, loadScatterbrainJson, isSlideViewData, loadDataset } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import {
+    type ColumnRequest,
+    type SlideViewDataset,
+    loadScatterbrainJson,
+    isSlideViewData,
+    loadDataset,
+} from '~/common/loaders/scatterplot/scatterbrain-loader';
 import type { OptionalTransform, Simple2DTransform } from '../types';
 
 export type ScatterplotGridConfig = {

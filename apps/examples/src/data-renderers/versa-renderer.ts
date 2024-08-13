@@ -1,11 +1,17 @@
 import REGL, { type Framebuffer2D } from 'regl';
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import { omit } from 'lodash';
-import { pickBestScale, planeSizeInVoxels, sizeInUnits, type ZarrDataset, type ZarrRequest } from '~/common/loaders/ome-zarr/zarr-data';
+import {
+    pickBestScale,
+    planeSizeInVoxels,
+    sizeInUnits,
+    type ZarrDataset,
+    type ZarrRequest,
+} from '~/common/loaders/ome-zarr/zarr-data';
 import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
 import type { Camera } from '~/common/camera';
 
-const TILE_SIZE = 256
+const TILE_SIZE = 256;
 
 type Props = {
     target: Framebuffer2D | null;
@@ -198,8 +204,9 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     }
 }
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-    return `${settings.dataset.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${settings.gamut[col as 'R' | 'G' | 'B'].index
-        }`;
+    return `${settings.dataset.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${
+        settings.gamut[col as 'R' | 'G' | 'B'].index
+    }`;
 }
 
 function reqSlice(dataset: ZarrDataset, req: ZarrRequest, layerIndex: number) {

@@ -1,10 +1,9 @@
 // lets make some easy to understand utils to access .zarr data stored in an s3 bucket somewhere
 // import { HTTPStore, NestedArray, type TypedArray, openArray, openGroup, slice } from "zarr";
-import * as zarr from 'zarrita'
-import { some } from "lodash";
-import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from "@alleninstitute/vis-geometry";
+import * as zarr from 'zarrita';
+import { some } from 'lodash';
+import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
-
 
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
@@ -19,14 +18,14 @@ type AxisDesc = {
 
 // todo, there are other types of coordinate transforms...
 type ScaleTransform = {
-    type: "scale";
+    type: 'scale';
     scale: ReadonlyArray<number>;
 };
 
 function isScaleTransform(trn: unknown): trn is ScaleTransform {
-    if (typeof trn === "object" && trn !== null) {
+    if (typeof trn === 'object' && trn !== null) {
         const scaleTransform = trn as ScaleTransform;
-        return scaleTransform.type === "scale" && scaleTransform.scale !== undefined;
+        return scaleTransform.type === 'scale' && scaleTransform.scale !== undefined;
     }
     return false;
 }
@@ -47,8 +46,8 @@ type ZarrAttrs = {
 
 async function getRawInfo(store: zarr.FetchStore) {
     // const group = await openGroup(store);
-    const group = await zarr.open(store, { kind: 'group' })
-    return group.attrs as ZarrAttrs
+    const group = await zarr.open(store, { kind: 'group' });
+    return group.attrs as ZarrAttrs;
     // TODO HACK ALERT: I am once again doing the thing that I hate, in which I promise to my friend Typescript that
     // the junk I just pulled out of this internet file is exactly what I expect it to be: :fingers_crossed:
     // return group.attrs.asObject() as Promise<ZarrAttrs>;
@@ -59,12 +58,12 @@ async function mapAsync<T, R>(arr: ReadonlyArray<T>, fn: (t: T, index: number) =
 }
 // return the mapping from path (aka resolution group???) to the dimensional shape of the data
 async function loadMetadata(url: string) {
-    const store = new zarr.FetchStore(url)
-    const root = zarr.root(store)
-    const attrs: ZarrAttrs = await getRawInfo(store)
+    const store = new zarr.FetchStore(url);
+    const root = zarr.root(store);
+    const attrs: ZarrAttrs = await getRawInfo(store);
     const addShapeToDesc = async (d: DatasetDesc) => ({
         ...d,
-        shape: (await zarr.open(root.resolve(d.path), { kind: 'array' })).shape
+        shape: (await zarr.open(root.resolve(d.path), { kind: 'array' })).shape,
         // shape: (await openArray({ store, mode: "r", path: d.path })).shape,
     });
     return {
@@ -76,16 +75,16 @@ async function loadMetadata(url: string) {
     };
 }
 
-type OmeDimension = "x" | "y" | "z" | "t" | "c";
+type OmeDimension = 'x' | 'y' | 'z' | 't' | 'c';
 const uvTable = {
-    xy: { u: "x", v: "y" },
-    xz: { u: "x", v: "z" },
-    yz: { u: "y", v: "z" },
+    xy: { u: 'x', v: 'y' },
+    xz: { u: 'x', v: 'z' },
+    yz: { u: 'y', v: 'z' },
 } as const;
 const sliceDimension = {
-    xy: "z",
-    xz: "y",
-    yz: "x",
+    xy: 'z',
+    xz: 'y',
+    yz: 'x',
 } as const;
 export function uvForPlane(plane: AxisAlignedPlane) {
     return uvTable[plane];
@@ -106,7 +105,7 @@ export function pickBestScale(
 ) {
     const datasets = dataset.multiscales[0].datasets;
     const axes = dataset.multiscales[0].axes;
-    const realSize = sizeInUnits(plane, axes, datasets[0])!
+    const realSize = sizeInUnits(plane, axes, datasets[0])!;
 
     const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
     // size, in dataspace, of a pixel 1/res
@@ -114,17 +113,17 @@ export function pickBestScale(
     const dstToDesired = (a: vec2, goal: vec2) => {
         const diff = Vec2.sub(a, goal);
         if (diff[0] * diff[1] > 0) {
-            // the res (a) is higher than our goal - 
+            // the res (a) is higher than our goal -
             // weight this heavily to prefer smaller than the goal
             return 1000 * Vec2.length(Vec2.sub(a, goal));
         }
         return Vec2.length(Vec2.sub(a, goal));
-    }
+    };
     // we assume the datasets are ordered... hmmm TODO
     const choice = datasets.reduce(
         (bestSoFar, cur) =>
             dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-                dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
+            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
                 ? cur
                 : bestSoFar,
         datasets[0]
@@ -136,14 +135,16 @@ function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
 }
 
 export function sizeInUnits(
-    plane: AxisAlignedPlane | {
-        u: OmeDimension;
-        v: OmeDimension;
-    },
+    plane:
+        | AxisAlignedPlane
+        | {
+              u: OmeDimension;
+              v: OmeDimension;
+          },
     axes: readonly AxisDesc[],
     dataset: DatasetWithShape
 ): vec2 | undefined {
-    plane = typeof plane === 'string' ? uvForPlane(plane) : plane
+    plane = typeof plane === 'string' ? uvForPlane(plane) : plane;
     const vxls = planeSizeInVoxels(plane, axes, dataset);
 
     if (vxls === undefined) return undefined;
@@ -160,15 +161,11 @@ export function sizeInUnits(
     });
     return size;
 }
-export function sizeInVoxels(
-    dim: OmeDimension,
-    axes: readonly AxisDesc[],
-    dataset: DatasetWithShape
-) {
+export function sizeInVoxels(dim: OmeDimension, axes: readonly AxisDesc[], dataset: DatasetWithShape) {
     const uI = indexFor(dim, axes);
-    if (uI === -1) return undefined
+    if (uI === -1) return undefined;
 
-    return dataset.shape[uI]
+    return dataset.shape[uI];
 }
 export function planeSizeInVoxels(
     plane: {
@@ -194,17 +191,17 @@ function buildQuery(r: Readonly<ZarrRequest>, axes: readonly AxisDesc[], shape: 
     const ordered = axes.map((a) => r[a.name as OmeDimension]);
     // if any are undefined, throw up
     if (some(ordered, (a) => a === undefined)) {
-        throw new Error("request does not match expected dimensions of ome-zarr dataset!");
+        throw new Error('request does not match expected dimensions of ome-zarr dataset!');
     }
 
     return ordered.map((d, i) => {
         const bounds = { min: 0, max: shape[i] };
         if (d === null) {
             return d;
-        } else if (typeof d === "number") {
+        } else if (typeof d === 'number') {
             return limit(bounds, d);
         }
-        return zarr.slice(limit(bounds, d.min), limit(bounds, d.max))
+        return zarr.slice(limit(bounds, d.min), limit(bounds, d.max));
     });
 }
 function dieIfMalformed(r: ZarrRequest) {
@@ -213,7 +210,7 @@ function dieIfMalformed(r: ZarrRequest) {
 }
 export async function explain(z: ZarrDataset) {
     console.dir(z);
-    const root = zarr.root(new zarr.FetchStore(z.url))
+    const root = zarr.root(new zarr.FetchStore(z.url));
     // const store = new HTTPStore(z.url);
     for (const d of z.multiscales[0].datasets) {
         zarr.open(root.resolve(d.path), { kind: 'array' }).then((arr) => {
@@ -230,16 +227,16 @@ export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex
     dieIfMalformed(r);
     // put the request in native order
     // const store = new HTTPStore(metadata.url);
-    const root = zarr.root(new zarr.FetchStore(metadata.url))
+    const root = zarr.root(new zarr.FetchStore(metadata.url));
     const scene = metadata.multiscales[0];
     const { axes } = scene;
     const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
-    const arr = await zarr.open(root.resolve(level.path), { kind: 'array' })
+    const arr = await zarr.open(root.resolve(level.path), { kind: 'array' });
     // const arr = await openArray({ store, path: level.path, mode: "r" });
     // const result = await arr.get(buildQuery(r, axes, level.shape));
-    const result = await zarr.get(arr, buildQuery(r, axes, level.shape))
-    if (typeof result == "number") {
-        throw new Error("oh noes, slice came back all weird");
+    const result = await zarr.get(arr, buildQuery(r, axes, level.shape));
+    if (typeof result == 'number') {
+        throw new Error('oh noes, slice came back all weird');
     }
     return {
         shape: result.shape,
