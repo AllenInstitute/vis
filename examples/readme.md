@@ -5,9 +5,9 @@
 1. download/clone this repository.
 2. in the root directory (vis/) run `pnpm install`
 3. run `pnpm build`
-4. `cd apps/layers`
-5. `pnpm run start`
-6. navigate to the running app (default `localhost://1234`)
+4. `cd examples/`
+5. `pnpm run dev`
+6. navigate to the running app (default `localhost://5173`)
 
 ## Why?
 
