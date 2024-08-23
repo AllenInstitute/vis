@@ -18,11 +18,13 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
         regl: REGL.Regl,
         imgRenderer: ImageRenderer,
         renderFn: RenderFn<Renderable, RenderSettings & RequiredSettings>,
-        resolution: vec2
+        resolution: vec2,
+        format?: 'float'
     ) {
+        const [width,height] = resolution;
         this.buffers = {
-            readFrom: { resolution, texture: regl.framebuffer(...resolution), bounds: undefined },
-            writeTo: { resolution, texture: regl.framebuffer(...resolution), bounds: undefined },
+            readFrom: { resolution, texture: regl.framebuffer({width,height, colorType:format??'uint8'}), bounds: undefined },
+            writeTo: { resolution, texture: regl.framebuffer({width,height,colorType:format ?? 'uint8'}), bounds: undefined },
         };
         this.renderImg = imgRenderer;
         this.regl = regl;

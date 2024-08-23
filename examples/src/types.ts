@@ -15,6 +15,8 @@ import type {
 } from './data-renderers/annotation-renderer';
 import type { AnnotationGrid } from './data-sources/annotation/annotation-grid';
 import type { ReglLayer2D } from '@alleninstitute/vis-scatterbrain';
+import type { ScatterplotDataset } from './common/loaders/scatterplot/scatterbrain-loader';
+import type { UmapScatterplot } from './data-sources/scatterplot/umap';
 // note: right now, all layers should be considered 2D, and WebGL only...
 export type Image = {
     texture: REGL.Framebuffer2D;
@@ -63,10 +65,16 @@ export type SlideViewAnnotations = {
     data: AnnotationGrid;
     render: ReglLayer2D<AnnotationGrid, AnnotationGridRenderSettings<CacheEntry>>;
 };
+export type UmapLayer = {
+    type:'umap',
+    data: UmapScatterplot,
+    render: ReglLayer2D<UmapScatterplot,SlideRenderSettings<CacheEntry>>
+}
 export type Layer =
     | ScatterPlotLayer
     | ScatterPlotGridLayer
     | VolumetricSliceLayer
     | VolumetricGridLayer
     | SlideViewAnnotations
-    | AnnotationLayer;
+    | AnnotationLayer
+    | UmapLayer

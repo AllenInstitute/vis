@@ -200,6 +200,7 @@ function loadSlideViewDataset(metadata: SlideColumnarMetadata, _datasetUrl: stri
     };
 }
 export type SlideViewDataset = ReturnType<typeof loadSlideViewDataset>;
+export type ScatterplotDataset = ReturnType<typeof loadDataset>
 
 export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
     if (isSlideViewData(metadata)) {
