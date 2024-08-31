@@ -10,7 +10,7 @@ import type { UmapScatterplot } from '~/data-sources/scatterplot/umap';
 type InnerRenderSettings = {
     Class: ColumnRequest;
     SubClass: ColumnRequest;
-    SuperCluster: ColumnRequest;
+    SuperType: ColumnRequest;
     Cluster: ColumnRequest;
     camera: Camera,
     target:REGL.Framebuffer2D|null,
@@ -30,7 +30,7 @@ type Props = {
 
     Class: REGL.Buffer,
     SubClass: REGL.Buffer,
-    SuperCluster: REGL.Buffer,
+    SuperType: REGL.Buffer,
     Cluster: REGL.Buffer,
     // taxonomy data - packed in class/sub/super/cluster order textures
     taxonomyPositions: REGL.Texture2D, // size = [4x |class/sub/super/cluster|]
@@ -51,7 +51,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
             position: REGL.Buffer;
             Class: REGL.Buffer,
             SubClass: REGL.Buffer,
-            SuperCluster: REGL.Buffer,
+            SuperType: REGL.Buffer,
             Cluster: REGL.Buffer,
         },
         Props
@@ -62,7 +62,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
 
     attribute float Class;
     attribute float SubClass;
-    attribute float SuperCluster;
+    attribute float SuperType;
     attribute float Cluster;
     
     uniform float pointSize;
@@ -74,7 +74,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     uniform sampler2D taxonomyPositions;
 
     // animation control //
-    uniform animationParam;
+    uniform float animationParam;
     // animationParam: an encoded value:
     // floor(p) => startTaxonomy
     // ceil(p) => endTaxonomy
@@ -88,35 +88,40 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         // todo: make me branchless
         float u = p/taxonomySize.x;
         float vS = taxonomySize.y;
-        if(p < 1.0){
+
+        if(p == 0.0){
             return texture2D(taxonomyPositions, vec2(u,Class/vS)).rgb;
         }
-        if(p < 2.0){
+        if(p == 1.0){
             return texture2D(taxonomyPositions, vec2(u,SubClass/vS)).rgb;
         }
-        if(p < 3.0){
-            return texture2D(taxonomyPositions, vec2(u,SuperCluster/vS)).rgb;
+        if(p == 2.0){
+            return texture2D(taxonomyPositions, vec2(u,SuperType/vS)).rgb;
         }
-        if(p < 4.0){
+        if(p == 3.0){
             return texture2D(taxonomyPositions, vec2(u,Cluster/vS)).rgb;
         }
-        return vec3(position,pointSize);
+        return vec3(position,1.0);
     }
 
     void main(){
         vec3 p1 = getTaxonomyData(floor(animationParam));
-        vec3 p2 = getTaxonomyData(ceil(animationParam));
+        vec3 p2 = getTaxonomyData(floor(animationParam)+1.0);
         // linear for now!
-        vec P = mix(p1,p2, fract(animationParam));
+        vec3 P = mix(p1,p2, fract(animationParam));
 
-        gl_PointSize=P.z;
+        gl_PointSize=pointSize*P.z;
         vec2 size = view.zw-view.xy;
         vec2 pos = ((P.xy+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
-
-        clr = vec4(mix(vec3(0.3,0,0),vec3(1,1,1),color/15.0),1.0);
+        vec3 rgb = texture2D(taxonomyPositions, vec2(4.0/taxonomySize.x,(Class)/taxonomySize.y)).rgb;
+        // vec3 hmm = getTaxonomyData(0.0);
+        // clr.rg = (vec2(20,20)+hmm.xy)/40.0;
+        // clr.b = 0.0;//Class/30.0;//hmm.z/4.0;
+        // clr.a=1.0;
+        clr = vec4(rgb,1.0);
         
-        gl_Position = vec4(clip,0.5-color/20.0,1);
+        gl_Position = vec4(clip,itemDepth/1000.0,1);
     }`,
         frag: `
         precision highp float;
@@ -130,7 +135,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         attributes: {
             Class: regl.prop<Props, 'Class'>('Class'),
             SubClass: regl.prop<Props, 'SubClass'>('SubClass'),
-            SuperCluster: regl.prop<Props, 'SuperCluster'>('SuperCluster'),
+            SuperType: regl.prop<Props, 'SuperType'>('SuperType'),
             Cluster: regl.prop<Props, 'Cluster'>('Cluster'),
             position: regl.prop<Props, 'position'>('position'),
         },
@@ -157,13 +162,13 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         settings: InnerRenderSettings,
         columns: Record<string, ColumnBuffer | object | undefined>
     ) => {
-        const { Class, Cluster, SubClass, SuperCluster, position } = columns;
+        const { Class, Cluster, SubClass, SuperType, position } = columns;
         const {taxonomyPositions,taxonomySize,animationParam,camera,pointSize,target}=settings
         const view = camera.view;
         const count = item.content.count;
         const itemDepth = item.content.depth;
         if (bufferIsLegit(position) && bufferIsLegit(Class) &&
-            bufferIsLegit(SubClass) && bufferIsLegit(SuperCluster) &&
+            bufferIsLegit(SubClass) && bufferIsLegit(SuperType) &&
             bufferIsLegit(Cluster)) {
             cmd({
                 view: Box2D.toFlatArray(view),
@@ -172,7 +177,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
                 position: position.data,
                 Class:Class.data,
                 SubClass:SubClass.data,
-                SuperCluster:SuperCluster.data,
+                SuperType:SuperType.data,
                 Cluster: Cluster.data,
                 taxonomyPositions,
                 taxonomySize,
@@ -190,18 +195,18 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
 
 
 export function fetchTaxonomyItems(item: ColumnarTree<vec2>, settings: InnerRenderSettings, signal?: AbortSignal) {
-    const { dataset, Class,SubClass,SuperCluster,Cluster } = settings;
+    const { dataset, Class,SubClass,SuperType,Cluster } = settings;
     const position = () =>
         fetchAndUpload(settings, item.content, { type: 'METADATA', name: dataset.spatialColumn }, signal);
     const cls = () => fetchAndUpload(settings, item.content, Class, signal);
     const sub = () => fetchAndUpload(settings, item.content, SubClass, signal);
-    const spr = () => fetchAndUpload(settings, item.content, SuperCluster, signal);
+    const spr = () => fetchAndUpload(settings, item.content, SuperType, signal);
     const clstr = () => fetchAndUpload(settings, item.content, Cluster, signal);
     return {
         position,
         Class:cls,
         SubClass:sub,
-        SuperCluster:spr,
+        SuperType:spr,
         Cluster:clstr,
     } as const;
 }
@@ -220,7 +225,7 @@ export type RenderSettings<C> = {
     concurrentTasks?: number;
     queueInterval?: number;
     cpuLimit?: number;
-} & InnerRenderSettings;
+} & Omit<InnerRenderSettings, 'target'>;
 
 // TODO: this cache key is totally insufficient!
 const cacheKey = (reqKey: string, item: ColumnarTree<vec2>, settings: InnerRenderSettings) =>

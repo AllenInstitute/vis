@@ -1,4 +1,4 @@
-import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import { Box2D, Vec2, type box2D, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
 import REGL from "regl";
 import type { Camera } from "../common/camera";
 import { createRoot } from "react-dom/client";
@@ -7,8 +7,11 @@ import type { CacheEntry } from "../types";
 import { buildImageRenderer } from "../common/image-renderer";
 import { createUmapDataset, type UmapConfig, type UmapScatterplot } from "../data-sources/scatterplot/umap";
 import type { OptionalTransform } from "../data-sources/types";
-import { buildTaxonomyRenderer,renderTaxonomyUmap,type RenderSettings,type RenderSettings as TaxRenderSettings } from "./taxonomy-renderer";
-import type { ColumnBuffer } from "~/common/loaders/scatterplot/scatterbrain-loader";
+import { buildTaxonomyRenderer, renderTaxonomyUmap, type RenderSettings, type RenderSettings as TaxRenderSettings } from "./taxonomy-renderer";
+import type { ColumnBuffer, ColumnRequest } from "~/common/loaders/scatterplot/scatterbrain-loader";
+import { query, resolve, type CellPropertiesConnection, type Maybe } from "~/gqty";
+import { nodeData } from "./nodes";
+import { keys } from "lodash";
 const flipBox = (box: box2D): box2D => {
     const { minCorner, maxCorner } = box;
     return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
@@ -22,7 +25,22 @@ const uiroot = createRoot(document.getElementById('sidebar')!);
 // a cell has a class, subclass, cluster, and super cluster
 // each value in those feature-types will now have a position associated with it - the centroid
 // of that thing in umap space.
-
+const Class: ColumnRequest = {
+    type: 'METADATA',
+    name: 'FS00DXV0T9R1X9FJ4QE'
+}
+const SubClass: ColumnRequest = {
+    type: 'METADATA',
+    name: 'QY5S8KMO5HLJUF0P00K'
+}
+const SuperType: ColumnRequest = {
+    type: 'METADATA',
+    name: '15BK47DCIOF1SLLUW9P'
+}
+const Cluster: ColumnRequest = {
+    type: 'METADATA',
+    name: 'CBGC0U30VV9JPR60TJU'
+}
 
 function destroyer(item: CacheEntry) {
     switch (item.type) {
@@ -49,42 +67,42 @@ export class Demo {
     mouse: 'up' | 'down';
     mode: 'draw' | 'pan';
     mousePos: vec2;
-    filterValue: number;
-    suppression: number;
-    layer: undefined | ReglLayer2D<UmapScatterplot,RenderSettings<CacheEntry>>;
+    taxonomyData: REGL.Texture2D;
+    txSize: vec2;
+    layer: undefined | ReglLayer2D<UmapScatterplot, RenderSettings<CacheEntry>>;
     plot: UmapScatterplot | undefined;
+    anmParam:number;
     private refreshRequested: number = 0;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
     taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
     // private redrawRequested: number = 0;
-    contourScale: number
     pointSize: number;
-    constructor(canvas: HTMLCanvasElement, regl:REGL.Regl){
-        this.regl=regl;
-        this.mode='pan'
-        this.mouse='up'
-        this.filterValue = 2;
-        this.mousePos=[0,0];
-        this.pointSize = 20;
-        this.suppression=0.0;
-        this.contourScale=1.0;
-        this.canvas=canvas;
+    constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
+        this.regl = regl;
+        this.mode = 'pan'
+        this.mouse = 'up'
+        this.mousePos = [0, 0];
+        this.pointSize = 4;
+        this.anmParam = 3.5;
+        this.canvas = canvas;
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
             view: Box2D.create([0, 0], [(10 * w) / h, 10]),
             screen: [w, h],
             projection: 'webImage',
         };
-        this.imgRenderer=buildImageRenderer(regl);
-        this.taxRenderer=buildTaxonomyRenderer(regl);
+        this.imgRenderer = buildImageRenderer(regl);
+        this.taxRenderer = buildTaxonomyRenderer(regl);
         this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 4000);
         this.initHandlers(canvas);
-
+        this.taxonomyData = regl.texture({width:5,height:6000,format:'rgba',type:'float'});
+        this.txSize = [5,6000];
+        this.loadTaxonomyInfo();
     }
     mouseButton(click: 'up' | 'down', pos: vec2) {
         this.mouse = click;
-        
+
     }
     private toDataspace(px: vec2) {
         const { view } = this.camera;
@@ -116,48 +134,39 @@ export class Demo {
         };
         this.onCameraChanged();
     }
-    getContourScale(){return this.contourScale}
-    setContourScale(v:number){
-        this.contourScale=v;
-        this.requestReRender();
-    }
-    getPointSize(){return this.pointSize}
-    setPointSize(v:number){
-        this.pointSize=v;
-        this.requestReRender();
-    }
-    getFilter(){return this.filterValue}
-    setFilter(v:number){
-        this.filterValue=v;
-        this.requestReRender();
-    }
-    getSuppression(){return this.suppression}
-    setSuppression(v:number){
-        this.suppression=v;
-        this.requestReRender();
-    }
-    private onCameraChanged(){
-        if(this.layer && this.plot){
+    private onCameraChanged() {
+        if (this.layer && this.plot) {
             this.layer?.onChange({
                 data: this.plot,
-                settings:{
-                    animationParam: 0,
-                    cache:this.cache,
-                    callback: ()=>{},
-                    camera:this.camera,
+                settings: {
+                    animationParam: this.anmParam,
+                    cache: this.cache,
+                    callback: () => { },
+                    camera: this.camera,
                     Class,
                     Cluster,
                     SubClass, // TODO!
-                    SuperCluster,
-                    dataset:this.plot.dataset,
-                    pointSize: 14,
-                    regl:this.regl,
-                    renderer:this.taxRenderer
+                    SuperType,
+                    taxonomyPositions: this.taxonomyData,
+                    taxonomySize: this.txSize,
+                    dataset: this.plot.dataset,
+                    pointSize: this.pointSize,
+                    regl: this.regl,
+                    renderer: this.taxRenderer
                 }
             })
             this.requestReRender();
         }
 
+    }
+    private loadTaxonomyInfo() {
+        // read a bunch of junk, join it with some stuff from IDF
+        // put the whole pile in this.taxonomyData...
+        // gimmeTaxonomy(datsetId,'v0',[Class.name,SubClass.name,SuperType.name,Cluster.name])
+        buildTexture().then(({texture,size})=>{
+            this.taxonomyData = this.regl.texture({data: texture,width:size[0],height:size[1],format:'rgba',type:'float'})
+            this.txSize = size;
+        })
     }
     private initHandlers(canvas: HTMLCanvasElement) {
         canvas.onmousedown = (e: MouseEvent) => {
@@ -174,20 +183,20 @@ export class Demo {
             this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
         };
         window.onkeyup = (e: KeyboardEvent) => {
-            if(e.key==='w'){
-                this.filterValue++;
+            if (e.key === 'w') {
+                this.anmParam+=0.0331;
                 this.onCameraChanged();
-            }else if(e.key==='s') {
-                this.filterValue-=1;
+            } else if (e.key === 's') {
+                this.anmParam -= 0.0331;
                 this.onCameraChanged();
             }
         }
     }
-    loadData(config:UmapConfig){
+    loadData(config: UmapConfig) {
         const [w, h] = this.camera.screen;
-        return createUmapDataset(config).then((plot)=>{
-            this.plot=plot;
-            this.camera = {...this.camera,view:plot.dataset.bounds};
+        return createUmapDataset(config).then((plot) => {
+            this.plot = plot;
+            this.camera = { ...this.camera, view: plot.dataset.bounds };
             this.layer = new ReglLayer2D<UmapScatterplot & OptionalTransform, RenderSettings<CacheEntry>>(
                 this.regl,
                 this.imgRenderer,
@@ -205,22 +214,19 @@ export class Demo {
             });
         }
     }
-    refreshScreen(){
-        this.regl.clear({framebuffer:null, color:[0,0,0,1], depth:1})
-        if(this.layer){
-            const img = this.layer.getRenderResults('prev');
-            if(img.bounds){
-            const flipped = Box2D.toFlatArray(flipBox(this.camera.view));
-            // draw this to the screen (eventually, do that with the topo shader...)
-            // this.contourRenderer({
-            //     // box:Box2D.toFlatArray(img.bounds),
-            //     heightmap:img.texture,
-            //     color:[1,1,1,1],
-            //     txStep:Vec2.div([1,1],img.resolution),
-            //     target:null,
-            //     cScale: 10/this.contourScale,
-            //     view:Box2D.toFlatArray(this.camera.view)
-            // })
+    refreshScreen() {
+        this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
+        if (this.layer) {
+            const img = this.layer.getRenderResults(this.layer.renderingInProgress() ? 'cur' : 'prev');
+            if (img.bounds) {
+                // const flipped = Box2D.toFlatArray(flipBox(this.camera.view));
+                this.imgRenderer({
+                    img: img.texture,
+                    box: Box2D.toFlatArray(img.bounds),
+                    target: null,
+                    view: Box2D.toFlatArray(this.camera.view)
+                })
+
             }
 
         }
@@ -253,13 +259,115 @@ function demoTime(thing: HTMLCanvasElement) {
     theDemo.loadData(fancy);
     theDemo.requestReRender();
 }
-const cls = 'FS00DXV0T9R1X9FJ4QE'
-const superclass='QY5S8KMO5HLJUF0P00K'
-
-const tenx =`https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json`
-    // 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
+// const cls = 'FS00DXV0T9R1X9FJ4QE'
+// const superclass = 'QY5S8KMO5HLJUF0P00K'
+const datsetId ='Q1NCWWPG6FZ0DNIXJBQ'
+const tenx = `https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json`
+// 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const fancy: UmapConfig = {
     url: tenx,
     type: 'UmapConfig',
 }
 demoTime(document.getElementById('glCanvas') as HTMLCanvasElement);
+
+
+// lets try GQty to pull in the metadata for cell types
+// we need that so that indexing will line up in the shader...
+
+async function gimmeTaxonomy(datasetId: string, version: string, cellTypeColumns: string[]) {
+    const getNodes = (conn: Maybe<CellPropertiesConnection>)=>({
+        nodes: conn?.nodes?.map(n=>({
+            color: n.color,
+            index: n.featureTypeValueIndex.index,
+            title: n.featureType.title,
+            value: n.featureTypeValueIndex.value
+        }))
+    })
+    // figuring out where junk goes is weird... and I proxies dont help,
+    // but now its looking pretty nice!
+    const everything = await resolve(({query: {cellProperties} })=>({
+        ...getNodes(cellProperties({
+            first: 6000,
+            where: 
+            {and: [
+                    { dataset: { referenceId: { eq: datasetId }, version: { eq: version } } }, 
+                    { featureType: { referenceId: { in: cellTypeColumns } } }
+                ]}
+        }))}));
+    // everything?.nodes?.map(({index,title,value,color})=>{
+        
+    //     console.log(title,color, value, index)
+    // });
+    return everything.nodes;
+}
+
+export function mapBy<K extends string, T extends Record<K, string>>(items: readonly T[], k: K): Record<string, T&{idx:number}> {
+    const dictionary: Record<string, T&{idx:number}> = {};
+    items.forEach((item,index) => {
+        dictionary[item[k]] = {...item, idx:index};
+    });
+    return dictionary;
+}
+
+export function hexToRgb(hex: string): vec3 {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    const fullHex = hex.replace(shorthandRegex, (_m, r, g, b) => r + r + g + g + b + b);
+
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+    if (result && result.length === 4) {
+        return [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)];
+    }
+    return [0.0, 0.0, 0.0];
+}
+// ok - parse our csv file of taxonomy node positions...
+// then join that onto the cell props from the IDF
+async function buildTexture(){
+    const A = gimmeTaxonomy(datsetId,'v0',[Class.name]).then((data)=>mapBy(data??[],'value'))
+    const B = gimmeTaxonomy(datsetId,'v0',[SubClass.name]).then((data)=>mapBy(data??[],'value'))
+    const C= gimmeTaxonomy(datsetId,'v0',[SuperType.name]).then((data)=>mapBy(data??[],'value'))
+    const D = gimmeTaxonomy(datsetId,'v0',[Cluster.name]).then((data)=>mapBy(data??[],'value'))
+    const [classes,subclasses,supertypes,clusters] = await Promise.all([A,B,C,D])
+    // we have to stash all this in a nice, high-precision buffer:
+    // RGBA (4) x 5 (each level + color) * longest column
+    const longestCol =  Math.max(...[classes,subclasses,supertypes,clusters].map((m)=>keys(m).length))
+    const texture = new Float32Array(5*4*longestCol);
+    const txFloatOffset = (col:number,row:number)=> (row*5*4)+col*4;
+    const lvls = {
+        class: {map:classes, column: 0},
+        subclass:{map:subclasses,column:1},
+        supertype:{map:supertypes,column:2},
+        cluster:{map:clusters,column:3}
+    }
+    const data = nodeData;
+    const lines = data.split('\n');
+    // for each line, read in the bits...
+    // level,level_name,label,name,parent,n_cells,centroid_x,centroid_y
+    // here, name = 'value' from the idf cellPropertyConnection node thingy
+    // levelName is class, subclass, etc...
+    for(const line of lines){
+        const [level,levelName,label,name,parent,numCells,cx,cy]=line.split(',');
+        const L = lvls[levelName.toLowerCase() as keyof typeof lvls];
+        if(L){
+            const info = L.map[name];
+            if(info){
+                if(L.column===0){
+                    const clrOffset = txFloatOffset(4,info.index);
+                    const rgb = hexToRgb(info.color ?? '0xFF0000');
+                    texture[clrOffset]=rgb[0]/255;
+                    texture[clrOffset+1]=rgb[1]/255;
+                    texture[clrOffset+2]=rgb[2]/255;
+                }
+                const offset = txFloatOffset(L.column,info.index);
+                texture[offset] = Number.parseFloat(cx);
+                texture[offset+1] = Number.parseFloat(cy);
+                texture[offset+2] =4 - L.column;
+            }else{
+                console.error('no such taxon (csv mistake?)', name)
+            }
+        }else {
+            // complain!
+            console.error('no such level (csv mistake?)', levelName)
+        }
+    }
+    return {texture, size: [5,longestCol] as vec2}
+}
