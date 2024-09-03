@@ -7,7 +7,7 @@
 3. run `pnpm build`
 4. `cd examples/`
 5. `pnpm run dev`
-6. navigate to the running app (default `localhost://5173`)
+6. navigate to the running app (default `localhost://5173`) followed by the path to the example: (`/layers` or `/constellation`)
 
 ## Why?
 
