@@ -72,6 +72,8 @@ export class Demo {
     layer: undefined | ReglLayer2D<UmapScatterplot, RenderSettings<CacheEntry>>;
     plot: UmapScatterplot | undefined;
     anmParam:number;
+    goal:number;
+    interval: number;
     private refreshRequested: number = 0;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
@@ -84,7 +86,9 @@ export class Demo {
         this.mouse = 'up'
         this.mousePos = [0, 0];
         this.pointSize = 4;
-        this.anmParam = 3.5;
+        this.interval=0;
+        this.anmParam = 0;;
+        this.goal = 0;
         this.canvas = canvas;
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
@@ -141,7 +145,7 @@ export class Demo {
                 settings: {
                     animationParam: this.anmParam,
                     cache: this.cache,
-                    callback: () => { },
+                    callback: () => { this.requestReRender()},
                     camera: this.camera,
                     Class,
                     Cluster,
@@ -166,6 +170,8 @@ export class Demo {
         buildTexture().then(({texture,size})=>{
             this.taxonomyData = this.regl.texture({data: texture,width:size[0],height:size[1],format:'rgba',type:'float'})
             this.txSize = size;
+            console.log('texture loaded!');
+            this.requestReRender();
         })
     }
     private initHandlers(canvas: HTMLCanvasElement) {
@@ -186,9 +192,35 @@ export class Demo {
             if (e.key === 'w') {
                 this.anmParam+=0.0331;
                 this.onCameraChanged();
-            } else if (e.key === 's') {
+            }else if(['0','1','2','3','4'].includes(e.key)){
+                this.goal = Number.parseInt(e.key);
+            }else if (e.key === 's') {
                 this.anmParam -= 0.0331;
                 this.onCameraChanged();
+            }else if(e.key === 'a'){
+                if(this.interval===0){
+                    let lastFrameTime = performance.now();
+                    const intervalMS = 16; //60fps
+                    const progressPerMS = 2/1000;
+                    this.interval = window.setInterval(()=>{
+                        const now = performance.now()
+                        const delta = now-lastFrameTime;
+                        lastFrameTime=now
+                        if(Math.abs(this.goal-this.anmParam) < progressPerMS*delta){
+                            this.anmParam=this.goal;
+                            this.onCameraChanged();
+                        }
+                        if(this.goal!= this.anmParam){
+                            const progress = progressPerMS*delta
+                            this.anmParam += (this.goal > this.anmParam) ? progress : -progress
+                            this.onCameraChanged();
+                        }
+                    },intervalMS)
+                }else {
+                    window.clearInterval(this.interval);
+                    this.interval=0;
+                }
+
             }
         }
     }
@@ -217,7 +249,8 @@ export class Demo {
     refreshScreen() {
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
         if (this.layer) {
-            const img = this.layer.getRenderResults(this.layer.renderingInProgress() ? 'cur' : 'prev');
+            let img = this.layer.getRenderResults('prev');
+            img = img.bounds===undefined ? this.layer.getRenderResults('cur') : img;
             if (img.bounds) {
                 // const flipped = Box2D.toFlatArray(flipBox(this.camera.view));
                 this.imgRenderer({
@@ -360,7 +393,7 @@ async function buildTexture(){
                 const offset = txFloatOffset(L.column,info.index);
                 texture[offset] = Number.parseFloat(cx);
                 texture[offset+1] = Number.parseFloat(cy);
-                texture[offset+2] =4 - L.column;
+                texture[offset+2] =5 - L.column;
             }else{
                 console.error('no such taxon (csv mistake?)', name)
             }

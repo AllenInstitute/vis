@@ -103,11 +103,20 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         }
         return vec3(position,1.0);
     }
+    // vec3 bendy(vec3 start, vec3 middle, vec3 end, float p){
+    //     vec3 goal = mix(middle,end, p);
+    //     return mix(start, goal, p);
+    // }
 
     void main(){
+        // vec3 p0 = getTaxonomyData(floor(animationParam)-1.0);
         vec3 p1 = getTaxonomyData(floor(animationParam));
         vec3 p2 = getTaxonomyData(floor(animationParam)+1.0);
-        // linear for now!
+        // vec2 mDir = normalize(p0.xy - p1.xy);
+        // vec2 M = p1.xy + mDir * length(p2.xy - p1.xy)/3.0;
+        // vec3 middle = vec3(M.x,M.y,p2.z);
+
+        // vec3 P = bendy(p1,middle,p2,fract(animationParam));
         vec3 P = mix(p1,p2, fract(animationParam));
 
         gl_PointSize=pointSize*P.z;
@@ -115,10 +124,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         vec2 pos = ((P.xy+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
         vec3 rgb = texture2D(taxonomyPositions, vec2(4.0/taxonomySize.x,(Class)/taxonomySize.y)).rgb;
-        // vec3 hmm = getTaxonomyData(0.0);
-        // clr.rg = (vec2(20,20)+hmm.xy)/40.0;
-        // clr.b = 0.0;//Class/30.0;//hmm.z/4.0;
-        // clr.a=1.0;
+        
         clr = vec4(rgb,1.0);
         
         gl_Position = vec4(clip,itemDepth/1000.0,1);
