@@ -13,13 +13,13 @@ type InnerRenderSettings = {
     SuperType: ColumnRequest;
     Cluster: ColumnRequest;
     camera: Camera,
-    target:REGL.Framebuffer2D|null,
+    target: REGL.Framebuffer2D | null,
     taxonomyPositions: REGL.Texture2D,
     taxonomySize: vec2,
-    animationParam:number;
+    animationParam: number;
     pointSize: number;
-    dataset:ScatterplotDataset,
-    regl:REGL.Regl
+    dataset: ScatterplotDataset,
+    regl: REGL.Regl
 }
 type Props = {
     view: vec4;
@@ -86,20 +86,20 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // I'd use an array, but array access must be compile-time constant in this version of GLSL :(
     vec3 getTaxonomyData(float p){
         // todo: make me branchless
-        float u = p/taxonomySize.x;
+        float u = (p+0.5)/taxonomySize.x;
         float vS = taxonomySize.y;
 
         if(p == 0.0){
-            return texture2D(taxonomyPositions, vec2(u,Class/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(Class+0.5)/vS)).rgb;
         }
         if(p == 1.0){
-            return texture2D(taxonomyPositions, vec2(u,SubClass/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(SubClass+0.5)/vS)).rgb;
         }
         if(p == 2.0){
-            return texture2D(taxonomyPositions, vec2(u,SuperType/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(SuperType+0.5)/vS)).rgb;
         }
         if(p == 3.0){
-            return texture2D(taxonomyPositions, vec2(u,Cluster/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(Cluster+0.5)/vS)).rgb;
         }
         return vec3(position,1.0);
     }
@@ -123,11 +123,11 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         vec2 size = view.zw-view.xy;
         vec2 pos = ((P.xy+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
-        vec3 rgb = texture2D(taxonomyPositions, vec2(4.0/taxonomySize.x,(Class)/taxonomySize.y)).rgb;
+        vec3 rgb = texture2D(taxonomyPositions, vec2(4.5/taxonomySize.x,(Class+0.5)/taxonomySize.y)).rgb;
         
         clr = vec4(rgb,1.0);
         
-        gl_Position = vec4(clip,itemDepth/1000.0,1);
+        gl_Position = vec4(clip,-itemDepth/1000.0,1);
     }`,
         frag: `
         precision highp float;
@@ -169,7 +169,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         columns: Record<string, ColumnBuffer | object | undefined>
     ) => {
         const { Class, Cluster, SubClass, SuperType, position } = columns;
-        const {taxonomyPositions,taxonomySize,animationParam,camera,pointSize,target}=settings
+        const { taxonomyPositions, taxonomySize, animationParam, camera, pointSize, target } = settings
         const view = camera.view;
         const count = item.content.count;
         const itemDepth = item.content.depth;
@@ -181,9 +181,9 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
                 count,
                 itemDepth,
                 position: position.data,
-                Class:Class.data,
-                SubClass:SubClass.data,
-                SuperType:SuperType.data,
+                Class: Class.data,
+                SubClass: SubClass.data,
+                SuperType: SuperType.data,
                 Cluster: Cluster.data,
                 taxonomyPositions,
                 taxonomySize,
@@ -201,7 +201,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
 
 
 export function fetchTaxonomyItems(item: ColumnarTree<vec2>, settings: InnerRenderSettings, signal?: AbortSignal) {
-    const { dataset, Class,SubClass,SuperType,Cluster } = settings;
+    const { dataset, Class, SubClass, SuperType, Cluster } = settings;
     const position = () =>
         fetchAndUpload(settings, item.content, { type: 'METADATA', name: dataset.spatialColumn }, signal);
     const cls = () => fetchAndUpload(settings, item.content, Class, signal);
@@ -210,10 +210,10 @@ export function fetchTaxonomyItems(item: ColumnarTree<vec2>, settings: InnerRend
     const clstr = () => fetchAndUpload(settings, item.content, Cluster, signal);
     return {
         position,
-        Class:cls,
-        SubClass:sub,
-        SuperType:spr,
-        Cluster:clstr,
+        Class: cls,
+        SubClass: sub,
+        SuperType: spr,
+        Cluster: clstr,
     } as const;
 }
 

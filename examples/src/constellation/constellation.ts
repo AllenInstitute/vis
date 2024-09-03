@@ -71,8 +71,8 @@ export class Demo {
     txSize: vec2;
     layer: undefined | ReglLayer2D<UmapScatterplot, RenderSettings<CacheEntry>>;
     plot: UmapScatterplot | undefined;
-    anmParam:number;
-    goal:number;
+    anmParam: number;
+    goal: number;
     interval: number;
     private refreshRequested: number = 0;
     cache: AsyncDataCache<string, string, CacheEntry>;
@@ -86,7 +86,7 @@ export class Demo {
         this.mouse = 'up'
         this.mousePos = [0, 0];
         this.pointSize = 4;
-        this.interval=0;
+        this.interval = 0;
         this.anmParam = 0;;
         this.goal = 0;
         this.canvas = canvas;
@@ -100,8 +100,8 @@ export class Demo {
         this.taxRenderer = buildTaxonomyRenderer(regl);
         this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 4000);
         this.initHandlers(canvas);
-        this.taxonomyData = regl.texture({width:5,height:6000,format:'rgba',type:'float'});
-        this.txSize = [5,6000];
+        this.taxonomyData = regl.texture({ width: 5, height: 6000, format: 'rgba', type: 'float' });
+        this.txSize = [5, 6000];
         this.loadTaxonomyInfo();
     }
     mouseButton(click: 'up' | 'down', pos: vec2) {
@@ -145,7 +145,7 @@ export class Demo {
                 settings: {
                     animationParam: this.anmParam,
                     cache: this.cache,
-                    callback: () => { this.requestReRender()},
+                    callback: () => { this.requestReRender() },
                     camera: this.camera,
                     Class,
                     Cluster,
@@ -167,8 +167,8 @@ export class Demo {
         // read a bunch of junk, join it with some stuff from IDF
         // put the whole pile in this.taxonomyData...
         // gimmeTaxonomy(datsetId,'v0',[Class.name,SubClass.name,SuperType.name,Cluster.name])
-        buildTexture().then(({texture,size})=>{
-            this.taxonomyData = this.regl.texture({data: texture,width:size[0],height:size[1],format:'rgba',type:'float'})
+        buildTexture().then(({ texture, size }) => {
+            this.taxonomyData = this.regl.texture({ data: texture, width: size[0], height: size[1], format: 'rgba', type: 'float' })
             this.txSize = size;
             console.log('texture loaded!');
             this.requestReRender();
@@ -190,35 +190,38 @@ export class Demo {
         };
         window.onkeyup = (e: KeyboardEvent) => {
             if (e.key === 'w') {
-                this.anmParam+=0.0331;
+                this.anmParam += 0.0331;
                 this.onCameraChanged();
-            }else if(['0','1','2','3','4'].includes(e.key)){
+            } else if (['0', '1', '2', '3', '4'].includes(e.key)) {
                 this.goal = Number.parseInt(e.key);
-            }else if (e.key === 's') {
+            } else if (e.key === 's') {
                 this.anmParam -= 0.0331;
                 this.onCameraChanged();
-            }else if(e.key === 'a'){
-                if(this.interval===0){
+            } else if (e.key === 'a') {
+                if (this.interval === 0) {
                     let lastFrameTime = performance.now();
                     const intervalMS = 16; //60fps
-                    const progressPerMS = 2/1000;
-                    this.interval = window.setInterval(()=>{
+                    const progressPerMS = 2 / 1000;
+                    this.interval = window.setInterval(() => {
                         const now = performance.now()
-                        const delta = now-lastFrameTime;
-                        lastFrameTime=now
-                        if(Math.abs(this.goal-this.anmParam) < progressPerMS*delta){
-                            this.anmParam=this.goal;
+                        const delta = now - lastFrameTime;
+                        lastFrameTime = now
+                        if (this.goal == this.anmParam) {
+                            return;
+                        }
+                        if (Math.abs(this.goal - this.anmParam) < progressPerMS * delta) {
+                            this.anmParam = this.goal;
                             this.onCameraChanged();
                         }
-                        if(this.goal!= this.anmParam){
-                            const progress = progressPerMS*delta
+                        if (this.goal != this.anmParam) {
+                            const progress = progressPerMS * delta
                             this.anmParam += (this.goal > this.anmParam) ? progress : -progress
                             this.onCameraChanged();
                         }
-                    },intervalMS)
-                }else {
+                    }, intervalMS)
+                } else {
                     window.clearInterval(this.interval);
-                    this.interval=0;
+                    this.interval = 0;
                 }
 
             }
@@ -250,7 +253,7 @@ export class Demo {
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
         if (this.layer) {
             let img = this.layer.getRenderResults('prev');
-            img = img.bounds===undefined ? this.layer.getRenderResults('cur') : img;
+            img = img.bounds === undefined ? this.layer.getRenderResults('cur') : img;
             if (img.bounds) {
                 // const flipped = Box2D.toFlatArray(flipBox(this.camera.view));
                 this.imgRenderer({
@@ -294,7 +297,7 @@ function demoTime(thing: HTMLCanvasElement) {
 }
 // const cls = 'FS00DXV0T9R1X9FJ4QE'
 // const superclass = 'QY5S8KMO5HLJUF0P00K'
-const datsetId ='Q1NCWWPG6FZ0DNIXJBQ'
+const datsetId = 'Q1NCWWPG6FZ0DNIXJBQ'
 const tenx = `https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json`
 // 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const fancy: UmapConfig = {
@@ -308,8 +311,8 @@ demoTime(document.getElementById('glCanvas') as HTMLCanvasElement);
 // we need that so that indexing will line up in the shader...
 
 async function gimmeTaxonomy(datasetId: string, version: string, cellTypeColumns: string[]) {
-    const getNodes = (conn: Maybe<CellPropertiesConnection>)=>({
-        nodes: conn?.nodes?.map(n=>({
+    const getNodes = (conn: Maybe<CellPropertiesConnection>) => ({
+        nodes: conn?.nodes?.map(n => ({
             color: n.color,
             index: n.featureTypeValueIndex.index,
             title: n.featureType.title,
@@ -318,26 +321,29 @@ async function gimmeTaxonomy(datasetId: string, version: string, cellTypeColumns
     })
     // figuring out where junk goes is weird... and I proxies dont help,
     // but now its looking pretty nice!
-    const everything = await resolve(({query: {cellProperties} })=>({
+    const everything = await resolve(({ query: { cellProperties } }) => ({
         ...getNodes(cellProperties({
             first: 6000,
-            where: 
-            {and: [
-                    { dataset: { referenceId: { eq: datasetId }, version: { eq: version } } }, 
+            where:
+            {
+                and: [
+                    { dataset: { referenceId: { eq: datasetId }, version: { eq: version } } },
                     { featureType: { referenceId: { in: cellTypeColumns } } }
-                ]}
-        }))}));
+                ]
+            }
+        }))
+    }));
     // everything?.nodes?.map(({index,title,value,color})=>{
-        
+
     //     console.log(title,color, value, index)
     // });
     return everything.nodes;
 }
 
-export function mapBy<K extends string, T extends Record<K, string>>(items: readonly T[], k: K): Record<string, T&{idx:number}> {
-    const dictionary: Record<string, T&{idx:number}> = {};
-    items.forEach((item,index) => {
-        dictionary[item[k]] = {...item, idx:index};
+export function mapBy<K extends string, T extends Record<K, string>>(items: readonly T[], k: K): Record<string, T & { idx: number }> {
+    const dictionary: Record<string, T & { idx: number }> = {};
+    items.forEach((item, index) => {
+        dictionary[item[k]] = { ...item, idx: index };
     });
     return dictionary;
 }
@@ -354,22 +360,22 @@ export function hexToRgb(hex: string): vec3 {
 }
 // ok - parse our csv file of taxonomy node positions...
 // then join that onto the cell props from the IDF
-async function buildTexture(){
-    const A = gimmeTaxonomy(datsetId,'v0',[Class.name]).then((data)=>mapBy(data??[],'value'))
-    const B = gimmeTaxonomy(datsetId,'v0',[SubClass.name]).then((data)=>mapBy(data??[],'value'))
-    const C= gimmeTaxonomy(datsetId,'v0',[SuperType.name]).then((data)=>mapBy(data??[],'value'))
-    const D = gimmeTaxonomy(datsetId,'v0',[Cluster.name]).then((data)=>mapBy(data??[],'value'))
-    const [classes,subclasses,supertypes,clusters] = await Promise.all([A,B,C,D])
+async function buildTexture() {
+    const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
+    const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
+    const C = gimmeTaxonomy(datsetId, 'v0', [SuperType.name]).then((data) => mapBy(data ?? [], 'value'))
+    const D = gimmeTaxonomy(datsetId, 'v0', [Cluster.name]).then((data) => mapBy(data ?? [], 'value'))
+    const [classes, subclasses, supertypes, clusters] = await Promise.all([A, B, C, D])
     // we have to stash all this in a nice, high-precision buffer:
     // RGBA (4) x 5 (each level + color) * longest column
-    const longestCol =  Math.max(...[classes,subclasses,supertypes,clusters].map((m)=>keys(m).length))
-    const texture = new Float32Array(5*4*longestCol);
-    const txFloatOffset = (col:number,row:number)=> (row*5*4)+col*4;
+    const longestCol = Math.max(...[classes, subclasses, supertypes, clusters].map((m) => keys(m).length))
+    const texture = new Float32Array(5 * 4 * longestCol);
+    const txFloatOffset = (col: number, row: number) => (row * 5 * 4) + col * 4;
     const lvls = {
-        class: {map:classes, column: 0},
-        subclass:{map:subclasses,column:1},
-        supertype:{map:supertypes,column:2},
-        cluster:{map:clusters,column:3}
+        class: { map: classes, column: 0 },
+        subclass: { map: subclasses, column: 1 },
+        supertype: { map: supertypes, column: 2 },
+        cluster: { map: clusters, column: 3 }
     }
     const data = nodeData;
     const lines = data.split('\n');
@@ -377,30 +383,30 @@ async function buildTexture(){
     // level,level_name,label,name,parent,n_cells,centroid_x,centroid_y
     // here, name = 'value' from the idf cellPropertyConnection node thingy
     // levelName is class, subclass, etc...
-    for(const line of lines){
-        const [level,levelName,label,name,parent,numCells,cx,cy]=line.split(',');
+    for (const line of lines) {
+        const [level, levelName, label, name, parent, numCells, cx, cy] = line.split(',');
         const L = lvls[levelName.toLowerCase() as keyof typeof lvls];
-        if(L){
+        if (L) {
             const info = L.map[name];
-            if(info){
-                if(L.column===0){
-                    const clrOffset = txFloatOffset(4,info.index);
+            if (info) {
+                if (L.column === 0) {
+                    const clrOffset = txFloatOffset(4, info.index);
                     const rgb = hexToRgb(info.color ?? '0xFF0000');
-                    texture[clrOffset]=rgb[0]/255;
-                    texture[clrOffset+1]=rgb[1]/255;
-                    texture[clrOffset+2]=rgb[2]/255;
+                    texture[clrOffset] = rgb[0] / 255;
+                    texture[clrOffset + 1] = rgb[1] / 255;
+                    texture[clrOffset + 2] = rgb[2] / 255;
                 }
-                const offset = txFloatOffset(L.column,info.index);
+                const offset = txFloatOffset(L.column, info.index);
                 texture[offset] = Number.parseFloat(cx);
-                texture[offset+1] = Number.parseFloat(cy);
-                texture[offset+2] =5 - L.column;
-            }else{
+                texture[offset + 1] = Number.parseFloat(cy);
+                texture[offset + 2] = 5 - L.column;
+            } else {
                 console.error('no such taxon (csv mistake?)', name)
             }
-        }else {
+        } else {
             // complain!
             console.error('no such level (csv mistake?)', levelName)
         }
     }
-    return {texture, size: [5,longestCol] as vec2}
+    return { texture, size: [5, longestCol] as vec2 }
 }
