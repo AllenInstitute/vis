@@ -12,6 +12,7 @@ import type { ColumnBuffer, ColumnRequest } from "~/common/loaders/scatterplot/s
 import { query, resolve, type CellPropertiesConnection, type Maybe } from "~/gqty";
 import { nodeData } from "./nodes";
 import { keys } from "lodash";
+import { numNodes, type Graph, visitChildParentPairs, visitOldestAncestors } from "./taxonomy-graph";
 const flipBox = (box: box2D): box2D => {
     const { minCorner, maxCorner } = box;
     return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
@@ -75,6 +76,7 @@ export class Demo {
     goal: number;
     interval: number;
     private refreshRequested: number = 0;
+    graphs: Record<string, Graph<string, TaxonomyNode, TaxonomyEdge>>;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
     taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
@@ -103,6 +105,7 @@ export class Demo {
         this.taxonomyData = regl.texture({ width: 5, height: 6000, format: 'rgba', type: 'float' });
         this.txSize = [5, 6000];
         this.loadTaxonomyInfo();
+        this.graphs = {}
     }
     mouseButton(click: 'up' | 'down', pos: vec2) {
         this.mouse = click;
@@ -163,16 +166,18 @@ export class Demo {
         }
 
     }
-    private loadTaxonomyInfo() {
+    private async loadTaxonomyInfo() {
         // read a bunch of junk, join it with some stuff from IDF
         // put the whole pile in this.taxonomyData...
         // gimmeTaxonomy(datsetId,'v0',[Class.name,SubClass.name,SuperType.name,Cluster.name])
-        buildTexture().then(({ texture, size }) => {
-            this.taxonomyData = this.regl.texture({ data: texture, width: size[0], height: size[1], format: 'rgba', type: 'float' })
-            this.txSize = size;
-            console.log('texture loaded!');
-            this.requestReRender();
-        })
+        // buildTexture().then(({ texture, size }) => {
+        //     this.taxonomyData = this.regl.texture({ data: texture, width: size[0], height: size[1], format: 'rgba', type: 'float' })
+        //     this.txSize = size;
+        //     console.log('texture loaded!');
+        //     this.requestReRender();
+        // })
+        this.graphs = await buildTaxonomyGraph();
+
     }
     private initHandlers(canvas: HTMLCanvasElement) {
         canvas.onmousedown = (e: MouseEvent) => {
@@ -333,10 +338,6 @@ async function gimmeTaxonomy(datasetId: string, version: string, cellTypeColumns
             }
         }))
     }));
-    // everything?.nodes?.map(({index,title,value,color})=>{
-
-    //     console.log(title,color, value, index)
-    // });
     return everything.nodes;
 }
 
@@ -358,6 +359,7 @@ export function hexToRgb(hex: string): vec3 {
     }
     return [0.0, 0.0, 0.0];
 }
+
 // ok - parse our csv file of taxonomy node positions...
 // then join that onto the cell props from the IDF
 async function buildTexture() {
@@ -409,4 +411,86 @@ async function buildTexture() {
         }
     }
     return { texture, size: [5, longestCol] as vec2 }
+}
+type TaxonomyEntry = { index: number, color: Maybe<string> | undefined }
+type TaxonomyNode = { id: string, parent: string | null, index: number, count: number, pos: vec2, color: string }
+type TaxonomyEdge = { start: string, end: string, count: number }
+async function buildTaxonomyGraph() {
+    const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
+    const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
+    const C = gimmeTaxonomy(datsetId, 'v0', [SuperType.name]).then((data) => mapBy(data ?? [], 'value'))
+    const D = gimmeTaxonomy(datsetId, 'v0', [Cluster.name]).then((data) => mapBy(data ?? [], 'value'))
+    const [cls, subclass, supertype, cluster] = await Promise.all([A, B, C, D])
+
+    const idfInfo: Record<string, Record<string, TaxonomyEntry>> = {
+        class: cls, subclass, supertype, cluster
+    }
+    const data = nodeData;
+    const lines = data.split('\n');
+    // for each line, read in the bits...
+    // level,level_name,label,name,parent,n_cells,centroid_x,centroid_y
+    // here, name = 'value' from the idf cellPropertyConnection node thingy
+    // levelName is class, subclass, etc...
+    const graphs: Record<string, Graph<string, TaxonomyNode, TaxonomyEdge>> = {}
+    for (const line of lines) {
+        const [level, levelName, label, name, parent, numCells, cx, cy] = line.split(',');
+        const taxonomyName = levelName.toLowerCase()
+        if (!graphs[taxonomyName]) {
+            graphs[taxonomyName] = { nodes: {}, edges: [], parent: null };
+        }
+        const taxonomy = graphs[taxonomyName];
+        if (taxonomyName in idfInfo) {
+            const IDFEntry: Record<string, TaxonomyEntry> = idfInfo[taxonomyName]
+            const { index, color } = IDFEntry[name]
+            graphs[taxonomyName] = {
+                ...taxonomy,
+                nodes: {
+                    ...taxonomy.nodes,
+                    [name]:
+                    {
+                        id: name, parent,
+                        count: Number.parseInt(numCells),
+                        index,
+                        color: color ?? '0x00',
+                        pos: [Number.parseFloat(cx), Number.parseFloat(cy)]
+                    }
+                }
+            }
+
+        }
+    }
+    return graphs;
+}
+
+function buildAnimationBuffers(layer: number, graph: Graph<string, TaxonomyNode, TaxonomyEdge>) {
+    // fill in a float buffer that has pairs {index,layer}
+    const nodes = numNodes(graph)
+    const A = new Float32Array(nodes * 3)
+    const B = new Float32Array(nodes * 3)
+    const color = new Uint8Array(nodes * 4);
+    let offset = 0;
+
+    // get the colors...
+    visitOldestAncestors(graph, (me: TaxonomyNode, parent: TaxonomyNode | null) => {
+        const [r, g, b] = hexToRgb(parent?.color ?? '0xff0000')
+        color[offset] = r;
+        color[offset + 1] = g;
+        color[offset + 2] = b;
+        color[offset + 3] = 255;
+        offset += 4;
+    });
+
+    offset = 0;
+    visitChildParentPairs(graph, (me: TaxonomyNode, parent: TaxonomyNode | null) => {
+
+        A[offset] = me.pos[0];
+        A[offset + 1] = me.pos[1];
+        A[offset + 2] = me.count;
+        // fill in the parent, use 'me' if it has no parent
+        B[offset] = parent?.pos[0] ?? me.pos[0]
+        B[offset + 1] = parent?.pos[1] ?? me.pos[1]
+        B[offset + 2] = parent?.count ?? me.count;
+        offset += 3
+    });
+    return { child: A, parent: B, nodes, color };
 }

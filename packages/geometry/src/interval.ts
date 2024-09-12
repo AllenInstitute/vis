@@ -1,7 +1,7 @@
-export type Interval = {
+export type Interval = Readonly<{
     min: number;
     max: number;
-};
+}>;
 
 /**
  *
