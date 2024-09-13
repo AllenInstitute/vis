@@ -39,7 +39,7 @@ function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
 //     the origin of this tile indexing system is the top left of the image.
 //     the spec says that the "size" of a layer is 2*layer... but its closer to pow(2, layer).
 //     note also that is more of a maximum size... for example I've seen 9/0_0.jpeg have a size of 421x363, both of those are lower than pow(2,9)=512
-//     note also that overlap is ADDED to the tile-size... which is a choice...
+//     note also that overlap is ADDED to the tile-size, which is a weird choice, as tileSize seems like it must be a power of 2...🤷‍♀️
 
 /**
  * 
@@ -50,6 +50,7 @@ function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
  */
 export function getVisibleTiles(dzi: DziImage, camera: { view: box2D, screenSize: vec2 }): DziTile[] {
     // TODO implement me
-    return [{ url: tileUrl(dzi, 0, { row: 0, col: 0 }), index: { row: 0, col: 0 }, layer: 0, relativeLocation: Box2D.create([0, 0], [1, 1]) }]
+
+    return [{ url: tileUrl(dzi, 8, { row: 0, col: 0 }), index: { row: 0, col: 0 }, layer: 8, relativeLocation: Box2D.create([0, 0], [1, 1]) }]
 }
 

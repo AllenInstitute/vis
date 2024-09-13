@@ -16,6 +16,7 @@ type WithCache = {
     callback: RenderCallback;
     cache: AsyncDataCache<string, string, CacheContentType>
 }
+export type ExternalRenderSettings = RenderSettings & WithCache
 function cacheKey(req: string, item: DziTile, settings: RenderSettings) {
     return item.url;
 }
@@ -68,6 +69,7 @@ function fetchDziTile(tile: DziTile, settings: RenderSettings, _abort?: AbortSig
             return new Promise<CacheContentType>((resolve, reject) => {
                 try {
                     const img = new Image()
+                    img.crossOrigin = 'anonymous'
                     img.onload = (ev) => {
                         resolve({ type: 'texture2D', data: settings.regl.texture(img) })
                     }
