@@ -1,5 +1,5 @@
 
-import { type vec2, type box2D, Box2D } from '@alleninstitute/vis-geometry'
+import { type vec2, type box2D, Box2D, type Interval, Vec2 } from '@alleninstitute/vis-geometry'
 // todo rename me...
 
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN
@@ -54,3 +54,38 @@ export function getVisibleTiles(dzi: DziImage, camera: { view: box2D, screenSize
     return [{ url: tileUrl(dzi, 8, { row: 0, col: 0 }), index: { row: 0, col: 0 }, layer: 8, relativeLocation: Box2D.create([0, 0], [1, 1]) }]
 }
 
+export function tileWithOverlap(total: number, step: number, overlap: number): Interval[] {
+    const blocks: Interval[] = []
+    let start = 0;
+    while (start < total) {
+        const next = Math.min(total, start + step + overlap + (start > 0 ? overlap : 0));
+        blocks.push({ min: start, max: next })
+        if (next >= total) {
+            return blocks;
+        }
+        start = next - (2 * overlap);
+    }
+    return blocks;
+}
+function boxFromRowCol(row: Interval, col: Interval) {
+    return Box2D.create([col.min, row.min], [col.max, row.max])
+}
+export function imageSizeAtLayer(dzi: DziImage, layer: number) {
+    const { overlap, size, tileSize } = dzi;
+    const layerMaxSize = 2 ** layer;
+    let total: vec2 = [size.width, size.height];
+    while (total[0] > layerMaxSize || total[1] > layerMaxSize) {
+        total = Vec2.ceil(Vec2.scale(total, 1 / 2));
+    }
+    return total;
+}
+export function tilesInLayer(dzi: DziImage, layer: number): box2D[] {
+    const { overlap, size, tileSize } = dzi;
+    const layerMaxSize = 2 ** layer;
+    // figure out the effective size of a layer by dividing the total size by 2 until its less than our layerMax
+    // note: if this all feels weird, its because I can find no reference implementation or specification, its a bit of reverse engineering
+    const total: vec2 = imageSizeAtLayer(dzi, layer)
+    const rows = tileWithOverlap(Math.ceil(total[1]), tileSize, overlap);
+    const cols = tileWithOverlap(Math.ceil(total[0]), tileSize, overlap);
+    return rows.flatMap(r => cols.map(c => boxFromRowCol(r, c)))
+}
