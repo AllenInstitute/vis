@@ -49,14 +49,13 @@ function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
  * @return a list of tiles at the most appropriate resolution which may be fetched and displayed
  */
 export function getVisibleTiles(dzi: DziImage, camera: { view: box2D, screenSize: vec2 }): DziTile[] {
-    // TODO implement me
     const viewWidth = Box2D.size(camera.view)[0];
     const layer = firstSuitableLayer(dzi.size.width, camera.screenSize[0] / viewWidth);
     const layerResolution = imageSizeAtLayer(dzi, layer);
     const availableTiles = tilesInLayer(dzi, layer);
     // filter out tiles which are not in view
     // note that the tile boxes are in pixels relative to the layer in which they reside
-    // the given view is assumed to be a parameter (in the space [0:1])
+    // the given view is assumed to be a parameter (in the space [0:1]) of the image as a whole
     const tileBoxAsParameter = (tile: box2D) => Box2D.create(Vec2.div(tile.minCorner, layerResolution), Vec2.div(tile.maxCorner, layerResolution));
     const tiles: DziTile[] = availableTiles.flatMap((row, rowIndex) => {
         return row.map((tile, colIndex) => {
@@ -70,7 +69,6 @@ export function getVisibleTiles(dzi: DziImage, camera: { view: box2D, screenSize
         })
     }).filter((t) => Box2D.intersection(t.relativeLocation, camera.view))
     return tiles;
-    // return [{ url: tileUrl(dzi, 8, { row: 0, col: 0 }), index: { row: 0, col: 0 }, layer: 8, relativeLocation: Box2D.create([0, 0], [1, 1]) }]
 }
 
 // starting with the width of an image, and the width of the screen on which to display that image
