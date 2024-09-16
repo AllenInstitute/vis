@@ -50,7 +50,8 @@ function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
  */
 export function getVisibleTiles(dzi: DziImage, camera: { view: box2D, screenSize: vec2 }): DziTile[] {
     // TODO implement me
-    const layer = firstSuitableLayer(dzi.size.width, camera.screenSize[0]);
+    const viewWidth = Box2D.size(camera.view)[0];
+    const layer = firstSuitableLayer(dzi.size.width, camera.screenSize[0] / viewWidth);
     const layerResolution = imageSizeAtLayer(dzi, layer);
     const availableTiles = tilesInLayer(dzi, layer);
     // filter out tiles which are not in view

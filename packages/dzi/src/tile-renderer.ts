@@ -17,13 +17,13 @@ varying vec2 uv;
 void main(){
     uv = position;
     vec2 size = view.zw-view.xy;
-    vec2 tileSize = tile.zy-tile.xw;
-    vec2 ups = vec2(tile.x, 1.0-tile.y);
-    vec2 tilePosition = (position * tileSize)+ups.xy;
+    vec2 tileSize = tile.zw-tile.xy;
+    vec2 tilePosition = (position * tileSize)+tile.xy;
     vec2 pos =(tilePosition-view.xy)/size;
     // to clip space:
     pos = (pos*2.0)-1.0;
-    gl_Position = vec4(pos.xy,depth,1);
+    // but flip it upside down becase of the origin of this tiling system is the top of the image.
+    gl_Position = vec4(pos.x,-pos.y,depth,1);
 }`
 
 const frag = `

@@ -1,6 +1,6 @@
 import REGL from "regl";
 import type { Camera } from "./common/camera";
-import { Box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import { Box2D, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
 import { buildDziRenderer, type CacheContentType, type DziImage, type DziRenderSettings } from "@alleninstitute/vis-dzi";
 import { AsyncDataCache, ReglLayer2D } from "@alleninstitute/vis-scatterbrain";
 import { buildImageRenderer } from "./common/image-renderer";
@@ -42,11 +42,17 @@ function sizeOf(item: CacheContentType) {
 export class Demo {
     camera: Camera;
     regl: REGL.Regl;
+    mousePos: vec2;
+    mouse: 'up' | 'down';
+    canvas: HTMLCanvasElement;
     dzi: DziImage;
     layer: ReglLayer2D<DziImage, DziRenderSettings>
     cache: AsyncDataCache<string, string, CacheContentType>;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.regl = regl;
+        this.mouse = 'up'
+        this.mousePos = [0, 0]
+        this.canvas = canvas;
         const screen: vec2 = [canvas.clientWidth, canvas.clientHeight]
         this.camera = {
             projection: 'webImage',
@@ -71,6 +77,11 @@ export class Demo {
                 })
             }
         }, 33)
+        this.onChange();
+        this.initHandlers(this.canvas);
+    }
+    onChange() {
+
         this.layer.onChange({
             data: this.dzi,
             settings: {
@@ -81,9 +92,56 @@ export class Demo {
             }
         })
     }
+    // private toDataspace(px: vec2) {
+    //     const { view } = this.camera;
+    //     const o: vec2 = [px[0], this.canvas.clientHeight - px[1]];
+    //     const p = Vec2.div(o, [this.canvas.clientWidth, this.canvas.clientHeight]);
+    //     const c = Vec2.mul(p, Box2D.size(view));
+    //     return Vec2.add(view.minCorner, c);
+    // }
+    mouseMove(delta: vec2, pos: vec2) {
+        if (this.mouse === 'down') {
+            // drag the view
+            const { screen, view } = this.camera;
+            const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
+            const c = Vec2.mul(p, Box2D.size(view));
+            this.camera = { ...this.camera, view: Box2D.translate(view, c), screen };
+        }
 
+
+        this.mousePos = Vec2.add(this.mousePos, delta);
+        this.onChange();
+    }
+    mouseButton(click: 'up' | 'down', pos: vec2) {
+        this.mouse = click;
+    }
+    zoom(scale: number) {
+        const { view, screen } = this.camera;
+        const m = Box2D.midpoint(view);
+        this.camera = {
+            ...this.camera,
+            view: Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m),
+            screen,
+        };
+        this.onChange();
+    }
+    private initHandlers(canvas: HTMLCanvasElement) {
+        canvas.onmousedown = (e: MouseEvent) => {
+            this.mouseButton('down', [e.offsetX, canvas.clientHeight - e.offsetY]);
+        };
+        canvas.onmouseup = (e: MouseEvent) => {
+            this.mouseButton('up', [e.offsetX, canvas.clientHeight - e.offsetY]);
+        };
+        canvas.onmousemove = (e: MouseEvent) => {
+            // account for gl-origin vs. screen origin:
+            this.mouseMove([-e.movementX, -e.movementY], [e.offsetX, canvas.clientHeight - e.offsetY]);
+        };
+        canvas.onwheel = (e: WheelEvent) => {
+            this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
+        };
+
+    }
 }
-
 let theDemo: Demo;
 
 function demoTime(thing: HTMLCanvasElement) {
