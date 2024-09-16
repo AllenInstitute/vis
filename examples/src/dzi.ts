@@ -22,8 +22,8 @@ const omg_cors: DziImage = {
     imagesUrl: 'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/',
     overlap: 1,
     size: {
-        width: 11596,
-        height: 13446
+        width: 13446,
+        height: 11596,
     },
     tileSize: 512
 }
@@ -48,6 +48,7 @@ export class Demo {
     dzi: DziImage;
     layer: ReglLayer2D<DziImage, DziRenderSettings>
     cache: AsyncDataCache<string, string, CacheContentType>;
+    updateReqd: boolean = false;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.regl = regl;
         this.mouse = 'up'
@@ -60,7 +61,7 @@ export class Demo {
             view: Box2D.create([0, 0], [1, 1])
         }
         this.cache = new AsyncDataCache(destroyer, sizeOf, 512);
-        this.dzi = exampleDzi;
+        this.dzi = omg_cors;
         const imgRenderer = buildImageRenderer(regl);
         const renderDzi = buildDziRenderer(regl);
         this.layer = new ReglLayer2D(regl, imgRenderer, renderDzi, screen);
@@ -81,16 +82,21 @@ export class Demo {
         this.initHandlers(this.canvas);
     }
     onChange() {
-
-        this.layer.onChange({
-            data: this.dzi,
-            settings: {
-                cache: this.cache,
-                callback: (e) => { console.log(e) },
-                camera: { view: this.camera.view, screenSize: this.camera.screen },
-                regl: this.regl,
-            }
-        })
+        if (!this.updateReqd) {
+            this.updateReqd = true;
+            requestAnimationFrame(() => {
+                this.layer.onChange({
+                    data: this.dzi,
+                    settings: {
+                        cache: this.cache,
+                        callback: (e) => { console.log(e) },
+                        camera: { view: this.camera.view, screenSize: this.camera.screen },
+                        regl: this.regl,
+                    }
+                });
+                this.updateReqd = false;
+            })
+        }
     }
     // private toDataspace(px: vec2) {
     //     const { view } = this.camera;
@@ -106,11 +112,11 @@ export class Demo {
             const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
             const c = Vec2.mul(p, Box2D.size(view));
             this.camera = { ...this.camera, view: Box2D.translate(view, c), screen };
+            this.onChange();
         }
 
 
         this.mousePos = Vec2.add(this.mousePos, delta);
-        this.onChange();
     }
     mouseButton(click: 'up' | 'down', pos: vec2) {
         this.mouse = click;
