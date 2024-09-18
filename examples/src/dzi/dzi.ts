@@ -1,9 +1,11 @@
 import REGL from "regl";
-import type { Camera } from "./common/camera";
+import type { Camera } from "~/common/camera";
 import { Box2D, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
 import { buildDziRenderer, type CacheContentType, type DziImage, type DziRenderSettings } from "@alleninstitute/vis-dzi";
 import { AsyncDataCache, ReglLayer2D } from "@alleninstitute/vis-scatterbrain";
-import { buildImageRenderer } from "./common/image-renderer";
+import { buildImageRenderer } from "~/common/image-renderer";
+import { createRoot } from "react-dom/client";
+import { AppUi } from "./app";
 
 
 const exampleDzi: DziImage = {
@@ -173,5 +175,14 @@ function demoTime(thing: HTMLCanvasElement) {
     });
     theDemo = new Demo(thing, regl);
 }
-
 demoTime(document.getElementById('glCanvas') as HTMLCanvasElement)
+
+// const uiroot = createRoot(document.getElementById('sidebar')!);
+// const eachFrame = () => {
+//     uiroot.render(AppUi({}))
+//     window.requestAnimationFrame(eachFrame);
+// }
+// function demoTime() {
+//     window.requestAnimationFrame(eachFrame)
+// }
+// demoTime();

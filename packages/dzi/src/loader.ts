@@ -2,11 +2,12 @@
 import { type vec2, type box2D, Box2D, type Interval, Vec2 } from '@alleninstitute/vis-geometry'
 // todo rename me...
 
+type DziTilesRoot = `${string}_files/`
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN
 // TODO find a less ancient spec...
 export type DziImage = {
-    imagesUrl: string; // lets say you found a dzi at http://blah.com/deepzoom.dzi
-    // imagesUrl would be the path which contains all the files:
+    imagesUrl: DziTilesRoot; // lets say you found a dzi at http://blah.com/deepzoom.dzi
+    // imagesUrl would be the path which contains all the files for the actual image tiles:
     // in this example:
     // http://blah.com/deepzoom_files/
     format: 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG',
@@ -49,14 +50,16 @@ function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
  * @return a list of tiles at the most appropriate resolution which may be fetched and displayed
  */
 export function getVisibleTiles(dzi: DziImage, camera: { view: box2D, screenSize: vec2 }): DziTile[] {
-    const viewWidth = Box2D.size(camera.view)[0];
+    const viewWidth = Box2D.size(camera.view)[0]
     const layer = firstSuitableLayer(dzi.size.width, camera.screenSize[0] / viewWidth);
     const layerResolution = imageSizeAtLayer(dzi, layer);
     const availableTiles = tilesInLayer(dzi, layer);
-    // filter out tiles which are not in view
+
     // note that the tile boxes are in pixels relative to the layer in which they reside
     // the given view is assumed to be a parameter (in the space [0:1]) of the image as a whole
+    // so, we must convert literal pixel boxes into their relative position in the image as a whole:
     const tileBoxAsParameter = (tile: box2D) => Box2D.create(Vec2.div(tile.minCorner, layerResolution), Vec2.div(tile.maxCorner, layerResolution));
+
     const tiles: DziTile[] = availableTiles.flatMap((row, rowIndex) => {
         return row.map((tile, colIndex) => {
             const index = { col: colIndex, row: rowIndex }
@@ -67,9 +70,13 @@ export function getVisibleTiles(dzi: DziImage, camera: { view: box2D, screenSize
                 url: tileUrl(dzi, layer, index)
             }
         })
-    }).filter((t) => Box2D.intersection(t.relativeLocation, camera.view))
+        // filter out tiles which are not in view
+    }).filter((t) => !!Box2D.intersection(t.relativeLocation, camera.view))
     return tiles;
 }
+/**
+ * NOTE: THE REMAINDER OF THIS FILE IS EXPORTED ONLY FOR TESTING PURPOSES 
+ * **/
 
 // starting with the width of an image, and the width of the screen on which to display that image
 // return the highest-numbered (aka highest resolution) dzi-layer folder which has a size that would be lower than the screen resolution 
