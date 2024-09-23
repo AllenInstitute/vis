@@ -33,7 +33,7 @@ export function buildImageCopy(regl: REGL.Regl) {
         framebuffer: regl.prop<Props, 'target'>('target'),
         attributes: {
             pos: [-1, -1, 1, -1, 1, 1, -1, 1],
-            tx: [0, 0, 1, 0, 0, 1, 1, 1]
+            tx: [0, 0, 1, 0, 1, 1, 0, 1]
         },
         depth: {
             enable: false,

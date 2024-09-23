@@ -27,13 +27,13 @@ type ClientEntry = {
     frame: FrameLifecycle | null;
     image: REGL.Framebuffer2D;
 }
-type RFN = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback) => FrameLifecycle
-
+type RFN = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback) => FrameLifecycle | null;
+type Client = HTMLCanvasElement
 export class RenderServer {
     private canvas: OffscreenCanvas;
     regl: REGL.Regl | null;
     cache: AsyncDataCache<string, string, ReglCacheEntry>
-    private clients: Map<ImageBitmapRenderingContext, ClientEntry>;
+    private clients: Map<Client, ClientEntry>;
     private imageCopy: ReturnType<typeof buildImageCopy>
     constructor(maxSize: vec2, cacheEntryLimit: number = 4000) {
         this.canvas = new OffscreenCanvas(...maxSize);
@@ -56,7 +56,7 @@ export class RenderServer {
         this.imageCopy = buildImageCopy(regl);
         this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheEntryLimit)
     }
-    private copyToClient(image: REGL.Framebuffer2D, client: ImageBitmapRenderingContext) {
+    private copyToClient(image: REGL.Framebuffer2D, client: Client) {
         try {
             // apocrapha: clearing a buffer before you draw to it can sometimes make things go faster
             this.regl?.clear({ framebuffer: null, color: [0, 0, 0, 0], depth: 1 })
@@ -64,25 +64,32 @@ export class RenderServer {
             this.imageCopy({ target: null, img: image })
             // then:
             // todo: I'm interested to see what happens when the source and dest are not the same size...
-            client.transferFromImageBitmap(this.canvas.transferToImageBitmap());
+            // client.transferFromImageBitmap(this.canvas.transferToImageBitmap());
+            /*
+            const img = this.canvas.transferToImageBitmap()
+            const ctx: CanvasRenderingContext2D = client.getContext('2d')!
+            ctx.drawImage(img, 0, 0, client.width, client.height);
+            img.close();
+            */
+            client.getContext('bitmaprenderer')!.transferFromImageBitmap(this.canvas.transferToImageBitmap());
         } catch (err) {
             console.error('hey - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
         }
     }
-    private clientFrameFinished(client: ImageBitmapRenderingContext) {
+    private clientFrameFinished(client: Client) {
         const C = this.clients.get(client);
         if (C) {
             C.frame = null;
         }
     }
-    destroyClient(client: ImageBitmapRenderingContext) {
+    destroyClient(client: Client) {
         const C = this.clients.get(client);
         if (C) {
             C.frame?.cancelFrame();
         }
         this.clients.delete(client);
     }
-    beginRendering(renderFn: RFN, callback: RenderCallback, client: ImageBitmapRenderingContext) {
+    beginRendering(renderFn: RFN, callback: RenderCallback, client: Client) {
         if (this.regl) {
             const clientFrame = this.clients.get(client);
             let image: REGL.Framebuffer2D | null = null;

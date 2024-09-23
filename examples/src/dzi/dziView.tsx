@@ -1,11 +1,16 @@
 import { useContext, useEffect, useRef } from 'react';
-import { reglContext } from './offscreen-renderer';
+import { renderServerContext } from './offscreen-renderer';
 import { buildDziRenderer, type DziImage, type DziRenderSettings, type DziTile } from '@alleninstitute/vis-dzi';
 import React from 'react';
 import { Box2D } from '@alleninstitute/vis-geometry';
-import { buildAsyncRenderer } from '@alleninstitute/vis-scatterbrain';
+import {
+    AsyncDataCache,
+    buildAsyncRenderer,
+    type ReglCacheEntry,
+    type RenderCallback,
+} from '@alleninstitute/vis-scatterbrain';
 import { partial } from 'lodash';
-
+import REGL from 'regl';
 const example: DziImage = {
     format: 'jpeg',
     imagesUrl:
@@ -17,6 +22,17 @@ const example: DziImage = {
     },
     tileSize: 512,
 };
+const exampleDzi: DziImage = {
+    imagesUrl: 'https://openseadragon.github.io/example-images/highsmith/highsmith_files/',
+    // imagesUrl: 'https://openseadragon.github.io/example-images/duomo/duomo_files/',
+    format: 'jpg',
+    overlap: 2,
+    size: {
+        width: 7026,
+        height: 9221,
+    },
+    tileSize: 256,
+};
 const exampleSettings: DziRenderSettings = {
     camera: {
         screenSize: [1024, 1024],
@@ -24,7 +40,7 @@ const exampleSettings: DziRenderSettings = {
     },
 };
 export function DziView() {
-    const server = useContext(reglContext);
+    const server = useContext(renderServerContext);
     const renderer =
         useRef<ReturnType<typeof buildAsyncRenderer<DziImage, DziTile, DziRenderSettings, string, string, any>>>();
     const cnvs = useRef<HTMLCanvasElement>(null);
@@ -37,12 +53,17 @@ export function DziView() {
     }, [server]);
     useEffect(() => {
         if (server && renderer.current && cnvs.current) {
-            // const hey= partial(renderer.current, example,exampleSettings)// ()=>renderer.current(example,exampleSettings,callback,target)
-            const hey = (target, cache, callback) => {
-                return renderer.current(example, exampleSettings, callback, target, cache);
+            const renderMyData = (
+                target: REGL.Framebuffer2D | null,
+                cache: AsyncDataCache<string, string, ReglCacheEntry>,
+                callback: RenderCallback
+            ) => {
+                if (renderer.current) {
+                    return renderer.current(example, exampleSettings, callback, target, cache);
+                }
+                return null;
             };
-            const ctx = cnvs.current.getContext('bitmaprenderer');
-            server.beginRendering(hey, (e) => console.log(e), ctx!);
+            server.beginRendering(renderMyData, (e) => console.log(e), cnvs.current);
         }
     }, [server, renderer.current, cnvs.current]);
     return (
