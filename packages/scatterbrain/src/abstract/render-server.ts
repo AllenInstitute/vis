@@ -1,4 +1,3 @@
-import { partial } from 'lodash';
 import { AsyncDataCache } from '../dataset-cache';
 import type { ReglCacheEntry } from './types';
 import type { vec2 } from '@alleninstitute/vis-geometry'

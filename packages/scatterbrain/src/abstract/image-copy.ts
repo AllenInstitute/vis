@@ -1,4 +1,3 @@
-import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
 import REGL, { type Framebuffer2D } from 'regl';
 
 type Props = {

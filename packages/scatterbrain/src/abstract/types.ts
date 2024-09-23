@@ -1,4 +1,3 @@
-
 import type REGL from 'regl';
 
 export type CachedTexture = {
