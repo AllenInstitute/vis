@@ -46,7 +46,6 @@ export function buildImageCopy(regl: REGL.Regl) {
         },
         count: 4,
         primitive: 'triangle fan',
-        // ... more!
     });
     return cmd;
 }
