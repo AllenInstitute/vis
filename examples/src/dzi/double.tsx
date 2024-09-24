@@ -18,7 +18,6 @@ const example: DziImage = {
 };
 const exampleDzi: DziImage = {
     imagesUrl: 'https://openseadragon.github.io/example-images/highsmith/highsmith_files/',
-    // imagesUrl: 'https://openseadragon.github.io/example-images/duomo/duomo_files/',
     format: 'jpg',
     overlap: 2,
     size: {
@@ -33,7 +32,7 @@ const exampleSettings: DziRenderSettings = {
         view: Box2D.create([0, 0], [1, 1]),
     },
 };
-export function TwoClientsPOC(props: {}) {
+export function TwoClientsPOC() {
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [1, 1]));
     const zoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
         const scale = e.deltaY > 0 ? 1.1 : 0.9;
@@ -44,11 +43,13 @@ export function TwoClientsPOC(props: {}) {
     return (
         <ReglProvider>
             <DziView
+                id="left"
                 dzi={example}
                 camera={{ ...exampleSettings.camera, view }}
                 wheel={zoom}
             />
             <DziView
+                id="right"
                 dzi={exampleDzi}
                 camera={{ ...exampleSettings.camera, view }}
                 wheel={zoom}

@@ -8,7 +8,7 @@ import type REGL from 'regl';
 // the most obvious difference: a config parameter, rather than a function over 11 arguments!
 // the second difference is more subtle - you'll notice an "isPrepared" parameter, which we use to deal with some competing interests
 // 1. it would be nice to write render functions that use objects (see the type GpuData) rather than records from strings to the data we want
-// 2. this desire is complicated by our desire to share GPU-resident data if possible! because different renderers want different "objects" to render which *could* all share raw gpu resources
+// 2. this desire is complicated by our desire to share GPU-resident data if possible! because different renderers might want different "objects" to render which *could* all share raw gpu resources
 //    it becomes very difficult to express the types of such a system statically. 
 // SO: by having render-authors provide a type-guard, we can safely (provided the guard is reasonable) cast a record<string, gpuStuf> to a nice, friendly object 'GpuData' at runtime!
 // note also: the cache is set up to dissuade users from holding on to references to data in the cache - its still possible of course (this is typescript!) but the whole system is set up to accept
@@ -18,9 +18,16 @@ export type FrameLifecycle = {
     cancelFrame: (reason?: string) => void;
 };
 
-export type NormalStatus = 'begun' | 'finished' | 'cancelled' | 'finished_synchronously' | 'progress';
-export type RenderCallback = (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void;
+export type FrameBegin = { status: 'begin' }
+export type FrameProgress<Dataset, Item> = { status: 'progress', dataset: Dataset, renderedItems: ReadonlyArray<Item> }
+export type FrameCancelled = { status: 'cancelled' }
+export type FrameFinished = { status: 'finished' }
+export type FrameError = { status: 'error', error: unknown }
 
+export type AsyncFrameEvent<Dataset, Item> = FrameBegin | FrameProgress<Dataset, Item> | FrameFinished | FrameCancelled | FrameError
+
+// export type RenderCallback<Dataset, Item, E extends AsyncFrameEvent<Dataset,Item>> = (event: E) => void;
+export type RenderCallback<Dataset, Item,> = (event: AsyncFrameEvent<Dataset, Item>) => void;
 export type RenderFrameConfig<Dataset, Item, Settings, RqKey extends string, CacheKey extends string, CacheEntryType, GpuData extends Record<RqKey, CacheEntryType>> = {
     maximumInflightAsyncTasks: number; // Maximum number of in-flight fetches to run at any time for this frame
     queueProcessingIntervalMS: number; // The length of time to wait between processing the queue in milliseconds.
@@ -30,7 +37,7 @@ export type RenderFrameConfig<Dataset, Item, Settings, RqKey extends string, Cac
     dataset: Dataset;                   // the dataset comprised of all Items
     settings: Settings;                // the settings (anything that is the same for the entire frame, think colors, point-sizes etc.)
     requestsForItem: (item: Item, dataset: Dataset, settings: Settings, signal?: AbortSignal) => Record<RqKey, () => Promise<CacheEntryType>>;
-    lifecycleCallback: RenderCallback,
+    lifecycleCallback: RenderCallback<Dataset, Item>,
     cacheKeyForRequest: (item: Item, requestKey: RqKey, dataset: Dataset, settings: Settings) => CacheKey
     isPrepared: (cacheData: Record<RqKey, CacheEntryType | undefined>) => cacheData is GpuData
     renderItem: (item: Item, dataset: Dataset, settings: Settings, gpuData: GpuData) => void;
@@ -43,66 +50,30 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
     const { maximumInflightAsyncTasks, queueTimeBudgetMS, queueProcessingIntervalMS, cacheKeyForRequest, settings, items, mutableCache, lifecycleCallback, renderItem, requestsForItem, isPrepared, dataset } = config;
 
     const abort = new AbortController();
-    const queue: Item[] = [];
+    const queue: Item[] = [...items];
     const taskCancelCallbacks: Array<() => void> = [];
     const fancy = (itemToRender: Item, maybe: Record<RqKey, CacheEntryType | undefined>) => {
         if (isPrepared(maybe)) {
+            console.log('rendering item: ', itemToRender)
             renderItem(itemToRender, dataset, settings, maybe);
+        } else {
+            console.log('item is malformed!')
         }
     }
-    const reportNormalStatus = (status: NormalStatus) => {
+    const reportStatus = (event: AsyncFrameEvent<Dataset, Item>, synchronous: boolean = false) => {
         // we want to report our status, however the flow of events can be confusing -
         // our callers anticipate an asynchronous (long running) frame to be started,
         // but there are scenarios in which the whole thing is completely synchronous
         // callers who are scheduling things may be surprised that their frame finished
         // before the code that handles it appears to start. thus, we make the entire lifecycle callback
         // system async, to prevent surprises.
-        Promise.resolve().then(() => lifecycleCallback({ status }));
-    };
-    // when starting a frame, we greedily attempt to render any tasks that are already in the cache
-    // however, if there is too much overhead (or too many tasks) we would risk hogging the main thread
-    // thus - obey the limit (its a soft limit)
-    const startTime = performance.now();
-
-    for (let i = 0; i < items.length; i += 1) {
-        const itemToRender = items[i];
-        const requestFns = requestsForItem(itemToRender, dataset, settings, abort.signal);
-        const cacheKey = (rq: RqKey): CacheKey => cacheKeyForRequest(itemToRender, rq, dataset, settings);
-        const cacheKeys = (Object.keys(requestFns) as RqKey[]).map(cacheKey);
-
-
-        if (mutableCache.areKeysAllCached(cacheKeys)) {
-            const result = mutableCache.cacheAndUse(requestFns, partial(fancy, itemToRender), cacheKey);
-            if (result !== undefined) {
-                // this is a problem - the cache reported that all the keys are in the cache, however this result is a cancellation callback,
-                // which indicates that the item could not be rendered right away, which should be impossible...
-                // TODO
-                taskCancelCallbacks.push(result);
-            }
+        if (synchronous) {
+            lifecycleCallback(event)
         } else {
-            // areKeysAllCached returned false - enqueue for later
-            queue.push(itemToRender);
+            Promise.resolve().then(() => lifecycleCallback(event));
         }
-        if (performance.now() - startTime > queueTimeBudgetMS) {
-            // we've used up all our time - enqueue all remaining tasks
-            if (i < items.length - 1) {
-                queue.push(...items.slice(i + 1));
-            }
-            break;
-        }
-    }
+    };
 
-    if (queue.length === 0) {
-        // we did all the work - it was already cached
-        reportNormalStatus('finished_synchronously');
-        return { cancelFrame: () => { } };
-    }
-    // TODO: Re-examine lifecycle reporting, potentially unify all statuses into a single type
-    reportNormalStatus('begun');
-    if (queue.length !== items.length) {
-        // We did some work, but there's some left
-        reportNormalStatus('progress');
-    }
     const doWorkOnQueue = (intervalId: number) => {
         // try our best to cleanup if something goes awry
         const startWorkTime = performance.now();
@@ -114,7 +85,7 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
             abort.abort(err);
             clearInterval(intervalId);
             // pass the error somewhere better:
-            lifecycleCallback({ status: 'error', error: err });
+            reportStatus({ status: 'error', error: err }, true);
         };
         while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
             if (queue.length < 1) {
@@ -123,7 +94,7 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
                 if (mutableCache.getNumPendingTasks() < 1) {
                     // we do want to wait for that last in-flight task to actually finish though:
                     clearInterval(intervalId);
-                    reportNormalStatus('finished');
+                    reportStatus({ status: 'finished' }, true);
                 }
                 return;
             }
@@ -135,7 +106,7 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
                     requestsForItem(itemToRender, dataset, settings, abort.signal),
                     partial(fancy, itemToRender),
                     toCacheKey,
-                    () => reportNormalStatus('progress')
+                    () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] })
                 );
                 if (result !== undefined) {
                     // put this cancel callback in a list where we can invoke if something goes wrong
@@ -153,6 +124,10 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
     };
     const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
 
+    // do some work right now...
+    reportStatus({ status: 'begin' }, true)
+    doWorkOnQueue(interval)
+
     // return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
     // touched/referenced after cancellation, unless the author of render() did some super weird bad things
     return {
@@ -160,27 +135,28 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
             taskCancelCallbacks.forEach((cancelMe) => cancelMe());
             abort.abort(new DOMException(reason, 'AbortError'));
             clearInterval(interval);
-            reportNormalStatus('cancelled');
+            reportStatus({ status: 'cancelled' });
         },
     };
 }
 
 
-export function buildAsyncRenderer<Dataset, Item, Settings, RequestKey extends string, CacheKeyType extends string, GpuData extends Record<RequestKey, ReglCacheEntry>>(
+export function buildAsyncRenderer<Dataset, Item, Settings, SemanticKey extends string, CacheKeyType extends string, GpuData extends Record<SemanticKey, ReglCacheEntry>>(
     renderer: Renderer<Dataset, Item, Settings, GpuData>) {
-    return (data: Dataset, settings: Settings, callback: RenderCallback, target: REGL.Framebuffer2D | null, cache: AsyncDataCache<RequestKey, CacheKeyType, ReglCacheEntry>) => {
+    return (data: Dataset, settings: Settings, callback: RenderCallback<Dataset, Item>, target: REGL.Framebuffer2D | null, cache: AsyncDataCache<SemanticKey, CacheKeyType, ReglCacheEntry>) => {
+        const { renderItem, isPrepared, cacheKey, fetchItemContent, getVisibleItems } = renderer;
         const config: RenderFrameConfig<Dataset, Item, Settings, string, string, ReglCacheEntry, GpuData> = {
             queueProcessingIntervalMS: 33,
             maximumInflightAsyncTasks: 5,
             queueTimeBudgetMS: 16,
-            cacheKeyForRequest: renderer.cacheKey,
+            cacheKeyForRequest: cacheKey,
             dataset: data,
-            isPrepared: renderer.isPrepared,
-            items: renderer.getVisibleItems(data, settings),
+            isPrepared: isPrepared,
+            items: getVisibleItems(data, settings),
             lifecycleCallback: callback,
             mutableCache: cache,
-            renderItem: partial(renderer.renderItem, target),
-            requestsForItem: renderer.fetchItemContent,
+            renderItem: partial(renderItem, target),
+            requestsForItem: fetchItemContent,
             settings
         }
         return beginFrame(config)

@@ -2,10 +2,12 @@ import type REGL from 'regl';
 
 export type CachedTexture = {
     texture: REGL.Texture2D;
+    bytes: number;
     type: 'texture'
 }
 export type CachedVertexBuffer = {
     buffer: REGL.Buffer;
+    bytes: number;
     type: 'buffer'
 }
 export type ReglCacheEntry = CachedTexture | CachedVertexBuffer

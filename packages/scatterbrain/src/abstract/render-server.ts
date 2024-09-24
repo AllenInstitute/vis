@@ -2,7 +2,7 @@ import { AsyncDataCache } from '../dataset-cache';
 import type { ReglCacheEntry } from './types';
 import type { vec2 } from '@alleninstitute/vis-geometry'
 import REGL from 'regl';
-import { type RenderCallback } from './async-frame';
+import { type AsyncFrameEvent, type RenderCallback } from './async-frame';
 import { type FrameLifecycle } from '../render-queue';
 import { buildImageCopy } from './image-copy';
 
@@ -18,15 +18,22 @@ function destroyer(item: ReglCacheEntry) {
             break;
     }
 }
-// todo... something less silly
+// return the size, in bytes, of some cached entity!
 function sizeOf(item: ReglCacheEntry) {
-    return 1;
+    return Math.max(1, item.bytes ?? 0);
 }
+const oneMB = 1024 * 1024;
+
 type ClientEntry = {
     frame: FrameLifecycle | null;
     image: REGL.Framebuffer2D;
 }
-type RFN = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback) => FrameLifecycle | null;
+type ServerActions = {
+    copyToClient: () => void;
+}
+type RenderEvent<D, I> = AsyncFrameEvent<D, I> & { target: REGL.Framebuffer2D | null, server: ServerActions }
+type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
+type RFN<D, I> = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback<D, I>) => FrameLifecycle | null;
 type Client = HTMLCanvasElement
 export class RenderServer {
     private canvas: OffscreenCanvas;
@@ -34,7 +41,7 @@ export class RenderServer {
     cache: AsyncDataCache<string, string, ReglCacheEntry>
     private clients: Map<Client, ClientEntry>;
     private imageCopy: ReturnType<typeof buildImageCopy>
-    constructor(maxSize: vec2, cacheEntryLimit: number = 4000) {
+    constructor(maxSize: vec2, cacheByteLimit: number = 2000 * oneMB) {
         this.canvas = new OffscreenCanvas(...maxSize);
         this.clients = new Map();
         const gl = this.canvas.getContext('webgl', {
@@ -53,10 +60,11 @@ export class RenderServer {
         });
         this.regl = regl;
         this.imageCopy = buildImageCopy(regl);
-        this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheEntryLimit)
+        this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheByteLimit)
     }
     private copyToClient(image: REGL.Framebuffer2D, client: Client) {
         try {
+            // console.log('blit: ', image.color[0]._texture.id, client.id)
             // apocrapha: clearing a buffer before you draw to it can sometimes make things go faster
             this.regl?.clear({ framebuffer: null, color: [0, 0, 0, 0], depth: 1 })
             // regl command to draw the image to our actual canvas!
@@ -88,7 +96,7 @@ export class RenderServer {
         }
         this.clients.delete(client);
     }
-    beginRendering(renderFn: RFN, callback: RenderCallback, client: Client) {
+    beginRendering<D, I>(renderFn: RFN<D, I>, callback: ServerCallback<D, I>, client: Client) {
         if (this.regl) {
             const clientFrame = this.clients.get(client);
             let image: REGL.Framebuffer2D | null = null;
@@ -99,22 +107,11 @@ export class RenderServer {
             }
             // either way - 
             const target = image ? image : this.regl.framebuffer(this.canvas.width, this.canvas.height)
-            const hijack: RenderCallback = (e) => {
-                switch (e.status) {
-                    case 'begun':
-                    case 'progress':
-                        // copy the private buffer to the given canvas!
-                        this.copyToClient(target, client)
-                        break;
-                    case 'finished':
-                    case 'finished_synchronously':
-                        // copy, and also clean up!
-                        this.copyToClient(target, client)
-                        this.clientFrameFinished(client);
-                        break;
+            const hijack: RenderCallback<D, I> = (e) => {
+                callback({ ...e, target, server: { copyToClient: () => { this.copyToClient(target, client) } } });
+                if (e.status === 'finished') {
+                    this.clientFrameFinished(client);
                 }
-                // call the user's callback...
-                callback(e);
             }
             this.clients.set(client, {
                 frame: renderFn(target, this.cache, hijack),

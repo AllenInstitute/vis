@@ -7,7 +7,7 @@ export function ReglProvider(props: PropsWithChildren<{}>) {
     const server = useRef<RenderServer>();
     const { children } = props;
     useEffect(() => {
-        server.current = new RenderServer([4096, 4096], 5000);
+        server.current = new RenderServer([4096, 4096]);
     }, []);
     return <renderServerContext.Provider value={server.current ?? null}>{children}</renderServerContext.Provider>;
 }
