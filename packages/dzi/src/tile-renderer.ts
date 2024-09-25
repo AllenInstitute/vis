@@ -22,7 +22,7 @@ void main(){
     vec2 pos =(tilePosition-view.xy)/size;
     // to clip space:
     pos = (pos*2.0)-1.0;
-    // but flip it upside down becase of the origin of this tiling system is the top of the image.
+    // but flip it upside down because of the origin of this tiling system is the top of the image.
     gl_Position = vec4(pos.x,-pos.y,depth,1);
 }`
 
