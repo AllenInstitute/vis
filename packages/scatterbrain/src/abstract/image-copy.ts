@@ -3,6 +3,7 @@ import REGL, { type Framebuffer2D } from 'regl';
 type Props = {
     target: Framebuffer2D | null;
     img: REGL.Texture2D | REGL.Framebuffer2D;
+    viewport: REGL.BoundingBox
 };
 export function buildImageCopy(regl: REGL.Regl) {
     const cmd = regl<
@@ -43,6 +44,7 @@ export function buildImageCopy(regl: REGL.Regl) {
         blend: {
             enable: false,
         },
+        viewport: regl.prop<Props, 'viewport'>('viewport'),
         count: 4,
         primitive: 'triangle fan',
     });

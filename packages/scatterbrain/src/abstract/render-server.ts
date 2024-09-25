@@ -1,6 +1,6 @@
 import { AsyncDataCache } from '../dataset-cache';
 import type { ReglCacheEntry } from './types';
-import type { vec2 } from '@alleninstitute/vis-geometry'
+import { Vec2, type vec2 } from '@alleninstitute/vis-geometry'
 import REGL from 'regl';
 import { type AsyncFrameEvent, type RenderCallback } from './async-frame';
 import { type FrameLifecycle } from '../render-queue';
@@ -73,11 +73,11 @@ export class RenderServer {
             // apocrapha: clearing a buffer before you draw to it can sometimes make things go faster
             this.regl?.clear({ framebuffer: null, color: [0, 0, 0, 0], depth: 1 })
             // regl command to draw the image to our actual canvas!
-            this.imageCopy({ target: null, img: image })
+            this.imageCopy({ target: null, img: image, viewport: { x: 0, y: 0, width: client.width, height: client.height } })
             // then:
             const ctx: CanvasRenderingContext2D = client.getContext('2d')!
             ctx.globalCompositeOperation = 'copy'
-            ctx.drawImage(this.canvas, 0, 0, client.width, client.height);
+            ctx.drawImage(this.canvas, 0, this.canvas.height - client.height, client.width, client.height, 0, 0, client.width, client.height);
         } catch (err) {
             console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
         }
@@ -128,7 +128,7 @@ export class RenderServer {
                 image = clientFrame.image;
             }
             // either way - 
-            const target = image ? image : this.regl.framebuffer(this.canvas.width, this.canvas.height)
+            const target = image ? image : this.regl.framebuffer(...Vec2.min([this.canvas.width, this.canvas.height], [client.width, client.height]))
             const hijack: RenderCallback<D, I> = (e) => {
                 callback({ ...e, target, server: { copyToClient: () => { this.requestCopyToClient(client) } } });
                 if (e.status === 'finished' || e.status === 'cancelled') {

@@ -67,7 +67,7 @@ export function DziView(props: Props) {
                             server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
                             break;
                         case 'progress':
-                            e.server.copyToClient();
+                            // e.server.copyToClient();
                             break;
                         case 'finished':
                             e.server.copyToClient();
