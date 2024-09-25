@@ -85,25 +85,18 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
             reportStatus({ status: 'error', error: err }, true);
         };
         while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
-            if (queue.length < 1) {
-                // we cant add anything to the in-flight staging area, the final task
-                // is already in flight
-                if (mutableCache.getNumPendingTasks() < 1) {
-                    // we do want to wait for that last in-flight task to actually finish though:
-                    clearInterval(intervalId);
-                    reportStatus({ status: 'finished' }, true);
-                }
-                return;
-            }
             // We know there are items in the queue because of the check above, so we assert the type exist
-            const itemToRender = queue.shift()!;
+            const itemToRender = queue.shift();
+            if (!itemToRender) {
+                break;
+            }
             const toCacheKey = (rq: RqKey) => cacheKeyForRequest(itemToRender, rq, dataset, settings);
             try {
                 const result = mutableCache.cacheAndUse(
                     requestsForItem(itemToRender, dataset, settings, abort.signal),
                     partial(fancy, itemToRender),
                     toCacheKey,
-                    () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] })
+                    () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] }, true)
                 );
                 if (result !== undefined) {
                     // put this cancel callback in a list where we can invoke if something goes wrong
@@ -118,23 +111,39 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
                 break;
             }
         }
+        if (queue.length < 1) {
+            // we cant add anything to the in-flight staging area, the final task
+            // is already in flight
+            if (mutableCache.getNumPendingTasks() < 1) {
+                // we do want to wait for that last in-flight task to actually finish though:
+                clearInterval(intervalId);
+                reportStatus({ status: 'finished' });
+            }
+            return;
+        }
     };
     const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
 
     // do some work right now...
-    reportStatus({ status: 'begin' }, true)
-    doWorkOnQueue(interval)
-
-    // return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
-    // touched/referenced after cancellation, unless the author of render() did some super weird bad things
+    if (queue.length > 0) {
+        reportStatus({ status: 'begin' }, true)
+        doWorkOnQueue(interval)
+        // return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
+        // touched/referenced after cancellation, unless the author of render() did some super weird bad things
+        return {
+            cancelFrame: (reason?: string) => {
+                taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+                abort.abort(new DOMException(reason, 'AbortError'));
+                clearInterval(interval);
+                reportStatus({ status: 'cancelled' });
+            },
+        };
+    }
     return {
-        cancelFrame: (reason?: string) => {
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
-            abort.abort(new DOMException(reason, 'AbortError'));
-            clearInterval(interval);
-            reportStatus({ status: 'cancelled' });
-        },
-    };
+        cancelFrame: () => { }
+    }
+
+
 }
 
 

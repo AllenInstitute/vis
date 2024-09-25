@@ -7,15 +7,7 @@ import {
     type GpuProps as CachedPixels,
 } from '@alleninstitute/vis-dzi';
 import React from 'react';
-import {
-    AsyncDataCache,
-    buildAsyncRenderer,
-    type ReglCacheEntry,
-    type RenderCallback,
-    type RenderEvent,
-    type RFN,
-} from '@alleninstitute/vis-scatterbrain';
-import REGL from 'regl';
+import { buildAsyncRenderer, type RFN } from '@alleninstitute/vis-scatterbrain';
 import { isEqual } from 'lodash';
 import { renderServerContext } from './render-server-provider';
 
@@ -69,13 +61,13 @@ export function DziView(props: Props) {
             server.beginRendering(
                 renderMyData,
                 (e) => {
-                    console.log(e);
+                    // console.log(e);
                     switch (e.status) {
                         case 'begin':
                             server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
                             break;
                         case 'progress':
-                            // e.server.copyToClient();
+                            e.server.copyToClient();
                             break;
                         case 'finished':
                             e.server.copyToClient();

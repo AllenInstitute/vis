@@ -27,6 +27,7 @@ const oneMB = 1024 * 1024;
 type ClientEntry = {
     frame: FrameLifecycle | null;
     image: REGL.Framebuffer2D;
+    updateRequested: boolean;
 }
 type ServerActions = {
     copyToClient: () => void;
@@ -37,13 +38,18 @@ type RFN<D, I> = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<strin
 type Client = HTMLCanvasElement
 export class RenderServer {
     private canvas: OffscreenCanvas;
+    private refreshRequested: boolean;
     regl: REGL.Regl | null;
     cache: AsyncDataCache<string, string, ReglCacheEntry>
     private clients: Map<Client, ClientEntry>;
     private imageCopy: ReturnType<typeof buildImageCopy>
-    constructor(maxSize: vec2, cacheByteLimit: number = 2000 * oneMB) {
+    private requestAnimationFrame: (fn: () => void) => void;
+
+    constructor(maxSize: vec2, requestAnimationFrame: (fn: () => void) => void, cacheByteLimit: number = 2000 * oneMB,) {
         this.canvas = new OffscreenCanvas(...maxSize);
         this.clients = new Map();
+        this.requestAnimationFrame = requestAnimationFrame;
+        this.refreshRequested = false;
         const gl = this.canvas.getContext('webgl', {
             alpha: true,
             preserveDrawingBuffer: true, // because this is a multiplexed context, we should turn this to false: TODO
@@ -69,12 +75,34 @@ export class RenderServer {
             // regl command to draw the image to our actual canvas!
             this.imageCopy({ target: null, img: image })
             // then:
-            // const ctx: CanvasRenderingContext2D = client.getContext('2d')!
-            // ctx.globalCompositeOperation = 'copy'
-            // ctx.drawImage(this.canvas, 0, 0, client.width, client.height);
-            client.getContext('bitmaprenderer')!.transferFromImageBitmap(this.canvas.transferToImageBitmap());
+            const ctx: CanvasRenderingContext2D = client.getContext('2d')!
+            ctx.globalCompositeOperation = 'copy'
+            ctx.drawImage(this.canvas, 0, 0, client.width, client.height);
         } catch (err) {
             console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
+        }
+    }
+    private onAnimationFrame() {
+        if (this.refreshRequested) {
+            for (const [client, entry] of this.clients) {
+                if (entry.updateRequested) {
+                    this.copyToClient(entry.image, client);
+                    entry.updateRequested = false;
+                }
+            }
+            this.refreshRequested = false;
+        }
+    }
+    private requestCopyToClient(client: Client) {
+        const c = this.clients.get(client);
+        if (c) {
+            if (!c.updateRequested) {
+                c.updateRequested = true;
+                if (!this.refreshRequested) {
+                    this.refreshRequested = true;
+                    this.requestAnimationFrame(() => this.onAnimationFrame());
+                }
+            }
         }
     }
     private clientFrameFinished(client: Client) {
@@ -102,14 +130,15 @@ export class RenderServer {
             // either way - 
             const target = image ? image : this.regl.framebuffer(this.canvas.width, this.canvas.height)
             const hijack: RenderCallback<D, I> = (e) => {
-                callback({ ...e, target, server: { copyToClient: () => { this.copyToClient(target, client) } } });
+                callback({ ...e, target, server: { copyToClient: () => { this.requestCopyToClient(client) } } });
                 if (e.status === 'finished' || e.status === 'cancelled') {
                     this.clientFrameFinished(client);
                 }
             }
             this.clients.set(client, {
                 frame: renderFn(target, this.cache, hijack),
-                image: target
+                image: target,
+                updateRequested: false
             })
         }
 
