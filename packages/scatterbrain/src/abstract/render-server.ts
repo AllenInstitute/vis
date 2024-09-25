@@ -27,6 +27,7 @@ const oneMB = 1024 * 1024;
 type ClientEntry = {
     frame: FrameLifecycle | null;
     image: REGL.Framebuffer2D;
+    copyBuffer: ArrayBuffer;
     updateRequested: boolean;
 }
 type ServerActions = {
@@ -44,10 +45,11 @@ export class RenderServer {
     private clients: Map<Client, ClientEntry>;
     private imageCopy: ReturnType<typeof buildImageCopy>
     private requestAnimationFrame: (fn: () => void) => void;
-
+    private maxSize: vec2
     constructor(maxSize: vec2, requestAnimationFrame: (fn: () => void) => void, cacheByteLimit: number = 2000 * oneMB,) {
-        this.canvas = new OffscreenCanvas(...maxSize);
+        this.canvas = new OffscreenCanvas(10, 10); // we always render to private buffers
         this.clients = new Map();
+        this.maxSize = maxSize;
         this.requestAnimationFrame = requestAnimationFrame;
         this.refreshRequested = false;
         const gl = this.canvas.getContext('webgl', {
@@ -68,16 +70,15 @@ export class RenderServer {
         this.imageCopy = buildImageCopy(regl);
         this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheByteLimit)
     }
-    private copyToClient(image: REGL.Framebuffer2D, client: Client) {
+    private copyToClient(image: REGL.Framebuffer2D, buffer: ArrayBuffer, client: Client) {
         try {
-            // apocrapha: clearing a buffer before you draw to it can sometimes make things go faster
-            this.regl?.clear({ framebuffer: null, color: [0, 0, 0, 0], depth: 1 })
-            // regl command to draw the image to our actual canvas!
-            this.imageCopy({ target: null, img: image, viewport: { x: 0, y: 0, width: client.width, height: client.height } })
+            // read directly from the framebuffer to which we render:
+            this.regl?.read({ framebuffer: image, x: 0, y: 0, width: client.width, height: client.height, data: new Uint8Array(buffer) })
             // then:
             const ctx: CanvasRenderingContext2D = client.getContext('2d')!
-            ctx.globalCompositeOperation = 'copy'
-            ctx.drawImage(this.canvas, 0, this.canvas.height - client.height, client.width, client.height, 0, 0, client.width, client.height);
+            const img = new ImageData(new Uint8ClampedArray(buffer), client.width, client.height);
+            ctx.putImageData(img, 0, 0);
+            // this is dramatically more performant than transferToBitmap() trickery - and uses way less memory!
         } catch (err) {
             console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
         }
@@ -86,7 +87,7 @@ export class RenderServer {
         if (this.refreshRequested) {
             for (const [client, entry] of this.clients) {
                 if (entry.updateRequested) {
-                    this.copyToClient(entry.image, client);
+                    this.copyToClient(entry.image, entry.copyBuffer, client);
                     entry.updateRequested = false;
                 }
             }
@@ -122,13 +123,20 @@ export class RenderServer {
         if (this.regl) {
             const clientFrame = this.clients.get(client);
             let image: REGL.Framebuffer2D | null = null;
+            let copyBuffer: ArrayBuffer | null = null;
             if (clientFrame) {
+                // we keep a client as the key to a map, however
+                // clients are potentially mutable! we need to handle what happens if one is resized
+                // TODO
                 // maybe cancel the existing frame
                 clientFrame.frame?.cancelFrame();
                 image = clientFrame.image;
+
             }
             // either way - 
-            const target = image ? image : this.regl.framebuffer(...Vec2.min([this.canvas.width, this.canvas.height], [client.width, client.height]))
+            const resolution = Vec2.min(this.maxSize, [client.width, client.height])
+            const target = image ? image : this.regl.framebuffer(...resolution)
+            copyBuffer = copyBuffer ? copyBuffer : new ArrayBuffer(resolution[0] * resolution[1] * 4);
             const hijack: RenderCallback<D, I> = (e) => {
                 callback({ ...e, target, server: { copyToClient: () => { this.requestCopyToClient(client) } } });
                 if (e.status === 'finished' || e.status === 'cancelled') {
@@ -138,6 +146,7 @@ export class RenderServer {
             this.clients.set(client, {
                 frame: renderFn(target, this.cache, hijack),
                 image: target,
+                copyBuffer,
                 updateRequested: false
             })
         }
