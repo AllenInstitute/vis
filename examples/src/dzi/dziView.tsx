@@ -1,5 +1,4 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { renderServerContext } from './offscreen-renderer';
 import {
     buildDziRenderer,
     type DziImage,
@@ -18,6 +17,7 @@ import {
 } from '@alleninstitute/vis-scatterbrain';
 import REGL from 'regl';
 import { isEqual } from 'lodash';
+import { renderServerContext } from './render-server-provider';
 
 type Props = {
     id: string;
@@ -59,14 +59,9 @@ export function DziView(props: Props) {
 
     useEffect(() => {
         if (server && renderer.current && cnvs.current) {
-            const renderMyData: RFN<DziImage, DziTile> = (
-                target: REGL.Framebuffer2D | null,
-                cache: AsyncDataCache<string, string, ReglCacheEntry>,
-                callback
-            ) => {
+            const renderMyData: RFN<DziImage, DziTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     // erase the frame before we start drawing on it
-                    // server.regl?.clear({ framebuffer: target, color: [0, 0, 0, 0], depth: 1 });
                     return renderer.current(dzi, { camera: cam }, callback, target, cache);
                 }
                 return null;
@@ -80,7 +75,7 @@ export function DziView(props: Props) {
                             server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
                             break;
                         case 'progress':
-                            e.server.copyToClient();
+                            // e.server.copyToClient();
                             break;
                         case 'finished':
                             e.server.copyToClient();

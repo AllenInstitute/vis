@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ReglProvider } from './offscreen-renderer';
+import { RenderServerProvider } from './render-server-provider';
 import React from 'react';
 import { DziView } from './dziView';
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
@@ -41,7 +41,7 @@ export function TwoClientsPOC() {
         setView(v);
     };
     return (
-        <ReglProvider>
+        <RenderServerProvider>
             <DziView
                 id="left"
                 dzi={example}
@@ -54,6 +54,6 @@ export function TwoClientsPOC() {
                 camera={{ ...exampleSettings.camera, view }}
                 wheel={zoom}
             />
-        </ReglProvider>
+        </RenderServerProvider>
     );
 }

@@ -64,23 +64,17 @@ export class RenderServer {
     }
     private copyToClient(image: REGL.Framebuffer2D, client: Client) {
         try {
-            // console.log('blit: ', image.color[0]._texture.id, client.id)
             // apocrapha: clearing a buffer before you draw to it can sometimes make things go faster
             this.regl?.clear({ framebuffer: null, color: [0, 0, 0, 0], depth: 1 })
             // regl command to draw the image to our actual canvas!
             this.imageCopy({ target: null, img: image })
             // then:
-            // todo: I'm interested to see what happens when the source and dest are not the same size...
-            // client.transferFromImageBitmap(this.canvas.transferToImageBitmap());
-            /*
-            const img = this.canvas.transferToImageBitmap()
-            const ctx: CanvasRenderingContext2D = client.getContext('2d')!
-            ctx.drawImage(img, 0, 0, client.width, client.height);
-            img.close();
-            */
+            // const ctx: CanvasRenderingContext2D = client.getContext('2d')!
+            // ctx.globalCompositeOperation = 'copy'
+            // ctx.drawImage(this.canvas, 0, 0, client.width, client.height);
             client.getContext('bitmaprenderer')!.transferFromImageBitmap(this.canvas.transferToImageBitmap());
         } catch (err) {
-            console.error('hey - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
+            console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
         }
     }
     private clientFrameFinished(client: Client) {
@@ -109,7 +103,7 @@ export class RenderServer {
             const target = image ? image : this.regl.framebuffer(this.canvas.width, this.canvas.height)
             const hijack: RenderCallback<D, I> = (e) => {
                 callback({ ...e, target, server: { copyToClient: () => { this.copyToClient(target, client) } } });
-                if (e.status === 'finished') {
+                if (e.status === 'finished' || e.status === 'cancelled') {
                     this.clientFrameFinished(client);
                 }
             }

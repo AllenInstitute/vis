@@ -3,13 +3,12 @@ import { type Renderer, type ReglCacheEntry, type CachedTexture } from '@allenin
 import type REGL from 'regl';
 import { type DziImage, type DziTile, getVisibleTiles } from "./loader";
 import { buildTileRenderer } from "./tile-renderer";
-// type CacheContentType = { type: 'texture2D'; data: REGL.Texture2D };
+
 export type RenderSettings = {
     camera: {
         view: box2D;
         screenSize: vec2;
     },
-    // regl: REGL.Regl;
 }
 
 type GpuProps = {

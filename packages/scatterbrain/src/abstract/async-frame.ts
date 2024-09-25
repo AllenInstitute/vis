@@ -54,10 +54,7 @@ export function beginFrame<Dataset, Item, Settings, RqKey extends string, CacheK
     const taskCancelCallbacks: Array<() => void> = [];
     const fancy = (itemToRender: Item, maybe: Record<RqKey, CacheEntryType | undefined>) => {
         if (isPrepared(maybe)) {
-            console.log('rendering item: ', itemToRender)
             renderItem(itemToRender, dataset, settings, maybe);
-        } else {
-            console.log('item is malformed!')
         }
     }
     const reportStatus = (event: AsyncFrameEvent<Dataset, Item>, synchronous: boolean = false) => {

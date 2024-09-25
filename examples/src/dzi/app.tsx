@@ -1,6 +1,6 @@
 import React from 'react';
 import { TwoClientsPOC } from './double';
 
-export function AppUi(props: {}) {
+export function AppUi() {
     return <TwoClientsPOC />;
 }
