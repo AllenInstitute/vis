@@ -3,11 +3,4 @@ import { AppUi } from "./app";
 
 
 const uiroot = createRoot(document.getElementById('main')!);
-const eachFrame = () => {
-    uiroot.render(AppUi({}))
-    window.requestAnimationFrame(eachFrame);
-}
-function demoTime() {
-    window.requestAnimationFrame(eachFrame)
-}
-demoTime();
+uiroot.render(AppUi());
