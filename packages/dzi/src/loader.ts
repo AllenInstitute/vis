@@ -1,6 +1,5 @@
 
 import { type vec2, type box2D, Box2D, type Interval, Vec2 } from '@alleninstitute/vis-geometry'
-// todo rename me...
 
 type DziTilesRoot = `${string}_files/`
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN
@@ -113,7 +112,6 @@ export function imageSizeAtLayer(dzi: DziImage, layer: number) {
 }
 export function tilesInLayer(dzi: DziImage, layer: number): box2D[][] {
     const { overlap, tileSize } = dzi;
-    const layerMaxSize = 2 ** layer;
     // figure out the effective size of a layer by dividing the total size by 2 until its less than our layerMax
     // note: if this all feels weird, its because I can find no reference implementation or specification, its a bit of reverse engineering
     const total: vec2 = imageSizeAtLayer(dzi, layer)
