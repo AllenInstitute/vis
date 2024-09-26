@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { RenderServerProvider } from './render-server-provider';
 import React from 'react';
 import { DziView } from './dziView';
@@ -32,6 +32,17 @@ const exampleSettings: DziRenderSettings = {
         view: Box2D.create([0, 0], [1, 1]),
     },
 };
+// function useSVGImage(url:string){
+//     const [svg,setSvg] = useState<HTMLImageElement>()
+//     useEffect(()=>{
+//         const img = new HTMLImageElement()
+//         img.onload=()=>{
+
+//         }
+//         img.src = url;
+
+//     },[url])
+// }
 export function TwoClientsPOC() {
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [1, 1]));
     const zoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
@@ -40,10 +51,19 @@ export function TwoClientsPOC() {
         const v = Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m);
         setView(v);
     };
+    const overlay = useRef<HTMLImageElement>(new Image());
+    useEffect(() => {
+        overlay.current.onload = () => {
+            console.log('loaded svg!');
+        };
+        overlay.current.src =
+            'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-22-07-pathology-image-move/pat_images_JGCXWER774NLNWX2NNR/7179-A6-I6-MTG-classified/annotation.svg';
+    }, []);
     return (
         <RenderServerProvider>
             <DziView
                 id="left"
+                svgOverlay={overlay.current}
                 dzi={example}
                 camera={{ ...exampleSettings.camera, view }}
                 wheel={zoom}
@@ -51,6 +71,7 @@ export function TwoClientsPOC() {
             <DziView
                 id="right"
                 dzi={exampleDzi}
+                svgOverlay={overlay.current}
                 camera={{ ...exampleSettings.camera, view }}
                 wheel={zoom}
             />

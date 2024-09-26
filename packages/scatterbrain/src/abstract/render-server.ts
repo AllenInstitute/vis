@@ -28,11 +28,12 @@ type ClientEntry = {
     image: REGL.Framebuffer2D;
     resolution: vec2;
     copyBuffer: ArrayBuffer;
-    updateRequested: boolean;
+    updateRequested: Compositor | null;
 }
 type ServerActions = {
-    copyToClient: () => void;
+    copyToClient: (composite: Compositor) => void;
 }
+type Compositor = (ctx: CanvasRenderingContext2D, glImage: ImageData) => void;
 type RenderEvent<D, I> = AsyncFrameEvent<D, I> & { target: REGL.Framebuffer2D | null, server: ServerActions }
 type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
 type RFN<D, I> = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback<D, I>) => FrameLifecycle | null;
@@ -68,35 +69,39 @@ export class RenderServer {
     private copyToClient(frameInfo: ClientEntry, client: Client) {
         // note: compared transferImageFromBitmap(transferImageToBitmap()), drawImage(canvas) and a few other variations
         // this method seems to have the most consistent performance across various browsers
-        const { resolution, copyBuffer, image } = frameInfo;
+        const { resolution, copyBuffer, image, updateRequested } = frameInfo;
         const [width, height] = resolution;
-        try {
-            // read directly from the framebuffer to which we render:
-            this.regl?.read({ framebuffer: image, x: 0, y: 0, width, height, data: new Uint8Array(copyBuffer) })
-            // then put those bytes in the client canvas:
-            const ctx: CanvasRenderingContext2D = client.getContext('2d')!
-            const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
-            ctx.putImageData(img, 0, 0);
-        } catch (err) {
-            console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
+        if (updateRequested) {
+            try {
+                // read directly from the framebuffer to which we render:
+                this.regl?.read({ framebuffer: image, x: 0, y: 0, width, height, data: new Uint8Array(copyBuffer) })
+                // then put those bytes in the client canvas:
+                const ctx: CanvasRenderingContext2D = client.getContext('2d')!
+                const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
+                updateRequested(ctx, img);
+            } catch (err) {
+                console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
+            }
         }
+
     }
     private onAnimationFrame() {
         if (this.refreshRequested) {
             for (const [client, entry] of this.clients) {
                 if (entry.updateRequested) {
-                    this.copyToClient(entry, client);
-                    entry.updateRequested = false;
+                    this.copyToClient(entry, client)
+                    // mark our progress:
+                    entry.updateRequested = null;
                 }
             }
             this.refreshRequested = false;
         }
     }
-    private requestCopyToClient(client: Client) {
+    private requestComposition(client: Client, composite: Compositor) {
         const c = this.clients.get(client);
         if (c) {
             if (!c.updateRequested) {
-                c.updateRequested = true;
+                c.updateRequested = composite;
                 if (!this.refreshRequested) {
                     this.refreshRequested = true;
                     // as of 2023, requestAnimationFrame should be generally available globally in both workers* and a window
@@ -145,7 +150,7 @@ export class RenderServer {
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
             const hijack: RenderCallback<D, I> = (e) => {
-                callback({ ...e, target: image, server: { copyToClient: () => { this.requestCopyToClient(client) } } });
+                callback({ ...e, target: image, server: { copyToClient: (compose: Compositor) => { this.requestComposition(client, compose) } } });
                 if (e.status === 'finished' || e.status === 'cancelled') {
                     this.clientFrameFinished(client);
                 }
@@ -155,7 +160,7 @@ export class RenderServer {
                 image,
                 copyBuffer,
                 resolution,
-                updateRequested: false
+                updateRequested: null
             })
         }
 

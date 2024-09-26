@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
     buildDziRenderer,
     type DziImage,
@@ -10,15 +10,33 @@ import React from 'react';
 import { buildAsyncRenderer, type RFN } from '@alleninstitute/vis-scatterbrain';
 import { isEqual } from 'lodash';
 import { renderServerContext } from './render-server-provider';
+import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 
 type Props = {
     id: string;
     dzi: DziImage;
+    svgOverlay: HTMLImageElement;
     wheel: (e: React.WheelEvent<HTMLCanvasElement>) => void;
 } & DziRenderSettings;
 
+function buildCompositor(svg: HTMLImageElement, settings: DziRenderSettings) {
+    return (ctx: CanvasRenderingContext2D, image: ImageData) => {
+        const { width, height } = svg;
+        const { camera } = settings;
+        const svgSize: vec2 = [width, height];
+        const start = Vec2.mul(camera.view.minCorner, svgSize);
+        const wh = Vec2.sub(Vec2.mul(camera.view.maxCorner, svgSize), start);
+        const [sx, sy] = start;
+        const [sw, sh] = wh;
+        // first, draw the results from webGL
+        ctx.putImageData(image, 0, 0);
+        // then add our svg overlay
+        ctx.drawImage(svg, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
+    };
+}
+
 export function DziView(props: Props) {
-    const { camera, dzi, wheel, id } = props;
+    const { svgOverlay, camera, dzi, wheel, id } = props;
     const server = useContext(renderServerContext);
     const cnvs = useRef<HTMLCanvasElement>(null);
 
@@ -58,19 +76,21 @@ export function DziView(props: Props) {
                 }
                 return null;
             };
+            const compose = buildCompositor(svgOverlay, { camera: cam });
             server.beginRendering(
                 renderMyData,
                 (e) => {
-                    // console.log(e);
                     switch (e.status) {
                         case 'begin':
                             server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
                             break;
                         case 'progress':
-                            // e.server.copyToClient();
+                            // wanna see the tiles as they arrive?
+                            e.server.copyToClient(compose);
                             break;
-                        case 'finished':
-                            e.server.copyToClient();
+                        case 'finished': {
+                            e.server.copyToClient(compose);
+                        }
                     }
                 },
                 cnvs.current
