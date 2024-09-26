@@ -3,7 +3,7 @@
 This document contains a list of tasks that need to be performed in order to prepare the repository for being open-sourced.
 
 ## General
-- [ ] Decide if we're using the BSD-3 license or the Allen Institute license and update LICENSE.md accordingly
+- [x] Decide if we're using the BSD-3 license or the Allen Institute license and update LICENSE.md accordingly: BSD-3 was selected
 - [ ] Decide on the name of the packages. Are we sticking with `@alleninstitute/vis-*` or are we going to use a different naming convention, like `@alleninstitute/visualization-toolkit-*`?
 - [ ] Decide what packages to have. See `packages.md` for a potential initial list
 - [ ] Review existing documentation and make sure it matches the current state of things
