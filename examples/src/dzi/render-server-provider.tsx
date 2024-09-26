@@ -7,7 +7,7 @@ export function RenderServerProvider(props: PropsWithChildren<{}>) {
     const server = useRef<RenderServer>();
     const { children } = props;
     useEffect(() => {
-        server.current = new RenderServer([2048, 2048], (fn) => window.requestAnimationFrame(fn));
+        server.current = new RenderServer([2048, 2048], []);
     }, []);
     return <renderServerContext.Provider value={server.current ?? null}>{children}</renderServerContext.Provider>;
 }

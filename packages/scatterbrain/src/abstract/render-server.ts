@@ -4,7 +4,6 @@ import { Vec2, type vec2 } from '@alleninstitute/vis-geometry'
 import REGL from 'regl';
 import { type AsyncFrameEvent, type RenderCallback } from './async-frame';
 import { type FrameLifecycle } from '../render-queue';
-import { buildImageCopy } from './image-copy';
 
 
 
@@ -27,6 +26,7 @@ const oneMB = 1024 * 1024;
 type ClientEntry = {
     frame: FrameLifecycle | null;
     image: REGL.Framebuffer2D;
+    resolution: vec2;
     copyBuffer: ArrayBuffer;
     updateRequested: boolean;
 }
@@ -43,18 +43,15 @@ export class RenderServer {
     regl: REGL.Regl | null;
     cache: AsyncDataCache<string, string, ReglCacheEntry>
     private clients: Map<Client, ClientEntry>;
-    private imageCopy: ReturnType<typeof buildImageCopy>
-    private requestAnimationFrame: (fn: () => void) => void;
     private maxSize: vec2
-    constructor(maxSize: vec2, requestAnimationFrame: (fn: () => void) => void, cacheByteLimit: number = 2000 * oneMB,) {
-        this.canvas = new OffscreenCanvas(10, 10); // we always render to private buffers
+    constructor(maxSize: vec2, extensions: string[], cacheByteLimit: number = 2000 * oneMB,) {
+        this.canvas = new OffscreenCanvas(10, 10); // we always render to private buffers, so we dont need a real resolution here...
         this.clients = new Map();
         this.maxSize = maxSize;
-        this.requestAnimationFrame = requestAnimationFrame;
         this.refreshRequested = false;
         const gl = this.canvas.getContext('webgl', {
             alpha: true,
-            preserveDrawingBuffer: true, // because this is a multiplexed context, we should turn this to false: TODO
+            preserveDrawingBuffer: false,
             antialias: true,
             premultipliedAlpha: true,
         });
@@ -63,22 +60,23 @@ export class RenderServer {
         }
         const regl = REGL({
             gl,
-            // TODO add extensions as arguments to the constructor of this server!
-            extensions: ['ANGLE_instanced_arrays', 'OES_texture_float', 'WEBGL_color_buffer_float'],
+            extensions,
         });
         this.regl = regl;
-        this.imageCopy = buildImageCopy(regl);
         this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheByteLimit)
     }
-    private copyToClient(image: REGL.Framebuffer2D, buffer: ArrayBuffer, client: Client) {
+    private copyToClient(frameInfo: ClientEntry, client: Client) {
+        // note: compared transferImageFromBitmap(transferImageToBitmap()), drawImage(canvas) and a few other variations
+        // this method seems to have the most consistent performance across various browsers
+        const { resolution, copyBuffer, image } = frameInfo;
+        const [width, height] = resolution;
         try {
             // read directly from the framebuffer to which we render:
-            this.regl?.read({ framebuffer: image, x: 0, y: 0, width: client.width, height: client.height, data: new Uint8Array(buffer) })
-            // then:
+            this.regl?.read({ framebuffer: image, x: 0, y: 0, width, height, data: new Uint8Array(copyBuffer) })
+            // then put those bytes in the client canvas:
             const ctx: CanvasRenderingContext2D = client.getContext('2d')!
-            const img = new ImageData(new Uint8ClampedArray(buffer), client.width, client.height);
+            const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
             ctx.putImageData(img, 0, 0);
-            // this is dramatically more performant than transferToBitmap() trickery - and uses way less memory!
         } catch (err) {
             console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
         }
@@ -87,7 +85,7 @@ export class RenderServer {
         if (this.refreshRequested) {
             for (const [client, entry] of this.clients) {
                 if (entry.updateRequested) {
-                    this.copyToClient(entry.image, entry.copyBuffer, client);
+                    this.copyToClient(entry, client);
                     entry.updateRequested = false;
                 }
             }
@@ -101,7 +99,9 @@ export class RenderServer {
                 c.updateRequested = true;
                 if (!this.refreshRequested) {
                     this.refreshRequested = true;
-                    this.requestAnimationFrame(() => this.onAnimationFrame());
+                    // as of 2023, requestAnimationFrame should be generally available globally in both workers* and a window
+                    // if this becomes an issue, we can have our caller pass requestAnimationFrame in to the constructor
+                    requestAnimationFrame(() => this.onAnimationFrame())
                 }
             }
         }
@@ -119,34 +119,42 @@ export class RenderServer {
         }
         this.clients.delete(client);
     }
+    private prepareToRenderToClient(client: Client) {
+        const previousEntry = this.clients.get(client);
+        if (previousEntry) {
+            // the client is mutable - so every time we get a request, we have to check to see if it got resized
+            if (client.width !== previousEntry.resolution[0] || client.height !== previousEntry.resolution[1]) {
+                // handle resizing by deleting previously allocated resources:
+                previousEntry.image.destroy();
+                // the rest will get GC'd normally
+            } else {
+                // use the existing resources!
+                return previousEntry;
+            }
+        }
+        const resolution = Vec2.min(this.maxSize, [client.width, client.height])
+        const copyBuffer = new ArrayBuffer(resolution[0] * resolution[1] * 4);
+        const image = this.regl!.framebuffer(...resolution)
+        return { resolution, copyBuffer, image }
+    }
     beginRendering<D, I>(renderFn: RFN<D, I>, callback: ServerCallback<D, I>, client: Client) {
         if (this.regl) {
             const clientFrame = this.clients.get(client);
-            let image: REGL.Framebuffer2D | null = null;
-            let copyBuffer: ArrayBuffer | null = null;
-            if (clientFrame) {
-                // we keep a client as the key to a map, however
-                // clients are potentially mutable! we need to handle what happens if one is resized
-                // TODO
-                // maybe cancel the existing frame
-                clientFrame.frame?.cancelFrame();
-                image = clientFrame.image;
-
+            if (clientFrame && clientFrame.frame) {
+                clientFrame.frame.cancelFrame();
             }
-            // either way - 
-            const resolution = Vec2.min(this.maxSize, [client.width, client.height])
-            const target = image ? image : this.regl.framebuffer(...resolution)
-            copyBuffer = copyBuffer ? copyBuffer : new ArrayBuffer(resolution[0] * resolution[1] * 4);
+            const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
             const hijack: RenderCallback<D, I> = (e) => {
-                callback({ ...e, target, server: { copyToClient: () => { this.requestCopyToClient(client) } } });
+                callback({ ...e, target: image, server: { copyToClient: () => { this.requestCopyToClient(client) } } });
                 if (e.status === 'finished' || e.status === 'cancelled') {
                     this.clientFrameFinished(client);
                 }
             }
             this.clients.set(client, {
-                frame: renderFn(target, this.cache, hijack),
-                image: target,
+                frame: renderFn(image, this.cache, hijack),
+                image,
                 copyBuffer,
+                resolution,
                 updateRequested: false
             })
         }
