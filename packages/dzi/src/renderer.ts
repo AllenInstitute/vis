@@ -1,5 +1,5 @@
 import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry"
-import { type Renderer, type ReglCacheEntry, type CachedTexture } from '@alleninstitute/vis-scatterbrain';
+import { type Renderer, type ReglCacheEntry, type CachedTexture, buildAsyncRenderer } from '@alleninstitute/vis-scatterbrain';
 import type REGL from 'regl';
 import { type DziImage, type DziTile, getVisibleTiles } from "./loader";
 import { buildTileRenderer } from "./tile-renderer";
@@ -57,4 +57,8 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
             })
         },
     }
+}
+
+export function buildAsyncDziRenderer(regl: REGL.Regl) {
+    return buildAsyncRenderer(buildDziRenderer(regl));
 }

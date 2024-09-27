@@ -36,7 +36,8 @@ type ServerActions = {
 type Compositor = (ctx: CanvasRenderingContext2D, glImage: ImageData) => void;
 type RenderEvent<D, I> = AsyncFrameEvent<D, I> & { target: REGL.Framebuffer2D | null, server: ServerActions }
 type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
-type RFN<D, I> = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback<D, I>) => FrameLifecycle | null;
+type RenderFrameFn<D, I> = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback<D, I>) => FrameLifecycle | null;
+
 type Client = HTMLCanvasElement
 export class RenderServer {
     private canvas: OffscreenCanvas;
@@ -142,7 +143,7 @@ export class RenderServer {
         const image = this.regl!.framebuffer(...resolution)
         return { resolution, copyBuffer, image }
     }
-    beginRendering<D, I>(renderFn: RFN<D, I>, callback: ServerCallback<D, I>, client: Client) {
+    beginRendering<D, I>(renderFn: RenderFrameFn<D, I>, callback: ServerCallback<D, I>, client: Client) {
         if (this.regl) {
             const clientFrame = this.clients.get(client);
             if (clientFrame && clientFrame.frame) {

@@ -38,6 +38,7 @@ export type RenderCallback = (event: { status: NormalStatus } | { status: 'error
  * In addition, you can cancel the frame at any time, which will stop the frame from running and prevent any further
  * rendering or data fetching from occurring.
  *
+ * @deprecated consider using beginFrame instead
  * @param maximumInflightAsyncTasks The maximum number of async tasks to run at once.
  * @param queueProcessingIntervalMS The length of time to wait between processing the queue in milliseconds.
  * @param items An array of generic items to render
@@ -110,7 +111,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     if (queue.length === 0) {
         // we did all the work - it was already cached
         reportNormalStatus('finished_synchronously');
-        return { cancelFrame: () => {} };
+        return { cancelFrame: () => { } };
     }
     // TODO: Re-examine lifecycle reporting, potentially unify all statuses into a single type
     reportNormalStatus('begun');

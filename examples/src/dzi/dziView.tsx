@@ -5,9 +5,10 @@ import {
     type DziRenderSettings,
     type DziTile,
     type GpuProps as CachedPixels,
+    buildAsyncDziRenderer,
 } from '@alleninstitute/vis-dzi';
 import React from 'react';
-import { buildAsyncRenderer, type RFN } from '@alleninstitute/vis-scatterbrain';
+import { buildAsyncRenderer, type RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
 import { isEqual } from 'lodash';
 import { renderServerContext } from './render-server-provider';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
@@ -58,7 +59,7 @@ export function DziView(props: Props) {
 
     useEffect(() => {
         if (server && server.regl) {
-            renderer.current = buildAsyncRenderer(buildDziRenderer(server.regl));
+            renderer.current = buildAsyncDziRenderer(server.regl);
         }
         return () => {
             if (cnvs.current) {
@@ -69,7 +70,7 @@ export function DziView(props: Props) {
 
     useEffect(() => {
         if (server && renderer.current && cnvs.current) {
-            const renderMyData: RFN<DziImage, DziTile> = (target, cache, callback) => {
+            const renderMyData: RenderFrameFn<DziImage, DziTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     // erase the frame before we start drawing on it
                     return renderer.current(dzi, { camera: cam }, callback, target, cache);
