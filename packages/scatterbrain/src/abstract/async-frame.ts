@@ -25,9 +25,8 @@ export type FrameFinished = { status: 'finished' }
 export type FrameError = { status: 'error', error: unknown }
 
 export type AsyncFrameEvent<Dataset, Item> = FrameBegin | FrameProgress<Dataset, Item> | FrameFinished | FrameCancelled | FrameError
-
-// export type RenderCallback<Dataset, Item, E extends AsyncFrameEvent<Dataset,Item>> = (event: E) => void;
 export type RenderCallback<Dataset, Item,> = (event: AsyncFrameEvent<Dataset, Item>) => void;
+
 export type RenderFrameConfig<Dataset, Item, Settings, RqKey extends string, CacheKey extends string, CacheEntryType, GpuData extends Record<RqKey, CacheEntryType>> = {
     maximumInflightAsyncTasks: number; // Maximum number of in-flight fetches to run at any time for this frame
     queueProcessingIntervalMS: number; // The length of time to wait between processing the queue in milliseconds.
