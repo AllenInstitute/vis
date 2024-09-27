@@ -111,7 +111,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     if (queue.length === 0) {
         // we did all the work - it was already cached
         reportNormalStatus('finished_synchronously');
-        return { cancelFrame: () => { } };
+        return { cancelFrame: () => {} };
     }
     // TODO: Re-examine lifecycle reporting, potentially unify all statuses into a single type
     reportNormalStatus('begun');

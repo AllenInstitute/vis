@@ -120,7 +120,7 @@ export function pickBestScale(
     const choice = datasets.reduce(
         (bestSoFar, cur) =>
             dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-                dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
+            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
                 ? cur
                 : bestSoFar,
         datasets[0]
@@ -135,9 +135,9 @@ export function sizeInUnits(
     plane:
         | AxisAlignedPlane
         | {
-            u: OmeDimension;
-            v: OmeDimension;
-        },
+              u: OmeDimension;
+              v: OmeDimension;
+          },
     axes: readonly AxisDesc[],
     dataset: DatasetWithShape
 ): vec2 | undefined {

@@ -1,11 +1,9 @@
 import { AsyncDataCache } from '../dataset-cache';
 import type { ReglCacheEntry } from './types';
-import { Vec2, type vec2 } from '@alleninstitute/vis-geometry'
+import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import REGL from 'regl';
 import { type AsyncFrameEvent, type RenderCallback } from './async-frame';
 import { type FrameLifecycle } from '../render-queue';
-
-
 
 function destroyer(item: ReglCacheEntry) {
     switch (item.type) {
@@ -29,24 +27,28 @@ type ClientEntry = {
     resolution: vec2;
     copyBuffer: ArrayBuffer;
     updateRequested: Compositor | null;
-}
+};
 type ServerActions = {
     copyToClient: (composite: Compositor) => void;
-}
+};
 type Compositor = (ctx: CanvasRenderingContext2D, glImage: ImageData) => void;
-type RenderEvent<D, I> = AsyncFrameEvent<D, I> & { target: REGL.Framebuffer2D | null, server: ServerActions }
+type RenderEvent<D, I> = AsyncFrameEvent<D, I> & { target: REGL.Framebuffer2D | null; server: ServerActions };
 type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
-type RenderFrameFn<D, I> = (target: REGL.Framebuffer2D | null, cache: AsyncDataCache<string, string, ReglCacheEntry>, callback: RenderCallback<D, I>) => FrameLifecycle | null;
+type RenderFrameFn<D, I> = (
+    target: REGL.Framebuffer2D | null,
+    cache: AsyncDataCache<string, string, ReglCacheEntry>,
+    callback: RenderCallback<D, I>
+) => FrameLifecycle | null;
 
-type Client = HTMLCanvasElement
+type Client = HTMLCanvasElement;
 export class RenderServer {
     private canvas: OffscreenCanvas;
     private refreshRequested: boolean;
     regl: REGL.Regl | null;
-    cache: AsyncDataCache<string, string, ReglCacheEntry>
+    cache: AsyncDataCache<string, string, ReglCacheEntry>;
     private clients: Map<Client, ClientEntry>;
-    private maxSize: vec2
-    constructor(maxSize: vec2, extensions: string[], cacheByteLimit: number = 2000 * oneMB,) {
+    private maxSize: vec2;
+    constructor(maxSize: vec2, extensions: string[], cacheByteLimit: number = 2000 * oneMB) {
         this.canvas = new OffscreenCanvas(10, 10); // we always render to private buffers, so we dont need a real resolution here...
         this.clients = new Map();
         this.maxSize = maxSize;
@@ -65,7 +67,7 @@ export class RenderServer {
             extensions,
         });
         this.regl = regl;
-        this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheByteLimit)
+        this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheByteLimit);
     }
     private copyToClient(frameInfo: ClientEntry, client: Client) {
         // note: compared transferImageFromBitmap(transferImageToBitmap()), drawImage(canvas) and a few other variations
@@ -75,22 +77,23 @@ export class RenderServer {
         if (updateRequested) {
             try {
                 // read directly from the framebuffer to which we render:
-                this.regl?.read({ framebuffer: image, x: 0, y: 0, width, height, data: new Uint8Array(copyBuffer) })
+                this.regl?.read({ framebuffer: image, x: 0, y: 0, width, height, data: new Uint8Array(copyBuffer) });
                 // then put those bytes in the client canvas:
-                const ctx: CanvasRenderingContext2D = client.getContext('2d')!
+                const ctx: CanvasRenderingContext2D = client.getContext('2d')!;
                 const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
                 updateRequested(ctx, img);
             } catch (err) {
-                console.error('error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok')
+                console.error(
+                    'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok'
+                );
             }
         }
-
     }
     private onAnimationFrame() {
         if (this.refreshRequested) {
             for (const [client, entry] of this.clients) {
                 if (entry.updateRequested) {
-                    this.copyToClient(entry, client)
+                    this.copyToClient(entry, client);
                     // mark our progress:
                     entry.updateRequested = null;
                 }
@@ -107,7 +110,7 @@ export class RenderServer {
                     this.refreshRequested = true;
                     // as of 2023, requestAnimationFrame should be generally available globally in both workers* and a window
                     // if this becomes an issue, we can have our caller pass requestAnimationFrame in to the constructor
-                    requestAnimationFrame(() => this.onAnimationFrame())
+                    requestAnimationFrame(() => this.onAnimationFrame());
                 }
             }
         }
@@ -138,10 +141,10 @@ export class RenderServer {
                 return previousEntry;
             }
         }
-        const resolution = Vec2.min(this.maxSize, [client.width, client.height])
+        const resolution = Vec2.min(this.maxSize, [client.width, client.height]);
         const copyBuffer = new ArrayBuffer(resolution[0] * resolution[1] * 4);
-        const image = this.regl!.framebuffer(...resolution)
-        return { resolution, copyBuffer, image }
+        const image = this.regl!.framebuffer(...resolution);
+        return { resolution, copyBuffer, image };
     }
     beginRendering<D, I>(renderFn: RenderFrameFn<D, I>, callback: ServerCallback<D, I>, client: Client) {
         if (this.regl) {
@@ -151,21 +154,26 @@ export class RenderServer {
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
             const hijack: RenderCallback<D, I> = (e) => {
-                callback({ ...e, target: image, server: { copyToClient: (compose: Compositor) => { this.requestComposition(client, compose) } } });
+                callback({
+                    ...e,
+                    target: image,
+                    server: {
+                        copyToClient: (compose: Compositor) => {
+                            this.requestComposition(client, compose);
+                        },
+                    },
+                });
                 if (e.status === 'finished' || e.status === 'cancelled') {
                     this.clientFrameFinished(client);
                 }
-            }
+            };
             this.clients.set(client, {
                 frame: renderFn(image, this.cache, hijack),
                 image,
                 copyBuffer,
                 resolution,
-                updateRequested: null
-            })
+                updateRequested: null,
+            });
         }
-
     }
-
-
 }

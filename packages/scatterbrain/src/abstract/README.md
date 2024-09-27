@@ -10,17 +10,17 @@ However your data is subdivided, we should be able to start with a renderer for 
 
 #### prerequisites
 
-1. you plan to do your rendering with [reGL](https://github.com/regl-project/regl/tree/master) and you have some familiarity with its basic concepts and verbage (framebuffer, command, etc.)
+1. you plan to do your rendering with [reGL](https://github.com/regl-project/regl/tree/master) and you have some familiarity with its basic concepts and verbiage (framebuffer, command, etc.)
 2. you have data that is partitioned in some way, preferably spatially.
 
-Lets start with scheduling first. Our goal is to be able to call the function `buildAsyncRenderer` from `async-frame.ts`. Its signiture is thus:
+Lets start with scheduling first. Our goal is to be able to call the function `buildAsyncRenderer` from `async-frame.ts`. Its signature is thus:
 `function buildAsyncRenderer<Dataset, Item, Settings, SemanticKey extends string, CacheKeyType extends string, GpuData extends Record<SemanticKey, ReglCacheEntry>>(renderer: Renderer<Dataset, Item, Settings, GpuData>)`
 
 It takes only a single argument, `Renderer`, but that argument is highly generic. Renderer is an interface that you will use to describe your data. The generic parameters end up being fairly simple:
 
 1. `Dataset` is the type of the whole thing you're rendering - for example a large tiled image or volume. Because we're assuming the dataset is remote, it need not be literally the dataset - often its just basic metadata and a URL.
 
-2. `Item` is the type of a renderable subdivision - a tile or small chunk. Again, it need not be the literal pixels, triangles, whatevers! A placeholder (e.g. a path from the main url where the data lives) is great.
+2. `Item` is the type of a renderable subdivision - a tile or small chunk. Again, it need not be the literal pixels, triangles, whatever! A placeholder (e.g. a path from the main url where the data lives) is great.
 
 3. `Settings` - a general bucket for things that dont change for a complete view - think camera angles, point sizes, color settings, etc.
 
@@ -37,7 +37,7 @@ Lets take a look at the Renderer interface items, one at a time. Each describes 
 1. `getVisibleItems` - the first step of any good renderer is knowing the minimum amount of work to do! Given a Dataset and some Settings, return an array of Items that are in view. This is a strong hint that whatever concept of a "Camera" that makes sense should be in your settings object.
 2. `fetchItemContent` - given a single item (and dataset and settings of course), return functions that fetch the raw, renderable data that an Item represents. In many cases, this could be very simple:
    `return {pixels: ()=>${dataset.url}/${item.path}.jpg}` would be reasonable! the shape of this interface is this way to support "Columnar" data - imagine rows in a database describing cells - the columns of the table contain X and Y positions, and perhaps colors or other measurements. In this analogy, an Item is a group of rows of the table, and what is returned would be a `SELECT` of each column of interest to the renderer.
-3. `isPrepared` is a simple convenience feature - because the system supports independant, cacheable columns, it can be awkward in the final step to render - you end up with a bunch of boilerplate to prove to Typescript that you have all the data! `isPrepared` is a [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) that helps make working with the data from the cache slightly more tidy.
+3. `isPrepared` is a simple convenience feature - because the system supports independent, cacheable columns, it can be awkward in the final step to render - you end up with a bunch of boilerplate to prove to Typescript that you have all the data! `isPrepared` is a [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) that helps make working with the data from the cache slightly more tidy.
 4. `renderItem` Is the main event! given a buffer to render to, and everything about the Item you're rendering, actually do the drawing. This usually involves calling one (or more!) reGL commands with the given target buffer and cached gpu data.
 5. `cacheKey` - the cache system needs to know how to uniquely identify any data it fetches. What makes sense here will depend on your data entirely. Make sure this is a pure function of its input!
 6. `destroy` - if you allocated (excluding cache data!) any resources, particularly GPU resources, you can release them here, think lookup tables or textures, etc.
@@ -59,6 +59,6 @@ Now that we have a function that can render, how do we deploy it? there are a fe
 1. Create a RenderServer instance. It will create its own reGL context, cache, and offscreen canvas.
 2. Create your AsyncRenderer as described earlier in this document, you must use `server.regl` to construct your renderer.
 3. Build your canvas component with access to a reference to this shared server. When its time to render a frame, call `server.beginRendering`. This function requires a wrapper around your Async Renderer, a callback for handling Render frame lifecycle events, and a reference to the Client canvas (where you want the rendering to appear when its done).
-4. The first issue will be the render function wrapper - because the server is generic, and could be shared between renderers of different datatypes, it cant really know about a particular renderer's dataset types. We could make opaque placeholder types, but those are often confusing. Instead, you can simply wrap your renderer like so:
+4. The first issue will be the render function wrapper - because the server is generic, and could be shared between renderers of different data types, it cant really know about a particular renderer's dataset types. We could make opaque placeholder types, but those are often confusing. Instead, you can simply wrap your renderer like so:
    `const wrapper = (target,cache,callback)=>myFancyAsyncRenderer(myDataset, mySettings, callback,target,cache)`
 5. Next up is the callback. At minimum, you must at some point handle an event (for example, the `finished` event) by copying the results of the rendering to the client, like so: `if(evnt.status == 'finished') evnt.server.copyToClient(compose)`. As you can see, how the pixels get to the client can be controlled by authoring a `compose` function. This function is given the 2D rendering [context](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D) on which to draw, and an [ImageData](https://developer.mozilla.org/docs/Web/API/ImageData) object representing the pixels rendered by reGL. In our testing, the most performant (over all browsers tested) way to deal with this is `context.putImageData(imageData, 0,0)`

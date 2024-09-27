@@ -1,12 +1,12 @@
-import type { vec4 } from "@alleninstitute/vis-geometry";
-import REGL from "regl";
+import type { vec4 } from '@alleninstitute/vis-geometry';
+import REGL from 'regl';
 type Props = {
-    img: REGL.Texture2D,
-    view: vec4,
-    tile: vec4,
-    depth: number,
+    img: REGL.Texture2D;
+    view: vec4;
+    tile: vec4;
+    depth: number;
     target: REGL.Framebuffer2D | null;
-}
+};
 const vert = `
 precision highp float;
 uniform vec4 view;
@@ -23,7 +23,7 @@ void main(){
     // to clip space:
     pos = (pos*2.0)-1.0;
     gl_Position = vec4(pos.x,pos.y,depth,1);
-}`
+}`;
 
 const frag = `
 precision highp float;
@@ -33,7 +33,7 @@ uniform sampler2D img;
 void main(){
     gl_FragColor = texture2D(img, uv);
 }
-`
+`;
 export function buildTileRenderer(regl: REGL.Regl, blend: REGL.BlendingOptions) {
     const cmd = regl({
         vert,
@@ -53,7 +53,7 @@ export function buildTileRenderer(regl: REGL.Regl, blend: REGL.BlendingOptions) 
             tile: regl.prop<Props, 'tile'>('tile'),
             depth: regl.prop<Props, 'depth'>('depth'),
         },
-        framebuffer: regl.prop<Props, 'target'>('target')
-    })
-    return (p: Props) => cmd(p)
+        framebuffer: regl.prop<Props, 'target'>('target'),
+    });
+    return (p: Props) => cmd(p);
 }
