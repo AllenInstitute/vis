@@ -45,7 +45,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
         };
     };
     return {
-        destroy: () => {}, // no private resources to destroy
+        destroy: () => { }, // no private resources to destroy
         cacheKey: (item, _requestKey, _data, _settings) => `${item.url}`,
         fetchItemContent: fetchDziTile,
         getVisibleItems: (dzi, settings) => {
@@ -60,7 +60,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
             const { camera } = settings;
             renderCmd({
                 target,
-                depth: tile.layer / 1000,
+                depth: -tile.layer / 1000,
                 img: pixels.texture,
                 tile: Box2D.toFlatArray(tile.relativeLocation),
                 view: Box2D.toFlatArray(camera.view),

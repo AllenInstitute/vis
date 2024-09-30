@@ -51,7 +51,16 @@ export function getVisibleTiles(dzi: DziImage, camera: { view: box2D; screenSize
     const viewWidth = Box2D.size(camera.view)[0];
     const layer = firstSuitableLayer(dzi.size.width, camera.screenSize[0] / viewWidth);
     const layerResolution = imageSizeAtLayer(dzi, layer);
+
     const availableTiles = tilesInLayer(dzi, layer);
+    const baseLayer = findLargestSingleTileLayer(dzi);
+    const baseIndex: TileIndex = { col: 0, row: 0 }
+    const baseTile: DziTile = {
+        index: baseIndex,
+        layer: baseLayer,
+        relativeLocation: Box2D.create([0, 0], [1, 1]),
+        url: tileUrl(dzi, baseLayer, baseIndex)
+    }
 
     // note that the tile boxes are in pixels relative to the layer in which they reside
     // the given view is assumed to be a parameter (in the space [0:1]) of the image as a whole
@@ -73,7 +82,7 @@ export function getVisibleTiles(dzi: DziImage, camera: { view: box2D; screenSize
             // filter out tiles which are not in view
         })
         .filter((t) => !!Box2D.intersection(t.relativeLocation, camera.view));
-    return tiles;
+    return (baseLayer < layer) ? [baseTile, ...tiles] : tiles;
 }
 /**
  * NOTE: THE REMAINDER OF THIS FILE IS EXPORTED ONLY FOR TESTING PURPOSES
@@ -87,6 +96,15 @@ export function firstSuitableLayer(imageWidth: number, screenWidth: number) {
     return Math.min(biggestRealLayer, idealLayer);
 }
 
+/**
+ * 
+ * @param dzi 
+ * @returns the index of the largest layer which contains only a single tile
+ * 
+ */
+function findLargestSingleTileLayer(dzi: DziImage): number {
+    return Math.floor(Math.log2(dzi.tileSize))
+}
 export function tileWithOverlap(total: number, step: number, overlap: number): Interval[] {
     const blocks: Interval[] = [];
     let start = 0;
