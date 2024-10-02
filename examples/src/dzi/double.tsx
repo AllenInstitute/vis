@@ -28,7 +28,7 @@ const exampleDzi: DziImage = {
 };
 const exampleSettings: DziRenderSettings = {
     camera: {
-        screenSize: [1024, 1024],
+        screenSize: [500, 500],
         view: Box2D.create([0, 0], [1, 1]),
     },
 };
