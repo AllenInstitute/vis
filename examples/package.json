@@ -23,7 +23,7 @@
             "email": "su.li@alleninstitute.org"
         }
     ],
-    "license": "TBD",
+    "license": "BSD-3-Clause",
     "type": "module",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
@@ -45,6 +45,7 @@
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-scatterbrain": "workspace:*",
+        "@alleninstitute/vis-dzi": "workspace:*",
         "@czi-sds/components": "^20.0.1",
         "@emotion/css": "^11.11.2",
         "@emotion/react": "^11.11.4",

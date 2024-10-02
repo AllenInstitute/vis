@@ -7,15 +7,23 @@
 3. run `pnpm build`
 4. `cd examples/`
 5. `pnpm run dev`
-6. navigate to the running app (default `localhost://5173`)
+6. navigate to the running app (default `localhost://5173`). you can click a link to a specific example, or just use the address bar (`localhost://5173/{path_to_desired_example}`)
 
-## Why?
+## DZI Example
+
+### Why?
+
+A simple proof of concept for displaying DZI (Deep zoom images) using our utilities, as well as demonstrating how to share an Offscreen canvas to render WebGL to multiple client canvases.
+
+## Layers Example
+
+### Why?
 
 the goal of this (rather complicated) example app is not to show off a cool app - rather its goal is to show that we can build complexity by composing simple, focused modules. As we (the AIBS Apps team) have developed ABC-Atlas, we've tried to make sure our visualization code stays general, and that each part does as little as possible. The result is that it was fairly easy to combine those components into this new app, which mixes a (terrible) UI, scatter-plot rendering, polygon-mesh rendering (for annotations) and multi-channel volumetric rendering into independent layers. Although each of these data types appear different, our caching, fetching, visibility determination, and render-scheduling code is the same regardless of the datatype to be rendered. All that is required is to fill in a simple interface, and provide a low-level "renderer" plugin in order to add a new "layer" type.
 
-## Demo Script
+### Demo Script
 
-### Programmatic Configuration
+#### Programmatic Configuration
 
 After starting the app in a browser, you'll be greeted by a blank screen. We're going to demonstrate programmatic access to the features of this demo. The goal here is not to make users invoke command-line arguments, but rather just an easy way for interested parties to "peak under the hood". All the visualizations are configured here via simple json objects - it would not be a stretch to read these configuration options at initialization-time via URL parameters for example.
 
