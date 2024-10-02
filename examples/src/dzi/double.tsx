@@ -32,17 +32,7 @@ const exampleSettings: DziRenderSettings = {
         view: Box2D.create([0, 0], [1, 1]),
     },
 };
-// function useSVGImage(url:string){
-//     const [svg,setSvg] = useState<HTMLImageElement>()
-//     useEffect(()=>{
-//         const img = new HTMLImageElement()
-//         img.onload=()=>{
 
-//         }
-//         img.src = url;
-
-//     },[url])
-// }
 export function TwoClientsPOC() {
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [1, 1]));
     const zoom = (e: React.WheelEvent<HTMLCanvasElement>) => {

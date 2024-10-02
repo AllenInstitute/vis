@@ -19,7 +19,7 @@
             "email": "su.li@alleninstitute.org"
         }
     ],
-    "license": "TBD",
+    "license": "BSD-3-Clause",
     "source": "src/index.ts",
     "main": "dist/main.js",
     "module": "dist/module.js",
