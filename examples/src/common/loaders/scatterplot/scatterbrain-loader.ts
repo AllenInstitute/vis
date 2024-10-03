@@ -199,6 +199,7 @@ function loadSlideViewDataset(metadata: SlideColumnarMetadata, _datasetUrl: stri
         visualizationReferenceId,
     };
 }
+export type ScatterplotDataset = ReturnType<typeof loadDataset>;
 export type SlideViewDataset = ReturnType<typeof loadSlideViewDataset>;
 
 export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
