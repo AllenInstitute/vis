@@ -11,8 +11,10 @@ import { buildTaxonomyRenderer, renderTaxonomyUmap, type RenderSettings, type Re
 import type { ColumnBuffer, ColumnRequest } from "~/common/loaders/scatterplot/scatterbrain-loader";
 import { query, resolve, type CellPropertiesConnection, type Maybe } from "~/gqty";
 import { nodeData } from "./nodes";
-import { keys } from "lodash";
+import { keys, partial, trim } from "lodash";
 import { numNodes, type Graph, visitChildParentPairs, visitOldestAncestors } from "./taxonomy-graph";
+import { edgeData } from "./edges";
+import { buildEdgeRenderer } from "./edge-renderer";
 const flipBox = (box: box2D): box2D => {
     const { minCorner, maxCorner } = box;
     return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
@@ -80,8 +82,10 @@ export class Demo {
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
     taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
+    edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
     // private redrawRequested: number = 0;
     pointSize: number;
+    edgeBuffers: Array<null | { start: REGL.Buffer, end: REGL.Buffer, count: number }>
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.regl = regl;
         this.mode = 'pan'
@@ -100,12 +104,14 @@ export class Demo {
         };
         this.imgRenderer = buildImageRenderer(regl);
         this.taxRenderer = buildTaxonomyRenderer(regl);
+        this.edgeRenderer = buildEdgeRenderer(regl);
         this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 4000);
         this.initHandlers(canvas);
         this.taxonomyData = regl.texture({ width: 5, height: 6000, format: 'rgba', type: 'float' });
         this.txSize = [5, 6000];
         this.loadTaxonomyInfo();
         this.graphs = {}
+        this.edgeBuffers = []
     }
     mouseButton(click: 'up' | 'down', pos: vec2) {
         this.mouse = click;
@@ -148,7 +154,23 @@ export class Demo {
                 settings: {
                     animationParam: this.anmParam,
                     cache: this.cache,
-                    callback: () => { this.requestReRender() },
+                    callback: (e) => {
+                        if (e.status === 'finished' || e.status === 'finished_synchronously') {
+                            const edges = this.edgeBuffers[Math.floor(this.anmParam)];
+                            const tgt = this.layer?.getRenderResults('prev').texture
+                            if (edges && tgt) {
+                                this.edgeRenderer({
+                                    color: [1, 0, 0, 0.41],
+                                    end: edges.end,
+                                    start: edges.start,
+                                    instances: edges.count,
+                                    target: tgt,
+                                    view: Box2D.toFlatArray(this.camera.view)
+                                })
+                            }
+                            this.requestReRender()
+                        }
+                    },
                     camera: this.camera,
                     Class,
                     Cluster,
@@ -166,17 +188,30 @@ export class Demo {
         }
 
     }
+    // make position buffers for animating edges in layer X to end at layer X-1
+    // private prepareEdgeBuffers(layer: number) {
+    //     const nextLayer = layer - 1;
+    // }
     private async loadTaxonomyInfo() {
         // read a bunch of junk, join it with some stuff from IDF
         // put the whole pile in this.taxonomyData...
-        // gimmeTaxonomy(datsetId,'v0',[Class.name,SubClass.name,SuperType.name,Cluster.name])
-        // buildTexture().then(({ texture, size }) => {
-        //     this.taxonomyData = this.regl.texture({ data: texture, width: size[0], height: size[1], format: 'rgba', type: 'float' })
-        //     this.txSize = size;
-        //     console.log('texture loaded!');
-        //     this.requestReRender();
-        // })
-        this.graphs = await buildTaxonomyGraph();
+        buildTexture().then(({ edgesByLevel, texture, size }) => {
+            this.taxonomyData = this.regl.texture({ data: texture, width: size[0], height: size[1], format: 'rgba', type: 'float' })
+            this.txSize = size;
+            console.log('texture loaded!');
+            this.edgeBuffers = edgesByLevel.map((lvl) => {
+                if (lvl) {
+                    return { start: this.regl.buffer(lvl.start), end: this.regl.buffer(lvl.end), count: lvl.count }
+                }
+                return null;
+            })
+            // create buffers for edges - there are not too many, so just do it...
+            this.requestReRender();
+        })
+        // building the graph was a fun thought, and might end up being where we go
+        // but its also complicated to get what we need to make a really cool thing...
+        // for now, lets just traverse the edges in the graph and build buffers to render animated edges
+        // this.graphs = await buildTaxonomyGraph();
 
     }
     private initHandlers(canvas: HTMLCanvasElement) {
@@ -267,6 +302,8 @@ export class Demo {
                     target: null,
                     view: Box2D.toFlatArray(this.camera.view)
                 })
+                const level = Math.floor(this.anmParam);
+                const edges = this.edgeBuffers[level];
 
             }
 
@@ -363,6 +400,8 @@ export function hexToRgb(hex: string): vec3 {
 // ok - parse our csv file of taxonomy node positions...
 // then join that onto the cell props from the IDF
 async function buildTexture() {
+    type N = { cx: number, cy: number, name: string, numCells: number, level: string; }
+    type E = { start: N, end: N, count: number }
     const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
     const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
     const C = gimmeTaxonomy(datsetId, 'v0', [SuperType.name]).then((data) => mapBy(data ?? [], 'value'))
@@ -379,14 +418,19 @@ async function buildTexture() {
         supertype: { map: supertypes, column: 2 },
         cluster: { map: clusters, column: 3 }
     }
-    const data = nodeData;
-    const lines = data.split('\n');
+    const nodeLines = nodeData.split('\n');
     // for each line, read in the bits...
     // level,level_name,label,name,parent,n_cells,centroid_x,centroid_y
     // here, name = 'value' from the idf cellPropertyConnection node thingy
     // levelName is class, subclass, etc...
-    for (const line of lines) {
+    const nodesByLabel: Record<string, N> = {}
+    const edgesByLevel: Record<string, E[]> = {}
+    for (const line of nodeLines) {
         const [level, levelName, label, name, parent, numCells, cx, cy] = line.split(',');
+        const CX = Number.parseFloat(cx);
+        const CY = Number.parseFloat(cy);
+        const R = Number.parseFloat(numCells);
+        nodesByLabel[label] = { cx: CX, cy: CY, numCells: R, name, level: levelName.toLowerCase() }
         const L = lvls[levelName.toLowerCase() as keyof typeof lvls];
         if (L) {
             const info = L.map[name];
@@ -399,8 +443,8 @@ async function buildTexture() {
                     texture[clrOffset + 2] = rgb[2] / 255;
                 }
                 const offset = txFloatOffset(L.column, info.index);
-                texture[offset] = Number.parseFloat(cx);
-                texture[offset + 1] = Number.parseFloat(cy);
+                texture[offset] = CX;
+                texture[offset + 1] = CY;
                 texture[offset + 2] = 5 - L.column;
             } else {
                 console.error('no such taxon (csv mistake?)', name)
@@ -410,11 +454,49 @@ async function buildTexture() {
             console.error('no such level (csv mistake?)', levelName)
         }
     }
-    return { texture, size: [5, longestCol] as vec2 }
+    const edgeLines = edgeData.split('\n');
+    for (const line of edgeLines) {
+        const [s, e, num] = line.split(',').map(trim);
+        const Start = nodesByLabel[s]
+        const End = nodesByLabel[e];
+        if (Start && End) {
+            const { level } = Start;
+            if (!edgesByLevel[level]) {
+                edgesByLevel[level] = []
+            }
+            const lvl = edgesByLevel[level];
+            lvl.push({ count: Number.parseInt(num), start: Start, end: End })
+        }
+    }
+    const buildEdgeBuffersForLevel = (edges: undefined | E[]) => {
+        if (edges === undefined || edges.length === 0) {
+            return null;
+        }
+        const B = 4;
+        const S = new Float32Array(edges.length * B);// 4 floats
+        const E = new Float32Array(edges.length * B);// 4 floats
+
+        for (let i = 0; i < edges.length; i++) {
+            const { start, end, count } = edges[i];
+            S[(i * B) + 0] = start.cx;
+            S[(i * B) + 1] = start.cy;
+            S[(i * B) + 2] = 0;
+            S[(i * B) + 3] = count;
+
+            E[(i * B) + 0] = end.cx;
+            E[(i * B) + 1] = end.cy;
+            E[(i * B) + 2] = 0;
+            E[(i * B) + 3] = 0;
+        }
+        return { start: S, end: E, count: edges.length }
+    }
+    return { edgesByLevel: [edgesByLevel['class'], edgesByLevel['subclass'], edgesByLevel['supertype'], edgesByLevel['cluster']].map(buildEdgeBuffersForLevel), texture, size: [5, longestCol] as vec2 }
 }
+
 type TaxonomyEntry = { index: number, color: Maybe<string> | undefined }
 type TaxonomyNode = { id: string, parent: string | null, index: number, count: number, pos: vec2, color: string }
 type TaxonomyEdge = { start: string, end: string, count: number }
+
 async function buildTaxonomyGraph() {
     const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
     const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
