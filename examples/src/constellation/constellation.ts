@@ -165,6 +165,8 @@ export class Demo {
                                 this.edgeRenderer({
                                     color: [0.4, 0.45, 0.5, 0.8],
                                     anmParam: what(this.anmParam),
+                                    taxonomyPositions: this.taxonomyData,
+                                    taxonomySize: this.txSize,
                                     start: edges.start,
                                     end: edges.end,
                                     pStart: edges.pStart,
@@ -453,6 +455,7 @@ async function buildTexture() {
                 texture[offset] = CX;
                 texture[offset + 1] = CY;
                 texture[offset + 2] = 5 - L.column;
+                texture[offset + 3] = R;
             } else {
                 console.error('no such taxon (csv mistake?)', name)
             }
@@ -460,6 +463,13 @@ async function buildTexture() {
             // complain!
             console.error('no such level (csv mistake?)', levelName)
         }
+    }
+    const getClassId = (n: N): number => {
+        const p = nodesByLabel[n.parent];
+        if (!p) {
+            return n.index;
+        }
+        return getClassId(p);
     }
     const edgeLines = edgeData.split('\n');
     for (const line of edgeLines) {
@@ -487,27 +497,30 @@ async function buildTexture() {
         const E = new Float32Array(edges.length * B);
         const pS = new Float32Array(edges.length * B);
         const pE = new Float32Array(edges.length * B);
+        // get the oldest anscestor of a node,
+        // get its id
 
         for (let i = 0; i < edges.length; i++) {
             const { start, end, pStart, pEnd, count } = edges[i];
+
             S[(i * B) + 0] = start.cx;
             S[(i * B) + 1] = start.cy;
-            S[(i * B) + 2] = 0;
+            S[(i * B) + 2] = getClassId(start)
             S[(i * B) + 3] = count;
 
             E[(i * B) + 0] = end.cx;
             E[(i * B) + 1] = end.cy;
-            E[(i * B) + 2] = 0;
+            E[(i * B) + 2] = getClassId(end);
             E[(i * B) + 3] = 0;
 
             pS[(i * B) + 0] = pStart.cx;
             pS[(i * B) + 1] = pStart.cy;
-            pS[(i * B) + 2] = 0;
+            pS[(i * B) + 2] = getClassId(pStart);
             pS[(i * B) + 3] = count;
 
             pE[(i * B) + 0] = pEnd.cx;
             pE[(i * B) + 1] = pEnd.cy;
-            pE[(i * B) + 2] = 0;
+            pE[(i * B) + 2] = getClassId(pEnd);
             pE[(i * B) + 3] = 0;
         }
         return { start: S, end: E, pStart: pS, pEnd: pE, count: edges.length }

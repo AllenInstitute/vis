@@ -84,24 +84,24 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     varying vec4 clr;
 
     // I'd use an array, but array access must be compile-time constant in this version of GLSL :(
-    vec3 getTaxonomyData(float p){
+    vec4 getTaxonomyData(float p){
         // todo: make me branchless
         float u = (p+0.5)/taxonomySize.x;
         float vS = taxonomySize.y;
 
         if(p == 0.0){
-            return texture2D(taxonomyPositions, vec2(u,(Class+0.5)/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(Class+0.5)/vS));
         }
         if(p == 1.0){
-            return texture2D(taxonomyPositions, vec2(u,(SubClass+0.5)/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(SubClass+0.5)/vS));
         }
         if(p == 2.0){
-            return texture2D(taxonomyPositions, vec2(u,(SuperType+0.5)/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(SuperType+0.5)/vS));
         }
         if(p == 3.0){
-            return texture2D(taxonomyPositions, vec2(u,(Cluster+0.5)/vS)).rgb;
+            return texture2D(taxonomyPositions, vec2(u,(Cluster+0.5)/vS));
         }
-        return vec3(position,1.0);
+        return vec4(position,1.0,2.71828);
     }
     // vec3 bendy(vec3 start, vec3 middle, vec3 end, float p){
     //     vec3 goal = mix(middle,end, p);
@@ -109,17 +109,15 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // }
 
     void main(){
-        // vec3 p0 = getTaxonomyData(floor(animationParam)-1.0);
-        vec3 p1 = getTaxonomyData(floor(animationParam));
-        vec3 p2 = getTaxonomyData(floor(animationParam)+1.0);
-        // vec2 mDir = normalize(p0.xy - p1.xy);
-        // vec2 M = p1.xy + mDir * length(p2.xy - p1.xy)/3.0;
-        // vec3 middle = vec3(M.x,M.y,p2.z);
+        vec4 p1 = getTaxonomyData(floor(animationParam));
+        vec4 p2 = getTaxonomyData(floor(animationParam)+1.0);
 
-        // vec3 P = bendy(p1,middle,p2,fract(animationParam));
-        vec3 P = mix(p1,p2, fract(animationParam));
 
-        gl_PointSize=pointSize*P.z;
+        vec4 P = mix(p1,p2, fract(animationParam));
+        float dotScale = 500.0; // TODO use the radius of the dataset instead of this made-up number
+        gl_PointSize= log(P.w); //mix(8.0,3.0,animationParam/5.0);
+        P.xy += (position.xy/dotScale - (P.xy/dotScale)) * (P.z*pointSize);
+
         vec2 size = view.zw-view.xy;
         vec2 pos = ((P.xy+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
@@ -127,7 +125,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         
         clr = vec4(rgb,1.0);
         
-        gl_Position = vec4(clip,-itemDepth/1000.0,1);
+        gl_Position = vec4(clip,itemDepth/1000.0,1);
     }`,
         frag: `
         precision highp float;

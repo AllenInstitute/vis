@@ -15,15 +15,19 @@ import type REGL from "regl"
 const vert = `
     precision highp float;
     attribute vec3 uv;      // the object-space edge - start and end are instanced!
-    attribute vec4 start;  // x,y,z, radius 
+    attribute vec4 start;  // x,y,id, radius 
     attribute vec4 end;
 
-    attribute vec4 pStart;  // x,y,z, radius 
+    attribute vec4 pStart;  // x,y,id, radius 
     attribute vec4 pEnd;
 
     uniform vec4 view;
     uniform float anmParam;
 
+    uniform sampler2D taxonomyPositions;
+    uniform vec2 taxonomySize;
+
+    varying vec4 clr;
     varying vec2 edgePos;
     varying vec3 linePos;
 
@@ -43,8 +47,8 @@ const vert = `
         vec2 offDir = vec2(-lineDir.y,lineDir.x);
 
         // make up a pretend center point:
-        // // float R = 10.8*length(AB);
-        vec2 C =(offDir*(0.15*length(AB))) + mid;
+        float curvature = 0.2*abs(anmParam-0.5); // enbiggen me for a wilder curve!
+        vec2 C =(offDir*(curvature*length(AB))) + mid;
         vec2 BC = C-B;
         // // we need the angle of the corner A:
         float sinA = length(C-mid)/length(C-A);
@@ -63,6 +67,16 @@ const vert = `
         float r = y*0.03*max(1.0, log(P.w));
         return circle.xy + (R*dir)+(r*dir);
         return (r*dir)+P.xy;
+    }
+    vec4 lookupTaxonomyColor(float id){
+        float uS = taxonomySize.x;
+        float vS = taxonomySize.y;
+        return texture2D(taxonomyPositions, vec2(4.5/uS,(id+0.5)/vS));
+    }
+    vec4 getColor(float startId, float endId){
+        // wiggle uv.z using a cosine for color transitions that take longer
+        float p = (1.0+cos(uv.z*3.14159))/2.0;
+        return mix(lookupTaxonomyColor(startId), lookupTaxonomyColor(endId), p)*0.7;
     }
 
     void main(){
@@ -89,10 +103,14 @@ const vert = `
         vec2 unit = (P.xy-view.xy)/size;
         vec2 clip = (unit*2.0)-1.0;
 
+        clr = getColor(start.z,end.z); // dont animate these... its weird
+
         edgePos = P.xy;
         linePos = vec3(pos.xy,C);
-
-        gl_Position = vec4(clip.xy,P.z,1.0);
+        // make the lines "hang" so they overlap in a nicer way:
+        float Z = abs(uv.z-0.5);
+        Z=1.0-(Z*Z);
+        gl_Position = vec4(clip.xy,Z,1.0);
     }
 
 `
@@ -103,6 +121,7 @@ const frag = `precision highp float;
 
     varying vec2 edgePos;
     varying vec3 linePos;
+    varying vec4 clr;
 
     void main(){
         // compute a reasonable guess at the size of a pixel in data space
@@ -111,14 +130,14 @@ const frag = `precision highp float;
         float p = linePos.z;
         // center that...
         p = abs(p-0.5)*2.0;
-        vec4 clr = color;
+
         float R = mix(dpx*8.0,dpx*24.0,p)/2.0;
        
-        clr.a *= (1.0-smoothstep(R-dpx,R+dpx,length(edgePos.xy-linePos.xy)));
-
-        // clr.g = length(edgePos.xy-linePos.xy)/0.03;
-        // clr.b = p;
-        gl_FragColor = clr;
+        if(length(edgePos.xy-linePos.xy) > R+dpx){
+            discard;
+        }
+   
+        gl_FragColor = vec4(clr.rgb,1.0);
     }
 `
 type Props = {
@@ -131,11 +150,15 @@ type Props = {
     pStart: REGL.Buffer;
     pEnd: REGL.Buffer;
     anmParam: number;
+    taxonomySize: vec2;
+    taxonomyPositions: REGL.Texture2D;
 }
 type Unis = {
     color: vec4,
     view: vec4;
     anmParam: number;
+    taxonomySize: vec2;
+    taxonomyPositions: REGL.Texture2D;
 }
 type Attrs = {
     uv: REGL.Attribute,
@@ -215,9 +238,11 @@ export function buildEdgeRenderer(regl: REGL.Regl) {
         uniforms: {
             anmParam: regl.prop<Props, 'anmParam'>('anmParam'),
             view: regl.prop<Props, 'view'>('view'),
+            taxonomySize: regl.prop<Props, 'taxonomySize'>('taxonomySize'),
+            taxonomyPositions: regl.prop<Props, 'taxonomyPositions'>('taxonomyPositions'),
             color: regl.prop<Props, 'color'>('color'),
         },
-        depth: { enable: false },
+        depth: { enable: true },
         blend: {
             enable: true, func: {
                 dst: 'one minus src alpha',
