@@ -46,11 +46,11 @@ const vert = `
   
         return vec4(center,R, theta);
     }
-    vec2 curveEdge(float p, vec4 circle){
+    vec2 curveEdge(float p, vec4 circle, float y){
         float R = circle.z;
         vec4 P = mix(start,end,p);
         vec2 dir = normalize(P.xy-circle.xy);
-        float r = uv.y*0.03*max(1.0, log(P.w));
+        float r = y*0.03*max(1.0, log(P.w));
         return circle.xy + (R*dir)+(r*dir);
         return (r*dir)+P.xy;
     }
@@ -69,15 +69,16 @@ const vert = `
         // the dataspace position is thus:
         vec3 P = vec3(pos.xy+w,pos.z);
         vec4 circle = makeUpCircle();
-        P.xy = curveEdge(uv.z, circle);
-        pos.xy = curveEdge(uv.z, circle);
+        float C = clamp(uv.z, 0.0,1.0);
+        P.xy = curveEdge(uv.z, circle,uv.y);
+        pos.xy = curveEdge(C, circle,0.0);
         // now apply the camera like usual!
         vec2 size = view.zw-view.xy;
         vec2 unit = (P.xy-view.xy)/size;
         vec2 clip = (unit*2.0)-1.0;
 
         edgePos = P.xy;
-        linePos = vec3(pos.xy,uv.z);
+        linePos = vec3(pos.xy,C);
 
         gl_Position = vec4(clip.xy,P.z,1.0);
     }
@@ -86,23 +87,25 @@ const vert = `
 
 const frag = `precision highp float;
     uniform vec4 color;
-    
+    uniform vec4 view;
+
     varying vec2 edgePos;
     varying vec3 linePos;
 
     void main(){
+        // compute a reasonable guess at the size of a pixel in data space
+        float dpx = abs(view.z-view.x)/2000.0; // pretending the screen is 2000 px wide - good enough
         // start simple!
         float p = linePos.z;
         // center that...
         p = abs(p-0.5)*2.0;
         vec4 clr = color;
-        float R = mix(0.005,0.015,p)/2.0;
-        // if(length(edgePos.xy-linePos.xy) > R){
-            
-        // }
-        // clr.a *= (1.0-smoothstep(R-0.0002,R+0.0002,length(edgePos.xy-linePos.xy)));
-        clr.g = length(edgePos.xy-linePos.xy)/0.03;
-        clr.b = p;
+        float R = mix(dpx*8.0,dpx*24.0,p)/2.0;
+       
+        clr.a *= (1.0-smoothstep(R-dpx,R+dpx,length(edgePos.xy-linePos.xy)));
+
+        // clr.g = length(edgePos.xy-linePos.xy)/0.03;
+        // clr.b = p;
         gl_FragColor = clr;
     }
 `
@@ -135,8 +138,19 @@ const verts = {
 }
 function buildStrip(d: number) {
     const nums: number[] = []
-    for (let p = 0.0; p <= 1.0; p += 1.0 / d) {
+    const step = 1.0 / d;
+    for (let p = -0.4; p <= 1.4; p += step) {
         nums.push(p, 1, p);
+        nums.push(p, 0, p);
+    }
+    // do a U-turn:
+    nums.push(1.4, 0, 1.4)
+    nums.push(1.4 + step, 0, 1.4)
+    nums.push(1.4, 0, 1.4)
+    nums.push(1.4, -1, 1.4)
+    // go back!
+    for (let p = 1.4; p >= -0.4; p -= step) {
+        nums.push(p, 0, p);
         nums.push(p, -1, p);
     }
     return nums;

@@ -160,7 +160,7 @@ export class Demo {
                             const tgt = this.layer?.getRenderResults('prev').texture
                             if (edges && tgt) {
                                 this.edgeRenderer({
-                                    color: [1, 0, 0, 0.41],
+                                    color: [0.4, 0.45, 0.5, 0.8],
                                     end: edges.end,
                                     start: edges.start,
                                     instances: edges.count,
@@ -400,7 +400,7 @@ export function hexToRgb(hex: string): vec3 {
 // ok - parse our csv file of taxonomy node positions...
 // then join that onto the cell props from the IDF
 async function buildTexture() {
-    type N = { cx: number, cy: number, name: string, numCells: number, level: string; }
+    type N = { cx: number, cy: number, name: string, numCells: number, level: string; index: number; }
     type E = { start: N, end: N, count: number }
     const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
     const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
@@ -430,7 +430,8 @@ async function buildTexture() {
         const CX = Number.parseFloat(cx);
         const CY = Number.parseFloat(cy);
         const R = Number.parseFloat(numCells);
-        nodesByLabel[label] = { cx: CX, cy: CY, numCells: R, name, level: levelName.toLowerCase() }
+        const lvlName = levelName.toLowerCase()
+        nodesByLabel[label] = { cx: CX, cy: CY, numCells: R, name, level: lvlName, index: lvls[lvlName as keyof typeof lvls].map[name].index }
         const L = lvls[levelName.toLowerCase() as keyof typeof lvls];
         if (L) {
             const info = L.map[name];
