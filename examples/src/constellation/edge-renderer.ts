@@ -18,16 +18,26 @@ const vert = `
     attribute vec4 start;  // x,y,z, radius 
     attribute vec4 end;
 
+    attribute vec4 pStart;  // x,y,z, radius 
+    attribute vec4 pEnd;
+
     uniform vec4 view;
+    uniform float anmParam;
 
     varying vec2 edgePos;
     varying vec3 linePos;
 
-    vec4 makeUpCircle(){
+    // handle the animation of the edge  s--->e to pS ---> pE
+    vec4 getAnimatedStart(){
+        return mix(start, pStart, anmParam);
+    }
+    vec4 getAnimatedEnd(){
+        return mix(end, pEnd, anmParam);
+    }
+
+    vec4 makeUpCircle(vec2 A, vec2 B){
         // find a circle that goes through start and end
-        vec2 A = start.xy;
-        vec2 B = end.xy;
-        vec2 AB = end.xy-start.xy;
+        vec2 AB = B-A;
         vec2 mid = (A+B)/2.0;
         vec2 lineDir = normalize(AB);
         vec2 offDir = vec2(-lineDir.y,lineDir.x);
@@ -46,9 +56,9 @@ const vert = `
   
         return vec4(center,R, theta);
     }
-    vec2 curveEdge(float p, vec4 circle, float y){
+    vec2 curveEdge(float p, vec4 circle, float y, vec4 S, vec4 E){
         float R = circle.z;
-        vec4 P = mix(start,end,p);
+        vec4 P = mix(S,E,p);
         vec2 dir = normalize(P.xy-circle.xy);
         float r = y*0.03*max(1.0, log(P.w));
         return circle.xy + (R*dir)+(r*dir);
@@ -56,8 +66,10 @@ const vert = `
     }
 
     void main(){
-        vec2 dir = normalize(end.xy-start.xy);
-        vec4 pos = mix(start,end,uv.z);
+        vec4 S = getAnimatedStart();
+        vec4 E = getAnimatedEnd();
+        vec2 dir = normalize(E.xy-S.xy);
+        vec4 pos = mix(S,E,uv.z);
 
         vec2 off = vec2(-dir.y,dir.x);
         // to offset, we have to convert uv.xy into data-specific terms:
@@ -68,10 +80,10 @@ const vert = `
         
         // the dataspace position is thus:
         vec3 P = vec3(pos.xy+w,pos.z);
-        vec4 circle = makeUpCircle();
+        vec4 circle = makeUpCircle(S.xy,E.xy);
         float C = clamp(uv.z, 0.0,1.0);
-        P.xy = curveEdge(uv.z, circle,uv.y);
-        pos.xy = curveEdge(C, circle,0.0);
+        P.xy = curveEdge(uv.z, circle,uv.y,S,E);
+        pos.xy = curveEdge(C, circle,0.0,S,E);
         // now apply the camera like usual!
         vec2 size = view.zw-view.xy;
         vec2 unit = (P.xy-view.xy)/size;
@@ -116,15 +128,21 @@ type Props = {
     color: vec4;
     start: REGL.Buffer;
     end: REGL.Buffer;
+    pStart: REGL.Buffer;
+    pEnd: REGL.Buffer;
+    anmParam: number;
 }
 type Unis = {
     color: vec4,
     view: vec4;
+    anmParam: number;
 }
 type Attrs = {
     uv: REGL.Attribute,
     start: REGL.AttributeConfig,
     end: REGL.AttributeConfig,
+    pStart: REGL.AttributeConfig,
+    pEnd: REGL.AttributeConfig,
 }
 const v = (x: number, y: number, p: number): vec3 => [x, y, p]
 const verts = {
@@ -184,9 +202,18 @@ export function buildEdgeRenderer(regl: REGL.Regl) {
             end: {
                 buffer: regl.prop<Props, 'end'>('end'),
                 divisor: 1
+            },
+            pStart: {
+                buffer: regl.prop<Props, 'pStart'>('pStart'),
+                divisor: 1
+            },
+            pEnd: {
+                buffer: regl.prop<Props, 'pEnd'>('pEnd'),
+                divisor: 1
             }
         },
         uniforms: {
+            anmParam: regl.prop<Props, 'anmParam'>('anmParam'),
             view: regl.prop<Props, 'view'>('view'),
             color: regl.prop<Props, 'color'>('color'),
         },

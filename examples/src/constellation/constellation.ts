@@ -85,7 +85,7 @@ export class Demo {
     edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
     // private redrawRequested: number = 0;
     pointSize: number;
-    edgeBuffers: Array<null | { start: REGL.Buffer, end: REGL.Buffer, count: number }>
+    edgeBuffers: Array<null | { start: REGL.Buffer, end: REGL.Buffer, pStart: REGL.Buffer, pEnd: REGL.Buffer, count: number }>
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.regl = regl;
         this.mode = 'pan'
@@ -156,13 +156,19 @@ export class Demo {
                     cache: this.cache,
                     callback: (e) => {
                         if (e.status === 'finished' || e.status === 'finished_synchronously') {
-                            const edges = this.edgeBuffers[Math.floor(this.anmParam)];
+                            const stable = this.goal == this.anmParam;
+                            // const what = goUp ? (n: number) => 1.0 - (n - Math.floor(n)) : (n: number) => n - Math.floor(n)
+                            const what = stable ? (n: number) => n - Math.floor(n) : (n: number) => 1.0 - (n - Math.floor(n))
+                            const edges = this.edgeBuffers[Math.ceil(this.anmParam)];// goUp ? Math.floor(this.anmParam) : Math.ceil(this.anmParam)];
                             const tgt = this.layer?.getRenderResults('prev').texture
                             if (edges && tgt) {
                                 this.edgeRenderer({
                                     color: [0.4, 0.45, 0.5, 0.8],
-                                    end: edges.end,
+                                    anmParam: what(this.anmParam),
                                     start: edges.start,
+                                    end: edges.end,
+                                    pStart: edges.pStart,
+                                    pEnd: edges.pEnd,
                                     instances: edges.count,
                                     target: tgt,
                                     view: Box2D.toFlatArray(this.camera.view)
@@ -201,7 +207,7 @@ export class Demo {
             console.log('texture loaded!');
             this.edgeBuffers = edgesByLevel.map((lvl) => {
                 if (lvl) {
-                    return { start: this.regl.buffer(lvl.start), end: this.regl.buffer(lvl.end), count: lvl.count }
+                    return { start: this.regl.buffer(lvl.start), end: this.regl.buffer(lvl.end), pStart: this.regl.buffer(lvl.pStart), pEnd: this.regl.buffer(lvl.pEnd), count: lvl.count }
                 }
                 return null;
             })
@@ -400,8 +406,8 @@ export function hexToRgb(hex: string): vec3 {
 // ok - parse our csv file of taxonomy node positions...
 // then join that onto the cell props from the IDF
 async function buildTexture() {
-    type N = { cx: number, cy: number, name: string, numCells: number, level: string; index: number; }
-    type E = { start: N, end: N, count: number }
+    type N = { cx: number, cy: number, name: string, numCells: number, level: string; index: number; parent: string }
+    type E = { start: N, end: N, pStart: N, pEnd: N, count: number }
     const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
     const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
     const C = gimmeTaxonomy(datsetId, 'v0', [SuperType.name]).then((data) => mapBy(data ?? [], 'value'))
@@ -431,7 +437,7 @@ async function buildTexture() {
         const CY = Number.parseFloat(cy);
         const R = Number.parseFloat(numCells);
         const lvlName = levelName.toLowerCase()
-        nodesByLabel[label] = { cx: CX, cy: CY, numCells: R, name, level: lvlName, index: lvls[lvlName as keyof typeof lvls].map[name].index }
+        nodesByLabel[label] = { cx: CX, cy: CY, numCells: R, name, level: lvlName, index: lvls[lvlName as keyof typeof lvls].map[name].index, parent }
         const L = lvls[levelName.toLowerCase() as keyof typeof lvls];
         if (L) {
             const info = L.map[name];
@@ -460,13 +466,16 @@ async function buildTexture() {
         const [s, e, num] = line.split(',').map(trim);
         const Start = nodesByLabel[s]
         const End = nodesByLabel[e];
+        // figure out parentStart and parent end...
         if (Start && End) {
+            const parents = { start: nodesByLabel[Start.parent], end: nodesByLabel[End.parent] }
+
             const { level } = Start;
             if (!edgesByLevel[level]) {
                 edgesByLevel[level] = []
             }
             const lvl = edgesByLevel[level];
-            lvl.push({ count: Number.parseInt(num), start: Start, end: End })
+            lvl.push({ count: Number.parseInt(num), start: Start, pStart: parents.start ?? Start, end: End, pEnd: parents.end ?? End })
         }
     }
     const buildEdgeBuffersForLevel = (edges: undefined | E[]) => {
@@ -474,11 +483,13 @@ async function buildTexture() {
             return null;
         }
         const B = 4;
-        const S = new Float32Array(edges.length * B);// 4 floats
-        const E = new Float32Array(edges.length * B);// 4 floats
+        const S = new Float32Array(edges.length * B);
+        const E = new Float32Array(edges.length * B);
+        const pS = new Float32Array(edges.length * B);
+        const pE = new Float32Array(edges.length * B);
 
         for (let i = 0; i < edges.length; i++) {
-            const { start, end, count } = edges[i];
+            const { start, end, pStart, pEnd, count } = edges[i];
             S[(i * B) + 0] = start.cx;
             S[(i * B) + 1] = start.cy;
             S[(i * B) + 2] = 0;
@@ -488,8 +499,18 @@ async function buildTexture() {
             E[(i * B) + 1] = end.cy;
             E[(i * B) + 2] = 0;
             E[(i * B) + 3] = 0;
+
+            pS[(i * B) + 0] = pStart.cx;
+            pS[(i * B) + 1] = pStart.cy;
+            pS[(i * B) + 2] = 0;
+            pS[(i * B) + 3] = count;
+
+            pE[(i * B) + 0] = pEnd.cx;
+            pE[(i * B) + 1] = pEnd.cy;
+            pE[(i * B) + 2] = 0;
+            pE[(i * B) + 3] = 0;
         }
-        return { start: S, end: E, count: edges.length }
+        return { start: S, end: E, pStart: pS, pEnd: pE, count: edges.length }
     }
     return { edgesByLevel: [edgesByLevel['class'], edgesByLevel['subclass'], edgesByLevel['supertype'], edgesByLevel['cluster']].map(buildEdgeBuffersForLevel), texture, size: [5, longestCol] as vec2 }
 }
