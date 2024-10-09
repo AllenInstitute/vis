@@ -103,10 +103,37 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         }
         return vec4(position,1.0,2.71828);
     }
-    // vec3 bendy(vec3 start, vec3 middle, vec3 end, float p){
-    //     vec3 goal = mix(middle,end, p);
-    //     return mix(start, goal, p);
-    // }
+    // ye olde "noise" trick from the internet:
+    vec2 rand(vec2 co){
+        return vec2(fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453),fract(sin(dot(co.yx, vec2(12.9898, 78.233))) * 54758.5453));
+    }
+    vec2 polarNoise(vec2 co){
+        vec2 uni = rand(co);
+        float theta = uni.y*3.14159*2.0;
+        float R = uni.x;
+        vec2 P = vec2(R*cos(theta),R*sin(theta));
+        // annoyingly, kinda uniform concentric rings...
+        return P; // +((uni-0.5)/5.0);
+    }
+    vec2 visualAggregate(vec4 P, float dotScale){
+        // compress the true UMAP position into a little range around the taxonomy centroid
+        // fuzz the true position with a little chaos to better distribute ultra-high density regions
+        float numCells = P.w;
+        // a good radius for this many cells is R where the circle with radius R has area = numCells.... maybe?
+        // A = pi*R*R -> sqrt(numCells/PI) = R
+        // then put that area in data space...
+        float R = sqrt(numCells/3.14159)/dotScale;
+
+        vec2 mini = polarNoise(position.xy);
+        vec2 tiny = 6.5*R*pointSize*(position.xy-P.xy)/dotScale;
+        mini *= R*pointSize; 
+        mini = mix(mini,tiny,0.5);
+        
+        return P.xy + mini;
+
+        // return P.xy + (((position.xy+mini)/dotScale) - (P.xy/dotScale)) * (R*pointSize);
+
+    }
 
     void main(){
         vec4 p1 = getTaxonomyData(floor(animationParam));
@@ -115,27 +142,26 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
 
         vec4 P = mix(p1,p2, fract(animationParam));
         float dotScale = 500.0; // TODO use the radius of the dataset instead of this made-up number
-        gl_PointSize= log(P.w); //mix(8.0,3.0,animationParam/5.0);
-        P.xy += (position.xy/dotScale - (P.xy/dotScale)) * (P.z*pointSize);
-
+        gl_PointSize= 4.0;//log(P.w); //mix(8.0,3.0,animationParam/5.0);
+        P.xy = visualAggregate(P, dotScale);
         vec2 size = view.zw-view.xy;
         vec2 pos = ((P.xy+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
-        vec3 rgb = texture2D(taxonomyPositions, vec2(4.5/taxonomySize.x,(Class+0.5)/taxonomySize.y)).rgb;
+        vec3 rgb = texture2D(taxonomyPositions, vec2(4.5/taxonomySize.x,(Cluster+0.5)/taxonomySize.y)).rgb;
         
         clr = vec4(rgb,1.0);
         
         gl_Position = vec4(clip,-1.0+itemDepth/1000.0,1);
     }`,
         frag: `
-        // #extension GL_EXT_frag_depth : enable
+        #extension GL_EXT_frag_depth : enable
         precision highp float;
         varying vec4 clr;
         void main(){
         if(length(gl_PointCoord-0.5)>0.5){
             discard;
         }
-        // gl_FragDepthEXT = (length(gl_PointCoord - 0.5)/3.0);
+        gl_FragDepthEXT = (length(gl_PointCoord - 0.5)/3.0);
         gl_FragColor = clr;
     }`,
         attributes: {
@@ -258,8 +284,9 @@ export function renderTaxonomyUmap<C extends CacheContentType | object>(
     const unitsPerPixel = Vec2.div(Box2D.size(view), screen);
 
     camera = { ...camera, view: applyOptionalTrn(camera.view, dataset.toModelSpace, true) };
-    // camera = camera.projection === 'webImage' ? flipY(camera) : camera;
-    const items = getVisibleItems(dataset.dataset, settings.camera.view, 10 * unitsPerPixel[0]);
+    // because we move points around with our taxonomy shader, we cant rely on the positions in the quad-tree to 
+    // let us cut down the points we request... for now just get all of them!
+    const items = getVisibleItems(dataset.dataset, dataset.dataset.bounds, 10 * unitsPerPixel[0]);
     // make the frame, return some junk
     const inner: InnerRenderSettings = {
         ...settings,

@@ -91,7 +91,7 @@ export class Demo {
         this.mode = 'pan'
         this.mouse = 'up'
         this.mousePos = [0, 0];
-        this.pointSize = 4;
+        this.pointSize = 2;
         this.interval = 0;
         this.anmParam = 0;;
         this.goal = 0;
@@ -340,7 +340,7 @@ function demoTime(thing: HTMLCanvasElement) {
     }
     const regl = REGL({
         gl,
-        extensions: ['ANGLE_instanced_arrays', 'OES_texture_float', 'WEBGL_color_buffer_float'],
+        extensions: ['ANGLE_instanced_arrays', 'OES_texture_float', 'WEBGL_color_buffer_float', 'EXT_frag_depth'],
     });
     theDemo = new Demo(thing, regl);
     theDemo.loadData(fancy);
@@ -445,7 +445,7 @@ async function buildTexture() {
         if (L) {
             const info = L.map[name];
             if (info) {
-                if (L.column === 0) {
+                if (L.column === 3) {
                     const clrOffset = txFloatOffset(4, info.index);
                     const rgb = hexToRgb(info.color ?? '0xFF0000');
                     texture[clrOffset] = rgb[0] / 255;
@@ -493,11 +493,18 @@ async function buildTexture() {
         if (edges === undefined || edges.length === 0) {
             return null;
         }
+        // blerg... make this faster TODO
+        let keepers = 0;
+        for (const e of edges) {
+            if (e.count > 10) {
+                keepers += 1;
+            }
+        }
         const B = 4;
-        const S = new Float32Array(edges.length * B);
-        const E = new Float32Array(edges.length * B);
-        const pS = new Float32Array(edges.length * B);
-        const pE = new Float32Array(edges.length * B);
+        const S = new Float32Array(keepers * B);
+        const E = new Float32Array(keepers * B);
+        const pS = new Float32Array(keepers * B);
+        const pE = new Float32Array(keepers * B);
         // get the oldest anscestor of a node,
         // get its id
 
@@ -524,7 +531,7 @@ async function buildTexture() {
             pE[(i * B) + 2] = getClassId(pEnd);
             pE[(i * B) + 3] = 0;
         }
-        return { start: S, end: E, pStart: pS, pEnd: pE, count: edges.length }
+        return { start: S, end: E, pStart: pS, pEnd: pE, count: keepers }
     }
     return { edgesByLevel: [edgesByLevel['class'], edgesByLevel['subclass'], edgesByLevel['supertype'], edgesByLevel['cluster']].map(buildEdgeBuffersForLevel), texture, size: [5, longestCol] as vec2 }
 }

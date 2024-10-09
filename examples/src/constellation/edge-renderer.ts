@@ -40,7 +40,9 @@ const vert = `
         return mix(end, pEnd, anmParam);
     }
 
-    vec4 makeUpCircle(vec2 A, vec2 B){
+    vec4 makeUpCircle(vec2 sA, vec2 eB){
+        vec2 A = sA.x < eB.x ? sA : eB;
+        vec2 B = sA.x >= eB.x ? sA : eB;
         // find a circle that goes through start and end
         vec2 AB = B-A;
         vec2 mid = (A+B)/2.0;
@@ -121,7 +123,8 @@ const vert = `
         Z -= mix(0.0,0.1, nearFocus);
 
         clr = getColor(start.z,end.z); // dont animate these... its weird
-        clr.a = mix(0.8,1.0,nearFocus);
+        clr.rgb = mix(vec3(0.3,0.3,0.3),clr.rgb,nearFocus);
+        clr.a = 1.0;
         // also ramp very slightly on the edges...
         clr.a *= mix(1.0,0.8, uv.y*uv.y);
 
