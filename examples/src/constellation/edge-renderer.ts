@@ -26,6 +26,7 @@ const vert = `
 
     uniform sampler2D taxonomyPositions;
     uniform vec2 taxonomySize;
+    uniform vec2 focus;
 
     varying vec4 clr;
     varying vec2 edgePos;
@@ -84,7 +85,9 @@ const vert = `
         vec4 E = getAnimatedEnd();
         vec2 dir = normalize(E.xy-S.xy);
         vec4 pos = mix(S,E,uv.z);
-
+        
+        float dpx = abs(view.z-view.x)/2000.0; // pretending the screen is 2000 px wide - good enough
+        
         vec2 off = vec2(-dir.y,dir.x);
         // to offset, we have to convert uv.xy into data-specific terms:
         vec2 Dx = 0.0*uv.x*dir; // that is to say, uv.x is along the line, uv.y is orthagonal to it.
@@ -103,13 +106,25 @@ const vert = `
         vec2 unit = (P.xy-view.xy)/size;
         vec2 clip = (unit*2.0)-1.0;
 
-        clr = getColor(start.z,end.z); // dont animate these... its weird
+        
 
         edgePos = P.xy;
         linePos = vec3(pos.xy,C);
         // make the lines "hang" so they overlap in a nicer way:
         float Z = abs(uv.z-0.5);
+        
+        // however, if focus is within a few pixels S.xy, lift it up to highlight it
+        float nearFocus = smoothstep(1.0, 0.0, min(length(focus-S.xy), length(focus-E.xy)));
+        
         Z=1.0-(Z*Z);
+        Z *= mix(1.0, -0.5, nearFocus);
+        Z -= mix(0.0,0.1, nearFocus);
+
+        clr = getColor(start.z,end.z); // dont animate these... its weird
+        clr.a = mix(0.8,1.0,nearFocus);
+        // also ramp very slightly on the edges...
+        clr.a *= mix(1.0,0.8, uv.y*uv.y);
+
         gl_Position = vec4(clip.xy,Z,1.0);
     }
 
@@ -137,7 +152,7 @@ const frag = `precision highp float;
             discard;
         }
    
-        gl_FragColor = vec4(clr.rgb,1.0);
+        gl_FragColor = clr;
     }
 `
 type Props = {
@@ -152,12 +167,14 @@ type Props = {
     anmParam: number;
     taxonomySize: vec2;
     taxonomyPositions: REGL.Texture2D;
+    focus: vec2;
 }
 type Unis = {
     color: vec4,
     view: vec4;
     anmParam: number;
     taxonomySize: vec2;
+    focus: vec2;
     taxonomyPositions: REGL.Texture2D;
 }
 type Attrs = {
@@ -241,6 +258,7 @@ export function buildEdgeRenderer(regl: REGL.Regl) {
             taxonomySize: regl.prop<Props, 'taxonomySize'>('taxonomySize'),
             taxonomyPositions: regl.prop<Props, 'taxonomyPositions'>('taxonomyPositions'),
             color: regl.prop<Props, 'color'>('color'),
+            focus: regl.prop<Props, 'focus'>('focus'),
         },
         depth: { enable: true },
         blend: {

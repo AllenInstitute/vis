@@ -125,15 +125,17 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         
         clr = vec4(rgb,1.0);
         
-        gl_Position = vec4(clip,itemDepth/1000.0,1);
+        gl_Position = vec4(clip,-1.0+itemDepth/1000.0,1);
     }`,
         frag: `
+        // #extension GL_EXT_frag_depth : enable
         precision highp float;
         varying vec4 clr;
         void main(){
         if(length(gl_PointCoord-0.5)>0.5){
             discard;
         }
+        // gl_FragDepthEXT = (length(gl_PointCoord - 0.5)/3.0);
         gl_FragColor = clr;
     }`,
         attributes: {

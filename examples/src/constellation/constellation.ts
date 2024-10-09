@@ -119,7 +119,7 @@ export class Demo {
     }
     private toDataspace(px: vec2) {
         const { view } = this.camera;
-        const o: vec2 = [px[0], this.canvas.clientHeight - px[1]];
+        const o: vec2 = px;//[px[0], this.canvas.clientHeight - px[1]];
         const p = Vec2.div(o, [this.canvas.clientWidth, this.canvas.clientHeight]);
         const c = Vec2.mul(p, Box2D.size(view));
         return Vec2.add(view.minCorner, c);
@@ -132,10 +132,10 @@ export class Demo {
                 const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
                 const c = Vec2.mul(p, Box2D.size(view));
                 this.camera = { ...this.camera, view: Box2D.translate(view, c), screen };
-                this.onCameraChanged();
             }
         }
-        this.mousePos = Vec2.add(this.mousePos, delta);
+        this.mousePos = pos;
+        this.onCameraChanged();
     }
     zoom(scale: number) {
         const { view, screen } = this.camera;
@@ -173,6 +173,7 @@ export class Demo {
                                     pEnd: edges.pEnd,
                                     instances: edges.count,
                                     target: tgt,
+                                    focus: this.toDataspace(this.mousePos),
                                     view: Box2D.toFlatArray(this.camera.view)
                                 })
                             }
