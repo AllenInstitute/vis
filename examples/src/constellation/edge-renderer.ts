@@ -15,34 +15,67 @@ import type REGL from "regl"
 const vert = `
     precision highp float;
     attribute vec3 uv;      // the object-space edge - start and end are instanced!
-    attribute vec4 start;  // x,y,id, radius 
-    attribute vec4 end;
+    attribute vec3 start;  // id,classId, radius 
+    attribute vec3 end;    // id,classId,radius 
 
-    attribute vec4 pStart;  // x,y,id, radius 
-    attribute vec4 pEnd;
+    attribute vec2 pStart;  // id, classId
+    attribute vec2 pEnd;    // id, classId
 
     uniform vec4 view;
     uniform float anmParam;
+    uniform float taxonLayer;
 
     uniform sampler2D taxonomyPositions;
     uniform vec2 taxonomySize;
     uniform vec2 focus;
 
     varying vec4 clr;
-    varying vec2 edgePos;
+    varying vec3 edgePos;
     varying vec3 linePos;
 
-    // handle the animation of the edge  s--->e to pS ---> pE
-    vec4 getAnimatedStart(){
-        return mix(start, pStart, anmParam);
-    }
-    vec4 getAnimatedEnd(){
-        return mix(end, pEnd, anmParam);
-    }
+    struct Edge {
+        vec2 start;
+        float srcR;
+        vec4 srcColor;
+        vec2 end;
+        float dstR;
+        vec4 dstColor;
+    };
 
-    vec4 makeUpCircle(vec2 sA, vec2 eB){
-        vec2 A = sA.x < eB.x ? sA : eB;
-        vec2 B = sA.x >= eB.x ? sA : eB;
+    // handle the animation of the edge  s--->e to pS ---> pE
+    vec2 lookupPosition(float id, float layer){
+        return texture2D(taxonomyPositions, vec2(layer+0.5,id+0.5)/taxonomySize).rg;
+    }
+    vec4 lookupTaxonomyColor(float id){
+        float uS = taxonomySize.x;
+        float vS = taxonomySize.y;
+        return texture2D(taxonomyPositions, vec2(4.5/uS,(id+0.5)/vS));
+    }
+    Edge getAnimatedEdge(){
+        vec2 sPos = lookupPosition(start.x,taxonLayer);
+        vec2 psPos = lookupPosition(pStart.x, max(0.0,taxonLayer-1.0));
+        vec2 ePos = lookupPosition(end.x,taxonLayer);
+        vec2 pePos = lookupPosition(pEnd.x, max(0.0,taxonLayer-1.0));
+        vec2 aStart = mix(sPos, psPos, anmParam);
+        vec2 aEnd = mix(ePos, pePos, anmParam);
+
+        vec4 sColor = lookupTaxonomyColor(start.y);
+        vec4 eColor = lookupTaxonomyColor(end.y);
+        return Edge(aStart,start.z,sColor,aEnd,end.z,eColor);
+    }
+    // vec4 getAnimatedStart(){
+    //     vec2 sPos = lookupPosition(start.x,taxonLayer);
+    //     vec2 pPos = lookupPosition(pStart.x, max(0.0,taxonLayer-1.0));
+
+    //     return mix(vec4(sPos,start.zw), vec4(pPos,pStart.zw), anmParam);
+    // }
+    // vec4 getAnimatedEnd(){
+    //     vec2 ePos = lookupPosition(end.x,taxonLayer);
+    //     vec2 pPos = lookupPosition(pEnd.x, max(0.0,taxonLayer-1.0));
+    //     return mix(vec4(ePos,end.zw), vec4(pPos,pEnd.zw), anmParam);
+    // }
+
+    vec4 makeUpCircle(vec2 A, vec2 B){
         // find a circle that goes through start and end
         vec2 AB = B-A;
         vec2 mid = (A+B)/2.0;
@@ -63,46 +96,47 @@ const vert = `
   
         return vec4(center,R, theta);
     }
-    vec2 curveEdge(float p, vec4 circle, float y, vec4 S, vec4 E){
+    vec3 curveEdge(float p, vec4 circle, float y, Edge E){
         float R = circle.z;
-        vec4 P = mix(S,E,p);
+        vec2 P = mix(E.start,E.end,p);
+        float Er = max(0.025, mix(E.srcR,E.dstR,p));
+        float dotScale = 500.0;
+        // Er is the edge radius - map it to the calc we would use in the Dot renderer:
         vec2 dir = normalize(P.xy-circle.xy);
-        float r = y*0.03*max(1.0, log(P.w));
-        return circle.xy + (R*dir)+(r*dir);
-        return (r*dir)+P.xy;
+        float r = y*Er;
+        return vec3(circle.xy + (R*dir)+(r*dir),Er);
     }
-    vec4 lookupTaxonomyColor(float id){
-        float uS = taxonomySize.x;
-        float vS = taxonomySize.y;
-        return texture2D(taxonomyPositions, vec2(4.5/uS,(id+0.5)/vS));
-    }
-    vec4 getColor(float startId, float endId){
-        // wiggle uv.z using a cosine for color transitions that take longer
-        float p = (1.0+cos(uv.z*3.14159))/2.0;
-        return mix(lookupTaxonomyColor(startId), lookupTaxonomyColor(endId), p)*0.7;
+    
+   
+    vec4 mixColor(Edge E, float param){
+        float p = (1.0+cos(param*3.14159))/2.0;
+        return mix(E.srcColor,E.dstColor, p)*0.7;
     }
 
     void main(){
-        vec4 S = getAnimatedStart();
-        vec4 E = getAnimatedEnd();
-        vec2 dir = normalize(E.xy-S.xy);
-        vec4 pos = mix(S,E,uv.z);
+        // vec4 S = getAnimatedStart();
+        // vec4 E = getAnimatedEnd();
+        Edge E = getAnimatedEdge();
+        vec2 dir = normalize(E.end-E.start);
+        vec2 pos = mix(E.start,E.end,uv.z);
+        float W = mix(E.srcR,E.dstR,uv.z);
+
+        // float dpx = abs(view.z-view.x)/2000.0; // pretending the screen is 2000 px wide - good enough
         
-        float dpx = abs(view.z-view.x)/2000.0; // pretending the screen is 2000 px wide - good enough
-        
-        vec2 off = vec2(-dir.y,dir.x);
-        // to offset, we have to convert uv.xy into data-specific terms:
-        vec2 Dx = 0.0*uv.x*dir; // that is to say, uv.x is along the line, uv.y is orthagonal to it.
-        vec2 Dy = uv.y*off;
-        float R = 0.03*max(1.0, log(pos.w));
-        vec2 w = R*(Dx+Dy);
+        // vec2 off = vec2(-dir.y,dir.x);
+        // // to offset, we have to convert uv.xy into data-specific terms:
+        // vec2 Dx = 0.0*uv.x*dir; // that is to say, uv.x is along the line, uv.y is orthagonal to it.
+        // vec2 Dy = uv.y*off;
+        // float R = W;
+        // vec2 w = R*(Dx+Dy);
         
         // the dataspace position is thus:
-        vec3 P = vec3(pos.xy+w,pos.z);
-        vec4 circle = makeUpCircle(S.xy,E.xy);
+
+        // vec2 P = pos.xy;// vec3(pos.xy+w,0.0);
+        vec4 circle = makeUpCircle(E.start,E.end);
         float C = clamp(uv.z, 0.0,1.0);
-        P.xy = curveEdge(uv.z, circle,uv.y,S,E);
-        pos.xy = curveEdge(C, circle,0.0,S,E);
+        vec3 P = curveEdge(uv.z, circle,uv.y,E);
+        pos.xy = curveEdge(C, circle,0.0,E).xy;
         // now apply the camera like usual!
         vec2 size = view.zw-view.xy;
         vec2 unit = (P.xy-view.xy)/size;
@@ -110,20 +144,22 @@ const vert = `
 
         
 
-        edgePos = P.xy;
+        edgePos = P;
         linePos = vec3(pos.xy,C);
         // make the lines "hang" so they overlap in a nicer way:
         float Z = abs(uv.z-0.5);
         
         // however, if focus is within a few pixels S.xy, lift it up to highlight it
-        float nearFocus = smoothstep(1.0, 0.0, min(length(focus-S.xy), length(focus-E.xy)));
+        float nearFocus = smoothstep(1.0, 0.0, min(length(focus-E.start), length(focus-E.end)));
         
         Z=1.0-(Z*Z);
         Z *= mix(1.0, -0.5, nearFocus);
         Z -= mix(0.0,0.1, nearFocus);
 
-        clr = getColor(start.z,end.z); // dont animate these... its weird
-        clr.rgb = mix(vec3(0.3,0.3,0.3),clr.rgb,nearFocus);
+        // clr = getColor(start.z,end.z); // dont animate these... its weird
+        clr = mixColor(E, uv.z);
+        // clr.rgb = mix(vec3(0.3,0.3,0.3),clr.rgb,nearFocus);
+        clr.rgb = mix(vec3(0.6),clr.rgb,nearFocus);
         clr.a = 1.0;
         // also ramp very slightly on the edges...
         clr.a *= mix(1.0,0.8, uv.y*uv.y);
@@ -137,7 +173,7 @@ const frag = `precision highp float;
     uniform vec4 color;
     uniform vec4 view;
 
-    varying vec2 edgePos;
+    varying vec3 edgePos;
     varying vec3 linePos;
     varying vec4 clr;
 
@@ -149,9 +185,9 @@ const frag = `precision highp float;
         // center that...
         p = abs(p-0.5)*2.0;
 
-        float R = mix(dpx*8.0,dpx*24.0,p)/2.0;
+        float R = edgePos.z;
        
-        if(length(edgePos.xy-linePos.xy) > R+dpx){
+        if(length(edgePos.xy-linePos.xy) > R){
             discard;
         }
    
@@ -171,11 +207,13 @@ type Props = {
     taxonomySize: vec2;
     taxonomyPositions: REGL.Texture2D;
     focus: vec2;
+    taxonLayer: number;
 }
 type Unis = {
     color: vec4,
     view: vec4;
     anmParam: number;
+    taxonLayer: number;
     taxonomySize: vec2;
     focus: vec2;
     taxonomyPositions: REGL.Texture2D;
@@ -262,6 +300,7 @@ export function buildEdgeRenderer(regl: REGL.Regl) {
             taxonomyPositions: regl.prop<Props, 'taxonomyPositions'>('taxonomyPositions'),
             color: regl.prop<Props, 'color'>('color'),
             focus: regl.prop<Props, 'focus'>('focus'),
+            taxonLayer: regl.prop<Props, 'taxonLayer'>('taxonLayer'),
         },
         depth: { enable: true },
         blend: {

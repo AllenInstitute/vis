@@ -15,6 +15,7 @@ import { keys, partial, trim } from "lodash";
 import { numNodes, type Graph, visitChildParentPairs, visitOldestAncestors } from "./taxonomy-graph";
 import { edgeData } from "./edges";
 import { buildEdgeRenderer } from "./edge-renderer";
+import { filteredEdges } from "./filtered-edges";
 const flipBox = (box: box2D): box2D => {
     const { minCorner, maxCorner } = box;
     return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
@@ -83,6 +84,7 @@ export class Demo {
     imgRenderer: ReturnType<typeof buildImageRenderer>;
     taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
     edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
+    filterCluster: number;
     // private redrawRequested: number = 0;
     pointSize: number;
     edgeBuffers: Array<null | { start: REGL.Buffer, end: REGL.Buffer, pStart: REGL.Buffer, pEnd: REGL.Buffer, count: number }>
@@ -92,6 +94,7 @@ export class Demo {
         this.mouse = 'up'
         this.mousePos = [0, 0];
         this.pointSize = 2;
+        this.filterCluster = -1;
         this.interval = 0;
         this.anmParam = 0;;
         this.goal = 0;
@@ -173,6 +176,7 @@ export class Demo {
                                     pEnd: edges.pEnd,
                                     instances: edges.count,
                                     target: tgt,
+                                    taxonLayer: Math.ceil(this.anmParam),
                                     focus: this.toDataspace(this.mousePos),
                                     view: Box2D.toFlatArray(this.camera.view)
                                 })
@@ -188,6 +192,7 @@ export class Demo {
                     taxonomyPositions: this.taxonomyData,
                     taxonomySize: this.txSize,
                     dataset: this.plot.dataset,
+                    filter_out_hack: this.filterCluster,
                     pointSize: this.pointSize,
                     regl: this.regl,
                     renderer: this.taxRenderer
@@ -246,7 +251,14 @@ export class Demo {
             } else if (e.key === 's') {
                 this.anmParam -= 0.0331;
                 this.onCameraChanged();
-            } else if (e.key === 'a') {
+            } else if (e.key === 'o') {
+                this.filterCluster -= 1;
+                this.onCameraChanged();
+            } else if (e.key === 'p') {
+                this.filterCluster += 1;
+                this.onCameraChanged();
+            }
+            else if (e.key === 'a') {
                 if (this.interval === 0) {
                     let lastFrameTime = performance.now();
                     const intervalMS = 16; //60fps
@@ -410,7 +422,7 @@ export function hexToRgb(hex: string): vec3 {
 // then join that onto the cell props from the IDF
 async function buildTexture() {
     type N = { cx: number, cy: number, name: string, numCells: number, level: string; index: number; parent: string }
-    type E = { start: N, end: N, pStart: N, pEnd: N, count: number }
+    type E = { start: N, end: N, pStart: N, pEnd: N, srcW: number, dstW: number }
     const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
     const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
     const C = gimmeTaxonomy(datsetId, 'v0', [SuperType.name]).then((data) => mapBy(data ?? [], 'value'))
@@ -445,7 +457,7 @@ async function buildTexture() {
         if (L) {
             const info = L.map[name];
             if (info) {
-                if (L.column === 3) {
+                if (L.column === 0) {
                     const clrOffset = txFloatOffset(4, info.index);
                     const rgb = hexToRgb(info.color ?? '0xFF0000');
                     texture[clrOffset] = rgb[0] / 255;
@@ -472,9 +484,9 @@ async function buildTexture() {
         }
         return getClassId(p);
     }
-    const edgeLines = edgeData.split('\n');
+    const edgeLines = filteredEdges.split('\n');
     for (const line of edgeLines) {
-        const [s, e, num] = line.split(',').map(trim);
+        const [s, e, srcW, dstW] = line.split(',').map(trim);
         const Start = nodesByLabel[s]
         const End = nodesByLabel[e];
         // figure out parentStart and parent end...
@@ -486,50 +498,53 @@ async function buildTexture() {
                 edgesByLevel[level] = []
             }
             const lvl = edgesByLevel[level];
-            lvl.push({ count: Number.parseInt(num), start: Start, pStart: parents.start ?? Start, end: End, pEnd: parents.end ?? End })
+            lvl.push({ srcW: Number.parseFloat(srcW), dstW: Number.parseFloat(dstW), start: Start, pStart: parents.start ?? Start, end: End, pEnd: parents.end ?? End })
         }
     }
     const buildEdgeBuffersForLevel = (edges: undefined | E[]) => {
         if (edges === undefined || edges.length === 0) {
             return null;
         }
-        // blerg... make this faster TODO
-        let keepers = 0;
-        for (const e of edges) {
-            if (e.count > 10) {
-                keepers += 1;
-            }
-        }
-        const B = 4;
+        const keepers = edges.length;
+        // // blerg... make this faster TODO
+        // let keepers = 0;
+        // for (const e of edges) {
+        //     if (e.count > 10) {
+        //         keepers += 1;
+        //     }
+        // }
+        const B = 3;
+        const P = 2;
         const S = new Float32Array(keepers * B);
         const E = new Float32Array(keepers * B);
-        const pS = new Float32Array(keepers * B);
-        const pE = new Float32Array(keepers * B);
+        const pS = new Float32Array(keepers * P);
+        const pE = new Float32Array(keepers * P);
         // get the oldest anscestor of a node,
         // get its id
-
+        // TODO: we're using pre-filered edges here, so 'count' is really more like Weight
+        // multiply it by the numCells of that taxon!
         for (let i = 0; i < edges.length; i++) {
-            const { start, end, pStart, pEnd, count } = edges[i];
+            const { start, end, pStart, pEnd, srcW, dstW } = edges[i];
 
-            S[(i * B) + 0] = start.cx;
-            S[(i * B) + 1] = start.cy;
-            S[(i * B) + 2] = getClassId(start)
-            S[(i * B) + 3] = count;
+            S[(i * B) + 0] = start.index;
+            S[(i * B) + 1] = getClassId(start)
+            S[(i * B) + 2] = srcW * Math.sqrt(start.numCells) / 400;
+            // S[(i * B) + 3] = 0;
 
-            E[(i * B) + 0] = end.cx;
-            E[(i * B) + 1] = end.cy;
-            E[(i * B) + 2] = getClassId(end);
-            E[(i * B) + 3] = 0;
+            E[(i * B) + 0] = end.index;
+            E[(i * B) + 1] = getClassId(end);
+            E[(i * B) + 2] = dstW * Math.sqrt(end.numCells) / 400;
+            // E[(i * B) + 3] = 0;
 
-            pS[(i * B) + 0] = pStart.cx;
-            pS[(i * B) + 1] = pStart.cy;
-            pS[(i * B) + 2] = getClassId(pStart);
-            pS[(i * B) + 3] = count;
+            pS[(i * P) + 0] = pStart.index;
+            pS[(i * P) + 1] = getClassId(pStart);
+            // pS[(i * B) + 2] = srcW * start.numCells;
+            // pS[(i * B) + 3] = 0;
 
-            pE[(i * B) + 0] = pEnd.cx;
-            pE[(i * B) + 1] = pEnd.cy;
-            pE[(i * B) + 2] = getClassId(pEnd);
-            pE[(i * B) + 3] = 0;
+            pE[(i * P) + 0] = pEnd.index;
+            pE[(i * P) + 1] = getClassId(pEnd);
+            // pE[(i * B) + 2] = dstW * end.numCells;
+            // pE[(i * B) + 3] = 0;
         }
         return { start: S, end: E, pStart: pS, pEnd: pE, count: keepers }
     }

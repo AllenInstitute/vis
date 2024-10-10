@@ -19,6 +19,7 @@ type InnerRenderSettings = {
     animationParam: number;
     pointSize: number;
     dataset: ScatterplotDataset,
+    filter_out_hack: number;
     regl: REGL.Regl
 }
 type Props = {
@@ -39,6 +40,7 @@ type Props = {
     animationParam: number,
     offset?: vec2 | undefined;
     target: Framebuffer2D | null;
+    filter_out_hack: number;
 };
 function bufferIsLegit(b: object | undefined): b is ColumnBuffer {
     return !!b && 'type' in b && b.type == 'vbo'
@@ -46,7 +48,7 @@ function bufferIsLegit(b: object | undefined): b is ColumnBuffer {
 export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // build the regl command first
     const cmd = regl<
-        { view: vec4; itemDepth: number; offset: vec2; pointSize: number, taxonomySize: vec2, animationParam: number, taxonomyPositions: REGL.Texture2D },
+        { view: vec4; itemDepth: number; offset: vec2; pointSize: number, taxonomySize: vec2, animationParam: number, taxonomyPositions: REGL.Texture2D, filter_out_hack: number },
         {
             position: REGL.Buffer;
             Class: REGL.Buffer,
@@ -69,6 +71,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     uniform vec4 view;
     uniform float itemDepth;
     uniform vec2 offset;
+    uniform float filter_out_hack;
 
     uniform vec2 taxonomySize;
     uniform sampler2D taxonomyPositions;
@@ -142,13 +145,14 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
 
         vec4 P = mix(p1,p2, fract(animationParam));
         float dotScale = 500.0; // TODO use the radius of the dataset instead of this made-up number
-        gl_PointSize= 4.0;//log(P.w); //mix(8.0,3.0,animationParam/5.0);
+        gl_PointSize= 6.0;//log(P.w); //mix(8.0,3.0,animationParam/5.0);
         P.xy = visualAggregate(P, dotScale);
         vec2 size = view.zw-view.xy;
         vec2 pos = ((P.xy+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
-        vec3 rgb = texture2D(taxonomyPositions, vec2(4.5/taxonomySize.x,(Cluster+0.5)/taxonomySize.y)).rgb;
-        
+        vec3 rgb = texture2D(taxonomyPositions, vec2(4.5/taxonomySize.x,(Class+0.5)/taxonomySize.y)).rgb;
+        // hack: pretend we're filtering by sub-type = something
+        rgb = abs(Cluster - filter_out_hack)<0.5 ? vec3(1) : rgb;
         clr = vec4(rgb,1.0);
         
         gl_Position = vec4(clip,-1.0+itemDepth/1000.0,1);
@@ -173,6 +177,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         },
         uniforms: {
             itemDepth: regl.prop<Props, 'itemDepth'>('itemDepth'),
+            filter_out_hack: regl.prop<Props, 'filter_out_hack'>('filter_out_hack'),
             view: regl.prop<Props, 'view'>('view'),
             offset: regl.prop<Props, 'offset'>('offset'),
             pointSize: regl.prop<Props, 'pointSize'>('pointSize'),
@@ -195,7 +200,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         columns: Record<string, ColumnBuffer | object | undefined>
     ) => {
         const { Class, Cluster, SubClass, SuperType, position } = columns;
-        const { taxonomyPositions, taxonomySize, animationParam, camera, pointSize, target } = settings
+        const { taxonomyPositions, taxonomySize, animationParam, camera, pointSize, target, filter_out_hack } = settings
         const view = camera.view;
         const count = item.content.count;
         const itemDepth = item.content.depth;
@@ -213,6 +218,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
                 Cluster: Cluster.data,
                 taxonomyPositions,
                 taxonomySize,
+                filter_out_hack,
                 animationParam,
                 pointSize,
                 offset: item.offset ?? [0, 0],
