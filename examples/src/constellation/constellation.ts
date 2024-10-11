@@ -20,7 +20,7 @@ const flipBox = (box: box2D): box2D => {
     const { minCorner, maxCorner } = box;
     return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
 };
-const uiroot = createRoot(document.getElementById('sidebar')!);
+// const uiroot = createRoot(document.getElementById('sidebar')!);
 
 // a demo for playing with constellation plot ideas.
 
@@ -183,25 +183,25 @@ export class Demo {
                                     focus: this.toDataspace(this.mousePos),
                                     view: Box2D.toFlatArray(this.camera.view)
                                 })
-                                if(!stable){
+                                const parentEdges = this.edgeBuffers[Math.floor(this.anmParam)]
+                                if(!stable && parentEdges){
                                     const edges = this.edgeBuffers[Math.floor(this.anmParam)]
                                     this.edgeRenderer({
                                         color: [0.4, 0.45, 0.5, 0.8],
                                         anmParam: 1.0-what(this.anmParam),
                                         taxonomyPositions: this.taxonomyData,
                                         taxonomySize: this.txSize,
-                                        start: edges.start,
-                                        end: edges.end,
-                                        pStart: edges.pStart,
-                                        pEnd: edges.pEnd,
-                                        instances: edges.count,
+                                        start: parentEdges.start,
+                                        end: parentEdges.end,
+                                        pStart: parentEdges.pStart,
+                                        pEnd: parentEdges.pEnd,
+                                        instances: parentEdges.count,
                                         target: tgt,
                                         taxonLayer: Math.floor(this.anmParam),
                                         focus: this.toDataspace(this.mousePos),
                                         view: Box2D.toFlatArray(this.camera.view)
                                     })
                                 }
-
                             }
                             this.requestReRender()
                         }
@@ -317,7 +317,11 @@ export class Demo {
         const [w, h] = this.camera.screen;
         return createUmapDataset(config).then((plot) => {
             this.plot = plot;
-            this.camera = { ...this.camera, view: plot.dataset.bounds };
+            // cover the dataset, respect the aspect of the screen:
+            const [dw,dh] = Box2D.size(plot.dataset.bounds)
+
+            const goodView = Box2D.create([0, 0], [(dw * w) / h, dh])
+            this.camera = { ...this.camera, view:goodView };
             this.layer = new ReglLayer2D<UmapScatterplot & OptionalTransform, RenderSettings<CacheEntry>>(
                 this.regl,
                 this.imgRenderer,
