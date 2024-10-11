@@ -18,6 +18,7 @@ type InnerRenderSettings = {
     taxonomySize: vec2,
     animationParam: number;
     pointSize: number;
+    colorBy: number;
     dataset: ScatterplotDataset,
     filter_out_hack: number;
     regl: REGL.Regl
@@ -33,6 +34,8 @@ type Props = {
     SubClass: REGL.Buffer,
     SuperType: REGL.Buffer,
     Cluster: REGL.Buffer,
+
+    colorBy: number;
     // taxonomy data - packed in class/sub/super/cluster order textures
     taxonomyPositions: REGL.Texture2D, // size = [4x |class/sub/super/cluster|]
     //format (rgba32 {x,y,pointSize})
@@ -48,7 +51,7 @@ function bufferIsLegit(b: object | undefined): b is ColumnBuffer {
 export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // build the regl command first
     const cmd = regl<
-        { view: vec4; itemDepth: number; offset: vec2; pointSize: number, taxonomySize: vec2, animationParam: number, taxonomyPositions: REGL.Texture2D, filter_out_hack: number },
+        { view: vec4; itemDepth: number; colorBy:number; offset: vec2; pointSize: number, taxonomySize: vec2, animationParam: number, taxonomyPositions: REGL.Texture2D, filter_out_hack: number },
         {
             position: REGL.Buffer;
             Class: REGL.Buffer,
@@ -67,6 +70,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     attribute float SuperType;
     attribute float Cluster;
     
+    uniform float colorBy;
     uniform float pointSize;
     uniform vec4 view;
     uniform float itemDepth;
@@ -85,7 +89,17 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // 0,1,2,3,4,5 ==> class, subclass, supercluster, cluster, position
 
     varying vec4 clr;
-
+    float getColorAttr(){
+        if(colorBy < 5.0){
+            return Class;
+        }else if(colorBy<6.0){
+            return SubClass;
+        }else if(colorBy<7.0){
+            return SuperType;
+        }else {
+            return Cluster;
+        }
+    }
     // I'd use an array, but array access must be compile-time constant in this version of GLSL :(
     vec4 getTaxonomyData(float p){
         // todo: make me branchless
@@ -150,9 +164,9 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         vec2 size = view.zw-view.xy;
         vec2 pos = ((P.xy+offset)-view.xy)/size;
         vec2 clip = (pos*2.0)-1.0;
-        vec3 rgb = texture2D(taxonomyPositions, vec2(4.5/taxonomySize.x,(Class+0.5)/taxonomySize.y)).rgb;
+        vec3 rgb = texture2D(taxonomyPositions, vec2((colorBy+0.5)/taxonomySize.x,(getColorAttr()+0.5)/taxonomySize.y)).rgb;
         // hack: pretend we're filtering by sub-type = something
-        rgb = abs(Cluster - filter_out_hack)<0.5 ? vec3(1) : rgb;
+        rgb = abs(SubClass - filter_out_hack)<0.5 ? vec3(1) : rgb;
         clr = vec4(rgb,1.0);
         
         gl_Position = vec4(clip,-1.0+itemDepth/1000.0,1);
@@ -181,6 +195,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
             view: regl.prop<Props, 'view'>('view'),
             offset: regl.prop<Props, 'offset'>('offset'),
             pointSize: regl.prop<Props, 'pointSize'>('pointSize'),
+            colorBy: regl.prop<Props, 'colorBy'>('colorBy'),
             taxonomyPositions: regl.prop<Props, 'taxonomyPositions'>('taxonomyPositions'),
             taxonomySize: regl.prop<Props, 'taxonomySize'>('taxonomySize'),
             animationParam: regl.prop<Props, 'animationParam'>('animationParam'),
@@ -200,7 +215,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         columns: Record<string, ColumnBuffer | object | undefined>
     ) => {
         const { Class, Cluster, SubClass, SuperType, position } = columns;
-        const { taxonomyPositions, taxonomySize, animationParam, camera, pointSize, target, filter_out_hack } = settings
+        const { taxonomyPositions, taxonomySize,colorBy, animationParam, camera, pointSize, target, filter_out_hack } = settings
         const view = camera.view;
         const count = item.content.count;
         const itemDepth = item.content.depth;
@@ -210,6 +225,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
             cmd({
                 view: Box2D.toFlatArray(view),
                 count,
+                colorBy,
                 itemDepth,
                 position: position.data,
                 Class: Class.data,

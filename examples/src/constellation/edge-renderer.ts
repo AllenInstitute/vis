@@ -83,7 +83,8 @@ const vert = `
         vec2 offDir = vec2(-lineDir.y,lineDir.x);
 
         // make up a pretend center point:
-        float curvature = 0.2*abs(anmParam-0.5); // enbiggen me for a wilder curve!
+        // float curvature = 0.2*abs(anmParam-0.5); // enbiggen me for a wilder curve!
+        float curvature =0.15;
         vec2 C =(offDir*(curvature*length(AB))) + mid;
         vec2 BC = C-B;
         // // we need the angle of the corner A:
@@ -160,7 +161,7 @@ const vert = `
         clr = mixColor(E, uv.z);
         // clr.rgb = mix(vec3(0.3,0.3,0.3),clr.rgb,nearFocus);
         clr.rgb = mix(vec3(0.6),clr.rgb,nearFocus);
-        clr.a = 1.0;
+        clr.a = 1.0-anmParam;
         // also ramp very slightly on the edges...
         clr.a *= mix(1.0,0.8, uv.y*uv.y);
 

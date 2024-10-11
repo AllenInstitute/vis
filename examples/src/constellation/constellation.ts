@@ -85,6 +85,7 @@ export class Demo {
     taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
     edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
     filterCluster: number;
+    colorBy:number;
     // private redrawRequested: number = 0;
     pointSize: number;
     edgeBuffers: Array<null | { start: REGL.Buffer, end: REGL.Buffer, pStart: REGL.Buffer, pEnd: REGL.Buffer, count: number }>
@@ -105,6 +106,7 @@ export class Demo {
             screen: [w, h],
             projection: 'webImage',
         };
+        this.colorBy = 0;
         this.imgRenderer = buildImageRenderer(regl);
         this.taxRenderer = buildTaxonomyRenderer(regl);
         this.edgeRenderer = buildEdgeRenderer(regl);
@@ -156,6 +158,7 @@ export class Demo {
                 data: this.plot,
                 settings: {
                     animationParam: this.anmParam,
+                    colorBy:4+this.colorBy,
                     cache: this.cache,
                     callback: (e) => {
                         if (e.status === 'finished' || e.status === 'finished_synchronously') {
@@ -180,6 +183,25 @@ export class Demo {
                                     focus: this.toDataspace(this.mousePos),
                                     view: Box2D.toFlatArray(this.camera.view)
                                 })
+                                if(!stable){
+                                    const edges = this.edgeBuffers[Math.floor(this.anmParam)]
+                                    this.edgeRenderer({
+                                        color: [0.4, 0.45, 0.5, 0.8],
+                                        anmParam: 1.0-what(this.anmParam),
+                                        taxonomyPositions: this.taxonomyData,
+                                        taxonomySize: this.txSize,
+                                        start: edges.start,
+                                        end: edges.end,
+                                        pStart: edges.pStart,
+                                        pEnd: edges.pEnd,
+                                        instances: edges.count,
+                                        target: tgt,
+                                        taxonLayer: Math.floor(this.anmParam),
+                                        focus: this.toDataspace(this.mousePos),
+                                        view: Box2D.toFlatArray(this.camera.view)
+                                    })
+                                }
+
                             }
                             this.requestReRender()
                         }
@@ -256,6 +278,9 @@ export class Demo {
                 this.onCameraChanged();
             } else if (e.key === 'p') {
                 this.filterCluster += 1;
+                this.onCameraChanged();
+            }else if(e.key==='c'){
+                this.colorBy = (this.colorBy+1)%4
                 this.onCameraChanged();
             }
             else if (e.key === 'a') {
@@ -431,8 +456,8 @@ async function buildTexture() {
     // we have to stash all this in a nice, high-precision buffer:
     // RGBA (4) x 5 (each level + color) * longest column
     const longestCol = Math.max(...[classes, subclasses, supertypes, clusters].map((m) => keys(m).length))
-    const texture = new Float32Array(5 * 4 * longestCol);
-    const txFloatOffset = (col: number, row: number) => (row * 5 * 4) + col * 4;
+    const texture = new Float32Array(8 *4* longestCol);
+    const txFloatOffset = (col: number, row: number) => (row * 8 * 4) + col * 4;
     const lvls = {
         class: { map: classes, column: 0 },
         subclass: { map: subclasses, column: 1 },
@@ -457,13 +482,12 @@ async function buildTexture() {
         if (L) {
             const info = L.map[name];
             if (info) {
-                if (L.column === 0) {
-                    const clrOffset = txFloatOffset(4, info.index);
-                    const rgb = hexToRgb(info.color ?? '0xFF0000');
-                    texture[clrOffset] = rgb[0] / 255;
-                    texture[clrOffset + 1] = rgb[1] / 255;
-                    texture[clrOffset + 2] = rgb[2] / 255;
-                }
+                const clrOffset = txFloatOffset(L.column + 4, info.index);
+                const rgb = hexToRgb(info.color ?? '0xFF0000');
+                texture[clrOffset] = rgb[0] / 255;
+                texture[clrOffset + 1] = rgb[1] / 255;
+                texture[clrOffset + 2] = rgb[2] / 255;
+
                 const offset = txFloatOffset(L.column, info.index);
                 texture[offset] = CX;
                 texture[offset + 1] = CY;
@@ -548,7 +572,7 @@ async function buildTexture() {
         }
         return { start: S, end: E, pStart: pS, pEnd: pE, count: keepers }
     }
-    return { edgesByLevel: [edgesByLevel['class'], edgesByLevel['subclass'], edgesByLevel['supertype'], edgesByLevel['cluster']].map(buildEdgeBuffersForLevel), texture, size: [5, longestCol] as vec2 }
+    return { edgesByLevel: [edgesByLevel['class'], edgesByLevel['subclass'], edgesByLevel['supertype'], edgesByLevel['cluster']].map(buildEdgeBuffersForLevel), texture, size: [8, longestCol] as vec2 }
 }
 
 type TaxonomyEntry = { index: number, color: Maybe<string> | undefined }
