@@ -51,7 +51,7 @@ function bufferIsLegit(b: object | undefined): b is ColumnBuffer {
 export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // build the regl command first
     const cmd = regl<
-        { view: vec4; itemDepth: number; colorBy:number; offset: vec2; pointSize: number, taxonomySize: vec2, animationParam: number, taxonomyPositions: REGL.Texture2D, filter_out_hack: number },
+        { view: vec4; itemDepth: number; colorBy: number; offset: vec2; pointSize: number, taxonomySize: vec2, animationParam: number, taxonomyPositions: REGL.Texture2D, filter_out_hack: number },
         {
             position: REGL.Buffer;
             Class: REGL.Buffer,
@@ -130,7 +130,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         float R = uni.x;
         vec2 P = vec2(R*cos(theta),R*sin(theta));
         // annoyingly, kinda uniform concentric rings...
-        return P; // +((uni-0.5)/5.0);
+        return P;
     }
     vec2 visualAggregate(vec4 P, float dotScale){
         // compress the true UMAP position into a little range around the taxonomy centroid
@@ -147,9 +147,6 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         mini = mix(mini,tiny,0.5);
         
         return P.xy + mini;
-
-        // return P.xy + (((position.xy+mini)/dotScale) - (P.xy/dotScale)) * (R*pointSize);
-
     }
 
     void main(){
@@ -215,7 +212,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         columns: Record<string, ColumnBuffer | object | undefined>
     ) => {
         const { Class, Cluster, SubClass, SuperType, position } = columns;
-        const { taxonomyPositions, taxonomySize,colorBy, animationParam, camera, pointSize, target, filter_out_hack } = settings
+        const { taxonomyPositions, taxonomySize, colorBy, animationParam, camera, pointSize, target, filter_out_hack } = settings
         const view = camera.view;
         const count = item.content.count;
         const itemDepth = item.content.depth;

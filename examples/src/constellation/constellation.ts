@@ -1,31 +1,24 @@
 import { Box2D, Vec2, type box2D, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
 import REGL from "regl";
 import type { Camera } from "../common/camera";
-import { createRoot } from "react-dom/client";
 import { AsyncDataCache, ReglLayer2D } from "@alleninstitute/vis-scatterbrain";
 import type { CacheEntry } from "../types";
 import { buildImageRenderer } from "../common/image-renderer";
 import { createUmapDataset, type UmapConfig, type UmapScatterplot } from "../data-sources/scatterplot/umap";
 import type { OptionalTransform } from "../data-sources/types";
-import { buildTaxonomyRenderer, renderTaxonomyUmap, type RenderSettings, type RenderSettings as TaxRenderSettings } from "./taxonomy-renderer";
-import type { ColumnBuffer, ColumnRequest } from "~/common/loaders/scatterplot/scatterbrain-loader";
-import { query, resolve, type CellPropertiesConnection, type Maybe } from "~/gqty";
+import { buildTaxonomyRenderer, renderTaxonomyUmap, type RenderSettings } from "./taxonomy-renderer";
+import type { ColumnRequest } from "~/common/loaders/scatterplot/scatterbrain-loader";
+import { resolve, type CellPropertiesConnection, type Maybe } from "~/gqty";
 import { nodeData } from "./nodes";
-import { keys, partial, trim } from "lodash";
-import { numNodes, type Graph, visitChildParentPairs, visitOldestAncestors } from "./taxonomy-graph";
-import { edgeData } from "./edges";
+import { keys, trim } from "lodash";
 import { buildEdgeRenderer } from "./edge-renderer";
 import { filteredEdges } from "./filtered-edges";
-const flipBox = (box: box2D): box2D => {
-    const { minCorner, maxCorner } = box;
-    return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
-};
-// const uiroot = createRoot(document.getElementById('sidebar')!);
+
 
 // a demo for playing with constellation plot ideas.
 
 
-// teh first ting to mess with is animating points through a heirarchy of positions...
+// the first ting to mess with is animating points through a heirarchy of positions...
 // a cell has a class, subclass, cluster, and super cluster
 // each value in those feature-types will now have a position associated with it - the centroid
 // of that thing in umap space.
@@ -61,7 +54,7 @@ function destroyer(item: CacheEntry) {
             break;
     }
 }
-function sizeOf(item: CacheEntry) {
+function sizeOf(_item: CacheEntry) {
     return 1;
 }
 export class Demo {
@@ -79,14 +72,12 @@ export class Demo {
     goal: number;
     interval: number;
     private refreshRequested: number = 0;
-    graphs: Record<string, Graph<string, TaxonomyNode, TaxonomyEdge>>;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
     taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
     edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
     filterCluster: number;
-    colorBy:number;
-    // private redrawRequested: number = 0;
+    colorBy: number;
     pointSize: number;
     edgeBuffers: Array<null | { start: REGL.Buffer, end: REGL.Buffer, pStart: REGL.Buffer, pEnd: REGL.Buffer, count: number }>
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
@@ -115,7 +106,6 @@ export class Demo {
         this.taxonomyData = regl.texture({ width: 5, height: 6000, format: 'rgba', type: 'float' });
         this.txSize = [5, 6000];
         this.loadTaxonomyInfo();
-        this.graphs = {}
         this.edgeBuffers = []
     }
     mouseButton(click: 'up' | 'down', pos: vec2) {
@@ -158,7 +148,7 @@ export class Demo {
                 data: this.plot,
                 settings: {
                     animationParam: this.anmParam,
-                    colorBy:4+this.colorBy,
+                    colorBy: 4 + this.colorBy,
                     cache: this.cache,
                     callback: (e) => {
                         if (e.status === 'finished' || e.status === 'finished_synchronously') {
@@ -184,11 +174,11 @@ export class Demo {
                                     view: Box2D.toFlatArray(this.camera.view)
                                 })
                                 const parentEdges = this.edgeBuffers[Math.floor(this.anmParam)]
-                                if(!stable && parentEdges){
+                                if (!stable && parentEdges) {
                                     const edges = this.edgeBuffers[Math.floor(this.anmParam)]
                                     this.edgeRenderer({
                                         color: [0.4, 0.45, 0.5, 0.8],
-                                        anmParam: 1.0-what(this.anmParam),
+                                        anmParam: 1.0 - what(this.anmParam),
                                         taxonomyPositions: this.taxonomyData,
                                         taxonomySize: this.txSize,
                                         start: parentEdges.start,
@@ -224,13 +214,8 @@ export class Demo {
         }
 
     }
-    // make position buffers for animating edges in layer X to end at layer X-1
-    // private prepareEdgeBuffers(layer: number) {
-    //     const nextLayer = layer - 1;
-    // }
+
     private async loadTaxonomyInfo() {
-        // read a bunch of junk, join it with some stuff from IDF
-        // put the whole pile in this.taxonomyData...
         buildTexture().then(({ edgesByLevel, texture, size }) => {
             this.taxonomyData = this.regl.texture({ data: texture, width: size[0], height: size[1], format: 'rgba', type: 'float' })
             this.txSize = size;
@@ -241,14 +226,8 @@ export class Demo {
                 }
                 return null;
             })
-            // create buffers for edges - there are not too many, so just do it...
             this.requestReRender();
         })
-        // building the graph was a fun thought, and might end up being where we go
-        // but its also complicated to get what we need to make a really cool thing...
-        // for now, lets just traverse the edges in the graph and build buffers to render animated edges
-        // this.graphs = await buildTaxonomyGraph();
-
     }
     private initHandlers(canvas: HTMLCanvasElement) {
         canvas.onmousedown = (e: MouseEvent) => {
@@ -279,8 +258,8 @@ export class Demo {
             } else if (e.key === 'p') {
                 this.filterCluster += 1;
                 this.onCameraChanged();
-            }else if(e.key==='c'){
-                this.colorBy = (this.colorBy+1)%4
+            } else if (e.key === 'c') {
+                this.colorBy = (this.colorBy + 1) % 4
                 this.onCameraChanged();
             }
             else if (e.key === 'a') {
@@ -318,10 +297,10 @@ export class Demo {
         return createUmapDataset(config).then((plot) => {
             this.plot = plot;
             // cover the dataset, respect the aspect of the screen:
-            const [dw,dh] = Box2D.size(plot.dataset.bounds)
+            const [dw, dh] = Box2D.size(plot.dataset.bounds)
 
             const goodView = Box2D.create([0, 0], [(dw * w) / h, dh])
-            this.camera = { ...this.camera, view:goodView };
+            this.camera = { ...this.camera, view: goodView };
             this.layer = new ReglLayer2D<UmapScatterplot & OptionalTransform, RenderSettings<CacheEntry>>(
                 this.regl,
                 this.imgRenderer,
@@ -345,16 +324,12 @@ export class Demo {
             let img = this.layer.getRenderResults('prev');
             img = img.bounds === undefined ? this.layer.getRenderResults('cur') : img;
             if (img.bounds) {
-                // const flipped = Box2D.toFlatArray(flipBox(this.camera.view));
                 this.imgRenderer({
                     img: img.texture,
                     box: Box2D.toFlatArray(img.bounds),
                     target: null,
                     view: Box2D.toFlatArray(this.camera.view)
                 })
-                const level = Math.floor(this.anmParam);
-                const edges = this.edgeBuffers[level];
-
             }
 
         }
@@ -387,8 +362,6 @@ function demoTime(thing: HTMLCanvasElement) {
     theDemo.loadData(fancy);
     theDemo.requestReRender();
 }
-// const cls = 'FS00DXV0T9R1X9FJ4QE'
-// const superclass = 'QY5S8KMO5HLJUF0P00K'
 const datsetId = 'Q1NCWWPG6FZ0DNIXJBQ'
 const tenx = `https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json`
 // 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
@@ -460,7 +433,7 @@ async function buildTexture() {
     // we have to stash all this in a nice, high-precision buffer:
     // RGBA (4) x 5 (each level + color) * longest column
     const longestCol = Math.max(...[classes, subclasses, supertypes, clusters].map((m) => keys(m).length))
-    const texture = new Float32Array(8 *4* longestCol);
+    const texture = new Float32Array(8 * 4 * longestCol);
     const txFloatOffset = (col: number, row: number) => (row * 8 * 4) + col * 4;
     const lvls = {
         class: { map: classes, column: 0 },
@@ -534,131 +507,32 @@ async function buildTexture() {
             return null;
         }
         const keepers = edges.length;
-        // // blerg... make this faster TODO
-        // let keepers = 0;
-        // for (const e of edges) {
-        //     if (e.count > 10) {
-        //         keepers += 1;
-        //     }
-        // }
+
         const B = 3;
         const P = 2;
         const S = new Float32Array(keepers * B);
         const E = new Float32Array(keepers * B);
         const pS = new Float32Array(keepers * P);
         const pE = new Float32Array(keepers * P);
-        // get the oldest anscestor of a node,
-        // get its id
-        // TODO: we're using pre-filered edges here, so 'count' is really more like Weight
-        // multiply it by the numCells of that taxon!
+
         for (let i = 0; i < edges.length; i++) {
             const { start, end, pStart, pEnd, srcW, dstW } = edges[i];
 
             S[(i * B) + 0] = start.index;
             S[(i * B) + 1] = getClassId(start)
             S[(i * B) + 2] = srcW * Math.sqrt(start.numCells) / 400;
-            // S[(i * B) + 3] = 0;
 
             E[(i * B) + 0] = end.index;
             E[(i * B) + 1] = getClassId(end);
             E[(i * B) + 2] = dstW * Math.sqrt(end.numCells) / 400;
-            // E[(i * B) + 3] = 0;
 
             pS[(i * P) + 0] = pStart.index;
             pS[(i * P) + 1] = getClassId(pStart);
-            // pS[(i * B) + 2] = srcW * start.numCells;
-            // pS[(i * B) + 3] = 0;
 
             pE[(i * P) + 0] = pEnd.index;
             pE[(i * P) + 1] = getClassId(pEnd);
-            // pE[(i * B) + 2] = dstW * end.numCells;
-            // pE[(i * B) + 3] = 0;
         }
         return { start: S, end: E, pStart: pS, pEnd: pE, count: keepers }
     }
     return { edgesByLevel: [edgesByLevel['class'], edgesByLevel['subclass'], edgesByLevel['supertype'], edgesByLevel['cluster']].map(buildEdgeBuffersForLevel), texture, size: [8, longestCol] as vec2 }
-}
-
-type TaxonomyEntry = { index: number, color: Maybe<string> | undefined }
-type TaxonomyNode = { id: string, parent: string | null, index: number, count: number, pos: vec2, color: string }
-type TaxonomyEdge = { start: string, end: string, count: number }
-
-async function buildTaxonomyGraph() {
-    const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
-    const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
-    const C = gimmeTaxonomy(datsetId, 'v0', [SuperType.name]).then((data) => mapBy(data ?? [], 'value'))
-    const D = gimmeTaxonomy(datsetId, 'v0', [Cluster.name]).then((data) => mapBy(data ?? [], 'value'))
-    const [cls, subclass, supertype, cluster] = await Promise.all([A, B, C, D])
-
-    const idfInfo: Record<string, Record<string, TaxonomyEntry>> = {
-        class: cls, subclass, supertype, cluster
-    }
-    const data = nodeData;
-    const lines = data.split('\n');
-    // for each line, read in the bits...
-    // level,level_name,label,name,parent,n_cells,centroid_x,centroid_y
-    // here, name = 'value' from the idf cellPropertyConnection node thingy
-    // levelName is class, subclass, etc...
-    const graphs: Record<string, Graph<string, TaxonomyNode, TaxonomyEdge>> = {}
-    for (const line of lines) {
-        const [level, levelName, label, name, parent, numCells, cx, cy] = line.split(',');
-        const taxonomyName = levelName.toLowerCase()
-        if (!graphs[taxonomyName]) {
-            graphs[taxonomyName] = { nodes: {}, edges: [], parent: null };
-        }
-        const taxonomy = graphs[taxonomyName];
-        if (taxonomyName in idfInfo) {
-            const IDFEntry: Record<string, TaxonomyEntry> = idfInfo[taxonomyName]
-            const { index, color } = IDFEntry[name]
-            graphs[taxonomyName] = {
-                ...taxonomy,
-                nodes: {
-                    ...taxonomy.nodes,
-                    [name]:
-                    {
-                        id: name, parent,
-                        count: Number.parseInt(numCells),
-                        index,
-                        color: color ?? '0x00',
-                        pos: [Number.parseFloat(cx), Number.parseFloat(cy)]
-                    }
-                }
-            }
-
-        }
-    }
-    return graphs;
-}
-
-function buildAnimationBuffers(layer: number, graph: Graph<string, TaxonomyNode, TaxonomyEdge>) {
-    // fill in a float buffer that has pairs {index,layer}
-    const nodes = numNodes(graph)
-    const A = new Float32Array(nodes * 3)
-    const B = new Float32Array(nodes * 3)
-    const color = new Uint8Array(nodes * 4);
-    let offset = 0;
-
-    // get the colors...
-    visitOldestAncestors(graph, (me: TaxonomyNode, parent: TaxonomyNode | null) => {
-        const [r, g, b] = hexToRgb(parent?.color ?? '0xff0000')
-        color[offset] = r;
-        color[offset + 1] = g;
-        color[offset + 2] = b;
-        color[offset + 3] = 255;
-        offset += 4;
-    });
-
-    offset = 0;
-    visitChildParentPairs(graph, (me: TaxonomyNode, parent: TaxonomyNode | null) => {
-
-        A[offset] = me.pos[0];
-        A[offset + 1] = me.pos[1];
-        A[offset + 2] = me.count;
-        // fill in the parent, use 'me' if it has no parent
-        B[offset] = parent?.pos[0] ?? me.pos[0]
-        B[offset + 1] = parent?.pos[1] ?? me.pos[1]
-        B[offset + 2] = parent?.count ?? me.count;
-        offset += 3
-    });
-    return { child: A, parent: B, nodes, color };
 }

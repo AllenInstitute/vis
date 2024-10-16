@@ -63,17 +63,6 @@ const vert = `
         vec4 eColor = lookupTaxonomyColor(end.y);
         return Edge(aStart,start.z,sColor,aEnd,end.z,eColor);
     }
-    // vec4 getAnimatedStart(){
-    //     vec2 sPos = lookupPosition(start.x,taxonLayer);
-    //     vec2 pPos = lookupPosition(pStart.x, max(0.0,taxonLayer-1.0));
-
-    //     return mix(vec4(sPos,start.zw), vec4(pPos,pStart.zw), anmParam);
-    // }
-    // vec4 getAnimatedEnd(){
-    //     vec2 ePos = lookupPosition(end.x,taxonLayer);
-    //     vec2 pPos = lookupPosition(pEnd.x, max(0.0,taxonLayer-1.0));
-    //     return mix(vec4(ePos,end.zw), vec4(pPos,pEnd.zw), anmParam);
-    // }
 
     vec4 makeUpCircle(vec2 A, vec2 B){
         // find a circle that goes through start and end
@@ -115,25 +104,11 @@ const vert = `
     }
 
     void main(){
-        // vec4 S = getAnimatedStart();
-        // vec4 E = getAnimatedEnd();
         Edge E = getAnimatedEdge();
         vec2 dir = normalize(E.end-E.start);
         vec2 pos = mix(E.start,E.end,uv.z);
         float W = mix(E.srcR,E.dstR,uv.z);
 
-        // float dpx = abs(view.z-view.x)/2000.0; // pretending the screen is 2000 px wide - good enough
-        
-        // vec2 off = vec2(-dir.y,dir.x);
-        // // to offset, we have to convert uv.xy into data-specific terms:
-        // vec2 Dx = 0.0*uv.x*dir; // that is to say, uv.x is along the line, uv.y is orthagonal to it.
-        // vec2 Dy = uv.y*off;
-        // float R = W;
-        // vec2 w = R*(Dx+Dy);
-        
-        // the dataspace position is thus:
-
-        // vec2 P = pos.xy;// vec3(pos.xy+w,0.0);
         vec4 circle = makeUpCircle(E.start,E.end);
         float C = clamp(uv.z, 0.0,1.0);
         vec3 P = curveEdge(uv.z, circle,uv.y,E);
@@ -157,9 +132,7 @@ const vert = `
         Z *= mix(1.0, -0.5, nearFocus);
         Z -= mix(0.0,0.1, nearFocus);
 
-        // clr = getColor(start.z,end.z); // dont animate these... its weird
         clr = mixColor(E, uv.z);
-        // clr.rgb = mix(vec3(0.3,0.3,0.3),clr.rgb,nearFocus);
         clr.rgb = mix(vec3(0.6),clr.rgb,nearFocus);
         clr.a = 1.0-anmParam;
         // also ramp very slightly on the edges...
@@ -183,7 +156,6 @@ const frag = `precision highp float;
         float dpx = abs(view.z-view.x)/2000.0; // pretending the screen is 2000 px wide - good enough
         // start simple!
         float p = linePos.z;
-        // center that...
         p = abs(p-0.5)*2.0;
 
         float R = edgePos.z;
@@ -200,7 +172,7 @@ type Props = {
     target: Framebuffer2D | null;
     instances: number,
     color: vec4;
-    start: REGL.Buffer;
+    start: REGL.Buffer | REGL.DynamicVariable<REGL.Buffer>;
     end: REGL.Buffer;
     pStart: REGL.Buffer;
     pEnd: REGL.Buffer;
@@ -221,21 +193,12 @@ type Unis = {
 }
 type Attrs = {
     uv: REGL.Attribute,
-    start: REGL.AttributeConfig,
-    end: REGL.AttributeConfig,
-    pStart: REGL.AttributeConfig,
-    pEnd: REGL.AttributeConfig,
+    start: REGL.Attribute,
+    end: REGL.Attribute,
+    pStart: REGL.Attribute,
+    pEnd: REGL.Attribute,
 }
-const v = (x: number, y: number, p: number): vec3 => [x, y, p]
-const verts = {
-    A: v(0, 0, 0),
-    B: v(-1, 1, 0),
-    C: v(-1, -1, 0),
 
-    D: v(0, 0, 1),
-    E: v(1, -1, 1),
-    F: v(1, 1, 1)
-}
 function buildStrip(d: number) {
     const nums: number[] = []
     const step = 1.0 / d;
@@ -255,20 +218,6 @@ function buildStrip(d: number) {
     }
     return nums;
 }
-type V = keyof typeof verts;
-type Tri = [V, V, V];
-type Line = [V, V];
-const tris: Tri[] = [['A', 'B', 'C'], ['B', 'D', 'F'], ['B', 'A', 'D'], ['C', 'A', 'D'], ['C', 'D', 'E'], ['D', 'E', 'F']]
-// const tris: Tri[] = [['B', 'C', 'E'], ['B', 'E', 'F']]
-function flattenTri(tri: Tri) {
-    const [A, B, C] = tri;
-    return [...verts[A], ...verts[B], ...verts[C]]
-}
-const lines: Line[] = [['D', 'E']]
-function flattenLine(line: Line) {
-    const [A, B] = line;
-    return [...verts[A], ...verts[B]]
-}
 export function buildEdgeRenderer(regl: REGL.Regl) {
     const verts = buildStrip(30);
     const cmd = regl<Unis, Attrs, Props>({
@@ -276,8 +225,11 @@ export function buildEdgeRenderer(regl: REGL.Regl) {
         frag,
         count: verts.length / 3,
         attributes: {
-            uv: verts, //flatMap(tris.map(flattenTri)), //flatMap(lines.map(flattenLine))
+            uv: verts,
             start: {
+                // the errors here are (I believe) a gap in the TS typings for REGL. 
+                // we're making a dynamic prop, which works fine and is clearly correct practice given regl's own examples
+                // however the type says that only 'REGL.Buffer' is safe
                 buffer: regl.prop<Props, 'start'>('start'),
                 divisor: 1
             },
