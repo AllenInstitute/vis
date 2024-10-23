@@ -1,52 +1,23 @@
-import { Box2D, Vec2, type box2D, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
+import { Box2D, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
 import REGL from "regl";
 import type { Camera } from "../common/camera";
-import { AsyncDataCache, ReglLayer2D } from "@alleninstitute/vis-scatterbrain";
-import type { CacheEntry } from "../types";
+import { AsyncDataCache, type ReglCacheEntry, type AsyncFrameEvent } from "@alleninstitute/vis-scatterbrain";
 import { buildImageRenderer } from "../common/image-renderer";
-import { createUmapDataset, type UmapConfig, type UmapScatterplot } from "../data-sources/scatterplot/umap";
-import type { OptionalTransform } from "../data-sources/types";
-import { buildTaxonomyRenderer, renderTaxonomyUmap, type RenderSettings } from "./taxonomy-renderer";
-import type { ColumnRequest } from "~/common/loaders/scatterplot/scatterbrain-loader";
-import { resolve, type CellPropertiesConnection, type Maybe } from "~/gqty";
-import { nodeData } from "./nodes";
-import { keys, trim } from "lodash";
-import { buildEdgeRenderer } from "./edge-renderer";
-import { filteredEdges } from "./filtered-edges";
+import { createUmapDataset, type UmapConfig } from "../data-sources/scatterplot/umap";
+import type { ScatterplotDataset } from "~/common/loaders/scatterplot/scatterbrain-loader";
+import { buildAsyncConstellationRenderer, buildConstellationRenderer, type ConstellationRenderSettings } from "./constellation-renderer";
+import { exampleTaxonomy, type TaxonomyFeatures } from "./loader";
 
 
 // a demo for playing with constellation plot ideas.
 
-
-// the first ting to mess with is animating points through a heirarchy of positions...
-// a cell has a class, subclass, cluster, and super cluster
-// each value in those feature-types will now have a position associated with it - the centroid
-// of that thing in umap space.
-const Class: ColumnRequest = {
-    type: 'METADATA',
-    name: 'FS00DXV0T9R1X9FJ4QE'
-}
-const SubClass: ColumnRequest = {
-    type: 'METADATA',
-    name: 'QY5S8KMO5HLJUF0P00K'
-}
-const SuperType: ColumnRequest = {
-    type: 'METADATA',
-    name: '15BK47DCIOF1SLLUW9P'
-}
-const Cluster: ColumnRequest = {
-    type: 'METADATA',
-    name: 'CBGC0U30VV9JPR60TJU'
-}
-
 function destroyer(item: CacheEntry) {
     switch (item.type) {
-        case 'texture2D':
-        case 'vbo':
-            item.data.destroy();
+        case 'buffer':
+            item.buffer.destroy();
             break;
-        case 'mesh':
-            item.data.points.destroy();
+        case 'texture':
+            item.texture.destroy();
             break;
         default:
             // @ts-expect-error
@@ -57,6 +28,8 @@ function destroyer(item: CacheEntry) {
 function sizeOf(_item: CacheEntry) {
     return 1;
 }
+type CacheEntry = ReglCacheEntry;
+type RendererType = Awaited<ReturnType<typeof buildConstellationRenderer>>;
 export class Demo {
     camera: Camera;
     regl: REGL.Regl;
@@ -66,16 +39,16 @@ export class Demo {
     mousePos: vec2;
     taxonomyData: REGL.Texture2D;
     txSize: vec2;
-    layer: undefined | ReglLayer2D<UmapScatterplot, RenderSettings<CacheEntry>>;
-    plot: UmapScatterplot | undefined;
+    plot: (ScatterplotDataset & TaxonomyFeatures) | undefined;
     anmParam: number;
     goal: number;
     interval: number;
     private refreshRequested: number = 0;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
-    taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
-    edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
+    // taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
+    // edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
+    constellationRenderer: null | Awaited<ReturnType<typeof buildAsyncConstellationRenderer>>;
     filterCluster: number;
     colorBy: number;
     pointSize: number;
@@ -91,6 +64,7 @@ export class Demo {
         this.anmParam = 0;;
         this.goal = 0;
         this.canvas = canvas;
+        this.constellationRenderer = null;
         const [w, h] = [canvas.clientWidth, canvas.clientHeight];
         this.camera = {
             view: Box2D.create([0, 0], [(10 * w) / h, 10]),
@@ -99,8 +73,6 @@ export class Demo {
         };
         this.colorBy = 0;
         this.imgRenderer = buildImageRenderer(regl);
-        this.taxRenderer = buildTaxonomyRenderer(regl);
-        this.edgeRenderer = buildEdgeRenderer(regl);
         this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 4000);
         this.initHandlers(canvas);
         this.taxonomyData = regl.texture({ width: 5, height: 6000, format: 'rgba', type: 'float' });
@@ -130,7 +102,7 @@ export class Demo {
             }
         }
         this.mousePos = pos;
-        this.onCameraChanged();
+        this.onRenderStateChanged();
     }
     zoom(scale: number) {
         const { view, screen } = this.camera;
@@ -140,94 +112,41 @@ export class Demo {
             view: Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m),
             screen,
         };
-        this.onCameraChanged();
+        this.onRenderStateChanged();
     }
-    private onCameraChanged() {
-        if (this.layer && this.plot) {
-            this.layer?.onChange({
-                data: this.plot,
-                settings: {
-                    animationParam: this.anmParam,
-                    colorBy: 4 + this.colorBy,
-                    cache: this.cache,
-                    callback: (e) => {
-                        if (e.status === 'finished' || e.status === 'finished_synchronously') {
-                            const stable = this.goal == this.anmParam;
-                            // const what = goUp ? (n: number) => 1.0 - (n - Math.floor(n)) : (n: number) => n - Math.floor(n)
-                            const what = stable ? (n: number) => n - Math.floor(n) : (n: number) => 1.0 - (n - Math.floor(n))
-                            const edges = this.edgeBuffers[Math.ceil(this.anmParam)];// goUp ? Math.floor(this.anmParam) : Math.ceil(this.anmParam)];
-                            const tgt = this.layer?.getRenderResults('prev').texture
-                            if (edges && tgt) {
-                                this.edgeRenderer({
-                                    color: [0.4, 0.45, 0.5, 0.8],
-                                    anmParam: what(this.anmParam),
-                                    taxonomyPositions: this.taxonomyData,
-                                    taxonomySize: this.txSize,
-                                    start: edges.start,
-                                    end: edges.end,
-                                    pStart: edges.pStart,
-                                    pEnd: edges.pEnd,
-                                    instances: edges.count,
-                                    target: tgt,
-                                    taxonLayer: Math.ceil(this.anmParam),
-                                    focus: this.toDataspace(this.mousePos),
-                                    view: Box2D.toFlatArray(this.camera.view)
-                                })
-                                const parentEdges = this.edgeBuffers[Math.floor(this.anmParam)]
-                                if (!stable && parentEdges) {
-                                    const edges = this.edgeBuffers[Math.floor(this.anmParam)]
-                                    this.edgeRenderer({
-                                        color: [0.4, 0.45, 0.5, 0.8],
-                                        anmParam: 1.0 - what(this.anmParam),
-                                        taxonomyPositions: this.taxonomyData,
-                                        taxonomySize: this.txSize,
-                                        start: parentEdges.start,
-                                        end: parentEdges.end,
-                                        pStart: parentEdges.pStart,
-                                        pEnd: parentEdges.pEnd,
-                                        instances: parentEdges.count,
-                                        target: tgt,
-                                        taxonLayer: Math.floor(this.anmParam),
-                                        focus: this.toDataspace(this.mousePos),
-                                        view: Box2D.toFlatArray(this.camera.view)
-                                    })
-                                }
-                            }
-                            this.requestReRender()
-                        }
-                    },
-                    camera: this.camera,
-                    Class,
-                    Cluster,
-                    SubClass, // TODO!
-                    SuperType,
-                    taxonomyPositions: this.taxonomyData,
-                    taxonomySize: this.txSize,
-                    dataset: this.plot.dataset,
-                    filter_out_hack: this.filterCluster,
-                    pointSize: this.pointSize,
-                    regl: this.regl,
-                    renderer: this.taxRenderer
-                }
-            })
-            this.requestReRender();
+    private onRenderEvent(e: AsyncFrameEvent<any, any>) {
+        if (this.constellationRenderer) {
+            switch (e.status) {
+                case 'finished':
+                    this.constellationRenderer.edgeRenderer({
+                        anmParam: this.anmParam,
+                        anmGoal: this.goal,
+                        focus: this.toDataspace(this.mousePos),
+                        target: null,
+                        view: this.camera.view,
+                    })
+                    break;
+            }
         }
 
     }
+    private onRenderStateChanged() {
+        if (this.constellationRenderer && this.plot) {
+            this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
+            const settings: ConstellationRenderSettings = {
+                animationParam: this.anmParam,
+                colorBy: 4 + this.colorBy,
+                camera: this.camera,
+                pointSize: this.pointSize,
+                filter_out_hack: this.filterCluster,
+            }
+            this.constellationRenderer.dotRenderer(this.plot, settings, (e) => { this.onRenderEvent(e) }, null, this.cache)
+        }
+    }
 
     private async loadTaxonomyInfo() {
-        buildTexture().then(({ edgesByLevel, texture, size }) => {
-            this.taxonomyData = this.regl.texture({ data: texture, width: size[0], height: size[1], format: 'rgba', type: 'float' })
-            this.txSize = size;
-            console.log('texture loaded!');
-            this.edgeBuffers = edgesByLevel.map((lvl) => {
-                if (lvl) {
-                    return { start: this.regl.buffer(lvl.start), end: this.regl.buffer(lvl.end), pStart: this.regl.buffer(lvl.pStart), pEnd: this.regl.buffer(lvl.pEnd), count: lvl.count }
-                }
-                return null;
-            })
-            this.requestReRender();
-        })
+        this.constellationRenderer = await buildAsyncConstellationRenderer(this.regl);
+        this.onRenderStateChanged();
     }
     private initHandlers(canvas: HTMLCanvasElement) {
         canvas.onmousedown = (e: MouseEvent) => {
@@ -246,21 +165,21 @@ export class Demo {
         window.onkeyup = (e: KeyboardEvent) => {
             if (e.key === 'w') {
                 this.anmParam += 0.0331;
-                this.onCameraChanged();
+                this.onRenderStateChanged();
             } else if (['0', '1', '2', '3', '4'].includes(e.key)) {
                 this.goal = Number.parseInt(e.key);
             } else if (e.key === 's') {
                 this.anmParam -= 0.0331;
-                this.onCameraChanged();
+                this.onRenderStateChanged();
             } else if (e.key === 'o') {
                 this.filterCluster -= 1;
-                this.onCameraChanged();
+                this.onRenderStateChanged();
             } else if (e.key === 'p') {
                 this.filterCluster += 1;
-                this.onCameraChanged();
+                this.onRenderStateChanged();
             } else if (e.key === 'c') {
                 this.colorBy = (this.colorBy + 1) % 4
-                this.onCameraChanged();
+                this.onRenderStateChanged();
             }
             else if (e.key === 'a') {
                 if (this.interval === 0) {
@@ -276,12 +195,12 @@ export class Demo {
                         }
                         if (Math.abs(this.goal - this.anmParam) < progressPerMS * delta) {
                             this.anmParam = this.goal;
-                            this.onCameraChanged();
+                            this.onRenderStateChanged();
                         }
                         if (this.goal != this.anmParam) {
                             const progress = progressPerMS * delta
                             this.anmParam += (this.goal > this.anmParam) ? progress : -progress
-                            this.onCameraChanged();
+                            this.onRenderStateChanged();
                         }
                     }, intervalMS)
                 } else {
@@ -295,45 +214,15 @@ export class Demo {
     loadData(config: UmapConfig) {
         const [w, h] = this.camera.screen;
         return createUmapDataset(config).then((plot) => {
-            this.plot = plot;
+            this.plot = { ...plot.dataset, ...exampleTaxonomy }
             // cover the dataset, respect the aspect of the screen:
             const [dw, dh] = Box2D.size(plot.dataset.bounds)
 
             const goodView = Box2D.create([0, 0], [(dw * w) / h, dh])
             this.camera = { ...this.camera, view: goodView };
-            this.layer = new ReglLayer2D<UmapScatterplot & OptionalTransform, RenderSettings<CacheEntry>>(
-                this.regl,
-                this.imgRenderer,
-                renderTaxonomyUmap,
-                [w, h]
-            );
         });
     }
-    requestReRender() {
-        if (this.refreshRequested === 0) {
-            this.refreshRequested = window.requestAnimationFrame(() => {
-                this.refreshScreen();
-                this.refreshRequested = 0;
-                // uiroot?.render(TopoUi({ demo: this }));
-            });
-        }
-    }
-    refreshScreen() {
-        this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 })
-        if (this.layer) {
-            let img = this.layer.getRenderResults('prev');
-            img = img.bounds === undefined ? this.layer.getRenderResults('cur') : img;
-            if (img.bounds) {
-                this.imgRenderer({
-                    img: img.texture,
-                    box: Box2D.toFlatArray(img.bounds),
-                    target: null,
-                    view: Box2D.toFlatArray(this.camera.view)
-                })
-            }
 
-        }
-    }
 }
 let theDemo: Demo;
 
@@ -360,9 +249,7 @@ function demoTime(thing: HTMLCanvasElement) {
     });
     theDemo = new Demo(thing, regl);
     theDemo.loadData(fancy);
-    theDemo.requestReRender();
 }
-const datsetId = 'Q1NCWWPG6FZ0DNIXJBQ'
 const tenx = `https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json`
 // 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const fancy: UmapConfig = {
@@ -375,164 +262,3 @@ demoTime(document.getElementById('glCanvas') as HTMLCanvasElement);
 // lets try GQty to pull in the metadata for cell types
 // we need that so that indexing will line up in the shader...
 
-async function gimmeTaxonomy(datasetId: string, version: string, cellTypeColumns: string[]) {
-    const getNodes = (conn: Maybe<CellPropertiesConnection>) => ({
-        nodes: conn?.nodes?.map(n => ({
-            color: n.color,
-            index: n.featureTypeValueIndex.index,
-            title: n.featureType.title,
-            value: n.featureTypeValueIndex.value
-        }))
-    })
-    // figuring out where junk goes is weird... and I proxies dont help,
-    // but now its looking pretty nice!
-    const everything = await resolve(({ query: { cellProperties } }) => ({
-        ...getNodes(cellProperties({
-            first: 6000,
-            where:
-            {
-                and: [
-                    { dataset: { referenceId: { eq: datasetId }, version: { eq: version } } },
-                    { featureType: { referenceId: { in: cellTypeColumns } } }
-                ]
-            }
-        }))
-    }));
-    return everything.nodes;
-}
-
-export function mapBy<K extends string, T extends Record<K, string>>(items: readonly T[], k: K): Record<string, T & { idx: number }> {
-    const dictionary: Record<string, T & { idx: number }> = {};
-    items.forEach((item, index) => {
-        dictionary[item[k]] = { ...item, idx: index };
-    });
-    return dictionary;
-}
-
-export function hexToRgb(hex: string): vec3 {
-    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-    const fullHex = hex.replace(shorthandRegex, (_m, r, g, b) => r + r + g + g + b + b);
-
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
-    if (result && result.length === 4) {
-        return [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)];
-    }
-    return [0.0, 0.0, 0.0];
-}
-
-// ok - parse our csv file of taxonomy node positions...
-// then join that onto the cell props from the IDF
-async function buildTexture() {
-    type N = { cx: number, cy: number, name: string, numCells: number, level: string; index: number; parent: string }
-    type E = { start: N, end: N, pStart: N, pEnd: N, srcW: number, dstW: number }
-    const A = gimmeTaxonomy(datsetId, 'v0', [Class.name]).then((data) => mapBy(data ?? [], 'value'))
-    const B = gimmeTaxonomy(datsetId, 'v0', [SubClass.name]).then((data) => mapBy(data ?? [], 'value'))
-    const C = gimmeTaxonomy(datsetId, 'v0', [SuperType.name]).then((data) => mapBy(data ?? [], 'value'))
-    const D = gimmeTaxonomy(datsetId, 'v0', [Cluster.name]).then((data) => mapBy(data ?? [], 'value'))
-    const [classes, subclasses, supertypes, clusters] = await Promise.all([A, B, C, D])
-    // we have to stash all this in a nice, high-precision buffer:
-    // RGBA (4) x 5 (each level + color) * longest column
-    const longestCol = Math.max(...[classes, subclasses, supertypes, clusters].map((m) => keys(m).length))
-    const texture = new Float32Array(8 * 4 * longestCol);
-    const txFloatOffset = (col: number, row: number) => (row * 8 * 4) + col * 4;
-    const lvls = {
-        class: { map: classes, column: 0 },
-        subclass: { map: subclasses, column: 1 },
-        supertype: { map: supertypes, column: 2 },
-        cluster: { map: clusters, column: 3 }
-    }
-    const nodeLines = nodeData.split('\n');
-    // for each line, read in the bits...
-    // level,level_name,label,name,parent,n_cells,centroid_x,centroid_y
-    // here, name = 'value' from the idf cellPropertyConnection node thingy
-    // levelName is class, subclass, etc...
-    const nodesByLabel: Record<string, N> = {}
-    const edgesByLevel: Record<string, E[]> = {}
-    for (const line of nodeLines) {
-        const [level, levelName, label, name, parent, numCells, cx, cy] = line.split(',');
-        const CX = Number.parseFloat(cx);
-        const CY = Number.parseFloat(cy);
-        const R = Number.parseFloat(numCells);
-        const lvlName = levelName.toLowerCase()
-        nodesByLabel[label] = { cx: CX, cy: CY, numCells: R, name, level: lvlName, index: lvls[lvlName as keyof typeof lvls].map[name].index, parent }
-        const L = lvls[levelName.toLowerCase() as keyof typeof lvls];
-        if (L) {
-            const info = L.map[name];
-            if (info) {
-                const clrOffset = txFloatOffset(L.column + 4, info.index);
-                const rgb = hexToRgb(info.color ?? '0xFF0000');
-                texture[clrOffset] = rgb[0] / 255;
-                texture[clrOffset + 1] = rgb[1] / 255;
-                texture[clrOffset + 2] = rgb[2] / 255;
-
-                const offset = txFloatOffset(L.column, info.index);
-                texture[offset] = CX;
-                texture[offset + 1] = CY;
-                texture[offset + 2] = 5 - L.column;
-                texture[offset + 3] = R;
-            } else {
-                console.error('no such taxon (csv mistake?)', name)
-            }
-        } else {
-            // complain!
-            console.error('no such level (csv mistake?)', levelName)
-        }
-    }
-    const getClassId = (n: N): number => {
-        const p = nodesByLabel[n.parent];
-        if (!p) {
-            return n.index;
-        }
-        return getClassId(p);
-    }
-    const edgeLines = filteredEdges.split('\n');
-    for (const line of edgeLines) {
-        const [s, e, srcW, dstW] = line.split(',').map(trim);
-        const Start = nodesByLabel[s]
-        const End = nodesByLabel[e];
-        // figure out parentStart and parent end...
-        if (Start && End) {
-            const parents = { start: nodesByLabel[Start.parent], end: nodesByLabel[End.parent] }
-
-            const { level } = Start;
-            if (!edgesByLevel[level]) {
-                edgesByLevel[level] = []
-            }
-            const lvl = edgesByLevel[level];
-            lvl.push({ srcW: Number.parseFloat(srcW), dstW: Number.parseFloat(dstW), start: Start, pStart: parents.start ?? Start, end: End, pEnd: parents.end ?? End })
-        }
-    }
-    const buildEdgeBuffersForLevel = (edges: undefined | E[]) => {
-        if (edges === undefined || edges.length === 0) {
-            return null;
-        }
-        const keepers = edges.length;
-
-        const B = 3;
-        const P = 2;
-        const S = new Float32Array(keepers * B);
-        const E = new Float32Array(keepers * B);
-        const pS = new Float32Array(keepers * P);
-        const pE = new Float32Array(keepers * P);
-
-        for (let i = 0; i < edges.length; i++) {
-            const { start, end, pStart, pEnd, srcW, dstW } = edges[i];
-
-            S[(i * B) + 0] = start.index;
-            S[(i * B) + 1] = getClassId(start)
-            S[(i * B) + 2] = srcW * Math.sqrt(start.numCells) / 400;
-
-            E[(i * B) + 0] = end.index;
-            E[(i * B) + 1] = getClassId(end);
-            E[(i * B) + 2] = dstW * Math.sqrt(end.numCells) / 400;
-
-            pS[(i * P) + 0] = pStart.index;
-            pS[(i * P) + 1] = getClassId(pStart);
-
-            pE[(i * P) + 0] = pEnd.index;
-            pE[(i * P) + 1] = getClassId(pEnd);
-        }
-        return { start: S, end: E, pStart: pS, pEnd: pE, count: keepers }
-    }
-    return { edgesByLevel: [edgesByLevel['class'], edgesByLevel['subclass'], edgesByLevel['supertype'], edgesByLevel['cluster']].map(buildEdgeBuffersForLevel), texture, size: [8, longestCol] as vec2 }
-}

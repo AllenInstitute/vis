@@ -1,17 +1,10 @@
 import REGL, { type Framebuffer2D } from 'regl';
-import { Box2D, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
-import type { ColumnarTree, ColumnBuffer, ColumnRequest, ScatterplotDataset } from '~/common/loaders/scatterplot/scatterbrain-loader';
-import { fetchAndUpload, getVisibleItems, getVisibleItemsInSlide, type Dataset } from '~/common/loaders/scatterplot/data';
+import { Box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import type { ColumnarTree, ColumnBuffer } from '~/common/loaders/scatterplot/scatterbrain-loader';
 import type { Camera } from '~/common/camera';
-import { beginLongRunningFrame, type AsyncDataCache, type RenderCallback } from '@alleninstitute/vis-scatterbrain';
-import { applyOptionalTrn } from '~/data-renderers/utils';
-import type { UmapScatterplot } from '~/data-sources/scatterplot/umap';
+import { type CachedVertexBuffer } from '@alleninstitute/vis-scatterbrain';
 
-type InnerRenderSettings = {
-    Class: ColumnRequest;
-    SubClass: ColumnRequest;
-    SuperType: ColumnRequest;
-    Cluster: ColumnRequest;
+export type TaxonomyRenderSettings = {
     camera: Camera,
     target: REGL.Framebuffer2D | null,
     taxonomyPositions: REGL.Texture2D,
@@ -19,9 +12,7 @@ type InnerRenderSettings = {
     animationParam: number;
     pointSize: number;
     colorBy: number;
-    dataset: ScatterplotDataset,
     filter_out_hack: number;
-    regl: REGL.Regl
 }
 type Props = {
     view: vec4;
@@ -47,6 +38,13 @@ type Props = {
 };
 function bufferIsLegit(b: object | undefined): b is ColumnBuffer {
     return !!b && 'type' in b && b.type == 'vbo'
+}
+export type TaxonomyGpuBuffers = {
+    position: CachedVertexBuffer,
+    Class: CachedVertexBuffer,
+    SubClass: CachedVertexBuffer,
+    SuperType: CachedVertexBuffer,
+    Cluster: CachedVertexBuffer,
 }
 export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // build the regl command first
@@ -208,120 +206,34 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     });
     const renderDots = (
         item: ColumnarTree<vec2> & { offset?: vec2 | undefined },
-        settings: InnerRenderSettings,
-        columns: Record<string, ColumnBuffer | object | undefined>
+        settings: TaxonomyRenderSettings,
+        columns: TaxonomyGpuBuffers
     ) => {
         const { Class, Cluster, SubClass, SuperType, position } = columns;
         const { taxonomyPositions, taxonomySize, colorBy, animationParam, camera, pointSize, target, filter_out_hack } = settings
         const view = camera.view;
         const count = item.content.count;
         const itemDepth = item.content.depth;
-        if (bufferIsLegit(position) && bufferIsLegit(Class) &&
-            bufferIsLegit(SubClass) && bufferIsLegit(SuperType) &&
-            bufferIsLegit(Cluster)) {
-            cmd({
-                view: Box2D.toFlatArray(view),
-                count,
-                colorBy,
-                itemDepth,
-                position: position.data,
-                Class: Class.data,
-                SubClass: SubClass.data,
-                SuperType: SuperType.data,
-                Cluster: Cluster.data,
-                taxonomyPositions,
-                taxonomySize,
-                filter_out_hack,
-                animationParam,
-                pointSize,
-                offset: item.offset ?? [0, 0],
-                target: target,
-            });
-        } else {
-            throw new Error('omg')
-        }
+
+        cmd({
+            view: Box2D.toFlatArray(view),
+            count,
+            colorBy,
+            itemDepth,
+            position: position.buffer,
+            Class: Class.buffer,
+            SubClass: SubClass.buffer,
+            SuperType: SuperType.buffer,
+            Cluster: Cluster.buffer,
+            taxonomyPositions,
+            taxonomySize,
+            filter_out_hack,
+            animationParam,
+            pointSize,
+            offset: item.offset ?? [0, 0],
+            target: target,
+        });
+
     };
     return renderDots;
-}
-
-
-export function fetchTaxonomyItems(item: ColumnarTree<vec2>, settings: InnerRenderSettings, signal?: AbortSignal) {
-    const { dataset, Class, SubClass, SuperType, Cluster } = settings;
-    const position = () =>
-        fetchAndUpload(settings, item.content, { type: 'METADATA', name: dataset.spatialColumn }, signal);
-    const cls = () => fetchAndUpload(settings, item.content, Class, signal);
-    const sub = () => fetchAndUpload(settings, item.content, SubClass, signal);
-    const spr = () => fetchAndUpload(settings, item.content, SuperType, signal);
-    const clstr = () => fetchAndUpload(settings, item.content, Cluster, signal);
-    return {
-        position,
-        Class: cls,
-        SubClass: sub,
-        SuperType: spr,
-        Cluster: clstr,
-    } as const;
-}
-
-type CacheContentType = {
-    type: 'vbo';
-    data: REGL.Buffer;
-};
-
-type Renderer = ReturnType<typeof buildTaxonomyRenderer>;
-export type RenderSettings<C> = {
-    camera: Camera;
-    cache: AsyncDataCache<string, string, C>;
-    renderer: Renderer;
-    callback: RenderCallback;
-    concurrentTasks?: number;
-    queueInterval?: number;
-    cpuLimit?: number;
-} & Omit<InnerRenderSettings, 'target'>;
-
-// TODO: this cache key is totally insufficient!
-const cacheKey = (reqKey: string, item: ColumnarTree<vec2>, settings: InnerRenderSettings) =>
-    `${reqKey}:${item.content.name}`;
-
-export function renderTaxonomyUmap<C extends CacheContentType | object>(
-    target: REGL.Framebuffer2D | null,
-    dataset: UmapScatterplot,
-    settings: RenderSettings<C>
-) {
-    const {
-        cache,
-        camera: { view, screen },
-        renderer,
-        callback,
-        regl,
-    } = settings;
-    let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
-
-    concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 3;
-    queueInterval = queueInterval ? Math.abs(queueInterval) : 33;
-    cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined;
-
-    const unitsPerPixel = Vec2.div(Box2D.size(view), screen);
-
-    camera = { ...camera, view: applyOptionalTrn(camera.view, dataset.toModelSpace, true) };
-    // because we move points around with our taxonomy shader, we cant rely on the positions in the quad-tree to 
-    // let us cut down the points we request... for now just get all of them!
-    const items = getVisibleItems(dataset.dataset, dataset.dataset.bounds, 200 * unitsPerPixel[0]);
-    // make the frame, return some junk
-    const inner: InnerRenderSettings = {
-        ...settings,
-        target,
-
-    }
-    return beginLongRunningFrame(
-        concurrentTasks,
-        queueInterval,
-        items,
-        cache,
-        inner,
-        fetchTaxonomyItems,
-        renderer,
-        callback,
-        cacheKey,
-        cpuLimit
-    );
 }
