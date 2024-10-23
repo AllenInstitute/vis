@@ -296,7 +296,7 @@ export function renderTaxonomyUmap<C extends CacheContentType | object>(
     } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
 
-    concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5;
+    concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 3;
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33;
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined;
 
@@ -305,7 +305,7 @@ export function renderTaxonomyUmap<C extends CacheContentType | object>(
     camera = { ...camera, view: applyOptionalTrn(camera.view, dataset.toModelSpace, true) };
     // because we move points around with our taxonomy shader, we cant rely on the positions in the quad-tree to 
     // let us cut down the points we request... for now just get all of them!
-    const items = getVisibleItems(dataset.dataset, dataset.dataset.bounds, 10 * unitsPerPixel[0]);
+    const items = getVisibleItems(dataset.dataset, dataset.dataset.bounds, 200 * unitsPerPixel[0]);
     // make the frame, return some junk
     const inner: InnerRenderSettings = {
         ...settings,
