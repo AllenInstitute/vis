@@ -85,7 +85,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     // ceil(p) => endTaxonomy
     // fract(p) => [0:1] mix between start and end above
     // 0,1,2,3,4,5 ==> class, subclass, supercluster, cluster, position
-
+    const float PI = radians(180.0);
     varying vec4 clr;
     float getColorAttr(){
         if(colorBy < 5.0){
@@ -124,7 +124,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
     }
     vec2 polarNoise(vec2 co){
         vec2 uni = rand(co);
-        float theta = uni.y*3.14159*2.0;
+        float theta = uni.y*PI*2.0;
         float R = uni.x;
         vec2 P = vec2(R*cos(theta),R*sin(theta));
         // annoyingly, kinda uniform concentric rings...
@@ -137,7 +137,7 @@ export function buildTaxonomyRenderer(regl: REGL.Regl) {
         // a good radius for this many cells is R where the circle with radius R has area = numCells.... maybe?
         // A = pi*R*R -> sqrt(numCells/PI) = R
         // then put that area in data space...
-        float R = sqrt(numCells/3.14159)/dotScale;
+        float R = sqrt(numCells/PI)/dotScale;
 
         vec2 mini = polarNoise(position.xy);
         vec2 tiny = 6.5*R*pointSize*(position.xy-P.xy)/dotScale;

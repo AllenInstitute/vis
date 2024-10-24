@@ -86,7 +86,7 @@ export class Demo {
     }
     private toDataspace(px: vec2) {
         const { view } = this.camera;
-        const o: vec2 = px;//[px[0], this.canvas.clientHeight - px[1]];
+        const o: vec2 = px;
         const p = Vec2.div(o, [this.canvas.clientWidth, this.canvas.clientHeight]);
         const c = Vec2.mul(p, Box2D.size(view));
         return Vec2.add(view.minCorner, c);

@@ -64,7 +64,7 @@ const vert = `
         return Edge(aStart,start.z,sColor,aEnd,end.z,eColor);
     }
 
-    vec4 makeUpCircle(vec2 A, vec2 B){
+    vec3 makeUpCircle(vec2 A, vec2 B){
         // find a circle that goes through start and end
         vec2 AB = B-A;
         vec2 mid = (A+B)/2.0;
@@ -72,7 +72,7 @@ const vert = `
         vec2 offDir = vec2(-lineDir.y,lineDir.x);
 
         // make up a pretend center point:
-        // float curvature = 0.2*abs(anmParam-0.5); // enbiggen me for a wilder curve!
+        
         float curvature =0.15;
         vec2 C =(offDir*(curvature*length(AB))) + mid;
         vec2 BC = C-B;
@@ -81,12 +81,10 @@ const vert = `
         float R = length(BC)/(2.0*sinA);
 
         vec2 center = (-R*offDir)+C;
-        // TODO: theta is not needed, remove
-        float theta = 2.0* asin(length(B-mid)/length(B-center));
   
-        return vec4(center,R, theta);
+        return vec3(center,R);
     }
-    vec3 curveEdge(float p, vec4 circle, float y, Edge E){
+    vec3 curveEdge(float p, vec3 circle, float y, Edge E){
         float R = circle.z;
         vec2 P = mix(E.start,E.end,p);
         float Er = max(0.025, mix(E.srcR,E.dstR,p));
@@ -109,7 +107,7 @@ const vert = `
         vec2 pos = mix(E.start,E.end,uv.z);
         float W = mix(E.srcR,E.dstR,uv.z);
 
-        vec4 circle = makeUpCircle(E.start,E.end);
+        vec3 circle = makeUpCircle(E.start,E.end);
         float C = clamp(uv.z, 0.0,1.0);
         vec3 P = curveEdge(uv.z, circle,uv.y,E);
         pos.xy = curveEdge(C, circle,0.0,E).xy;
