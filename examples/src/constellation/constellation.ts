@@ -37,17 +37,12 @@ export class Demo {
     mouse: 'up' | 'down';
     mode: 'draw' | 'pan';
     mousePos: vec2;
-    taxonomyData: REGL.Texture2D;
-    txSize: vec2;
     plot: (ScatterplotDataset & TaxonomyFeatures) | undefined;
     anmParam: number;
     goal: number;
     interval: number;
-    private refreshRequested: number = 0;
     cache: AsyncDataCache<string, string, CacheEntry>;
     imgRenderer: ReturnType<typeof buildImageRenderer>;
-    // taxRenderer: ReturnType<typeof buildTaxonomyRenderer>;
-    // edgeRenderer: ReturnType<typeof buildEdgeRenderer>;
     constellationRenderer: null | Awaited<ReturnType<typeof buildAsyncConstellationRenderer>>;
     filterCluster: number;
     colorBy: number;
@@ -75,8 +70,6 @@ export class Demo {
         this.imgRenderer = buildImageRenderer(regl);
         this.cache = new AsyncDataCache<string, string, CacheEntry>(destroyer, sizeOf, 4000);
         this.initHandlers(canvas);
-        this.taxonomyData = regl.texture({ width: 5, height: 6000, format: 'rgba', type: 'float' });
-        this.txSize = [5, 6000];
         this.loadTaxonomyInfo();
         this.edgeBuffers = []
     }
