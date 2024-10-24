@@ -2,8 +2,7 @@
 
 // I've got to start simple or I will go crazy and get nowhere
 
-import type { vec4, vec2, vec3 } from "@alleninstitute/vis-geometry";
-import { flatMap } from "lodash";
+import type { vec4, vec2 } from "@alleninstitute/vis-geometry";
 import type { Framebuffer2D } from "regl";
 import type REGL from "regl"
 

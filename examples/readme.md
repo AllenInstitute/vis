@@ -9,6 +9,30 @@
 5. `pnpm run dev`
 6. navigate to the running app (default `localhost://5173`). you can click a link to a specific example, or just use the address bar (`localhost://5173/{path_to_desired_example}`)
 
+## Constellation Example
+
+### Why?
+
+A POC for investigating the use of constellation plots for examining the cell type taxonomy as a graph, in which edges represent strong, asymetric similarity relationships between various taxons.
+Most of the data / technique in this vis comes from a paper (todo: find the paper and give proper attribution).
+
+Nodes in the graph are sized by the number of cells in that node. Nodes positions are the centroid of their constituent cells in the UMAP.
+Note that when zooming in, a "Big dot" aka Node aka Taxon is rendered simply by filling the appropriate radius with the cells that comprise that taxon. This fill is essentially random. Note also that "little" dot (aka cell) sizes are adaptive according to local density - this is an effort to ensure that no cell is ever fully occluded by any other; differences in little-dot sizes have no meaning in this plot.
+Edges are colored by class - each end of an edge is the color of the class of the node at the opposite end. (pink) green-->fade to--->pink (green)
+The weight of an edge at its ends indicates the strength of the connection in that direction. See the paper for the specifics of how edges are calculated.
+Edge curvature is purely aesthetic.
+
+This POC is very much a rough draft from a "useable software" perspective! It will flicker wildly when loading, which can take some time. It has no UI, just hotkeys:
+
+a: enable/disable animation. initially its disabled.
+0-4: transition to the corresponding layer: 0=Class, 1=SubClass, ... 4 = Umap cells
+c: cycle colorBy - dots will be colored by one of the taxonomy layers, starting with Class.
+o: decrease the ID used for filtering a cluster (turn that cluster white) by 1
+p: increase the ID used for filtering a cluster by 1
+scroll-wheel: zoom in/out
+click-drag: pan the view.
+hover: highlight the connections leaving or entering a taxon.
+
 ## DZI Example
 
 ### Why?
