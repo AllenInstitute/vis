@@ -1,4 +1,2 @@
-export function magic() {
-    return 3 + 5;
-}
-// todo: actually export the thing we care about - this is just to test that I can do a build...
+export { type OmeZarrDataset, buildOmeZarrSliceRenderer, buildAsyncOmezarrRenderer } from '~/src/sliceview/slice-renderer'
+export { type VoxelTile, defaultDecoder, getVisibleTiles } from '~/src/sliceview/loader'

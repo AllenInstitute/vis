@@ -4,6 +4,7 @@ import {
     type Renderer,
     type ReglCacheEntry,
     type CachedTexture,
+    buildAsyncRenderer,
 } from '@alleninstitute/vis-scatterbrain';
 import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
 import { buildTileRenderer } from './tile-renderer';
@@ -19,7 +20,7 @@ type RenderSettings = {
     plane: AxisAlignedPlane,
     gamut: Record<'R' | 'G' | 'B', { gamut: Interval; index: number }>;
 }
-type OmeZarrDataset = ZarrDataset
+export type OmeZarrDataset = ZarrDataset
 
 // represent a 2D slice of a volume
 
@@ -122,4 +123,7 @@ export function buildOmeZarrSliceRenderer(regl: REGL.Regl, decoder: Decoder): Re
             })
         },
     }
+}
+export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder) {
+    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder))
 }
