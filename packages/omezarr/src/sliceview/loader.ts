@@ -1,5 +1,8 @@
-import { Box2D, Vec2, box2D, vec2 } from "@alleninstitute/vis-geometry";
-import { AxisAlignedPlane, ZarrDataset, getSlice, pickBestScale, planeSizeInVoxels, sizeInUnits, uvForPlane } from "../zarr-data";
+import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from "../zarr-data"
+import { getSlice, pickBestScale, planeSizeInVoxels, sizeInUnits, uvForPlane } from "../zarr-data";
+import type { VoxelTileImage } from "./slice-renderer";
+import type { Chunk } from "zarrita";
 
 export type VoxelTile = {
     plane: AxisAlignedPlane; // the plane in which the tile sits
@@ -56,4 +59,10 @@ export function getVisibleTiles(
     }))
 }
 
-export const defaultDecoder = getSlice
+export const defaultDecoder = (metadata: ZarrDataset, r: ZarrRequest, layerIndex: number): Promise<VoxelTileImage> => {
+    return getSlice(metadata, r, layerIndex).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
+        const { shape, buffer } = result;
+        return { shape, data: new Float32Array(buffer.data) }
+    })
+
+}

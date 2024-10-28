@@ -3,7 +3,7 @@
 // note that the ome-zarr data must have exactly 3 channels
 // the channels may be remapped with a basic 2-post gamut control
 
-import { vec2, vec4 } from "@alleninstitute/vis-geometry";
+import type { vec2, vec4 } from "@alleninstitute/vis-geometry";
 import REGL, { Framebuffer2D } from "regl";
 
 type Props = {

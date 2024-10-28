@@ -1,14 +1,13 @@
 import REGL from 'regl'
-import { Box2D, Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type Renderer,
     type ReglCacheEntry,
     type CachedTexture,
-    buildAsyncRenderer,
 } from '@alleninstitute/vis-scatterbrain';
-import { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
+import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
 import { buildTileRenderer } from './tile-renderer';
-import { VoxelTile, getVisibleTiles } from './loader';
+import { type VoxelTile, getVisibleTiles } from './loader';
 
 type RenderSettings = {
     camera: {
@@ -25,7 +24,7 @@ type OmeZarrDataset = ZarrDataset
 // represent a 2D slice of a volume
 
 // a slice of a volume (as voxels suitable for display)
-type VoxelTileImage = {
+export type VoxelTileImage = {
     data: Float32Array;
     shape: number[];
 };
@@ -79,7 +78,7 @@ export function buildOmeZarrSliceRenderer(regl: REGL.Regl, decoder: Decoder): Re
         const { data, shape } = slice;
         return {
             bytes: data.byteLength,
-            texture: regl.texture({ data: data, width: shape[1], height: shape[1], format: 'luminance' }),
+            texture: regl.texture({ data: data, width: shape[1], height: shape[0], format: 'luminance' }),
             type: 'texture'
         }
     }
