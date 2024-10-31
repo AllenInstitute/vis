@@ -1,14 +1,10 @@
 {
-    "name": "@alleninstitute/vis-scatterbrain",
-    "version": "0.0.4",
+    "name": "@alleninstitute/vis-dzi",
+    "version": "0.0.3",
     "contributors": [
         {
             "name": "Lane Sawyer",
             "email": "lane.sawyer@alleninstitute.org"
-        },
-        {
-            "name": "James Gerstenberger",
-            "email": "james.gerstenberger@alleninstitute.org"
         },
         {
             "name": "Noah Shepard",
@@ -55,6 +51,7 @@
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
+        "@alleninstitute/vis-scatterbrain": "workspace:*",
         "lodash": "^4.17.21",
         "regl": "^2.1.0"
     }

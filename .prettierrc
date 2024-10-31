@@ -4,5 +4,6 @@
     "tabWidth": 4,
     "singleQuote": true,
     "semi": true,
-    "singleAttributePerLine": true
+    "singleAttributePerLine": true,
+    "endOfLine": "auto"
 }
