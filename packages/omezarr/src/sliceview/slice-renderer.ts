@@ -66,7 +66,7 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
             };
     }
 }
-function isPrepared(stuff: Record<string, ReglCacheEntry | undefined>): stuff is GpuData {
+function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cacheData is GpuData {
     return 'R' in stuff && 'G' in stuff && 'B' in stuff &&
         stuff.R?.type === 'texture' && stuff.G?.type === 'texture' && stuff.B?.type === 'texture'
 }
