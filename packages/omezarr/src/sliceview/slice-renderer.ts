@@ -29,7 +29,7 @@ export type VoxelTileImage = {
     data: Float32Array;
     shape: number[];
 };
-type GpuData = {
+type ImageChannels = {
     R: CachedTexture,
     G: CachedTexture,
     B: CachedTexture,
@@ -66,14 +66,14 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
             };
     }
 }
-function isPrepared(stuff: Record<string, ReglCacheEntry | undefined>): stuff is GpuData {
+function isPrepared(stuff: Record<string, ReglCacheEntry | undefined>): stuff is ImageChannels {
     return 'R' in stuff && 'G' in stuff && 'B' in stuff &&
         stuff.R?.type === 'texture' && stuff.G?.type === 'texture' && stuff.B?.type === 'texture'
 }
 const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max]
 
 type Decoder = (dataset: OmeZarrDataset, req: ZarrRequest, layerIndex: number) => Promise<VoxelTileImage>
-export function buildOmeZarrSliceRenderer(regl: REGL.Regl, decoder: Decoder): Renderer<OmeZarrDataset, VoxelTile, RenderSettings, GpuData> {
+export function buildOmeZarrSliceRenderer(regl: REGL.Regl, decoder: Decoder): Renderer<OmeZarrDataset, VoxelTile, RenderSettings, ImageChannels> {
 
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
         const { data, shape } = slice;
