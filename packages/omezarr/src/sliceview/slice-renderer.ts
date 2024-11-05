@@ -116,7 +116,6 @@ export function buildOmeZarrSliceRenderer(regl: REGL.Regl, decoder: Decoder): Re
                 Rgamut,
                 Ggamut,
                 Bgamut,
-                rotation: 0,
                 target,
                 tile: Box2D.toFlatArray(item.realBounds),
                 view: Box2D.toFlatArray(camera.view),
