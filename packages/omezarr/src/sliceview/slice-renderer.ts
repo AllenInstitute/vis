@@ -66,9 +66,9 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
             };
     }
 }
-function isPrepared(stuff: Record<string, ReglCacheEntry | undefined>): stuff is ImageChannels {
-    return 'R' in stuff && 'G' in stuff && 'B' in stuff &&
-        stuff.R?.type === 'texture' && stuff.G?.type === 'texture' && stuff.B?.type === 'texture'
+function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cacheData is ImageChannels {
+    return 'R' in cacheData && 'G' in cacheData && 'B' in cacheData &&
+        cacheData.R?.type === 'texture' && cacheData.G?.type === 'texture' && cacheData.B?.type === 'texture'
 }
 const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max]
 
