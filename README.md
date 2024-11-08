@@ -15,7 +15,9 @@ For details on running or adding new examples, see the `docs/examples.md` file.
 
 # Contributing
 
-Contributions are welcome! We're currently breaking apart the Scattebrain component into smaller, more manageable packages. If you have a package that you think would be useful to others, please open a PR.
+Contributions are welcome! We're currently breaking apart the Scatterbrain component into smaller, more manageable packages. If you have a package that you think would be useful to others, please open a PR.
+
+See the CONTRIBUTING.md file for more information on how to contribute to the project
 
 # Using the Libraries
 
