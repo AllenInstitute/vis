@@ -105,7 +105,7 @@ export function beginFrame<
         if (synchronous) {
             lifecycleCallback(event);
         } else {
-            Promise.resolve().then(() => lifecycleCallback(event))
+            Promise.resolve().then(() => lifecycleCallback(event));
         }
     };
 
@@ -161,10 +161,10 @@ export function beginFrame<
         }
     };
 
-    reportStatus({ status: 'begin' }, true)
+    reportStatus({ status: 'begin' }, true);
     const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
     if (queue.length > 0) {
-        doWorkOnQueue(interval, false)
+        doWorkOnQueue(interval, false);
     }
     return {
         cancelFrame: (reason?: string) => {
@@ -172,7 +172,7 @@ export function beginFrame<
             taskCancelCallbacks.forEach((cancelMe) => cancelMe());
             clearInterval(interval);
             reportStatus({ status: 'cancelled' }, true);
-        }
+        },
     };
 }
 
