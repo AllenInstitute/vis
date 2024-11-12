@@ -153,7 +153,7 @@ export class RenderServer {
             const clientFrame = this.clients.get(client);
             if (clientFrame && clientFrame.frame) {
                 clientFrame.frame.cancelFrame();
-                this.regl.clear({ framebuffer: clientFrame.image, color: [1, 0, 0, 1], depth: 0 })
+                this.regl.clear({ framebuffer: clientFrame.image, color: [0, 0, 0, 0], depth: 0 })
                 clientFrame.updateRequested = null;
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
