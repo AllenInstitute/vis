@@ -87,12 +87,15 @@ export function beginFrame<
     const abort = new AbortController();
     const queue: Item[] = [...items];
     const taskCancelCallbacks: Array<() => void> = [];
-    const fancy = (itemToRender: Item, maybe: Record<RqKey, CacheEntryType | undefined>) => {
-        if (isPrepared(maybe)) {
+    const renderItemWrapper = (itemToRender: Item, maybe: Record<RqKey, CacheEntryType | undefined>) => {
+        if (isPrepared(maybe) && !abort.signal.aborted) {
             renderItem(itemToRender, dataset, settings, maybe);
         }
     };
     const reportStatus = (event: AsyncFrameEvent<Dataset, Item>, synchronous: boolean) => {
+        if (event.status !== 'cancelled' && abort.signal.aborted) {
+            return;
+        }
         // we want to report our status, however the flow of events can be confusing -
         // our callers anticipate an asynchronous (long running) frame to be started,
         // but there are scenarios in which the whole thing is completely synchronous
@@ -129,7 +132,7 @@ export function beginFrame<
             try {
                 const result = mutableCache.cacheAndUse(
                     requestsForItem(itemToRender, dataset, settings, abort.signal),
-                    partial(fancy, itemToRender),
+                    partial(renderItemWrapper, itemToRender),
                     toCacheKey,
                     () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] }, synchronous)
                 );
@@ -165,8 +168,8 @@ export function beginFrame<
     }
     return {
         cancelFrame: (reason?: string) => {
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
             abort.abort(new DOMException(reason, 'AbortError'));
+            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
             clearInterval(interval);
             reportStatus({ status: 'cancelled' }, true);
         }
