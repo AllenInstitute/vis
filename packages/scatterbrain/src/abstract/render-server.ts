@@ -168,12 +168,19 @@ export class RenderServer {
                 }
             };
             this.clients.set(client, {
-                frame: renderFn(image, this.cache, hijack),
+                frame: null,
                 image,
                 copyBuffer,
                 resolution,
                 updateRequested: null,
             });
+            // this is worded rather awkwardly, because sometimes the frameLifecycle object returned by renderFn() represents
+            // a frame that is already finished!
+            // this is a good thing for performance, but potentially confusing - so we do our book-keeping before we actually start rendering:
+            const aboutToStart = this.clients.get(client); // this is the record we just put into the clients map - TS just wants to be sure it really exists:
+            if (aboutToStart) {
+                aboutToStart.frame = renderFn(image, this.cache, hijack)
+            }
         }
     }
 }
