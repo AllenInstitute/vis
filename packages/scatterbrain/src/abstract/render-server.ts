@@ -104,6 +104,7 @@ export class RenderServer {
     private requestComposition(client: Client, composite: Compositor) {
         const c = this.clients.get(client);
         if (c) {
+
             if (!c.updateRequested) {
                 c.updateRequested = composite;
                 if (!this.refreshRequested) {
@@ -131,6 +132,7 @@ export class RenderServer {
     private prepareToRenderToClient(client: Client) {
         const previousEntry = this.clients.get(client);
         if (previousEntry) {
+            previousEntry.updateRequested = null;
             // the client is mutable - so every time we get a request, we have to check to see if it got resized
             if (client.width !== previousEntry.resolution[0] || client.height !== previousEntry.resolution[1]) {
                 // handle resizing by deleting previously allocated resources:
@@ -151,6 +153,8 @@ export class RenderServer {
             const clientFrame = this.clients.get(client);
             if (clientFrame && clientFrame.frame) {
                 clientFrame.frame.cancelFrame();
+                this.regl.clear({ framebuffer: clientFrame.image, color: [1, 0, 0, 1], depth: 0 })
+                clientFrame.updateRequested = null;
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
             const hijack: RenderCallback<D, I> = (e) => {
