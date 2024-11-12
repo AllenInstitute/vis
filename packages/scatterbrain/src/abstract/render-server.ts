@@ -179,7 +179,7 @@ export class RenderServer {
             // this is a good thing for performance, but potentially confusing - so we do our book-keeping before we actually start rendering:
             const aboutToStart = this.clients.get(client); // this is the record we just put into the clients map - TS just wants to be sure it really exists:
             if (aboutToStart) {
-                aboutToStart.frame = renderFn(image, this.cache, hijack)
+                aboutToStart.frame = renderFn(image, this.cache, hijack);
             }
         }
     }
