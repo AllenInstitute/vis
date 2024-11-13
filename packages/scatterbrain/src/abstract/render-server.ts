@@ -104,7 +104,6 @@ export class RenderServer {
     private requestComposition(client: Client, composite: Compositor) {
         const c = this.clients.get(client);
         if (c) {
-
             if (!c.updateRequested) {
                 c.updateRequested = composite;
                 if (!this.refreshRequested) {
@@ -153,7 +152,7 @@ export class RenderServer {
             const clientFrame = this.clients.get(client);
             if (clientFrame && clientFrame.frame) {
                 clientFrame.frame.cancelFrame();
-                this.regl.clear({ framebuffer: clientFrame.image, color: [0, 0, 0, 0], depth: 0 })
+                this.regl.clear({ framebuffer: clientFrame.image, color: [0, 0, 0, 0], depth: 0 });
                 clientFrame.updateRequested = null;
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
@@ -183,14 +182,14 @@ export class RenderServer {
             // this is a good thing for performance, but potentially confusing - so we do our book-keeping before we actually start rendering:
             const aboutToStart = this.clients.get(client); // this is the record we just put into the clients map - TS just wants to be sure it really exists:
             if (aboutToStart) {
-                const frame = renderFn(image, this.cache, hijack)
+                const frame = renderFn(image, this.cache, hijack);
                 if (frame) {
                     aboutToStart.frame = {
                         cancelFrame: (reason?: string) => {
                             frame.cancelFrame(reason);
                             aboutToStart.updateRequested = null;
-                        }
-                    }
+                        },
+                    };
                 }
             }
         }
