@@ -87,12 +87,15 @@ export function beginFrame<
     const abort = new AbortController();
     const queue: Item[] = [...items];
     const taskCancelCallbacks: Array<() => void> = [];
-    const fancy = (itemToRender: Item, maybe: Record<RqKey, CacheEntryType | undefined>) => {
-        if (isPrepared(maybe)) {
+    const renderItemWrapper = (itemToRender: Item, maybe: Record<RqKey, CacheEntryType | undefined>) => {
+        if (isPrepared(maybe) && !abort.signal.aborted) {
             renderItem(itemToRender, dataset, settings, maybe);
         }
     };
-    const reportStatus = (event: AsyncFrameEvent<Dataset, Item>, synchronous: boolean = false) => {
+    const reportStatus = (event: AsyncFrameEvent<Dataset, Item>, synchronous: boolean) => {
+        if (event.status !== 'cancelled' && abort.signal.aborted) {
+            return;
+        }
         // we want to report our status, however the flow of events can be confusing -
         // our callers anticipate an asynchronous (long running) frame to be started,
         // but there are scenarios in which the whole thing is completely synchronous
@@ -106,7 +109,7 @@ export function beginFrame<
         }
     };
 
-    const doWorkOnQueue = (intervalId: number) => {
+    const doWorkOnQueue = (intervalId: number, synchronous: boolean = false) => {
         // try our best to cleanup if something goes awry
         const startWorkTime = performance.now();
         const cleanupOnError = (err: unknown) => {
@@ -117,7 +120,7 @@ export function beginFrame<
             abort.abort(err);
             clearInterval(intervalId);
             // pass the error somewhere better:
-            reportStatus({ status: 'error', error: err }, true);
+            reportStatus({ status: 'error', error: err }, synchronous);
         };
         while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
             // We know there are items in the queue because of the check above, so we assert the type exist
@@ -129,9 +132,9 @@ export function beginFrame<
             try {
                 const result = mutableCache.cacheAndUse(
                     requestsForItem(itemToRender, dataset, settings, abort.signal),
-                    partial(fancy, itemToRender),
+                    partial(renderItemWrapper, itemToRender),
                     toCacheKey,
-                    () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] }, true)
+                    () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] }, synchronous)
                 );
                 if (result !== undefined) {
                     // put this cancel callback in a list where we can invoke if something goes wrong
@@ -152,30 +155,24 @@ export function beginFrame<
             if (mutableCache.getNumPendingTasks() < 1) {
                 // we do want to wait for that last in-flight task to actually finish though:
                 clearInterval(intervalId);
-                reportStatus({ status: 'finished' });
+                reportStatus({ status: 'finished' }, synchronous);
             }
             return;
         }
     };
-    const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
 
-    // do some work right now...
+    reportStatus({ status: 'begin' }, true);
+    const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
     if (queue.length > 0) {
-        reportStatus({ status: 'begin' }, true);
-        doWorkOnQueue(interval);
-        // return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
-        // touched/referenced after cancellation, unless the author of render() did some super weird bad things
-        return {
-            cancelFrame: (reason?: string) => {
-                taskCancelCallbacks.forEach((cancelMe) => cancelMe());
-                abort.abort(new DOMException(reason, 'AbortError'));
-                clearInterval(interval);
-                reportStatus({ status: 'cancelled' });
-            },
-        };
+        doWorkOnQueue(interval, false);
     }
     return {
-        cancelFrame: () => {},
+        cancelFrame: (reason?: string) => {
+            abort.abort(new DOMException(reason, 'AbortError'));
+            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            clearInterval(interval);
+            reportStatus({ status: 'cancelled' }, true);
+        },
     };
 }
 

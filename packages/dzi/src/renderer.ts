@@ -45,7 +45,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
         };
     };
     return {
-        destroy: () => { }, // no private resources to destroy
+        destroy: () => {}, // no private resources to destroy
         cacheKey: (item, _requestKey, _data, _settings) => `${item.url}`,
         fetchItemContent: fetchDziTile,
         getVisibleItems: (dzi, settings) => {

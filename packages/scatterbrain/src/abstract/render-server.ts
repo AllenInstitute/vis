@@ -131,6 +131,7 @@ export class RenderServer {
     private prepareToRenderToClient(client: Client) {
         const previousEntry = this.clients.get(client);
         if (previousEntry) {
+            previousEntry.updateRequested = null;
             // the client is mutable - so every time we get a request, we have to check to see if it got resized
             if (client.width !== previousEntry.resolution[0] || client.height !== previousEntry.resolution[1]) {
                 // handle resizing by deleting previously allocated resources:
@@ -151,6 +152,8 @@ export class RenderServer {
             const clientFrame = this.clients.get(client);
             if (clientFrame && clientFrame.frame) {
                 clientFrame.frame.cancelFrame();
+                this.regl.clear({ framebuffer: clientFrame.image, color: [0, 0, 0, 0], depth: 0 });
+                clientFrame.updateRequested = null;
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
             const hijack: RenderCallback<D, I> = (e) => {
@@ -168,12 +171,27 @@ export class RenderServer {
                 }
             };
             this.clients.set(client, {
-                frame: renderFn(image, this.cache, hijack),
+                frame: null,
                 image,
                 copyBuffer,
                 resolution,
                 updateRequested: null,
             });
+            // this is worded rather awkwardly, because sometimes the frameLifecycle object returned by renderFn() represents
+            // a frame that is already finished!
+            // this is a good thing for performance, but potentially confusing - so we do our book-keeping before we actually start rendering:
+            const aboutToStart = this.clients.get(client); // this is the record we just put into the clients map - TS just wants to be sure it really exists:
+            if (aboutToStart) {
+                const frame = renderFn(image, this.cache, hijack);
+                if (frame) {
+                    aboutToStart.frame = {
+                        cancelFrame: (reason?: string) => {
+                            frame.cancelFrame(reason);
+                            aboutToStart.updateRequested = null;
+                        },
+                    };
+                }
+            }
         }
     }
 }
