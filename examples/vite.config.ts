@@ -8,6 +8,7 @@ export default defineConfig({
             input: {
                 layers: path.resolve(__dirname, './layers.html'),
                 dzi: path.resolve(__dirname, './dzi.html'),
+                constellation: path.resolve(__dirname, './constellation.html'),
             },
         },
     },

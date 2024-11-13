@@ -63,7 +63,7 @@ function toReglBuffer(c: ColumnData, regl: REGL.Regl) {
         data: regl.buffer(c),
     } as const;
 }
-function fetchAndUpload(
+export function fetchAndUpload(
     settings: { dataset: Dataset; regl: REGL.Regl },
     node: ColumnarNode<vec2>,
     req: ColumnRequest,
