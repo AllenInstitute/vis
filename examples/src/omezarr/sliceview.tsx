@@ -9,7 +9,6 @@ import {
 import type { RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
 import React from 'react';
 import { useContext, useEffect, useRef } from 'react';
-import type { Camera } from '~/common/camera';
 import { renderServerContext } from '~/common/react/render-server-provider';
 type Props = {
     omezarr: ZarrDataset | undefined;
