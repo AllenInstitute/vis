@@ -1,6 +1,7 @@
 // a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
 import type { Chunk } from 'zarrita';
-import { getSlice, type ZarrDataset, type ZarrRequest } from './zarr-data';
+import { type ZarrDataset, type ZarrRequest } from '@alleninstitute/vis-omezarr';
+import { getSlice } from './zarr-data';
 
 const ctx = self;
 type ZarrSliceRequest = {

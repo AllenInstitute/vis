@@ -1,7 +1,8 @@
-import { type ZarrDataset, load } from '~/common/loaders/ome-zarr/zarr-data';
+import { type ZarrDataset } from '@alleninstitute/vis-omezarr';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
+import { load } from '~/common/loaders/ome-zarr/zarr-data';
 export type ZarrSliceConfig = {
     type: 'zarrSliceConfig';
     url: string;
