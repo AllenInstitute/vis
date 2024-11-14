@@ -1,8 +1,8 @@
-import { Box2D, Vec2, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from "../zarr-data"
-import { getSlice, pickBestScale, planeSizeInVoxels, sizeInUnits, uvForPlane } from "../zarr-data";
-import type { VoxelTileImage } from "./slice-renderer";
-import type { Chunk } from "zarrita";
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
+import { getSlice, pickBestScale, planeSizeInVoxels, sizeInUnits, uvForPlane } from '../zarr-data';
+import type { VoxelTileImage } from './slice-renderer';
+import type { Chunk } from 'zarrita';
 
 export type VoxelTile = {
     plane: AxisAlignedPlane; // the plane in which the tile sits
@@ -10,7 +10,7 @@ export type VoxelTile = {
     bounds: box2D; // in voxels, in the plane
     planeIndex: number; // the index of this slice along the axis being sliced (orthoganal to plane)
     layerIndex: number; // the index in the resolution pyramid of the omezarr dataset
-}
+};
 
 function getAllTiles(idealTilePx: vec2, layerSize: vec2) {
     // return the set of all our "tiles" of this layer, given the tilePx size
@@ -25,8 +25,8 @@ function getAllTiles(idealTilePx: vec2, layerSize: vec2) {
 }
 export function getVisibleTiles(
     camera: {
-        view: box2D,
-        screenSize: vec2,
+        view: box2D;
+        screenSize: vec2;
     },
     plane: AxisAlignedPlane,
     planeIndex: number,
@@ -56,13 +56,12 @@ export function getVisibleTiles(
         bounds: uv,
         planeIndex,
         layerIndex,
-    }))
+    }));
 }
 
 export const defaultDecoder = (metadata: ZarrDataset, r: ZarrRequest, layerIndex: number): Promise<VoxelTileImage> => {
     return getSlice(metadata, r, layerIndex).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
         const { shape, buffer } = result;
-        return { shape, data: new Float32Array(buffer.data) }
-    })
-
-}
+        return { shape, data: new Float32Array(buffer.data) };
+    });
+};

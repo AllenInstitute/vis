@@ -6,10 +6,9 @@ export default defineConfig({
         lib: {
             entry: resolve(__dirname, 'src/index.ts'),
             name: 'omezarr',
-            fileName: (format) => `module.${format}.js`
+            fileName: (format) => `module.${format}.js`,
         },
-        rollupOptions: {
-        },
+        rollupOptions: {},
     },
     resolve: {
         alias: {

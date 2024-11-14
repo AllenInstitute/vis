@@ -1,4 +1,4 @@
-import REGL from 'regl'
+import REGL from 'regl';
 import { Box2D, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type Renderer,
@@ -15,12 +15,12 @@ type RenderSettings = {
         view: box2D;
         screenSize: vec2;
     };
-    planeIndex: number,
-    tileSize: number,
-    plane: AxisAlignedPlane,
+    planeIndex: number;
+    tileSize: number;
+    plane: AxisAlignedPlane;
     gamut: Record<'R' | 'G' | 'B', { gamut: Interval; index: number }>;
-}
-export type OmeZarrDataset = ZarrDataset
+};
+export type OmeZarrDataset = ZarrDataset;
 
 // represent a 2D slice of a volume
 
@@ -30,9 +30,9 @@ export type VoxelTileImage = {
     shape: number[];
 };
 type ImageChannels = {
-    R: CachedTexture,
-    G: CachedTexture,
-    B: CachedTexture,
+    R: CachedTexture;
+    G: CachedTexture;
+    B: CachedTexture;
 };
 function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     const { plane, planeIndex, bounds } = tile;
@@ -67,48 +67,59 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     }
 }
 function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cacheData is ImageChannels {
-    return 'R' in cacheData && 'G' in cacheData && 'B' in cacheData &&
-        cacheData.R?.type === 'texture' && cacheData.G?.type === 'texture' && cacheData.B?.type === 'texture'
+    return (
+        'R' in cacheData &&
+        'G' in cacheData &&
+        'B' in cacheData &&
+        cacheData.R?.type === 'texture' &&
+        cacheData.G?.type === 'texture' &&
+        cacheData.B?.type === 'texture'
+    );
 }
-const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max]
+const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max];
 
-type Decoder = (dataset: OmeZarrDataset, req: ZarrRequest, layerIndex: number) => Promise<VoxelTileImage>
-export function buildOmeZarrSliceRenderer(regl: REGL.Regl, decoder: Decoder): Renderer<OmeZarrDataset, VoxelTile, RenderSettings, ImageChannels> {
-
+type Decoder = (dataset: OmeZarrDataset, req: ZarrRequest, layerIndex: number) => Promise<VoxelTileImage>;
+export function buildOmeZarrSliceRenderer(
+    regl: REGL.Regl,
+    decoder: Decoder
+): Renderer<OmeZarrDataset, VoxelTile, RenderSettings, ImageChannels> {
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
         const { data, shape } = slice;
         return {
             bytes: data.byteLength,
             texture: regl.texture({ data: data, width: shape[1], height: shape[0], format: 'luminance' }),
-            type: 'texture'
-        }
+            type: 'texture',
+        };
     }
     const cmd = buildTileRenderer(regl);
     return {
         cacheKey: (item, requestKey, dataset, settings) => {
-            const col = requestKey as keyof RenderSettings['gamut']
+            const col = requestKey as keyof RenderSettings['gamut'];
             const index = settings.gamut[col]?.index ?? 0;
-            return `${dataset.url}_${JSON.stringify(item)}_ch=${index.toFixed(0)}`
+            return `${dataset.url}_${JSON.stringify(item)}_ch=${index.toFixed(0)}`;
         },
-        destroy: () => { },
+        destroy: () => {},
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, planeIndex, tileSize } = settings;
-            return getVisibleTiles(camera, plane, planeIndex, dataset, tileSize)
+            return getVisibleTiles(camera, plane, planeIndex, dataset, tileSize);
         },
         fetchItemContent: (item, dataset, settings, signal) => {
             return {
-                R: () => decoder(dataset, toZarrRequest(item, settings.gamut.R.index), item.layerIndex).then(sliceAsTexture),
-                G: () => decoder(dataset, toZarrRequest(item, settings.gamut.G.index), item.layerIndex).then(sliceAsTexture),
-                B: () => decoder(dataset, toZarrRequest(item, settings.gamut.B.index), item.layerIndex).then(sliceAsTexture),
-            }
+                R: () =>
+                    decoder(dataset, toZarrRequest(item, settings.gamut.R.index), item.layerIndex).then(sliceAsTexture),
+                G: () =>
+                    decoder(dataset, toZarrRequest(item, settings.gamut.G.index), item.layerIndex).then(sliceAsTexture),
+                B: () =>
+                    decoder(dataset, toZarrRequest(item, settings.gamut.B.index), item.layerIndex).then(sliceAsTexture),
+            };
         },
         isPrepared,
         renderItem: (target, item, dataset, settings, gpuData) => {
             const { R, G, B } = gpuData;
             const { camera } = settings;
-            const Rgamut = intervalToVec2(settings.gamut.R.gamut)
-            const Ggamut = intervalToVec2(settings.gamut.G.gamut)
-            const Bgamut = intervalToVec2(settings.gamut.B.gamut)
+            const Rgamut = intervalToVec2(settings.gamut.R.gamut);
+            const Ggamut = intervalToVec2(settings.gamut.G.gamut);
+            const Bgamut = intervalToVec2(settings.gamut.B.gamut);
             cmd({
                 R: R.texture,
                 G: G.texture,
@@ -119,10 +130,10 @@ export function buildOmeZarrSliceRenderer(regl: REGL.Regl, decoder: Decoder): Re
                 target,
                 tile: Box2D.toFlatArray(item.realBounds),
                 view: Box2D.toFlatArray(camera.view),
-            })
+            });
         },
-    }
+    };
 }
 export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder) {
-    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder))
+    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder));
 }

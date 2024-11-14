@@ -2,7 +2,6 @@ import * as zarr from 'zarrita';
 import { some } from 'lodash';
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
 
-
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
@@ -71,7 +70,7 @@ async function loadMetadata(url: string) {
 }
 export type AxisAlignedPlane = 'xy' | 'xz' | 'yz';
 export type OmeDimension = 'x' | 'y' | 'z' | 't' | 'c';
-export type PlaneMapping = { u: OmeDimension, v: OmeDimension }
+export type PlaneMapping = { u: OmeDimension; v: OmeDimension };
 // we could be tricky and try to statically prevent a uv mapping like xx or xy, but theres no real value in it
 const uvTable = {
     xy: { u: 'x', v: 'y' },
@@ -121,7 +120,7 @@ export function pickBestScale(
     const choice = datasets.reduce(
         (bestSoFar, cur) =>
             dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-                dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
+            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
                 ? cur
                 : bestSoFar,
         datasets[0]
@@ -136,9 +135,9 @@ export function sizeInUnits(
     plane:
         | AxisAlignedPlane
         | {
-            u: OmeDimension;
-            v: OmeDimension;
-        },
+              u: OmeDimension;
+              v: OmeDimension;
+          },
     axes: readonly AxisDesc[],
     dataset: DatasetWithShape
 ): vec2 | undefined {

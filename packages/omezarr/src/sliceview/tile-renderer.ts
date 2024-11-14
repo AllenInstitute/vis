@@ -1,10 +1,9 @@
-
 // render a slice of an ome-zarr file as a 2D image
 // note that the ome-zarr data must have exactly 3 channels
 // the channels may be mapped to color-channels (RGB) with a basic 2-post gamut control
 
-import type { vec2, vec4 } from "@alleninstitute/vis-geometry";
-import REGL, { type Framebuffer2D } from "regl";
+import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import REGL, { type Framebuffer2D } from 'regl';
 
 type Props = {
     target: Framebuffer2D | null;
@@ -16,10 +15,9 @@ type Props = {
     R: REGL.Texture2D;
     G: REGL.Texture2D;
     B: REGL.Texture2D;
-}
+};
 
 export function buildTileRenderer(regl: REGL.Regl) {
-
     const cmd = regl<
         {
             view: vec4;
@@ -97,5 +95,5 @@ export function buildTileRenderer(regl: REGL.Regl) {
         primitive: 'triangle fan',
     });
 
-    return (p: Props) => cmd(p)
+    return (p: Props) => cmd(p);
 }
