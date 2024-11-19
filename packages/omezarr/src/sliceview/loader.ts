@@ -20,7 +20,7 @@ export type VoxelTile = {
  * @param bounds visit only the tiles that are within the given bounds (in pixels)
  */
 function visitTilesWithin(idealTilePx: vec2, size: vec2, bounds: box2D, visit: (tile: box2D) => void) {
-    const withinBoth = Box2D.intersection(bounds, Box2D.create([0, 0], size))
+    const withinBoth = Box2D.intersection(bounds, Box2D.create([0, 0], size));
     if (!withinBoth) {
         return;
     }
@@ -29,31 +29,33 @@ function visitTilesWithin(idealTilePx: vec2, size: vec2, bounds: box2D, visit: (
     for (let x = Math.floor(boundsInTiles.minCorner[0]); x < Math.ceil(boundsInTiles.maxCorner[0]); x += 1) {
         for (let y = Math.floor(boundsInTiles.minCorner[1]); y < Math.ceil(boundsInTiles.maxCorner[1]); y += 1) {
             // all tiles visited are always within both the bounds, and the image itself
-            const lo = Vec2.mul([x, y], idealTilePx)
+            const lo = Vec2.mul([x, y], idealTilePx);
             const hi = Vec2.add(lo, idealTilePx);
-            visit(Box2D.create(lo, hi))
+            visit(Box2D.create(lo, hi));
         }
     }
 }
-function getVisibleTilesInLayer(camera: {
-    view: box2D;
-    screenSize: vec2;
-},
+function getVisibleTilesInLayer(
+    camera: {
+        view: box2D;
+        screenSize: vec2;
+    },
     plane: AxisAlignedPlane,
     planeIndex: number,
     dataset: ZarrDataset,
     tileSize: number,
-    layerIndex: number) {
+    layerIndex: number
+) {
     const uv = uvForPlane(plane);
     const layer = dataset.multiscales[0].datasets[layerIndex];
-    if (!layer) return []
+    if (!layer) return [];
     const size = planeSizeInVoxels(uv, dataset.multiscales[0].axes, layer);
     const realSize = sizeInUnits(uv, dataset.multiscales[0].axes, layer);
     if (!size || !realSize) return [];
     const scale = Vec2.div(realSize, size);
-    const vxlToReal = (vxl: box2D) => Box2D.scale(vxl, scale)
+    const vxlToReal = (vxl: box2D) => Box2D.scale(vxl, scale);
     const realToVxl = (real: box2D) => Box2D.scale(real, Vec2.div([1, 1], scale));
-    const visibleTiles: VoxelTile[] = []
+    const visibleTiles: VoxelTile[] = [];
     visitTilesWithin([tileSize, tileSize], size, realToVxl(camera.view), (uv) => {
         visibleTiles.push({
             plane,
@@ -61,9 +63,9 @@ function getVisibleTilesInLayer(camera: {
             bounds: uv,
             planeIndex,
             layerIndex,
-        })
-    })
-    return visibleTiles
+        });
+    });
+    return visibleTiles;
 }
 export function getVisibleTiles(
     camera: {
@@ -86,11 +88,12 @@ export function getVisibleTiles(
         // if the layer we want to draw is not the lowest-level of detail,
         // then we inject the low-level of detail tiles into the returned result - the idea
         // is that we draw the low LOD data underneath the desired LOD as a fallback to prevent flickering.
-        return [...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, baselayerIndex),
-        ...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex)
-        ]
+        return [
+            ...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, baselayerIndex),
+            ...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex),
+        ];
     }
-    return getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex)
+    return getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex);
 }
 
 export const defaultDecoder = (metadata: ZarrDataset, r: ZarrRequest, layerIndex: number): Promise<VoxelTileImage> => {
