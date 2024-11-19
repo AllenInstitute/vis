@@ -93,7 +93,7 @@ export function getVisibleTiles(dzi: DziImage, camera: { view: box2D; screenSize
 export function firstSuitableLayer(imageWidth: number, screenWidth: number) {
     const idealLayer = Math.ceil(Math.log2(screenWidth));
     const biggestRealLayer = Math.ceil(Math.log2(imageWidth));
-    return Math.min(biggestRealLayer, idealLayer);
+    return Math.max(0, Math.min(biggestRealLayer, idealLayer));
 }
 
 /**
@@ -123,8 +123,9 @@ function boxFromRowCol(row: Interval, col: Interval) {
 }
 export function imageSizeAtLayer(dzi: DziImage, layer: number) {
     const { size } = dzi;
-    const layerMaxSize = 2 ** layer;
+    const layerMaxSize = 2 ** (isFinite(layer) ? Math.max(0, layer) : 0);
     let total: vec2 = [size.width, size.height];
+
     while (total[0] > layerMaxSize || total[1] > layerMaxSize) {
         total = Vec2.ceil(Vec2.scale(total, 1 / 2));
     }

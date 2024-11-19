@@ -24,6 +24,9 @@ describe('tiling math', () => {
             const pretend_max_image_width = 512;
             expect(firstSuitableLayer(pretend_max_image_width, 4096)).toEqual(9);
         });
+        it('never picks a layer that cant exist', () => {
+            expect(firstSuitableLayer(512, 0.00001)).toEqual(0);
+        });
     });
     it('divide 512 into 2 chunks', () => {
         const intervals = tileWithOverlap(512, 256, 1);
@@ -50,6 +53,14 @@ describe('tiling math', () => {
     it('image size is as expected for real data (layer 9) ', () => {
         const size = imageSizeAtLayer(highsmith, 9);
         expect(size).toEqual([220, 289]);
+    });
+    it('tilesInLayer does not loop indefinitly when given a nonsensical layer index', () => {
+        const size = imageSizeAtLayer(highsmith, -1);
+        expect(size).toEqual(imageSizeAtLayer(highsmith, 0));
+    });
+    it('tilesInLayer does not loop indefinitly when given a NAN layer index', () => {
+        const size = imageSizeAtLayer(highsmith, Number.NaN);
+        expect(size).toEqual(imageSizeAtLayer(highsmith, 0));
     });
     it('matches observed image dimensions (https://openseadragon.github.io/example-images/highsmith/highsmith.dzi) at layer 9', () => {
         const tiles = tilesInLayer(highsmith, 9);
