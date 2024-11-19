@@ -1,4 +1,4 @@
-import { Box2D } from '@alleninstitute/vis-geometry';
+import { type box2D, Box2D, Vec2 } from '@alleninstitute/vis-geometry';
 import {
     buildAsyncOmezarrRenderer,
     defaultDecoder,
@@ -7,7 +7,7 @@ import {
     type RenderSettings,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
-import React from 'react';
+import React, { useState } from 'react';
 import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 type Props = {
@@ -36,6 +36,7 @@ export function SliceView(props: Props) {
     const server = useContext(renderServerContext);
     const cnvs = useRef<HTMLCanvasElement>(null);
     const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
+    const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]))
     useEffect(() => {
         if (server && server.regl) {
             renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
@@ -48,15 +49,13 @@ export function SliceView(props: Props) {
     }, [server]);
 
     useEffect(() => {
-        console.log('maybe render...');
         if (server && renderer.current && cnvs.current && omezarr) {
             const hey: RenderFrameFn<ZarrDataset, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
-                    return renderer.current(omezarr, settings, callback, target, cache);
+                    return renderer.current(omezarr, {...settings, camera:{...settings.camera,view}}, callback, target, cache);
                 }
                 return null;
             };
-            console.log('go!');
             server.beginRendering(
                 hey,
                 (e) => {
@@ -76,11 +75,17 @@ export function SliceView(props: Props) {
                 cnvs.current
             );
         }
-    }, [server, renderer.current, cnvs.current, omezarr]);
+    }, [server, renderer.current, cnvs.current, omezarr,view]);
     return (
         <canvas
             id={'hey there'}
             ref={cnvs}
+            onWheel={(e)=>{
+                const scale = e.deltaY > 0 ? 1.1 : 0.9;
+                const m = Box2D.midpoint(view);
+                const v = Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m);
+                setView(v);
+            }}
             width={settings.camera.screenSize[0]}
             height={settings.camera.screenSize[1]}
         ></canvas>
