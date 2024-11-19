@@ -1,8 +1,7 @@
-import { type ZarrDataset } from '@alleninstitute/vis-omezarr';
+import { loadMetadata, type ZarrDataset } from '@alleninstitute/vis-omezarr';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
-import { load } from '~/common/loaders/ome-zarr/zarr-data';
 export type ZarrSliceConfig = {
     type: 'zarrSliceConfig';
     url: string;
@@ -33,7 +32,7 @@ function assembleZarrSlice(config: ZarrSliceConfig, dataset: ZarrDataset): AxisA
 }
 export function createZarrSlice(config: ZarrSliceConfig): Promise<AxisAlignedZarrSlice> {
     const { url } = config;
-    return load(url).then((dataset) => {
+    return loadMetadata(url).then((dataset) => {
         return assembleZarrSlice(config, dataset);
     });
 }
