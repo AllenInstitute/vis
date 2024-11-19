@@ -8,7 +8,9 @@ export { type VoxelTile, defaultDecoder, getVisibleTiles } from './sliceview/loa
 export { buildTileRenderer } from './sliceview/tile-renderer';
 export { load as loadOmeZarr } from './zarr-data';
 export {
+    loadMetadata,
     pickBestScale,
+    getSlice,
     sizeInUnits,
     sizeInVoxels,
     sliceDimensionForPlane,

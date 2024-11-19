@@ -52,7 +52,7 @@ async function mapAsync<T, R>(arr: ReadonlyArray<T>, fn: (t: T, index: number) =
     return Promise.all(arr.map((v, i) => fn(v, i)));
 }
 // return the mapping from path (aka resolution group???) to the dimensional shape of the data
-async function loadMetadata(url: string) {
+export async function loadMetadata(url: string) {
     const store = new zarr.FetchStore(url);
     const root = zarr.root(store);
     const attrs: ZarrAttrs = await getRawInfo(store);
