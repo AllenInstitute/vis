@@ -81,6 +81,9 @@ export function getVisibleTiles(
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
     const layer = pickBestScale(dataset, uv, camera.view, camera.screenSize);
+    // using [1,1] here is asking for the best LOD to fill a single pixel - aka
+    // the lowest LOD - this is safer than just assuming that layer will be
+    // the first or last in the list.
     const baseLayer = pickBestScale(dataset, uv, camera.view, [1, 1]);
     const layerIndex = dataset.multiscales[0].datasets.indexOf(layer);
     const baselayerIndex = dataset.multiscales[0].datasets.indexOf(baseLayer);
