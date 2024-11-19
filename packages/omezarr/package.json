@@ -44,8 +44,6 @@
     "devDependencies": {
         "@types/lodash": "^4.14.202",
         "typescript": "^5.3.3",
-        "vitest": "^1.4.0",
-        "vite": "^5.3.5",
         "parcel": "2.12.0",
         "@parcel/packager-ts": "^2.12.0",
         "@parcel/transformer-typescript-types": "^2.12.0"
