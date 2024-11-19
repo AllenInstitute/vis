@@ -36,7 +36,7 @@ export function SliceView(props: Props) {
     const server = useContext(renderServerContext);
     const cnvs = useRef<HTMLCanvasElement>(null);
     const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
-    const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]))
+    const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]));
     useEffect(() => {
         if (server && server.regl) {
             renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
@@ -52,7 +52,13 @@ export function SliceView(props: Props) {
         if (server && renderer.current && cnvs.current && omezarr) {
             const hey: RenderFrameFn<ZarrDataset, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
-                    return renderer.current(omezarr, {...settings, camera:{...settings.camera,view}}, callback, target, cache);
+                    return renderer.current(
+                        omezarr,
+                        { ...settings, camera: { ...settings.camera, view } },
+                        callback,
+                        target,
+                        cache
+                    );
                 }
                 return null;
             };
@@ -75,12 +81,12 @@ export function SliceView(props: Props) {
                 cnvs.current
             );
         }
-    }, [server, renderer.current, cnvs.current, omezarr,view]);
+    }, [server, renderer.current, cnvs.current, omezarr, view]);
     return (
         <canvas
             id={'hey there'}
             ref={cnvs}
-            onWheel={(e)=>{
+            onWheel={(e) => {
                 const scale = e.deltaY > 0 ? 1.1 : 0.9;
                 const m = Box2D.midpoint(view);
                 const v = Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m);
