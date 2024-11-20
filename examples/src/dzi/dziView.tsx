@@ -10,7 +10,7 @@ import {
 import React from 'react';
 import { buildAsyncRenderer, type RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
 import { isEqual } from 'lodash';
-import { renderServerContext } from './render-server-provider';
+import { renderServerContext } from '../common/react/render-server-provider';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 
 type Props = {
