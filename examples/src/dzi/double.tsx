@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { RenderServerProvider } from './render-server-provider';
+import { RenderServerProvider } from '../common/react/render-server-provider';
 import React from 'react';
 import { DziView } from './dziView';
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';

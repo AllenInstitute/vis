@@ -46,7 +46,7 @@ import { buildLoopRenderer, buildMeshRenderer } from './data-renderers/mesh-rend
 import { saveAs } from 'file-saver';
 import type { AnnotationGrid, AnnotationGridConfig } from './data-sources/annotation/annotation-grid';
 import { buildRenderer } from './data-renderers/scatterplot';
-import { sizeInUnits } from './common/loaders/ome-zarr/zarr-data';
+import { sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { ColumnRequest } from './common/loaders/scatterplot/scatterbrain-loader';
 import { buildVersaRenderer, type AxisAlignedPlane } from './data-renderers/versa-renderer';
 import { buildImageRenderer } from './common/image-renderer';
