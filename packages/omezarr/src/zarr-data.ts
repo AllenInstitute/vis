@@ -1,9 +1,6 @@
-// lets make some easy to understand utils to access .zarr data stored in an s3 bucket somewhere
-// import { HTTPStore, NestedArray, type TypedArray, openArray, openGroup, slice } from "zarr";
 import * as zarr from 'zarrita';
 import { some } from 'lodash';
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
-import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
@@ -16,7 +13,7 @@ type AxisDesc = {
     unit: string; // see list of possible units: https://ngff.openmicroscopy.org/latest/#axes-md
 };
 
-// todo, there are other types of coordinate transforms...
+// todo, there are other types of coordinate transforms, however we only support scale transforms for now
 type ScaleTransform = {
     type: 'scale';
     scale: ReadonlyArray<number>;
@@ -55,7 +52,7 @@ async function mapAsync<T, R>(arr: ReadonlyArray<T>, fn: (t: T, index: number) =
     return Promise.all(arr.map((v, i) => fn(v, i)));
 }
 // return the mapping from path (aka resolution group???) to the dimensional shape of the data
-async function loadMetadata(url: string) {
+export async function loadMetadata(url: string) {
     const store = new zarr.FetchStore(url);
     const root = zarr.root(store);
     const attrs: ZarrAttrs = await getRawInfo(store);
@@ -71,19 +68,22 @@ async function loadMetadata(url: string) {
         })),
     };
 }
-
-type OmeDimension = 'x' | 'y' | 'z' | 't' | 'c';
+export type AxisAlignedPlane = 'xy' | 'xz' | 'yz';
+export type OmeDimension = 'x' | 'y' | 'z' | 't' | 'c';
+export type PlaneMapping = { u: OmeDimension; v: OmeDimension };
+// we could be tricky and try to statically prevent a uv mapping like xx or xy, but theres no real value in it
 const uvTable = {
     xy: { u: 'x', v: 'y' },
     xz: { u: 'x', v: 'z' },
     yz: { u: 'y', v: 'z' },
 } as const;
+
 const sliceDimension = {
     xy: 'z',
     xz: 'y',
     yz: 'x',
 } as const;
-export function uvForPlane(plane: AxisAlignedPlane) {
+export function uvForPlane<T extends AxisAlignedPlane>(plane: T) {
     return uvTable[plane];
 }
 export function sliceDimensionForPlane(plane: AxisAlignedPlane) {

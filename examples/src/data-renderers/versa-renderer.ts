@@ -7,7 +7,7 @@ import {
     sizeInUnits,
     type ZarrDataset,
     type ZarrRequest,
-} from '~/common/loaders/ome-zarr/zarr-data';
+} from '@alleninstitute/vis-omezarr';
 import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
 import type { Camera } from '~/common/camera';
 
