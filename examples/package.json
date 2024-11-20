@@ -1,0 +1,68 @@
+{
+    "name": "@alleninstitute/examples",
+    "version": "0.0.1",
+    "contributors": [
+        {
+            "name": "Lane Sawyer",
+            "email": "lane.sawyer@alleninstitute.org"
+        },
+        {
+            "name": "James Gerstenberger",
+            "email": "james.gerstenberger@alleninstitute.org"
+        },
+        {
+            "name": "Noah Shepard",
+            "email": "noah.shepard@alleninstitute.org"
+        },
+        {
+            "name": "Skyler Moosman",
+            "email": "skyler.moosman@alleninstitute.org"
+        },
+        {
+            "name": "Su Li",
+            "email": "su.li@alleninstitute.org"
+        }
+    ],
+    "license": "BSD-3-Clause",
+    "type": "module",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "private": true,
+    "scripts": {
+        "preinstall": "npx only-allow pnpm",
+        "typecheck": "tsc --noEmit",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@types/file-saver": "^2.0.7",
+        "@types/node": "^22.1.0",
+        "@types/react": "^18.3.0",
+        "@types/react-dom": "^18.3.0",
+        "@vitejs/plugin-react-swc": "^3.5.0",
+        "typescript": "^5.3.3",
+        "vite": "^5.3.5"
+    },
+    "dependencies": {
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "@alleninstitute/vis-scatterbrain": "workspace:*",
+        "@alleninstitute/vis-dzi": "workspace:*",
+        "@alleninstitute/vis-omezarr": "workspace:*",
+        "@czi-sds/components": "^20.0.1",
+        "@emotion/css": "^11.11.2",
+        "@emotion/react": "^11.11.4",
+        "@emotion/styled": "^11.11.5",
+        "@mui/base": "5.0.0-beta.40",
+        "@mui/icons-material": "^5.15.15",
+        "@mui/lab": "5.0.0-alpha.170",
+        "@mui/material": "^5.15.15",
+        "@types/lodash": "^4.14.202",
+        "file-saver": "^2.0.5",
+        "json5": "^2.2.3",
+        "kiwi-schema": "^0.5.0",
+        "lodash": "^4.17.21",
+        "react": "^18.3.0",
+        "react-dom": "^18.3.0",
+        "regl": "^2.1.0",
+        "zarrita": "0.4.0-next.14"
+    }
+}

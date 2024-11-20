@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import delay from 'lodash/delay';
 import { beginLongRunningFrame, type NormalStatus } from '../render-queue';
 import { AsyncDataCache } from '../dataset-cache';
@@ -13,7 +13,11 @@ function cacheKey(item: FakeItem, settings: FakeSettings) {
 
 // a few easy tests to start, we can get crazy later
 describe('beginLongRunningFrame', () => {
-    let cache: AsyncDataCache<string, string, FakeTask> = new AsyncDataCache(() => { }, () => 1, 9999);
+    let cache: AsyncDataCache<string, string, FakeTask> = new AsyncDataCache(
+        () => {},
+        () => 1,
+        9999
+    );
     let renderSequence: FakeTask[] = [];
     function renderPretender(item: FakeItem, settings: FakeSettings, tasks: Record<string, FakeTask | undefined>) {
         const tsk = tasks[cacheKey(item, settings)];
@@ -50,14 +54,20 @@ describe('beginLongRunningFrame', () => {
             9999
         );
     beforeEach(() => {
-        cache = new AsyncDataCache(() => { }, () => 1, 9999);
+        cache = new AsyncDataCache(
+            () => {},
+            () => 1,
+            9999
+        );
         renderSequence = [];
     });
     it('runs the expected number of tasks', async () => {
         let done: () => void;
         const testOver = new Promise<void>((resolve, reject) => {
-            done = () => { resolve() }
-        })
+            done = () => {
+                resolve();
+            };
+        });
         const events: string[] = [];
         fakeFrame(9, (e) => {
             events.push(e.status); // track the events for the test
@@ -78,8 +88,8 @@ describe('beginLongRunningFrame', () => {
     it('can be cancelled without crash', async () => {
         let done: () => void;
         const testOver = new Promise<void>((resolve, reject) => {
-            done = () => resolve()
-        })
+            done = () => resolve();
+        });
         try {
             const frame = fakeFrame(9, (e) => {
                 expect(renderSequence.length).toBeLessThan(9);
@@ -103,8 +113,8 @@ describe('beginLongRunningFrame', () => {
         const allEvents: string[] = [];
         let done: () => void;
         const testOver = new Promise<void>((resolve, reject) => {
-            done = () => resolve()
-        })
+            done = () => resolve();
+        });
         fakeFrame(9, (e) => {
             allEvents.push(e.status);
             if (e.status === 'finished') {
@@ -122,7 +132,7 @@ describe('beginLongRunningFrame', () => {
                 });
             }
         });
-        await testOver
+        await testOver;
         expect(renderSequence.length).toBe(9 + 9); // two frames, each having 9 tasks
         expect(allEvents.length).toBe(9 + 2 + 1); // all of the events of the first frame(begun,progress*9,finished) + 'finished_sync'
     });

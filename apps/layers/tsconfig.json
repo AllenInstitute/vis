@@ -1,7 +1,0 @@
-{
-    "extends": "../tsconfig.json",
-    "include": ["./src/**/*", "../common/src/**/*",
-     "../scatterplot/src/**/*",
-     "../omezarr-viewer/src/**/*"]
-    
-}
