@@ -24,7 +24,7 @@ describe('tiling math', () => {
             const pretend_max_image_width = 512;
             expect(firstSuitableLayer(pretend_max_image_width, 4096)).toEqual(9);
         });
-        it('never picks a layer that cant exist', () => {
+        it('never picks a layer that cant exist (negative layer indexes)', () => {
             expect(firstSuitableLayer(512, 0.00001)).toEqual(0);
         });
     });
