@@ -1,4 +1,4 @@
-import { type ZarrDataset, load } from '~/common/loaders/ome-zarr/zarr-data';
+import { loadMetadata, type ZarrDataset } from '@alleninstitute/vis-omezarr';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
@@ -33,7 +33,7 @@ function assembleZarrSliceGrid(config: ZarrSliceGridConfig, dataset: ZarrDataset
 }
 export function createZarrSliceGrid(config: ZarrSliceGridConfig): Promise<AxisAlignedZarrSliceGrid> {
     const { url } = config;
-    return load(url).then((dataset) => {
+    return loadMetadata(url).then((dataset) => {
         return assembleZarrSliceGrid(config, dataset);
     });
 }

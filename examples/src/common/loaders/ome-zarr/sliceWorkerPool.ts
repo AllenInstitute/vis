@@ -1,5 +1,5 @@
 import { uniqueId } from 'lodash';
-import type { ZarrDataset, ZarrRequest } from './zarr-data';
+import type { ZarrDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
 
 type PromisifiedMessage = {
     requestCacheKey: string;
