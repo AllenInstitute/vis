@@ -225,6 +225,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         workingSet: Record<SemanticKey, () => Promise<D>>,
         use: (items: Record<SemanticKey, D>) => void,
         toCacheKey: (semanticKey: SemanticKey) => CacheKey,
+        // TODO: consider removing taskFinished - it would be more simple to let the caller handle this in their use() function
         taskFinished?: () => void
     ): cancelFn | undefined {
         const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[];

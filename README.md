@@ -14,6 +14,12 @@ See the `example` directory for example projects using the packages. Over time, 
 
 For details on running or adding new examples, see the `docs/examples.md` file.s
 
+# Installation for Development
+
+This project uses [Node.js](https://nodejs.org) and [pnpm](https://pnpm.io/). We use [Volta](https://volta.sh/) to manage the versions of each. If you're not using Volta, check the "volta" key in the root `package.json` for the Node and pnpm versions we're using when developing.
+
+Volta has experimental support for pnpm, so [follow the steps on their docs](https://docs.volta.sh/advanced/pnpm) to get it enabled.
+
 # Using the Libraries
 
 See the `docs/using-packages.md` file for information on how to use the packages in your own projects.
