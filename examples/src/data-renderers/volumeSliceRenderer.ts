@@ -12,7 +12,7 @@ import {
     sizeInVoxels,
     sliceDimensionForPlane,
     uvForPlane,
-} from '~/common/loaders/ome-zarr/zarr-data';
+} from '@alleninstitute/vis-omezarr';
 import {
     cacheKeyFactory,
     getVisibleTiles,
