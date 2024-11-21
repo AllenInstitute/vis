@@ -1,6 +1,6 @@
 # Examples
 
-Examples are located in the `examples` directory. There is a single project that runs all the examples.
+Examples are located in the `examples` directory. There is a single command that runs all the examples on one website: `npm run dev`
 
 ## Adding New Examples
 
