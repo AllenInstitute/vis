@@ -12,7 +12,7 @@ TODO: Update this based on the package setup we decide to use
 
 See the `example` directory for example projects using the packages. Over time, these examples will become simpler as the base tooling becomes more mature.
 
-For details on running or adding new examples, see the `docs/examples.md` file.s
+For details on running or adding new examples, see the `docs/examples.md` file.
 
 # Installation for Development
 
