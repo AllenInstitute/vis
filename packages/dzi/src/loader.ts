@@ -133,11 +133,10 @@ export function imageSizeAtLayer(dzi: DziImage, layer: number) {
     // solve for N, X = the larger the image dimensions:
     // X * (0.5^N) <= maxLayerSize ...
     // 0.5^N = maxLayerSize/X ...
-    // log_0.5(maxLayerSize/X) = N    
+    // log_0.5(maxLayerSize/X) = N
     const bigger = Math.max(size[0], size[1]);
-    const N = Math.ceil(logBaseHalf(layerMaxSize / bigger))
+    const N = Math.ceil(logBaseHalf(layerMaxSize / bigger));
     return Vec2.ceil(Vec2.scale(size, 0.5 ** N));
-
 }
 export function tilesInLayer(dzi: DziImage, layer: number): box2D[][] {
     const { overlap, tileSize } = dzi;
