@@ -31,6 +31,7 @@
     "scripts": {
         "preinstall": "npx only-allow pnpm",
         "typecheck": "tsc --noEmit",
+        "build": "vite build",
         "dev": "vite"
     },
     "devDependencies": {

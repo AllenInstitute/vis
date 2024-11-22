@@ -21,6 +21,8 @@ We are planning on occasional updating this tool with no fixed schedule. Communi
 
 ## Examples
 
+A deployed version our our examples are located at [https://alleninstitute.github.io/vis](https://alleninstitute.github.io/vis).
+
 See the `examples` directory for example projects using the packages. Over time, these examples will become more fully featured as the base tooling becomes more mature.
 
 For details on running or adding new examples, see the `docs/examples.md` file.
