@@ -54,9 +54,9 @@ That was fun! Now we can finally call `buildAsyncRenderer` on an object containi
 
 ## Using it on a Page
 
-Now that we have a function that can render, how do we deploy it? There are a few options. 
+Now that we have a function that can render, how do we deploy it? There are a few options.
 
-The first is the most direct: create a `Canvas`, initialize WebGL and REGL on that canvas, then repeatedly call your renderer in response to suitable events, such as when the camera moves. The catch here is that GPU resources are bound to this `Canvas`, and cannot be shared with other canvases. Often, this is a non-issue: you have a single page with a single view of big data, and you're done. If this is the case for you, feel free to stop reading; the remainder of this document will be focused on other use cases. 
+The first is the most direct: create a `Canvas`, initialize WebGL and REGL on that canvas, then repeatedly call your renderer in response to suitable events, such as when the camera moves. The catch here is that GPU resources are bound to this `Canvas`, and cannot be shared with other canvases. Often, this is a non-issue: you have a single page with a single view of big data, and you're done. If this is the case for you, feel free to stop reading; the remainder of this document will be focused on other use cases.
 
 If you need multiple views of potentially shared data, you can use the `render-server`, which lets you draw to many `Canvas` instances as though they shared a single WebGL context and cache. This will incur a small performance penalty when copying rendered results from the server to the client. However, in practice, for a handful of views, this cost will be dwarfed by other bottlenecks.
 
@@ -65,6 +65,6 @@ If you need multiple views of potentially shared data, you can use the `render-s
 1. Create a `RenderServer` instance. It will create its own REGL context, cache, and offscreen canvas.
 2. Create your `AsyncRenderer` as described earlier in this document. You must use `server.regl` to construct your renderer.
 3. Build your `Canvas` component with access to a reference to this shared server. When its time to render a frame, call `server.beginRendering()`. This function requires a wrapper around your `AsyncRenderer`, a callback for handling Render frame lifecycle events, and a reference to the Client `Canvas` (where you want the rendering to appear when its done).
-4. Now you will need to prepare your render function wrapper. Because the server is generic, and could be shared between renderers of different data types, it can't really know about a particular renderer's dataset types. We could make opaque placeholder types, but those are often confusing. Instead, you can simply wrap your renderer like so: 
-> `const wrapper = (target, cache, callback) => myFancyAsyncRenderer(myDataset, mySettings, callback, target, cache)`
+4. Now you will need to prepare your render function wrapper. Because the server is generic, and could be shared between renderers of different data types, it can't really know about a particular renderer's dataset types. We could make opaque placeholder types, but those are often confusing. Instead, you can simply wrap your renderer like so:
+    > `const wrapper = (target, cache, callback) => myFancyAsyncRenderer(myDataset, mySettings, callback, target, cache)`
 5. Next up is the callback. At minimum, you must at some point handle an event (for example, the `finished` event) by copying the results of the rendering to the client, like so: `if (event.status == 'finished') { event.server.copyToClient(compose); }`. As you can see, how the pixels get to the client can be controlled by authoring a `compose` function. This function is given the 2D rendering [context](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D) on which to draw, and an [ImageData](https://developer.mozilla.org/docs/Web/API/ImageData) object representing the pixels rendered by REGL. In our testing, the most performant (over all browsers tested) way to deal with this is `context.putImageData(imageData, 0, 0)`.
