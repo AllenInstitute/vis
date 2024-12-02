@@ -16,9 +16,9 @@ type Props = {
 const settings: RenderSettings = {
     tileSize: 256,
     gamut: {
-        R: { gamut: { min: 0, max: 1000 }, index: 0 },
-        G: { gamut: { min: 0, max: 6000 }, index: 1 },
-        B: { gamut: { min: 0, max: 600 }, index: 2 },
+        R: { gamut: { min: 0, max: 80 }, index: 0 },
+        G: { gamut: { min: 0, max: 100 }, index: 1 },
+        B: { gamut: { min: 0, max: 100 }, index: 2 },
     },
     plane: 'xy',
     planeIndex: 3,
