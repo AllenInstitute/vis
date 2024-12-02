@@ -7,7 +7,7 @@ import {
     type RenderSettings,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 type Props = {
@@ -16,12 +16,12 @@ type Props = {
 const settings: RenderSettings = {
     tileSize: 256,
     gamut: {
-        R: { gamut: { min: 0, max: 80 }, index: 0 },
-        G: { gamut: { min: 0, max: 100 }, index: 1 },
-        B: { gamut: { min: 0, max: 100 }, index: 2 },
+        R: { gamut: { min: 0, max: 1000 }, index: 0 },
+        G: { gamut: { min: 0, max: 6000 }, index: 1 },
+        B: { gamut: { min: 0, max: 600 }, index: 2 },
     },
     plane: 'xy',
-    planeIndex: 0,
+    planeIndex: 3,
     camera: {
         view: Box2D.create([0, 0], [250, 120]),
         screenSize: [500, 500],
@@ -82,10 +82,22 @@ export function SliceView(props: Props) {
             );
         }
     }, [server, renderer.current, cnvs.current, omezarr, view]);
+    const pan = useCallback(
+        (e: React.MouseEvent<HTMLCanvasElement>) => {
+            if (e.ctrlKey) {
+                const pos = Vec2.div([-e.movementX, -e.movementY], settings.camera.screenSize);
+                const scaledOffset = Vec2.mul(pos, Box2D.size(view));
+                const v = Box2D.translate(view, scaledOffset);
+                setView(v);
+            }
+        },
+        [view]
+    );
     return (
         <canvas
             id={'hey there'}
             ref={cnvs}
+            onMouseMove={pan}
             onWheel={(e) => {
                 const scale = e.deltaY > 0 ? 1.1 : 0.9;
                 const m = Box2D.midpoint(view);

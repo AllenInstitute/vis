@@ -30,7 +30,7 @@ function visitTilesWithin(idealTilePx: vec2, size: vec2, bounds: box2D, visit: (
         for (let y = Math.floor(boundsInTiles.minCorner[1]); y < Math.ceil(boundsInTiles.maxCorner[1]); y += 1) {
             // all tiles visited are always within both the bounds, and the image itself
             const lo = Vec2.mul([x, y], idealTilePx);
-            const hi = Vec2.add(lo, idealTilePx);
+            const hi = Vec2.min(size, Vec2.add(lo, idealTilePx));
             visit(Box2D.create(lo, hi));
         }
     }
