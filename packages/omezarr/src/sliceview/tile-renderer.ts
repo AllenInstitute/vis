@@ -7,16 +7,22 @@ import REGL, { type Framebuffer2D } from 'regl';
 
 type Props = {
     target: Framebuffer2D | null;
-    tile: vec4;
-    view: vec4;
-    Rgamut: vec2;
-    Ggamut: vec2;
-    Bgamut: vec2;
+    tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
+    view: vec4; // [minx,miny,maxx,maxy] representing the camera in the same space as the tile's bounding box
+    Rgamut: vec2; // [min,max] RedOut = RedChannelValue-Rgamut.min/(Rgamut.max-Rgamut.min)
+    Ggamut: vec2; // [min,max] GreenOut = GreenChannelValue-Ggamut.min/(Ggamut.max-Ggamut.min)
+    Bgamut: vec2; // [min,max] BlueOut = BlueChannelValue-Bgamut.min/(Bgamut.max-Bgamut.min)
     R: REGL.Texture2D;
     G: REGL.Texture2D;
     B: REGL.Texture2D;
 };
-
+/**
+ * 
+ * @param regl an active REGL context
+ * @returns a function (regl command) which renders 3 individual channels as the RGB
+ * components of an image. Each channel is mapped to the output RGB space via the given Gamut.
+ * the rendering is done in the given target buffer (or null for the screen).
+ */
 export function buildTileRenderer(regl: REGL.Regl) {
     const cmd = regl<
         {

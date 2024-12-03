@@ -67,6 +67,19 @@ function getVisibleTilesInLayer(
     });
     return visibleTiles;
 }
+/**
+ * get tiles of the omezarr image which are visible (intersect with @param camera.veiw). 
+ * @param camera an object describing the current view: the region of the omezarr, and the resolution at which it 
+ * will be displayed.
+ * @param plane the plane (eg. 'xy') from which to draw tiles
+ * @param planeIndex the index of the plane along the orthagonal axis (if plane is xy, then the planes are slices along the Z axis)
+ * note that not all ome-zarr LOD layers can be expected to have the same number of slices! an index which exists at a high LOD may not
+ * exist at a low LOD.
+ * @param dataset the omezarr iamge to pull tiles from
+ * @param tileSize the size of the tiles, in pixels. it is recommended to use a size that agrees with the chunking used in the dataset, however,
+ * other utilities in this library will stitch togeather chunks to satisfy the requested tile size.
+ * @returns an array of objects representing tiles (bounding information, etc) which are visible from the given dataset.
+ */
 export function getVisibleTiles(
     camera: {
         view: box2D;
@@ -98,7 +111,15 @@ export function getVisibleTiles(
     }
     return getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex);
 }
-
+/**
+ * a function which returns a promise of float32 data from the requested region of an omezarr dataset.
+ * Note that omezarr decoding can be slow - consider wrapping this function in a web-worker (or a pool of them)
+ * to improve performance (note also that the webworker message passing will need to itself be wrapped in promises)
+ * @param metadata an omezarr object
+ * @param r a slice request @see getSlice
+ * @param layerIndex an index into the LOD pyramid of the given ZarrDataset.
+ * @returns the requested voxel information from the given layer of the given dataset.
+ */
 export const defaultDecoder = (metadata: ZarrDataset, r: ZarrRequest, layerIndex: number): Promise<VoxelTileImage> => {
     return getSlice(metadata, r, layerIndex).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
         const { shape, buffer } = result;
