@@ -32,8 +32,19 @@ const exampleSettings: DziRenderSettings = {
         view: Box2D.create([0, 0], [1, 1]),
     },
 };
-
+/**
+ * HEY!!!
+ * this is an example React Component for rendering two DZI images which share a camera.
+ * Additionally, both images have an SVG overlay.
+ * This example is as bare-bones as possible! It is NOT the recommended way to do anything, its just trying to show
+ * one way of:
+ * 1. using our rendering utilities for DZI data, specifically in a react component. Your needs for state-management,
+ * SVG overlays, etc may all be different!
+ *
+ */
 export function TwoClientsPOC() {
+    // the DZI renderer expects a "relative" camera - that means a box, from 0 to 1. 0 is the bottom or left of the image,
+    // and 1 is the top or right of the image, regardless of the aspect ratio of that image.
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [1, 1]));
     const zoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
         const scale = e.deltaY > 0 ? 1.1 : 0.9;
