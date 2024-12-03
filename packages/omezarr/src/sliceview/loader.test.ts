@@ -1,4 +1,4 @@
-import type { ZarrDataset } from '../zarr-data';
+import { sizeInUnits, type ZarrDataset } from '../zarr-data';
 import { describe, expect, it } from 'vitest';
 import { Box2D, box2D } from '@alleninstitute/vis-geometry';
 import { getVisibleTiles } from './loader';
@@ -192,4 +192,24 @@ describe('omezarr basic tiled loading', () => {
             expect(visible[0].bounds).toEqual(Box2D.create([0, 0], [x, y]));
         });
     });
+    describe('sizeInUnits', () => {
+        it('respects scale transformations', () => {
+            const pyramid = exampleOmeZarr.multiscales[0]
+            const { axes, datasets } = pyramid
+
+            const layer9xy = sizeInUnits('xy', axes, datasets[9])
+            const layer0xy = sizeInUnits('xy', axes, datasets[0])
+
+            const layer9yz = sizeInUnits('yz', axes, datasets[9])
+            const layer0yz = sizeInUnits('yz', axes, datasets[0])
+            // we're looking at the highest resolution and lowest resolution layers.
+            // I think in an ideal world, we'd expect each layer to end up having an exactly equal size,
+            // however I think that isnt happening here for floating-point reasons - so the small differences are acceptable.
+            expect(layer9xy).toEqual([13.9776, 10.3936])
+            expect(layer0xy).toEqual([13.9993, 10.4993])
+            // note the Y coordinate (last above, first below) is as expected:
+            expect(layer9yz).toEqual([10.3936, 14.200000000000001])
+            expect(layer0yz).toEqual([10.4993, 14.200000000000001])
+        })
+    })
 });
