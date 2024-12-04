@@ -68,8 +68,8 @@ function getVisibleTilesInLayer(
     return visibleTiles;
 }
 /**
- * get tiles of the omezarr image which are visible (intersect with @param camera.view). 
- * @param camera an object describing the current view: the region of the omezarr, and the resolution at which it 
+ * get tiles of the omezarr image which are visible (intersect with @param camera.view).
+ * @param camera an object describing the current view: the region of the omezarr, and the resolution at which it
  * will be displayed.
  * @param plane the plane (eg. 'xy') from which to draw tiles
  * @param planeIndex the index of the plane along the orthogonal axis (if plane is xy, then the planes are slices along the Z axis)

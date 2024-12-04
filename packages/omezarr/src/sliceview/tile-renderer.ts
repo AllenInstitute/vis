@@ -17,7 +17,7 @@ type Props = {
     B: REGL.Texture2D;
 };
 /**
- * 
+ *
  * @param regl an active REGL context
  * @returns a function (regl command) which renders 3 individual channels as the RGB
  * components of an image. Each channel is mapped to the output RGB space via the given Gamut.

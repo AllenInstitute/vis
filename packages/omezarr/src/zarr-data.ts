@@ -52,7 +52,7 @@ async function mapAsync<T, R>(arr: ReadonlyArray<T>, fn: (t: T, index: number) =
     return Promise.all(arr.map((v, i) => fn(v, i)));
 }
 /**
- * 
+ *
  * @param url a url which resolves to an omezarr dataset
  * @returns a structure describing the omezarr dataset. See
  * https://ngff.openmicroscopy.org/latest/#multiscale-md for the specification.
@@ -114,7 +114,7 @@ export type ZarrRequest = Record<OmeDimension, number | Interval | null>;
  * an example relative view of [0,0],[1,1] would suggest we're trying to view the entire slice at the given resolution.
  * @param displayResolution
  * @returns  an LOD (level-of-detail) layer from the given dataset, that is appropriate for viewing at the given
- * displayResolution. 
+ * displayResolution.
  */
 export function pickBestScale(
     dataset: ZarrDataset,
@@ -146,7 +146,7 @@ export function pickBestScale(
     const choice = datasets.reduce(
         (bestSoFar, cur) =>
             dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-                dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
+            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
                 ? cur
                 : bestSoFar,
         datasets[0]
@@ -172,9 +172,9 @@ export function sizeInUnits(
     plane:
         | AxisAlignedPlane
         | {
-            u: OmeDimension;
-            v: OmeDimension;
-        },
+              u: OmeDimension;
+              v: OmeDimension;
+          },
     axes: readonly AxisDesc[],
     dataset: DatasetWithShape
 ): vec2 | undefined {
@@ -211,7 +211,7 @@ export function sizeInVoxels(dim: OmeDimension, axes: readonly AxisDesc[], datas
 }
 /**
  * get the size of a plane of a volume (given a specific layer) in voxels
- * see @function sizeInVoxels 
+ * see @function sizeInVoxels
  * @param plane the plane to measure (eg. 'xy')
  * @param axes the axes metadata of an omezarr object
  * @param dataset a layer of the ome-zarr resolution pyramid

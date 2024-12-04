@@ -26,7 +26,7 @@ type GpuProps = {
     pixels: CachedTexture;
 };
 /**
- * 
+ *
  * @param regl a valid REGL context (https://github.com/regl-project/regl)
  * @returns an object which can fetch tiles from a DeepZoomImage, determine the visibility of those tiles given a simple camera, and render said tiles
  * using regl (which uses webGL)
@@ -57,7 +57,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
         };
     };
     return {
-        destroy: () => { }, // no private resources to destroy
+        destroy: () => {}, // no private resources to destroy
         cacheKey: (item, _requestKey, _data, _settings) => `${item.url}`,
         fetchItemContent: fetchDziTile,
         getVisibleItems: (dzi, settings) => {
@@ -81,7 +81,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
     };
 }
 /**
- * 
+ *
  * @param regl  a valid REGL context (https://github.com/regl-project/regl)
  * @returns a function which creates a "Frame" of actions. each action represents loading
  * and subsequently rendering a tile of the image as requested via its configuration -

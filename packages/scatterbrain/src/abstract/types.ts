@@ -25,7 +25,7 @@ export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, Reg
      * fetch raw, expensive-to-load content (an "Item" is a placeholder for that content)
      * @param item An item to fetch content for
      * @param dataset the dataset which owns the given item
-     * @param settings 
+     * @param settings
      * @param signal an AbortSignal that allows the fetching of content to be cancelled
      * @returns a map of meaningful names (eg. position, color, amplitude, etc) to functions that promise raw content, like pixels or other raw, renderable information.
      * expect that the functions returned in this way have closures over the other arguments to this function -
@@ -38,7 +38,7 @@ export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, Reg
         signal?: AbortSignal
     ) => Record<string, () => Promise<ReglCacheEntry>>;
     /**
-     * 
+     *
      * @param cacheData the results of fetching all the content for an Item
      * @returns true if the content matches the expectations of our rendering function
      */
@@ -65,7 +65,7 @@ export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, Reg
      * @param item the item we're caching the data for
      * @param requestKey a key of gpuData (TODO: make this fact official via Typescript if possible)
      * @param data the dataset that owns the given item
-     * @param settings the configuration of the current rendering task 
+     * @param settings the configuration of the current rendering task
      * @returns a string, suitable for use in a cache
      */
     cacheKey: (item: Item, requestKey: string, data: Dataset, settings: Settings) => string;
@@ -73,7 +73,7 @@ export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, Reg
      * in some cases, rendering may rely on non-item-specific rendering resources (lookup tables, buffers, etc)
      * this function is the place to release those
      * @param regl the regl context (the same that was used to create this renderer)
-     * @returns 
+     * @returns
      */
     destroy: (regl: REGL.Regl) => void;
 };
