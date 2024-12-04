@@ -25,7 +25,7 @@ const settings: RenderSettings = {
     plane: 'xy',
     planeIndex: 3,
     camera: {
-        // the OMEZARR renderer expects a box in whatever space is given by the omezarr file itself in its
+        // the omezarr renderer expects a box in whatever space is given by the omezarr file itself in its
         // axes metadata = for example, millimeters. if you load a volume that says its 30mm X 30mm X 10mm,
         // and you want to view XY slices and have them fit perfectly on your screen, then a box
         // like [0,0],[30,30] would be appropriate!

@@ -8,7 +8,7 @@ export type VoxelTile = {
     plane: AxisAlignedPlane; // the plane in which the tile sits
     realBounds: box2D; // in the space given by the axis descriptions of the omezarr dataset
     bounds: box2D; // in voxels, in the plane
-    planeIndex: number; // the index of this slice along the axis being sliced (orthoganal to plane)
+    planeIndex: number; // the index of this slice along the axis being sliced (orthogonal to plane)
     layerIndex: number; // the index in the resolution pyramid of the omezarr dataset
 };
 
@@ -68,16 +68,16 @@ function getVisibleTilesInLayer(
     return visibleTiles;
 }
 /**
- * get tiles of the omezarr image which are visible (intersect with @param camera.veiw). 
+ * get tiles of the omezarr image which are visible (intersect with @param camera.view). 
  * @param camera an object describing the current view: the region of the omezarr, and the resolution at which it 
  * will be displayed.
  * @param plane the plane (eg. 'xy') from which to draw tiles
- * @param planeIndex the index of the plane along the orthagonal axis (if plane is xy, then the planes are slices along the Z axis)
+ * @param planeIndex the index of the plane along the orthogonal axis (if plane is xy, then the planes are slices along the Z axis)
  * note that not all ome-zarr LOD layers can be expected to have the same number of slices! an index which exists at a high LOD may not
  * exist at a low LOD.
- * @param dataset the omezarr iamge to pull tiles from
+ * @param dataset the omezarr image to pull tiles from
  * @param tileSize the size of the tiles, in pixels. it is recommended to use a size that agrees with the chunking used in the dataset, however,
- * other utilities in this library will stitch togeather chunks to satisfy the requested tile size.
+ * other utilities in this library will stitch together chunks to satisfy the requested tile size.
  * @returns an array of objects representing tiles (bounding information, etc) which are visible from the given dataset.
  */
 export function getVisibleTiles(
