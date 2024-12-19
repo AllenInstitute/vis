@@ -1,7 +1,6 @@
 {
     "name": "@alleninstitute/vis",
     "scripts": {
-        "preinstall": "npx only-allow pnpm",
         "build": "pnpm -r run --no-bail build",
         "watch": "pnpm -r run watch",
         "fmt": "npx prettier . --write",

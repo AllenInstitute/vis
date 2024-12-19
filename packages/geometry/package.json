@@ -32,7 +32,6 @@
         "dist"
     ],
     "scripts": {
-        "preinstall": "npx only-allow pnpm",
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
         "watch": "parcel watch",
