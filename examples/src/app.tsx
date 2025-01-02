@@ -1,58 +1,31 @@
 import React from 'react';
-import { SliceViewLayer } from './ui/slice-ui';
-import type { Demo } from './layers';
-import { AnnotationGrid } from './ui/annotation-grid';
-import { ContactSheetUI } from './ui/contact-sheet';
-import { ScatterplotUI } from './ui/scatterplot-ui';
-import { Button } from '@czi-sds/components';
+import { BrowserRouter, Route, Routes } from 'react-router';
+import { Home } from './home';
+import { TwoClientsPOC } from './dzi/double';
+import { OmezarrDemo } from './omezarr/app';
 
-export function AppUi(props: { demo: Demo }) {
-    const { demo } = props;
+export function App() {
+    console.log('app');
     return (
-        <div>
-            <Button
-                onClick={() => {
-                    demo.requestSnapshot(3000);
-                }}
-            >
-                {'📸'}
-            </Button>
-            <label>{`Layer ${demo.selectedLayer}`}</label>
-            <Button
-                onClick={() => {
-                    demo.selectLayer(demo.selectedLayer - 1);
-                }}
-            >
-                {'<-'}
-            </Button>
-            <Button
-                onClick={() => {
-                    demo.selectLayer(demo.selectedLayer + 1);
-                }}
-            >
-                {'->'}
-            </Button>
-            <LayerUi demo={demo} />
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route
+                    index
+                    element={<Home />}
+                />
+                <Route
+                    path="/dzi"
+                    element={<TwoClientsPOC />}
+                />
+                <Route
+                    path="/omezarr"
+                    element={<OmezarrDemo />}
+                />
+                {/* <Route
+                    path="/layers"
+                    element={<LayersDemo />}
+                /> */}
+            </Routes>
+        </BrowserRouter>
     );
-}
-function LayerUi(props: { demo: Demo }) {
-    const { demo } = props;
-    const layer = demo.layers[demo.selectedLayer];
-    if (layer) {
-        switch (layer.type) {
-            case 'annotationGrid':
-                return <AnnotationGrid demo={demo} />;
-            case 'volumeGrid':
-                return <ContactSheetUI demo={demo} />;
-            case 'volumeSlice':
-                return <SliceViewLayer demo={demo} />;
-            case 'scatterplot':
-            case 'scatterplotGrid':
-                return <ScatterplotUI demo={demo} />;
-            default:
-                return null;
-        }
-    }
-    return <SliceViewLayer demo={props.demo} />;
 }

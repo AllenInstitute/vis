@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { AppUi } from './app';
+import { OmezarrDemo } from './app';
 
 const uiroot = createRoot(document.getElementById('main')!);
-uiroot.render(AppUi());
+uiroot.render(OmezarrDemo());

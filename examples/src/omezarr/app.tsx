@@ -4,7 +4,7 @@ import { SliceView } from './sliceview';
 import { type OmeZarrDataset, loadOmeZarr } from '@alleninstitute/vis-omezarr';
 
 const demo_versa = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/';
-export function AppUi() {
+export function OmezarrDemo() {
     return <DataPlease />;
 }
 /**
