@@ -27,18 +27,18 @@ export function composeRotation(b: AxisAngle, a: AxisAngle): AxisAngle {
     const cosB = Math.cos(b2)
     const A = a.axis
     const B = b.axis
-    // a2 and b2 are called half angles...
     const gamma = 2 * Math.acos(cosB * cosA - (Vec3.dot(B, A) * sinB * sinA))
+
     const D = Vec3.add(
         Vec3.add(Vec3.scale(B, sinB * cosA),
             Vec3.scale(A, sinA * cosB)),
         Vec3.scale(Vec3.cross(B, A), sinB * sinA));
-    // TODO: normalization wont save us when the vector is near zero, or when the angle is k2pi.... sanitize!
+
     const dir = Vec3.normalize(D)
     if (!Vec3.finite(dir)) {
         return Vec3.finite(a.axis) ? a : identity
     }
-    return { radians: gamma, axis: Vec3.normalize(D) }
+    return { radians: gamma, axis: dir }
 }
 
 

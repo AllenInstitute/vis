@@ -1,13 +1,11 @@
 import { VectorLibFactory } from './vector'
 import { Vec3, type vec3 } from './vec3'
 import { type vec4 } from './vec4';
-// specifically, square matricies...
-type VectorConstraint = ReadonlyArray<number>;
-type ColumnConstraint<V extends VectorConstraint> = ReadonlyArray<V>
 
-// examples...
+
 export type mat4 = readonly [vec4, vec4, vec4, vec4]
 
+// these vec types are for internal use only
 
 type _Vec<N extends number, E> = N extends 2 ? [E, E] :
     (N extends 3 ? [E, E, E] : (
@@ -17,6 +15,11 @@ type Vec<N extends number, E> = N extends 2 ? readonly [E, E] :
     (N extends 3 ? readonly [E, E, E] : (
         N extends 4 ? readonly [E, E, E, E] : never
     ))
+
+// a template for generating utils for square matricies
+// note that you'll see a few 'as any' in the implementation here -
+// I've been having trouble getting TS to use a literal number as a template that relates to the length of tuples
+// all such cases are very short, and easy to verify as not-actually-risky
 
 function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
     type mColumn = _Vec<Dim, number>
@@ -45,18 +48,19 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         }
         return arr as any;
     }
-
-    const identity = (): Matrix => {
+    const _identity = (): mMatrix => {
         const mat: mMatrix = blank();
         for (let i = 0; i < N; i++) {
             mat[i][i] = 1;
         }
         return mat;
     }
+    const identity = (): Matrix => {
+        return _identity();
+    }
     const translate = (v: Column): Matrix => {
-        const _mat: Matrix = identity();
-        const mat: mMatrix = [..._mat] as any;
-        mat[N - 1] = ([...v] as any)
+        const mat: mMatrix = _identity();
+        mat[N - 1] = v as mColumn;
         return mat;
     }
     const transpose = (m: Matrix): Matrix => {
@@ -76,17 +80,21 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         const T = transpose(a)
         return map(v, (_, i) => lib.dot(v, T[i]))
     }
-    const normalize = (a: Matrix): Matrix => {
-        return map(a, (c) => lib.normalize(c))
-    }
+
     const toColumnMajorArray = (m: mat4): number[] => m.flatMap(x => x)
     return {
-        identity, mul, transpose, translate, transform, normalize, toColumnMajorArray
+        identity, mul, transpose, translate, transform, toColumnMajorArray
     }
 
 }
 type Mat4Lib = ReturnType<typeof MatrixLib<4>>;
-export function rotateAboutAxis(axis: vec3, radians: number): mat4 {
+
+/**
+ * @param axis 
+ * @param radians 
+ * @returns a 4x4 matrix, expressing a rotation about the @param axis through the origin
+ */
+function rotateAboutAxis(axis: vec3, radians: number): mat4 {
     const sin = Math.sin(radians);
     const cos = Math.cos(radians);
     const icos = 1 - cos;
@@ -118,8 +126,7 @@ export function rotateAboutAxis(axis: vec3, radians: number): mat4 {
     const W: vec4 = [0, 0, 0, 1];
     return [X, Y, Z, W];
 }
-
-export function rotateAboutPoint(lib: Mat4Lib, axis: vec3, radians: number, point: vec3): mat4 {
+function rotateAboutPoint(lib: Mat4Lib, axis: vec3, radians: number, point: vec3): mat4 {
     const mul = lib.mul;
     const back = lib.translate([...point, 1])
     const rot = rotateAboutAxis(axis, radians);
@@ -128,6 +135,7 @@ export function rotateAboutPoint(lib: Mat4Lib, axis: vec3, radians: number, poin
     return mul(mul(move, rot), back);
 
 }
+const moverotmove = (lib: Mat4Lib) => (axis: vec3, radians: number, point: vec3) => rotateAboutPoint(lib, axis, radians, point)
 const lib = MatrixLib(4)
 
-export const Mat4 = { ...lib, rotateAboutAxis, rotateAboutPoint }
+export const Mat4 = { ...lib, rotateAboutAxis, rotateAboutPoint: moverotmove(lib) }
