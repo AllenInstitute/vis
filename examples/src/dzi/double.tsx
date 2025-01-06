@@ -1,11 +1,13 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import React from 'react';
-import { DziView } from './dziView';
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
-import { Box2D, Vec2, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { DziViewer } from './dzi-viewer';
 
-const example: DziImage = {
+// We know the sizes and formats ahead of time for these examples,
+// if you'd like to see how to get this data from an endpoint with a dzi file check out use-dzi-image.ts
+const exampleA: DziImage = {
     format: 'jpeg',
     imagesUrl:
         'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/',
@@ -16,7 +18,8 @@ const example: DziImage = {
     },
     tileSize: 512,
 };
-const exampleDzi: DziImage = {
+
+const exampleB: DziImage = {
     imagesUrl: 'https://openseadragon.github.io/example-images/highsmith/highsmith_files/',
     format: 'jpg',
     overlap: 2,
@@ -26,12 +29,11 @@ const exampleDzi: DziImage = {
     },
     tileSize: 256,
 };
-const exampleSettings: DziRenderSettings = {
-    camera: {
-        screenSize: [500, 500],
-        view: Box2D.create([0, 0], [1, 1]),
-    },
-};
+
+const screenSize: vec2 = [500, 500];
+
+const images = [exampleA, exampleB];
+
 /**
  * HEY!!!
  * this is an example React Component for rendering two DZI images which share a camera.
@@ -42,17 +44,21 @@ const exampleSettings: DziRenderSettings = {
  * SVG overlays, etc may all be different!
  *
  */
-export function TwoClientsPOC() {
+export function DziViewerPair() {
     // the DZI renderer expects a "relative" camera - that means a box, from 0 to 1. 0 is the bottom or left of the image,
     // and 1 is the top or right of the image, regardless of the aspect ratio of that image.
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [1, 1]));
-    const zoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    const zoom = (e: WheelEvent) => {
+        e.preventDefault();
         const scale = e.deltaY > 0 ? 1.1 : 0.9;
         const m = Box2D.midpoint(view);
         const v = Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m);
         setView(v);
     };
     const overlay = useRef<HTMLImageElement>(new Image());
+
+    const camera: DziRenderSettings['camera'] = useMemo(() => ({ screenSize, view }), [view]);
+
     useEffect(() => {
         overlay.current.onload = () => {
             console.log('loaded svg!');
@@ -60,22 +66,22 @@ export function TwoClientsPOC() {
         overlay.current.src =
             'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-22-07-pathology-image-move/pat_images_JGCXWER774NLNWX2NNR/7179-A6-I6-MTG-classified/annotation.svg';
     }, []);
+
     return (
         <RenderServerProvider>
-            <DziView
-                id="left"
-                svgOverlay={overlay.current}
-                dzi={example}
-                camera={{ ...exampleSettings.camera, view }}
-                wheel={zoom}
-            />
-            <DziView
-                id="right"
-                dzi={exampleDzi}
-                svgOverlay={overlay.current}
-                camera={{ ...exampleSettings.camera, view }}
-                wheel={zoom}
-            />
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+                {images.map((v) => (
+                    <div style={{ width: screenSize[0], height: screenSize[1] }}>
+                        <DziViewer
+                            id={v.imagesUrl}
+                            dzi={v}
+                            camera={camera}
+                            svgOverlay={overlay.current}
+                            onWheel={zoom}
+                        />
+                    </div>
+                ))}
+            </div>
         </RenderServerProvider>
     );
 }

@@ -1,23 +1,25 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import {
-    buildDziRenderer,
     type DziImage,
     type DziRenderSettings,
     type DziTile,
     type GpuProps as CachedPixels,
     buildAsyncDziRenderer,
 } from '@alleninstitute/vis-dzi';
-import React from 'react';
 import { buildAsyncRenderer, type RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
-import { isEqual } from 'lodash';
-import { renderServerContext } from '../common/react/render-server-provider';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import { renderServerContext } from '~/common/react/render-server-provider';
+import React from 'react';
 
 type Props = {
     id: string;
     dzi: DziImage;
     svgOverlay: HTMLImageElement;
-    wheel: (e: React.WheelEvent<HTMLCanvasElement>) => void;
+    onWheel?: (e: WheelEvent) => void;
+    onMouseDown?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+    onMouseUp?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+    onMouseMove?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+    onMouseLeave?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 } & DziRenderSettings;
 
 function buildCompositor(svg: HTMLImageElement, settings: DziRenderSettings) {
@@ -36,19 +38,10 @@ function buildCompositor(svg: HTMLImageElement, settings: DziRenderSettings) {
     };
 }
 
-export function DziView(props: Props) {
-    const { svgOverlay, camera, dzi, wheel, id } = props;
+export function DziViewer(props: Props) {
+    const { svgOverlay, camera, dzi, onWheel, id, onMouseDown, onMouseUp, onMouseMove, onMouseLeave } = props;
     const server = useContext(renderServerContext);
     const cnvs = useRef<HTMLCanvasElement>(null);
-
-    // this is a demo, so rather than work hard to have a referentially stable camera,
-    // we just memoize it like so to prevent over-rendering
-    const [cam, setCam] = useState(camera);
-    useEffect(() => {
-        if (!isEqual(cam, camera)) {
-            setCam(camera);
-        }
-    }, [camera]);
 
     // the renderer needs WebGL for us to create it, and WebGL needs a canvas to exist, and that canvas needs to be the same canvas forever
     // hence the awkwardness of refs + an effect to initialize the whole hting
@@ -63,6 +56,7 @@ export function DziView(props: Props) {
         }
         return () => {
             if (cnvs.current) {
+                // eslint-disable-next-line react-hooks/exhaustive-deps
                 server?.destroyClient(cnvs.current);
             }
         };
@@ -73,11 +67,11 @@ export function DziView(props: Props) {
             const renderMyData: RenderFrameFn<DziImage, DziTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     // erase the frame before we start drawing on it
-                    return renderer.current(dzi, { camera: cam }, callback, target, cache);
+                    return renderer.current(dzi, { camera }, callback, target, cache);
                 }
                 return null;
             };
-            const compose = buildCompositor(svgOverlay, { camera: cam });
+            const compose = buildCompositor(svgOverlay, { camera });
             server.beginRendering(
                 renderMyData,
                 (e) => {
@@ -91,20 +85,42 @@ export function DziView(props: Props) {
                             break;
                         case 'finished': {
                             e.server.copyToClient(compose);
+                            break;
                         }
+                        default:
+                            break;
                     }
                 },
                 cnvs.current
             );
         }
-    }, [server, renderer.current, cnvs.current, cam]);
+    }, [server, svgOverlay, dzi, camera]);
+
+    // we have to add the listener this way because onWheel is a passive listener by default
+    // that means we can't preventDefault to stop scrolling
+    useEffect(() => {
+        const handleWheel = (e: WheelEvent) => onWheel?.(e);
+        const canvas = cnvs;
+        if (canvas?.current) {
+            canvas.current.addEventListener('wheel', handleWheel, { passive: false });
+        }
+        return () => {
+            if (canvas?.current) {
+                canvas.current.removeEventListener('wheel', handleWheel);
+            }
+        };
+    }, [onWheel]);
+
     return (
         <canvas
             id={id}
             ref={cnvs}
-            onWheel={wheel}
             width={camera.screenSize[0]}
             height={camera.screenSize[1]}
-        ></canvas>
+            onMouseDown={onMouseDown}
+            onMouseUp={onMouseUp}
+            onMouseMove={onMouseMove}
+            onMouseLeave={onMouseLeave}
+        />
     );
 }
