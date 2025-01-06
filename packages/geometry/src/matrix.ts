@@ -5,8 +5,10 @@ import { type vec4 } from './vec4';
 
 export type mat4 = readonly [vec4, vec4, vec4, vec4]
 
-// these vec types are for internal use only
 
+// these vec types are for internal use only - just trickery to help get TS to treat
+// a literal number as a length in a generic-but-static-ish manner - as you can see,
+// some work might be needed to extend this past a 4x4 matrix
 type _Vec<N extends number, E> = N extends 2 ? [E, E] :
     (N extends 3 ? [E, E, E] : (
         N extends 4 ? [E, E, E, E] : never
@@ -105,12 +107,15 @@ function rotateAboutAxis(axis: vec3, radians: number): mat4 {
     const yz = y * z;
     const yy = y * y;
     const zz = z * z;
-    // this function is not lovely, and thats because rotation in 3D is weird.
-    // this is as nice as I can make it...
-    const X: vec4 = [xx * icos + cos,
-    xy * icos + (z * sin),
-    xz * icos - (y * sin),
+
+    // todo: there is a pattern here - perhaps someone clever could
+    // express it in a more concise way
+    const X: vec4 = [
+        xx * icos + cos,
+        xy * icos + (z * sin),
+        xz * icos - (y * sin),
         0];
+
     const Y: vec4 = [
         xy * icos - (z * sin),
         yy * icos + cos,
