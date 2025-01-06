@@ -29,7 +29,6 @@
     "types": "lib/index.d.ts",
     "private": true,
     "scripts": {
-        "preinstall": "npx only-allow pnpm",
         "typecheck": "tsc --noEmit",
         "dev": "vite"
     },
