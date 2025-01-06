@@ -21,10 +21,7 @@ export function App() {
                     path="/omezarr"
                     element={<OmezarrDemo />}
                 />
-                {/* <Route
-                    path="/layers"
-                    element={<LayersDemo />}
-                /> */}
+                <Route path="/layers" />
             </Routes>
         </BrowserRouter>
     );

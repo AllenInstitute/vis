@@ -14,12 +14,10 @@ export function Home() {
                     <a href="/omezarr">OMEZARR</a>
                     <br />
                 </li>
-                {/* layers is not in the AC to be converted to a react component
-                    maybe we'll convert it at some point though so I'll leave this here
-                 <li>
+                <li>
                     <a href="/layers">Layers</a>
                     <br />
-                </li> */}
+                </li>
             </ul>
         </>
     );
