@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { Home } from './home';
 import { TwoClientsPOC } from './dzi/double';
-import { OmezarrDemo } from './omezarr/app';
+import { OmezarrDemo } from './omezarr/omezarr';
 
 export function App() {
     console.log('app');
