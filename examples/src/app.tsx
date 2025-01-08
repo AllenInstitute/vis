@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { Home } from './home';
-import { OmezarrDemo } from './omezarr/omezarr';
-import { DziViewerPair } from './dzi/double';
+import { OmezarrDemo } from './omezarr/omezarr-demo';
+import { DziDemo } from './dzi/dzi-demo';
 
 export function App() {
     return (
@@ -14,7 +14,7 @@ export function App() {
                 />
                 <Route
                     path="/dzi"
-                    element={<DziViewerPair />}
+                    element={<DziDemo />}
                 />
                 <Route
                     path="/omezarr"

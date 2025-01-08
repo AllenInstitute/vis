@@ -44,7 +44,7 @@ const images = [exampleA, exampleB];
  * SVG overlays, etc may all be different!
  *
  */
-export function DziViewerPair() {
+export function DziDemo() {
     // the DZI renderer expects a "relative" camera - that means a box, from 0 to 1. 0 is the bottom or left of the image,
     // and 1 is the top or right of the image, regardless of the aspect ratio of that image.
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [1, 1]));
