@@ -56,7 +56,6 @@ export function DziViewer(props: Props) {
         }
         return () => {
             if (cnvs.current) {
-                // eslint-disable-next-line react-hooks/exhaustive-deps
                 server?.destroyClient(cnvs.current);
             }
         };

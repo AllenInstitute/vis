@@ -69,6 +69,7 @@ export function DziDemo() {
 
     return (
         <RenderServerProvider>
+            <p>Scroll below to view image</p>
             <div style={{ display: 'flex', flexDirection: 'row' }}>
                 {images.map((v) => (
                     <div style={{ width: screenSize[0], height: screenSize[1] }}>

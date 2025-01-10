@@ -93,26 +93,30 @@ export function OmezarrDemo() {
         setPlaneIndex((prev) => prev + next);
     };
 
-    return omezarr && settings ? (
+    return (
         <RenderServerProvider>
-            <div>
-                <button onClick={() => handlePlaneIndex(-1)}>{'<-'}</button>
-                <button onClick={() => handlePlaneIndex(1)}>{'->'}</button>
-            </div>
-            <OmezarrViewer
-                omezarr={omezarr}
-                id="omezarr-viewer"
-                screenSize={screenSize}
-                settings={settings}
-                onWheel={zoom}
-                onMouseMove={pan}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-            />
+            {omezarr && settings ? (
+                <>
+                    <div>
+                        <button onClick={() => handlePlaneIndex(-1)}>{'<-'}</button>
+                        <button onClick={() => handlePlaneIndex(1)}>{'->'}</button>
+                    </div>
+                    <OmezarrViewer
+                        omezarr={omezarr}
+                        id="omezarr-viewer"
+                        screenSize={screenSize}
+                        settings={settings}
+                        onWheel={zoom}
+                        onMouseMove={pan}
+                        onMouseDown={handleMouseDown}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                    />
+                </>
+            ) : (
+                <h5>Unable to load OME-Zarr</h5>
+            )}
         </RenderServerProvider>
-    ) : (
-        <h5>Unable to load OME-Zarr</h5>
     );
 }
 /**

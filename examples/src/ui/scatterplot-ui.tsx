@@ -6,8 +6,6 @@ export function ScatterplotUI(props: { demo: Demo }) {
     // control the gamut with some sliders
     const l = demo.layers[demo.selectedLayer];
 
-    const [pointSize, setPointSize] = useState(l.data?.pointSize ?? 0)
-    
     if ((l && l.type === 'scatterplot') || l.type === 'scatterplotGrid') {
         return (
             <div>
