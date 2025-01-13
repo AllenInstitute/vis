@@ -8,12 +8,12 @@ export type Camera = {
 };
 /**
  * Zooms relative to your current mouse position
- * @param view your current view
- * @param screenSize the size of your canvas/screen
- * @param zoomScale the scale you want to apply to your view
- * @param mousePos the offsetX and offsetY of your mouse
+ * @param view box2d in dataspace that is mapped to the canvas
+ * @param screenSize in pixels
+ * @param zoomScale
+ * @param mousePos mouse position in pixels
  */
-export function zoom(view: box2D, screenSize: vec2, zoomScale: number, mousePos: vec2) {
+export function zoom(view: box2D, screenSize: vec2, zoomScale: number, mousePos: vec2): box2D {
     // translate mouse pos to data space
     // offset divided by screen size gives us a percentage of the canvas where the mouse is
     // multiply percentage by view size to make it data space
@@ -31,12 +31,11 @@ export function zoom(view: box2D, screenSize: vec2, zoomScale: number, mousePos:
 
 /**
  *
- * @param view your current view
- * @param screenSize the size of your screen/canvas
- * @param mousePos your mouse position
- * @returns new view that has your pan applied
+ * @param view box2d in dataspace that is mapped to the canvas
+ * @param screenSize
+ * @param mousePos mouse position in pixels
  */
-export function pan(view: box2D, screenSize: vec2, mousePos: vec2) {
+export function pan(view: box2D, screenSize: vec2, mousePos: vec2): box2D {
     const relativePos = Vec2.div(Vec2.mul(mousePos, [-1, -1]), screenSize);
     const scaledOffset = Vec2.mul(relativePos, Box2D.size(view));
     const newView = Box2D.translate(view, scaledOffset);

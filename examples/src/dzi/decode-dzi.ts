@@ -5,8 +5,8 @@ import type { DziImage } from '@alleninstitute/vis-dzi';
 // At the end of the file you can see two examples of the metadata format you might see, one as XML and another as JSON
 /**
  * This function helps decode xml metadata for a dzi file.
- * @param s xml string
- * @param url url for dzi file
+ * @param s the contents of the url param - expected to be an XML doc describing the DZI image
+ * @param url location of the .dzi file
  * @returns formatted dzi image data
  */
 function decodeDziXml(s: string, url: string): DziImage | undefined {
