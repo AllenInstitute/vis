@@ -8,19 +8,19 @@ const slide32 = 'MQ1B9QBZFIPXQO6PETJ';
 const colorByGene: ColumnRequest = { name: '88', type: 'QUANTITATIVE' };
 const scottpoc = 'https://tissuecyte-ome-zarr-poc.s3.amazonaws.com/40_128_128/1145081396';
 
-export const examples: Record<string, any> = {
-    ['reconstructed']: {
+export const examples = {
+    reconstructed: {
         colorBy: colorByGene,
         type: 'ScatterPlotGridConfig',
         url: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
     } as ScatterplotGridConfig,
-    ['oneSlide']: {
+    oneSlide: {
         colorBy: colorByGene,
         slideId: slide32,
         type: 'ScatterPlotGridSlideConfig',
         url: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
     } as ScatterPlotGridSlideConfig,
-    ['tissueCyte396']: {
+    tissueCyte396: {
         type: 'ZarrSliceGridConfig',
         gamut: {
             R: { index: 0, gamut: { max: 600, min: 0 } },
@@ -31,7 +31,7 @@ export const examples: Record<string, any> = {
         slices: 142,
         url: scottpoc,
     } as ZarrSliceGridConfig,
-    ['tissueCyteSlice']: {
+    tissueCyteSlice: {
         type: 'zarrSliceConfig',
         gamut: {
             R: { index: 0, gamut: { max: 600, min: 0 } },
@@ -42,7 +42,7 @@ export const examples: Record<string, any> = {
         planeParameter: 0.5,
         url: scottpoc,
     } as ZarrSliceConfig,
-    ['versa1']: {
+    versa1: {
         url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
         type: 'ZarrSliceGridConfig',
         gamut: {
@@ -53,7 +53,7 @@ export const examples: Record<string, any> = {
         plane: 'xy',
         slices: 4,
     } as ZarrSliceGridConfig,
-    ['structureAnnotation']: {
+    structureAnnotation: {
         type: 'AnnotationGridConfig',
         url: 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_ccf_04112024-20240419205547/4STCSZBXHYOI0JUUA3M/ScatterBrain.json',
         levelFeature: '73GVTDXDEGE27M2XJMT',

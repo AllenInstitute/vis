@@ -5,6 +5,7 @@ import { type OmeZarrDataset, loadOmeZarr, sizeInUnits } from '@alleninstitute/v
 import { OmezarrViewer } from './omezarr-viewer';
 import { type RenderSettings } from '@alleninstitute/vis-omezarr';
 import { Box2D, Vec2, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
+import { pan, zoom } from '~/common/camera';
 
 const demo_versa = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/';
 
@@ -43,39 +44,21 @@ export function OmezarrDemo() {
             const size = sizeInUnits('xy', v.multiscales[0].axes, v.multiscales[0].datasets[0]);
             if (size) {
                 console.log(size);
-                setView(Box2D.create([0, 0], [size[0], size[1]]));
+                setView(Box2D.create([0, 0], size));
             }
         });
     }, []);
 
-    const zoom = (e: WheelEvent) => {
+    const handleZoom = (e: WheelEvent) => {
         e.preventDefault();
-
         const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-
-        // translate mouse pos to data space
-        // offset divided by screen size gives us a percentage of the canvas where the mouse is
-        // multiply percentage by view size to make it data space
-        // add offset of the min corner so that the position takes into account any box offset
-        const zoomPoint: vec2 = Vec2.add(
-            view.minCorner,
-            Vec2.mul(Vec2.div([e.offsetX, e.offsetY], screenSize), Box2D.size(view))
-        );
-
-        // scale the box with our new zoom point as the center
-        const v = Box2D.translate(
-            Box2D.scale(Box2D.translate(view, Vec2.scale(zoomPoint, -1)), [zoomScale, zoomScale]),
-            zoomPoint
-        );
-
+        const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
         setView(v);
     };
 
-    const pan = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (dragging) {
-            const pos = Vec2.div([-e.movementX, -e.movementY], screenSize);
-            const scaledOffset = Vec2.mul(pos, Box2D.size(view));
-            const v = Box2D.translate(view, scaledOffset);
+            const v = pan(view, screenSize, [e.movementX, e.movementY]);
             setView(v);
         }
     };
@@ -106,8 +89,8 @@ export function OmezarrDemo() {
                         id="omezarr-viewer"
                         screenSize={screenSize}
                         settings={settings}
-                        onWheel={zoom}
-                        onMouseMove={pan}
+                        onWheel={handleZoom}
+                        onMouseMove={handlePan}
                         onMouseDown={handleMouseDown}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}

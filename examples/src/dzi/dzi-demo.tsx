@@ -4,6 +4,7 @@ import React from 'react';
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
 import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { DziViewer } from './dzi-viewer';
+import { pan, zoom } from '~/common/camera';
 
 // We know the sizes and formats ahead of time for these examples,
 // if you'd like to see how to get this data from an endpoint with a dzi file check out use-dzi-image.ts
@@ -48,13 +49,30 @@ export function DziDemo() {
     // the DZI renderer expects a "relative" camera - that means a box, from 0 to 1. 0 is the bottom or left of the image,
     // and 1 is the top or right of the image, regardless of the aspect ratio of that image.
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [1, 1]));
-    const zoom = (e: WheelEvent) => {
+    const [dragging, setDragging] = useState(false);
+
+    const handleZoom = (e: WheelEvent) => {
         e.preventDefault();
-        const scale = e.deltaY > 0 ? 1.1 : 0.9;
-        const m = Box2D.midpoint(view);
-        const v = Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m);
+        const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
+        const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
         setView(v);
     };
+
+    const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (dragging) {
+            const v = pan(view, screenSize, [e.movementX, e.movementY]);
+            setView(v);
+        }
+    };
+
+    const handleMouseDown = () => {
+        setDragging(true);
+    };
+
+    const handleMouseUp = () => {
+        setDragging(false);
+    };
+
     const overlay = useRef<HTMLImageElement>(new Image());
 
     const camera: DziRenderSettings['camera'] = useMemo(() => ({ screenSize, view }), [view]);
@@ -78,7 +96,11 @@ export function DziDemo() {
                             dzi={v}
                             camera={camera}
                             svgOverlay={overlay.current}
-                            onWheel={zoom}
+                            onMouseDown={handleMouseDown}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                            onMouseMove={handlePan}
+                            onWheel={handleZoom}
                         />
                     </div>
                 ))}
