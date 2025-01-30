@@ -16,7 +16,7 @@ import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 type Props = {
     id: string;
     dzi: DziImage;
-    svgOverlay: HTMLImageElement;
+    svgOverlay?: HTMLImageElement;
     wheel: (e: React.WheelEvent<HTMLCanvasElement>) => void;
 } & DziRenderSettings;
 
@@ -77,7 +77,10 @@ export function DziView(props: Props) {
                 }
                 return null;
             };
-            const compose = buildCompositor(svgOverlay, { camera: cam });
+            let render = (ctx: CanvasRenderingContext2D, image: ImageData) => ctx.putImageData(image, 0, 0);
+            if (svgOverlay) {
+                render = buildCompositor(svgOverlay, { camera });
+            }
             server.beginRendering(
                 renderMyData,
                 (e) => {
@@ -87,10 +90,10 @@ export function DziView(props: Props) {
                             break;
                         case 'progress':
                             // wanna see the tiles as they arrive?
-                            e.server.copyToClient(compose);
+                            e.server.copyToClient(render);
                             break;
                         case 'finished': {
-                            e.server.copyToClient(compose);
+                            e.server.copyToClient(render);
                         }
                     }
                 },
