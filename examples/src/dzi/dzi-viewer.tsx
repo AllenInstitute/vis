@@ -51,7 +51,8 @@ export function DziViewer(props: Props) {
             // first, draw the results from webGL
             ctx.putImageData(image, 0, 0);
 
-            if (svgOverlay) { // then add our svg overlay
+            if (svgOverlay) {
+                // then add our svg overlay
                 const { width, height } = svgOverlay;
                 const svgSize: vec2 = [width, height];
                 const start = Vec2.mul(camera.view.minCorner, svgSize);
@@ -83,7 +84,6 @@ export function DziViewer(props: Props) {
             );
         }
     }, [server, svgOverlay, dzi, camera]);
-
 
     // we have to add the listener this way because onWheel is a passive listener by default
     // that means we can't preventDefault to stop scrolling
