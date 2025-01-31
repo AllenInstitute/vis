@@ -29,7 +29,7 @@ import {
 } from './data-sources/scatterplot/dynamic-grid';
 import type { OptionalTransform } from './data-sources/types';
 import type { CacheEntry, AnnotationLayer, Layer } from './types';
-import { AppUi } from './app';
+import { AppUi } from './layers/layers';
 import { createRoot } from 'react-dom/client';
 import {
     createZarrSliceGrid,

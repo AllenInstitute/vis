@@ -1,58 +1,27 @@
 import React from 'react';
-import { SliceViewLayer } from './ui/slice-ui';
-import type { Demo } from './layers';
-import { AnnotationGrid } from './ui/annotation-grid';
-import { ContactSheetUI } from './ui/contact-sheet';
-import { ScatterplotUI } from './ui/scatterplot-ui';
-import { Button } from '@czi-sds/components';
+import { BrowserRouter, Route, Routes } from 'react-router';
+import { Home } from './home';
+import { OmezarrDemo } from './omezarr/omezarr-demo';
+import { DziDemo } from './dzi/dzi-demo';
 
-export function AppUi(props: { demo: Demo }) {
-    const { demo } = props;
+export function App() {
     return (
-        <div>
-            <Button
-                onClick={() => {
-                    demo.requestSnapshot(3000);
-                }}
-            >
-                {'📸'}
-            </Button>
-            <label>{`Layer ${demo.selectedLayer}`}</label>
-            <Button
-                onClick={() => {
-                    demo.selectLayer(demo.selectedLayer - 1);
-                }}
-            >
-                {'<-'}
-            </Button>
-            <Button
-                onClick={() => {
-                    demo.selectLayer(demo.selectedLayer + 1);
-                }}
-            >
-                {'->'}
-            </Button>
-            <LayerUi demo={demo} />
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route
+                    index
+                    element={<Home />}
+                />
+                <Route
+                    path="/dzi"
+                    element={<DziDemo />}
+                />
+                <Route
+                    path="/omezarr"
+                    element={<OmezarrDemo />}
+                />
+                <Route path="/layers" />
+            </Routes>
+        </BrowserRouter>
     );
-}
-function LayerUi(props: { demo: Demo }) {
-    const { demo } = props;
-    const layer = demo.layers[demo.selectedLayer];
-    if (layer) {
-        switch (layer.type) {
-            case 'annotationGrid':
-                return <AnnotationGrid demo={demo} />;
-            case 'volumeGrid':
-                return <ContactSheetUI demo={demo} />;
-            case 'volumeSlice':
-                return <SliceViewLayer demo={demo} />;
-            case 'scatterplot':
-            case 'scatterplotGrid':
-                return <ScatterplotUI demo={demo} />;
-            default:
-                return null;
-        }
-    }
-    return <SliceViewLayer demo={props.demo} />;
 }
