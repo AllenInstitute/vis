@@ -17,6 +17,7 @@ Before you can publish a package, you'll need to get your Personal Access Token 
 ```
 
 ## Authenticating in GitHub Actions or Another CI/CD Pipeline
+
 If you have a CI/CD pipeline outside of GitHub Actions, do the following to authenticate:
 
 1. Follow the instructions for generating a PAT in the previous section.
@@ -24,6 +25,7 @@ If you have a CI/CD pipeline outside of GitHub Actions, do the following to auth
 2. Add that new token to your pipeline's secrets (e.g. `NODE_AUTH_TOKEN`).
 
 3. Use that secret in your pipeline to set up the token before you do the package install:
+
 ```
 npm set "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN"
 ```
