@@ -9,8 +9,9 @@ export function ScatterplotUI(props: { demo: Demo }) {
 	if ((l && l.type === "scatterplot") || l.type === "scatterplotGrid") {
 		return (
 			<div>
-				<label>point size</label>
+				<label htmlFor="point-size">point size</label>
 				<InputSlider
+					name="point-size"
 					min={0.5}
 					max={20}
 					step={0.001}
@@ -19,8 +20,9 @@ export function ScatterplotUI(props: { demo: Demo }) {
 						demo.setPointSize(value as number);
 					}}
 				/>
-				<label>{`Color By Gene (by index: ${l.data.colorBy.name})`}</label>
+				<label htmlFor="color-by">{`Color By Gene (by index: ${l.data.colorBy.name})`}</label>
 				<InputSlider
+					name="color-by"
 					min={0}
 					max={400}
 					step={1}

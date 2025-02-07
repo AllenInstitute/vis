@@ -8,8 +8,9 @@ export function SliceViewLayer(props: { demo: Demo }) {
 	if (l && l.type === "volumeSlice") {
 		return (
 			<div>
-				<label>RGB </label>
+				<label htmlFor="rgb">RGB </label>
 				<InputSlider
+					name="rgb"
 					min={0}
 					max={1000}
 					value={[l.data.gamut.R.gamut.min, l.data.gamut.R.gamut.max]}
@@ -33,8 +34,9 @@ export function SliceViewLayer(props: { demo: Demo }) {
 						demo.setGamutChannel("B", value as number[]);
 					}}
 				/>
-				<label>Slice </label>
+				<label htmlFor="slice">Slice </label>
 				<InputSlider
+					name="slice"
 					min={0}
 					max={1}
 					step={0.001}

@@ -81,7 +81,7 @@ export function buildPathRenderer(regl: REGL.Regl) {
 		settings: { view: box2D; target: REGL.Framebuffer2D | null },
 		tasks: Record<string, ColumnData | object | undefined>,
 	) => {
-		const pos = tasks["position"];
+		const pos = tasks.position;
 		const { view, target } = settings;
 		if (pos && "type" in pos && pos.type === "float") {
 			cmd(pos.data, item.color, view, target);

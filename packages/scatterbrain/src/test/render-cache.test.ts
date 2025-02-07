@@ -152,7 +152,9 @@ describe("async cache", () => {
 			// fail one, resolve the other
 			let boom = false;
 			// this little catch represents passing our deep error up to someone smarter:
-			spies[0].catch(() => (boom = true));
+			spies[0].catch(() => {
+				boom = true;
+			});
 
 			mockPromises.mockResolve(spies[1]);
 			// resolve one first so that we can be sure its value lives in the cache
@@ -336,7 +338,7 @@ describe("async cache", () => {
 			const clr: vec3 = [255, 0, 0];
 			const { fetchers, id, spies } = fetchTheSameThingTwice(1, clr, [1, 2, 3]);
 			// in this case, we want to test what happens when one cache key is associated with multiple semantic keys:
-			const toCacheKey = () => `http://blah.channel0`;
+			const toCacheKey = () => "http://blah.channel0";
 			const result = cache.cacheAndUse(fetchers, render, toCacheKey);
 
 			expect(result).toBeDefined();
@@ -363,7 +365,7 @@ describe("async cache", () => {
 				[1, 2, 3],
 			);
 			// in this case, we want to test what happens when one cache key is associated with multiple semantic keys:
-			const toCacheKey = () => `http://blah.channel0`;
+			const toCacheKey = () => "http://blah.channel0";
 			const result = cache.cacheAndUse(fetchers, render, toCacheKey);
 
 			expect(result).toBeDefined();

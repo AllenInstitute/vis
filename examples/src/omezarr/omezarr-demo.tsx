@@ -102,8 +102,12 @@ export function OmezarrDemo() {
 			{omezarr && settings ? (
 				<>
 					<div>
-						<button onClick={() => handlePlaneIndex(-1)}>{"<-"}</button>
-						<button onClick={() => handlePlaneIndex(1)}>{"->"}</button>
+						<button type="button" onClick={() => handlePlaneIndex(-1)}>
+							{"<-"}
+						</button>
+						<button type="button" onClick={() => handlePlaneIndex(1)}>
+							{"->"}
+						</button>
 					</div>
 					<OmezarrViewer
 						omezarr={omezarr}

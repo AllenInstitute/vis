@@ -8,8 +8,9 @@ export function ContactSheetUI(props: { demo: Demo }) {
 	if (l && l.type === "volumeGrid") {
 		return (
 			<div>
-				<label>RGB </label>
+				<label htmlFor="rgb">RGB </label>
 				<InputSlider
+					name="rgb"
 					min={0}
 					max={1000}
 					value={[l.data.gamut.R.gamut.min, l.data.gamut.R.gamut.max]}

@@ -50,7 +50,7 @@ export function OmezarrViewer({
 	// setup renderer and delete it when component goes away
 	useEffect(() => {
 		const c = canvas?.current;
-		if (server && server.regl) {
+		if (server?.regl) {
 			renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
 		}
 		return () => {
@@ -101,7 +101,7 @@ export function OmezarrViewer({
 				canvas.current,
 			);
 		}
-	}, [server, renderer, canvas, omezarr, settings]);
+	}, [server, omezarr, settings]);
 
 	// wheel event needs to be active for control + wheel zoom to work
 	useEffect(() => {

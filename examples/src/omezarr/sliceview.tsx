@@ -48,7 +48,7 @@ export function SliceView(props: Props) {
 	const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
 	const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]));
 	useEffect(() => {
-		if (server && server.regl) {
+		if (server?.regl) {
 			renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
 		}
 		return () => {
@@ -100,7 +100,7 @@ export function SliceView(props: Props) {
 				cnvs.current,
 			);
 		}
-	}, [server, renderer.current, cnvs.current, omezarr, view]);
+	}, [server, omezarr, view]);
 	const pan = useCallback(
 		(e: React.MouseEvent<HTMLCanvasElement>) => {
 			if (e.ctrlKey) {
@@ -131,6 +131,6 @@ export function SliceView(props: Props) {
 			}}
 			width={settings.camera.screenSize[0]}
 			height={settings.camera.screenSize[1]}
-		></canvas>
+		/>
 	);
 }

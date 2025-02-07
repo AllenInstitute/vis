@@ -58,7 +58,7 @@ export function DziViewer(props: Props) {
 		>();
 
 	useEffect(() => {
-		if (server && server.regl) {
+		if (server?.regl) {
 			renderer.current = buildAsyncDziRenderer(server.regl);
 		}
 		return () => {
@@ -110,13 +110,13 @@ export function DziViewer(props: Props) {
 			server.beginRendering(
 				renderMyData,
 				(e) => {
-					if (e.status == "begin") {
+					if (e.status === "begin") {
 						server.regl?.clear({
 							framebuffer: e.target,
 							color: [0, 0, 0, 0],
 							depth: 1,
 						});
-					} else if (e.status == "progress" || e.status == "finished") {
+					} else if (e.status === "progress" || e.status === "finished") {
 						e.server.copyToClient(compose);
 					}
 				},
