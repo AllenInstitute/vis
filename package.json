@@ -6,7 +6,7 @@
 		"test": "pnpm -r run --no-bail test:ci",
 		"typecheck": "pnpm -r --no-bail run typecheck",
 		"check": "biome check .",
-		"check:fix": "biome check . --apply",
+		"check:fix": "biome check . --write",
 		"fmt": "biome format . --write",
 		"lint": "biome lint ."
 	},
