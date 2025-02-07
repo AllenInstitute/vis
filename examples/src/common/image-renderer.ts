@@ -1,20 +1,21 @@
-import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
-import REGL, { type Framebuffer2D } from 'regl';
+import type { vec2, vec4 } from "@alleninstitute/vis-geometry";
+import type REGL from "regl";
+import type { Framebuffer2D } from "regl";
 
 type Props = {
-    target: Framebuffer2D | null;
-    box: vec4;
-    view: vec4;
-    //   viewport: REGL.BoundingBox;
-    img: REGL.Texture2D | REGL.Framebuffer2D;
+	target: Framebuffer2D | null;
+	box: vec4;
+	view: vec4;
+	//   viewport: REGL.BoundingBox;
+	img: REGL.Texture2D | REGL.Framebuffer2D;
 };
 export function buildImageRenderer(regl: REGL.Regl) {
-    const cmd = regl<
-        { view: vec4; box: vec4; img: REGL.Texture2D | REGL.Framebuffer2D },
-        { pos: REGL.BufferData },
-        Props
-    >({
-        vert: ` precision highp float;
+	const cmd = regl<
+		{ view: vec4; box: vec4; img: REGL.Texture2D | REGL.Framebuffer2D },
+		{ pos: REGL.BufferData },
+		Props
+	>({
+		vert: ` precision highp float;
       attribute vec2 pos;
           
           uniform vec4 view;
@@ -30,7 +31,7 @@ export function buildImageRenderer(regl: REGL.Regl) {
               p = (p*2.0)-1.0;
               gl_Position = vec4(p.x,p.y,0.0,1.0);
           }`,
-        frag: `
+		frag: `
       precision highp float;
       
       uniform sampler2D img;
@@ -40,28 +41,28 @@ export function buildImageRenderer(regl: REGL.Regl) {
               
               gl_FragColor =texture2D(img, texCoord);
           }`,
-        framebuffer: regl.prop<Props, 'target'>('target'),
-        attributes: {
-            pos: [0, 0, 1, 0, 1, 1, 0, 1],
-        },
-        depth: {
-            enable: false,
-        },
-        uniforms: {
-            box: regl.prop<Props, 'box'>('box'),
-            view: regl.prop<Props, 'view'>('view'),
-            img: regl.prop<Props, 'img'>('img'),
-        },
-        blend: {
-            enable: true,
-            func: {
-                src: 'src alpha',
-                dst: 'one minus src alpha',
-            },
-        },
-        count: 4,
-        primitive: 'triangle fan',
-        // ... more!
-    });
-    return cmd;
+		framebuffer: regl.prop<Props, "target">("target"),
+		attributes: {
+			pos: [0, 0, 1, 0, 1, 1, 0, 1],
+		},
+		depth: {
+			enable: false,
+		},
+		uniforms: {
+			box: regl.prop<Props, "box">("box"),
+			view: regl.prop<Props, "view">("view"),
+			img: regl.prop<Props, "img">("img"),
+		},
+		blend: {
+			enable: true,
+			func: {
+				src: "src alpha",
+				dst: "one minus src alpha",
+			},
+		},
+		count: 4,
+		primitive: "triangle fan",
+		// ... more!
+	});
+	return cmd;
 }

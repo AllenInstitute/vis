@@ -1,4 +1,4 @@
-import { VectorLibFactory } from './vector';
+import { VectorLibFactory } from "./vector";
 
 export type vec5 = readonly [number, number, number, number, number];
 

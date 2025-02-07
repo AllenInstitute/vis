@@ -1,4 +1,4 @@
-import { Vec2, vec2 } from './vec2';
+import { Vec2, type vec2 } from "./vec2";
 
 export type line = { start: vec2; end: vec2 };
 
@@ -23,36 +23,39 @@ export type line = { start: vec2; end: vec2 };
  * @param secondLine Second line to compare
  * @returns One if the lines intersect, zero otherwise
  */
-export function lineSegmentsIntersect(firstLine: line, secondLine: line): 1 | 0 {
-    // given line segments a->b and c->d:
-    // make a vec for each point:
-    const { start: A, end: B } = firstLine;
-    const { start: C, end: D } = secondLine;
+export function lineSegmentsIntersect(
+	firstLine: line,
+	secondLine: line,
+): 1 | 0 {
+	// given line segments a->b and c->d:
+	// make a vec for each point:
+	const { start: A, end: B } = firstLine;
+	const { start: C, end: D } = secondLine;
 
-    const AB = Vec2.sub(A, B);
-    const CD = Vec2.sub(C, D);
-    const AC = Vec2.sub(A, C);
+	const AB = Vec2.sub(A, B);
+	const CD = Vec2.sub(C, D);
+	const AC = Vec2.sub(A, C);
 
-    // from the wikipedia link:
-    // - 1s and 2s are A and B
-    // - 3s and 4s are C and D
-    // now use vec2.sub to group the points into vectors:
-    // this is the common denominator:
-    const BAxDC = Vec2.det(AB, CD);
+	// from the wikipedia link:
+	// - 1s and 2s are A and B
+	// - 3s and 4s are C and D
+	// now use vec2.sub to group the points into vectors:
+	// this is the common denominator:
+	const BAxDC = Vec2.det(AB, CD);
 
-    if (BAxDC === 0) {
-        // if the determinant is 0, the lines are parallel
-        return 0;
-    }
+	if (BAxDC === 0) {
+		// if the determinant is 0, the lines are parallel
+		return 0;
+	}
 
-    const t = Vec2.det(AC, CD) / BAxDC;
-    const u = Vec2.det(AC, AB) / BAxDC;
+	const t = Vec2.det(AC, CD) / BAxDC;
+	const u = Vec2.det(AC, AB) / BAxDC;
 
-    // Once we have t and u, we know that the lines intersect if t and u are both between 0 and 1
-    // NOTE: This is a slight modification from the Wikipedia algorithm linked in the JSDoc.
-    // t and u are each checked against the half closed interval [0,1). Each represents the
-    // (bezier) parameter of the intersection point in terms of the other - that is to say where
-    // on the first line does the second line (if it were infinite) hit, and where on the second
-    // line does the first line hit (if it were infinite).
-    return t >= 0 && t < 1 && u >= 0 && u < 1 ? 1 : 0;
+	// Once we have t and u, we know that the lines intersect if t and u are both between 0 and 1
+	// NOTE: This is a slight modification from the Wikipedia algorithm linked in the JSDoc.
+	// t and u are each checked against the half closed interval [0,1). Each represents the
+	// (bezier) parameter of the intersection point in terms of the other - that is to say where
+	// on the first line does the second line (if it were infinite) hit, and where on the second
+	// line does the first line hit (if it were infinite).
+	return t >= 0 && t < 1 && u >= 0 && u < 1 ? 1 : 0;
 }
