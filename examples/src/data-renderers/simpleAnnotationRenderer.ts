@@ -39,7 +39,7 @@ function requestsForPath(p: Path) {
 export function renderAnnotationLayer(
     target: REGL.Framebuffer2D | null,
     layer: SimpleAnnotation & OptionalTransform,
-    settings: RenderSettings
+    settings: RenderSettings,
 ) {
     const { camera, cache, renderer, callback } = settings;
     const items = getVisibleStrokes(camera, layer);
@@ -55,6 +55,6 @@ export function renderAnnotationLayer(
         requestsForPath,
         renderer,
         callback,
-        (rq: string, path: Path) => `${rq}_${path.id}_${path.points.length}`
+        (rq: string, path: Path) => `${rq}_${path.id}_${path.points.length}`,
     );
 }

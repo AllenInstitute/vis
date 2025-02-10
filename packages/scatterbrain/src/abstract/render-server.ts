@@ -32,12 +32,15 @@ type ServerActions = {
     copyToClient: (composite: Compositor) => void;
 };
 type Compositor = (ctx: CanvasRenderingContext2D, glImage: ImageData) => void;
-type RenderEvent<D, I> = AsyncFrameEvent<D, I> & { target: REGL.Framebuffer2D | null; server: ServerActions };
+type RenderEvent<D, I> = AsyncFrameEvent<D, I> & {
+    target: REGL.Framebuffer2D | null;
+    server: ServerActions;
+};
 type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
 type RenderFrameFn<D, I> = (
     target: REGL.Framebuffer2D | null,
     cache: AsyncDataCache<string, string, ReglCacheEntry>,
-    callback: RenderCallback<D, I>
+    callback: RenderCallback<D, I>,
 ) => FrameLifecycle | null;
 
 type Client = HTMLCanvasElement;
@@ -77,14 +80,21 @@ export class RenderServer {
         if (updateRequested) {
             try {
                 // read directly from the framebuffer to which we render:
-                this.regl?.read({ framebuffer: image, x: 0, y: 0, width, height, data: new Uint8Array(copyBuffer) });
+                this.regl?.read({
+                    framebuffer: image,
+                    x: 0,
+                    y: 0,
+                    width,
+                    height,
+                    data: new Uint8Array(copyBuffer),
+                });
                 // then put those bytes in the client canvas:
                 const ctx: CanvasRenderingContext2D = client.getContext('2d')!;
                 const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
                 updateRequested(ctx, img);
             } catch (err) {
                 console.error(
-                    'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok'
+                    'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok',
                 );
             }
         }
@@ -152,7 +162,11 @@ export class RenderServer {
             const clientFrame = this.clients.get(client);
             if (clientFrame && clientFrame.frame) {
                 clientFrame.frame.cancelFrame();
-                this.regl.clear({ framebuffer: clientFrame.image, color: [0, 0, 0, 0], depth: 0 });
+                this.regl.clear({
+                    framebuffer: clientFrame.image,
+                    color: [0, 0, 0, 0],
+                    depth: 0,
+                });
                 clientFrame.updateRequested = null;
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);

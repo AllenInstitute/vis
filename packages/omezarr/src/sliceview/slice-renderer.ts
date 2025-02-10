@@ -81,13 +81,18 @@ const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max];
 type Decoder = (dataset: OmeZarrDataset, req: ZarrRequest, layerIndex: number) => Promise<VoxelTileImage>;
 export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
-    decoder: Decoder
+    decoder: Decoder,
 ): Renderer<OmeZarrDataset, VoxelTile, RenderSettings, ImageChannels> {
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
         const { data, shape } = slice;
         return {
             bytes: data.byteLength,
-            texture: regl.texture({ data: data, width: shape[1], height: shape[0], format: 'luminance' }),
+            texture: regl.texture({
+                data: data,
+                width: shape[1],
+                height: shape[0],
+                format: 'luminance',
+            }),
             type: 'texture',
         };
     }

@@ -17,7 +17,7 @@ describe('scaleFromPoint', () => {
                 size: [1, 1],
             },
             100,
-            [5, 5]
+            [5, 5],
         );
         expect(scaled.center).toEqual([5, 5]);
         expect(scaled.size).toEqual([100, 100]);

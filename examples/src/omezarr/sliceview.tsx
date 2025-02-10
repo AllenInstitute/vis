@@ -66,7 +66,7 @@ export function SliceView(props: Props) {
                         { ...settings, camera: { ...settings.camera, view } },
                         callback,
                         target,
-                        cache
+                        cache,
                     );
                 }
                 return null;
@@ -77,7 +77,11 @@ export function SliceView(props: Props) {
                 (e) => {
                     switch (e.status) {
                         case 'begin':
-                            server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
+                            server.regl?.clear({
+                                framebuffer: e.target,
+                                color: [0, 0, 0, 0],
+                                depth: 1,
+                            });
                             break;
                         case 'progress':
                             e.server.copyToClient(compose);
@@ -88,7 +92,7 @@ export function SliceView(props: Props) {
                         }
                     }
                 },
-                cnvs.current
+                cnvs.current,
             );
         }
     }, [server, renderer.current, cnvs.current, omezarr, view]);
@@ -101,7 +105,7 @@ export function SliceView(props: Props) {
                 setView(v);
             }
         },
-        [view]
+        [view],
     );
     return (
         <canvas

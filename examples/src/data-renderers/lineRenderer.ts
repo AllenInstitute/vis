@@ -73,7 +73,7 @@ export function buildPathRenderer(regl: REGL.Regl) {
     return (
         item: Path,
         settings: { view: box2D; target: REGL.Framebuffer2D | null },
-        tasks: Record<string, ColumnData | object | undefined>
+        tasks: Record<string, ColumnData | object | undefined>,
     ) => {
         const pos = tasks['position'];
         const { view, target } = settings;

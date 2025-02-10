@@ -42,10 +42,10 @@
         "vite": "^5.3.5"
     },
     "dependencies": {
-        "@alleninstitute/vis-geometry": "workspace:*",
-        "@alleninstitute/vis-scatterbrain": "workspace:*",
         "@alleninstitute/vis-dzi": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-omezarr": "workspace:*",
+        "@alleninstitute/vis-scatterbrain": "workspace:*",
         "@czi-sds/components": "^20.0.1",
         "@emotion/css": "^11.11.2",
         "@emotion/react": "^11.11.4",
@@ -61,6 +61,7 @@
         "lodash": "^4.17.21",
         "react": "^18.3.0",
         "react-dom": "^18.3.0",
+        "react-router": "^7.0.2",
         "regl": "^2.1.0",
         "zarrita": "0.4.0-next.14"
     }

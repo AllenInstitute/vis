@@ -29,7 +29,7 @@ const cacheKey = (reqKey: string, item: ColumnarTree<vec2>, settings: { colorBy:
 export function renderSlide<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     slide: DynamicGridSlide,
-    settings: RenderSettings<C>
+    settings: RenderSettings<C>,
 ) {
     const {
         cache,
@@ -47,7 +47,10 @@ export function renderSlide<C extends CacheContentType | object>(
     const { dataset, colorBy, pointSize } = slide;
     const unitsPerPixel = Vec2.div(Box2D.size(view), screen);
 
-    camera = { ...camera, view: applyOptionalTrn(camera.view, slide.toModelSpace, true) };
+    camera = {
+        ...camera,
+        view: applyOptionalTrn(camera.view, slide.toModelSpace, true),
+    };
     // camera = camera.projection === 'webImage' ? flipY(camera) : camera;
     const items = getVisibleItemsInSlide(slide.dataset, slide.slideId, settings.camera.view, 10 * unitsPerPixel[0]);
     // make the frame, return some junk
@@ -61,14 +64,14 @@ export function renderSlide<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKey,
-        cpuLimit
+        cpuLimit,
     );
 }
 
 export function renderDynamicGrid<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     grid: DynamicGrid,
-    settings: RenderSettings<C>
+    settings: RenderSettings<C>,
 ) {
     const {
         cache,
@@ -86,7 +89,10 @@ export function renderDynamicGrid<C extends CacheContentType | object>(
     const { dataset, pointSize } = grid;
     const unitsPerPixel = Vec2.div(Box2D.size(view), screen);
     const rowSize = Math.floor(Math.sqrt(Object.keys(dataset.slides).length));
-    camera = { ...camera, view: applyOptionalTrn(camera.view, grid.toModelSpace, true) };
+    camera = {
+        ...camera,
+        view: applyOptionalTrn(camera.view, grid.toModelSpace, true),
+    };
     Object.keys(dataset.slides).forEach((slideId, i) => {
         const slide = dataset.slides[slideId];
         const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)];
@@ -96,8 +102,8 @@ export function renderDynamicGrid<C extends CacheContentType | object>(
         if (Box2D.intersection(view, realBounds)) {
             items.push(
                 ...getVisibleItemsInSlide(grid.dataset, slide.id, settings.camera.view, 10 * unitsPerPixel[0]).map(
-                    (t) => ({ ...t, offset })
-                )
+                    (t) => ({ ...t, offset }),
+                ),
             );
         }
     });
@@ -113,6 +119,6 @@ export function renderDynamicGrid<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKey,
-        cpuLimit
+        cpuLimit,
     );
 }

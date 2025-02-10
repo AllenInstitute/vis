@@ -61,7 +61,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
     lifecycleCallback: RenderCallback,
     cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key,
-    queueTimeBudgetMS: number = queueProcessingIntervalMS / 3
+    queueTimeBudgetMS: number = queueProcessingIntervalMS / 3,
 ): FrameLifecycle {
     const abort = new AbortController();
     const queue: Item[] = [];
@@ -151,7 +151,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
                     requestsForItem(itemToRender, settings, abort.signal),
                     partial(render, itemToRender, settings),
                     toCacheKey,
-                    () => reportNormalStatus('progress')
+                    () => reportNormalStatus('progress'),
                 );
                 if (result !== undefined) {
                     // put this cancel callback in a list where we can invoke if something goes wrong

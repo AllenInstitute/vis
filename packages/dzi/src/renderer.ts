@@ -37,7 +37,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
         tile: DziTile,
         _img: DziImage,
         _settings: RenderSettings,
-        _abort?: AbortSignal
+        _abort?: AbortSignal,
     ): Record<string, () => Promise<ReglCacheEntry>> => {
         return {
             pixels: () => {
@@ -46,7 +46,11 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
                         const img = new Image();
                         img.crossOrigin = 'anonymous';
                         img.onload = (ev) => {
-                            resolve({ type: 'texture', texture: regl.texture(img), bytes: img.width * img.height * 4 }); // close enough
+                            resolve({
+                                type: 'texture',
+                                texture: regl.texture(img),
+                                bytes: img.width * img.height * 4,
+                            }); // close enough
                         };
                         img.src = tile.url;
                     } catch (err) {

@@ -47,7 +47,7 @@ function isMesh(obj: object | undefined): obj is CacheContentType {
 function fetchAnnotationsForSlide(
     item: SlideAnnotations,
     settings: Settings,
-    _abort: AbortSignal | undefined
+    _abort: AbortSignal | undefined,
 ): Record<string, () => Promise<CacheContentType | undefined>> {
     const { regl } = settings;
     const toCacheEntry = (m: AnnotationMesh | undefined): CacheContentType | undefined =>
@@ -73,7 +73,7 @@ type RProps = Parameters<ReturnType<typeof buildLoopRenderer>>[0];
 function renderSlideAnnotations(
     item: SlideAnnotations,
     settings: Settings,
-    columns: Record<string, GPUAnnotationMesh | object | undefined>
+    columns: Record<string, GPUAnnotationMesh | object | undefined>,
 ) {
     const { camera, viewport, target, regl, loopRenderer, meshRenderer, stencilMeshRenderer } = settings;
     // const { view } = camera.projection === 'webImage' ? flipY(camera) : camera
@@ -150,7 +150,7 @@ export type RenderSettings<C> = {
 export function renderAnnotationGrid(
     target: REGL.Framebuffer2D | null,
     grid: AnnotationGrid,
-    settings: RenderSettings<CacheContentType | object | undefined>
+    settings: RenderSettings<CacheContentType | object | undefined>,
 ): FrameLifecycle {
     const { dataset, annotationBaseUrl, levelFeature, stroke, fill } = grid;
     const {
@@ -212,7 +212,7 @@ export function renderAnnotationGrid(
         renderSlideAnnotations,
         callback,
         (rq: string, item: SlideAnnotations, _settings: Settings) => `${rq}_${item.gridFeature}_${item.levelFeature}`,
-        cpuLimit
+        cpuLimit,
     );
     return frame;
 }

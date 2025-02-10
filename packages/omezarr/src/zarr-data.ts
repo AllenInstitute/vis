@@ -124,7 +124,7 @@ export function pickBestScale(
     },
     relativeView: box2D, // a box in data-unit-space
     // in the plane given above
-    displayResolution: vec2
+    displayResolution: vec2,
 ) {
     const datasets = dataset.multiscales[0].datasets;
     const axes = dataset.multiscales[0].axes;
@@ -149,7 +149,7 @@ export function pickBestScale(
             dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
                 ? cur
                 : bestSoFar,
-        datasets[0]
+        datasets[0],
     );
     return choice ?? datasets[datasets.length - 1];
 }
@@ -176,7 +176,7 @@ export function sizeInUnits(
               v: OmeDimension;
           },
     axes: readonly AxisDesc[],
-    dataset: DatasetWithShape
+    dataset: DatasetWithShape,
 ): vec2 | undefined {
     const planeUV = typeof plane === 'string' ? uvForPlane(plane) : plane;
     const vxls = planeSizeInVoxels(planeUV, axes, dataset);
@@ -223,7 +223,7 @@ export function planeSizeInVoxels(
         v: OmeDimension;
     },
     axes: readonly AxisDesc[],
-    dataset: DatasetWithShape
+    dataset: DatasetWithShape,
 ): vec2 | undefined {
     // first - u&v must not refer to the same dimension,
     // and both should exist in the axes...

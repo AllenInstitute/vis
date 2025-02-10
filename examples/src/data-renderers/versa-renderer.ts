@@ -124,7 +124,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
     return (
         item: VoxelTile,
         settings: VoxelSliceRenderSettings,
-        channels: Record<string, Bfr | object | undefined>
+        channels: Record<string, Bfr | object | undefined>,
     ) => {
         const { view, viewport, gamut, target, rotation } = settings;
         const { realBounds } = item;
@@ -269,7 +269,7 @@ export function getVisibleTiles(
     plane: AxisAlignedPlane,
     planeIndex: number,
     dataset: ZarrDataset,
-    offset?: vec2
+    offset?: vec2,
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
     // const { axes, datasets } = dataset.multiscales[0];
     // const zIndex = indexOfDimension(axes, sliceDimension[plane]);

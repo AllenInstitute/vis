@@ -19,7 +19,11 @@ export type FrameLifecycle = {
 };
 
 export type FrameBegin = { status: 'begin' };
-export type FrameProgress<Dataset, Item> = { status: 'progress'; dataset: Dataset; renderedItems: ReadonlyArray<Item> };
+export type FrameProgress<Dataset, Item> = {
+    status: 'progress';
+    dataset: Dataset;
+    renderedItems: ReadonlyArray<Item>;
+};
 export type FrameCancelled = { status: 'cancelled' };
 export type FrameFinished = { status: 'finished' };
 export type FrameError = { status: 'error'; error: unknown };
@@ -52,7 +56,7 @@ export type RenderFrameConfig<
         item: Item,
         dataset: Dataset,
         settings: Settings,
-        signal?: AbortSignal
+        signal?: AbortSignal,
     ) => Record<RqKey, () => Promise<CacheEntryType>>;
     lifecycleCallback: RenderCallback<Dataset, Item>;
     cacheKeyForRequest: (item: Item, requestKey: RqKey, dataset: Dataset, settings: Settings) => CacheKey;
@@ -134,7 +138,7 @@ export function beginFrame<
                     requestsForItem(itemToRender, dataset, settings, abort.signal),
                     partial(renderItemWrapper, itemToRender),
                     toCacheKey,
-                    () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] }, synchronous)
+                    () => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] }, synchronous),
                 );
                 if (result !== undefined) {
                     // put this cancel callback in a list where we can invoke if something goes wrong
@@ -189,7 +193,7 @@ export function buildAsyncRenderer<
         settings: Settings,
         callback: RenderCallback<Dataset, Item>,
         target: REGL.Framebuffer2D | null,
-        cache: AsyncDataCache<SemanticKey, CacheKeyType, ReglCacheEntry>
+        cache: AsyncDataCache<SemanticKey, CacheKeyType, ReglCacheEntry>,
     ) => {
         const { renderItem, isPrepared, cacheKey, fetchItemContent, getVisibleItems } = renderer;
         const config: RenderFrameConfig<Dataset, Item, Settings, string, string, ReglCacheEntry, GpuData> = {

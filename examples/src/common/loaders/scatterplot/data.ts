@@ -34,7 +34,7 @@ export function getVisibleItems(dataset: Dataset, view: box2D, sizeLimit: number
         (tree) => {
             hits.push(tree);
         },
-        (tree) => isVisible(view, sizeLimit, tree)
+        (tree) => isVisible(view, sizeLimit, tree),
     );
     return hits;
 }
@@ -53,7 +53,7 @@ export function getVisibleItemsInSlide(dataset: SlideViewDataset, slide: string,
         (tree) => {
             hits.push(tree);
         },
-        (tree) => isVisible(view, sizeLimit, tree)
+        (tree) => isVisible(view, sizeLimit, tree),
     );
     return hits;
 }
@@ -67,7 +67,7 @@ function fetchAndUpload(
     settings: { dataset: Dataset; regl: REGL.Regl },
     node: ColumnarNode<vec2>,
     req: ColumnRequest,
-    signal?: AbortSignal | undefined
+    signal?: AbortSignal | undefined,
 ) {
     const { dataset, regl } = settings;
     return fetchColumn(node, dataset, req, signal).then((cd) => toReglBuffer(cd, regl));

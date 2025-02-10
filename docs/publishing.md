@@ -30,7 +30,7 @@ When you have changes to an existing package that you want to publish, follow th
 
 1. Authenticate with GitHub Packages by following the instructions in the [Authenticating with GitHub Packages](authenticating.md) documentation.
 
-2. Update the version number in the `package.json` file, following the [Semantic Versioning standard](https://semver.org/). Remember to run `pnpm install` to get the lock file updated as well!
+2. Update the version number in the `package.json` file, following the [Semantic Versioning standard](https://semver.org/).
 
 3. Get that version number update onto the `main` branch and make sure everything is ship-shape for publishing.
 

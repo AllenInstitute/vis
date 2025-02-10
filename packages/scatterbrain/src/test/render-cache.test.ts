@@ -103,7 +103,7 @@ describe('async cache', () => {
     let cache = new AsyncDataCache<Columns, string, Data>(
         (item: Data) => {},
         () => 1,
-        10
+        10,
     );
     let disposed: Data[] = [];
     let rendered: SpyOnRenderer[] = []; // these are just for spying
@@ -116,7 +116,7 @@ describe('async cache', () => {
                 disposed.push(item);
             },
             () => 1,
-            10
+            10,
         );
         disposed = [];
         rendered = [];
@@ -251,7 +251,9 @@ describe('async cache', () => {
             // each of our tasks requests two chunks of data
             // the cache has a limit of 10 items (see beforeEach)
             let allKeysSoFar: string[] = [];
-            let first: ReturnType<typeof fetchFakeItem> & { toCacheKey: (rq: Columns) => string };
+            let first: ReturnType<typeof fetchFakeItem> & {
+                toCacheKey: (rq: Columns) => string;
+            };
             for (let i = 0; i < 5; i++) {
                 const { fetchers, id, spies } = fetchFakeItem(i, [255, 0, i], [1, 2 * i, 3 * i]);
                 const toCacheKey = partial(cacheKey, { id });

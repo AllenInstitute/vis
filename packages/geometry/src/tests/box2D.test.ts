@@ -25,7 +25,7 @@ describe('box2D', () => {
     });
     test('map', () => {
         expect(Box2D.map(Box2D.create([0, 0], [1, 1]), (v) => Vec2.scale(v, 200))).toStrictEqual(
-            Box2D.create([0, 0], [200, 200])
+            Box2D.create([0, 0], [200, 200]),
         );
     });
     test('isValid', () => {

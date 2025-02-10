@@ -5,7 +5,7 @@ import type REGL from 'regl';
 export type RenderFn<Data, Settings> = (
     target: REGL.Framebuffer2D | null,
     thing: Readonly<Data>,
-    settings: Readonly<Settings>
+    settings: Readonly<Settings>,
 ) => FrameLifecycle;
 
 export type Image = {

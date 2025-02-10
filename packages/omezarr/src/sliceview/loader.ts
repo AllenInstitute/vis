@@ -44,7 +44,7 @@ function getVisibleTilesInLayer(
     planeIndex: number,
     dataset: ZarrDataset,
     tileSize: number,
-    layerIndex: number
+    layerIndex: number,
 ) {
     const uv = uvForPlane(plane);
     const layer = dataset.multiscales[0].datasets[layerIndex];
@@ -88,7 +88,7 @@ export function getVisibleTiles(
     plane: AxisAlignedPlane,
     planeIndex: number,
     dataset: ZarrDataset,
-    tileSize: number
+    tileSize: number,
 ): VoxelTile[] {
     const uv = uvForPlane(plane);
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!

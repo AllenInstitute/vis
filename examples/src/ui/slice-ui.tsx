@@ -43,22 +43,13 @@ export function SliceViewLayer(props: { demo: Demo }) {
                         demo.setSlice(value as number);
                     }}
                 />
-                <Button
-                    key={'xy'}
-                    onClick={() => demo.setPlane('xy')}
-                >
+                <Button key={'xy'} onClick={() => demo.setPlane('xy')}>
                     xy
                 </Button>
-                <Button
-                    key={'yz'}
-                    onClick={() => demo.setPlane('yz')}
-                >
+                <Button key={'yz'} onClick={() => demo.setPlane('yz')}>
                     yz
                 </Button>
-                <Button
-                    key={'xz'}
-                    onClick={() => demo.setPlane('xz')}
-                >
+                <Button key={'xz'} onClick={() => demo.setPlane('xz')}>
                     xz
                 </Button>
             </div>

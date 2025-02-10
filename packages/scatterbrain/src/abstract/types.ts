@@ -35,7 +35,7 @@ export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, Reg
         item: Item,
         dataset: Dataset,
         settings: Settings,
-        signal?: AbortSignal
+        signal?: AbortSignal,
     ) => Record<string, () => Promise<ReglCacheEntry>>;
     /**
      *
@@ -57,7 +57,7 @@ export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, Reg
         item: Item,
         data: Dataset,
         settings: Settings,
-        gpuData: GpuData
+        gpuData: GpuData,
     ) => void;
     /**
      * compute a unique (but please not random!) string that the cache system can use to identify the content

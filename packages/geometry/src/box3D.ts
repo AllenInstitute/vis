@@ -14,6 +14,9 @@ const isBox3D = (maybe: unknown): maybe is box3D => {
 export const Box3D = {
     ...BoxClassFactory<vec3>(Vec3),
     isBox3D,
-    xy: (b: box<vec3>): box<vec2> => ({ minCorner: Vec3.xy(b.minCorner), maxCorner: Vec3.xy(b.maxCorner) }),
+    xy: (b: box<vec3>): box<vec2> => ({
+        minCorner: Vec3.xy(b.minCorner),
+        maxCorner: Vec3.xy(b.maxCorner),
+    }),
 };
 export type box3D = box<vec3>;

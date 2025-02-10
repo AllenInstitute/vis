@@ -71,7 +71,7 @@ export function buildRenderer(regl: REGL.Regl) {
     const renderDots = (
         item: ColumnarTree<vec2> & { offset?: vec2 | undefined },
         settings: RenderSettings,
-        columns: Record<string, ColumnBuffer | object | undefined>
+        columns: Record<string, ColumnBuffer | object | undefined>,
     ) => {
         const { color, position } = columns;
         const count = item.content.count;
