@@ -3,7 +3,7 @@ updates:
     # We need to point to each package.json, so this file will be a bit verbose
 
     # Root package.json
-    - package-ecosystem: 'pnpm'
+    - package-ecosystem: 'npm'
       directory: '/'
       schedule:
           interval: 'monthly'
@@ -13,7 +13,7 @@ updates:
           prefix: 'chore(deps):'
 
     # Packages
-    - package-ecosystem: 'pnpm'
+    - package-ecosystem: 'npm'
       directory: '/packages/dzi'
       schedule:
           interval: 'monthly'
@@ -22,7 +22,7 @@ updates:
       commit-message:
           prefix: 'chore(deps):'
 
-    - package-ecosystem: 'pnpm'
+    - package-ecosystem: 'npm'
       directory: '/packages/geometry'
       schedule:
           interval: 'monthly'
@@ -31,7 +31,7 @@ updates:
       commit-message:
           prefix: 'chore(deps):'
     
-    - package-ecosystem: 'pnpm'
+    - package-ecosystem: 'npm'
       directory: '/packages/omezarr'
       schedule:
           interval: 'monthly'
@@ -40,7 +40,7 @@ updates:
       commit-message:
           prefix: 'chore(deps):'
     
-    - package-ecosystem: 'pnpm'
+    - package-ecosystem: 'npm'
       directory: '/packages/scatterbrain'
       schedule:
           interval: 'monthly'
@@ -50,7 +50,7 @@ updates:
           prefix: 'chore(deps):'
 
     # Examples
-    - package-ecosystem: 'pnpm'
+    - package-ecosystem: 'npm'
       directory: '/examples'
       schedule:
           interval: 'monthly'

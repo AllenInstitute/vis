@@ -51,5 +51,6 @@
         "lodash": "4.17.21",
         "regl": "2.1.0",
         "zarrita": "0.4.0-next.14"
-    }
+    },
+    "packageManager": "pnpm@9.14.2"
 }
