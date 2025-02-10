@@ -1,4 +1,4 @@
-import { VectorLibFactory } from './vector';
+import { VectorLibFactory } from "./vector";
 
 export type vec3 = readonly [number, number, number];
 // add things that vec3 has that vec2 does not have!

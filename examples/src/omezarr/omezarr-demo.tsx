@@ -1,106 +1,126 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { RenderServerProvider } from '~/common/react/render-server-provider';
-import { SliceView } from './sliceview';
-import { type OmeZarrDataset, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
-import { OmezarrViewer } from './omezarr-viewer';
-import { type RenderSettings } from '@alleninstitute/vis-omezarr';
-import { Box2D, Vec2, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
-import { pan, zoom } from '~/common/camera';
+import React, { useEffect, useMemo, useState } from "react";
+import { RenderServerProvider } from "~/common/react/render-server-provider";
+import { SliceView } from "./sliceview";
+import {
+	type OmeZarrDataset,
+	loadOmeZarr,
+	sizeInUnits,
+} from "@alleninstitute/vis-omezarr";
+import { OmezarrViewer } from "./omezarr-viewer";
+import { type RenderSettings } from "@alleninstitute/vis-omezarr";
+import {
+	Box2D,
+	Vec2,
+	type box2D,
+	type Interval,
+	type vec2,
+} from "@alleninstitute/vis-geometry";
+import { pan, zoom } from "~/common/camera";
 
-const demo_versa = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/';
+const demo_versa =
+	"https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
 
 const screenSize: vec2 = [500, 500];
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
-function makeZarrSettings(screenSize: vec2, view: box2D, planeIdx: number): RenderSettings {
-    return {
-        camera: { screenSize, view },
-        gamut: {
-            R: { gamut: defaultInterval, index: 0 },
-            G: { gamut: defaultInterval, index: 1 },
-            B: { gamut: defaultInterval, index: 2 },
-        },
-        plane: 'xy',
-        planeIndex: planeIdx,
-        tileSize: 256,
-    };
+function makeZarrSettings(
+	screenSize: vec2,
+	view: box2D,
+	planeIdx: number,
+): RenderSettings {
+	return {
+		camera: { screenSize, view },
+		gamut: {
+			R: { gamut: defaultInterval, index: 0 },
+			G: { gamut: defaultInterval, index: 1 },
+			B: { gamut: defaultInterval, index: 2 },
+		},
+		plane: "xy",
+		planeIndex: planeIdx,
+		tileSize: 256,
+	};
 }
 
 export function OmezarrDemo() {
-    const [omezarr, setOmezarr] = useState<OmeZarrDataset>();
-    const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
-    const [planeIndex, setPlaneIndex] = useState(0);
-    const [dragging, setDragging] = useState(false);
+	const [omezarr, setOmezarr] = useState<OmeZarrDataset>();
+	const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
+	const [planeIndex, setPlaneIndex] = useState(0);
+	const [dragging, setDragging] = useState(false);
 
-    const settings: RenderSettings | undefined = useMemo(
-        () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex) : undefined),
-        [omezarr, view, planeIndex]
-    );
+	const settings: RenderSettings | undefined = useMemo(
+		() =>
+			omezarr ? makeZarrSettings(screenSize, view, planeIndex) : undefined,
+		[omezarr, view, planeIndex],
+	);
 
-    useEffect(() => {
-        loadOmeZarr(demo_versa).then((v) => {
-            setOmezarr(v);
-            const size = sizeInUnits('xy', v.multiscales[0].axes, v.multiscales[0].datasets[0]);
-            if (size) {
-                console.log(size);
-                setView(Box2D.create([0, 0], size));
-            }
-        });
-    }, []);
+	useEffect(() => {
+		loadOmeZarr(demo_versa).then((v) => {
+			setOmezarr(v);
+			const size = sizeInUnits(
+				"xy",
+				v.multiscales[0].axes,
+				v.multiscales[0].datasets[0],
+			);
+			if (size) {
+				console.log(size);
+				setView(Box2D.create([0, 0], size));
+			}
+		});
+	}, []);
 
-    const handleZoom = (e: WheelEvent) => {
-        e.preventDefault();
-        const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-        const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
-        setView(v);
-    };
+	const handleZoom = (e: WheelEvent) => {
+		e.preventDefault();
+		const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
+		const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
+		setView(v);
+	};
 
-    const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (dragging) {
-            const v = pan(view, screenSize, [e.movementX, e.movementY]);
-            setView(v);
-        }
-    };
+	const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (dragging) {
+			const v = pan(view, screenSize, [e.movementX, e.movementY]);
+			setView(v);
+		}
+	};
 
-    const handleMouseDown = () => {
-        setDragging(true);
-    };
+	const handleMouseDown = () => {
+		setDragging(true);
+	};
 
-    const handleMouseUp = () => {
-        setDragging(false);
-    };
+	const handleMouseUp = () => {
+		setDragging(false);
+	};
 
-    // you could put this on the mouse wheel, but for this demo we'll have buttons
-    const handlePlaneIndex = (next: 1 | -1) => {
-        setPlaneIndex((prev) => prev + next);
-    };
+	// you could put this on the mouse wheel, but for this demo we'll have buttons
+	const handlePlaneIndex = (next: 1 | -1) => {
+		setPlaneIndex((prev) => prev + next);
+	};
 
-    return (
-        <RenderServerProvider>
-            {omezarr && settings ? (
-                <>
-                    <div>
-                        <button onClick={() => handlePlaneIndex(-1)}>{'<-'}</button>
-                        <button onClick={() => handlePlaneIndex(1)}>{'->'}</button>
-                    </div>
-                    <OmezarrViewer
-                        omezarr={omezarr}
-                        id="omezarr-viewer"
-                        screenSize={screenSize}
-                        settings={settings}
-                        onWheel={handleZoom}
-                        onMouseMove={handlePan}
-                        onMouseDown={handleMouseDown}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                    />
-                </>
-            ) : (
-                <h5>Unable to load OME-Zarr</h5>
-            )}
-        </RenderServerProvider>
-    );
+	return (
+		<RenderServerProvider>
+			{omezarr && settings ? (
+				<>
+					<div>
+						<button onClick={() => handlePlaneIndex(-1)}>{"<-"}</button>
+						<button onClick={() => handlePlaneIndex(1)}>{"->"}</button>
+					</div>
+					<OmezarrViewer
+						omezarr={omezarr}
+						id="omezarr-viewer"
+						screenSize={screenSize}
+						settings={settings}
+						onWheel={handleZoom}
+						onMouseMove={handlePan}
+						onMouseDown={handleMouseDown}
+						onMouseUp={handleMouseUp}
+						onMouseLeave={handleMouseUp}
+					/>
+				</>
+			) : (
+				<h5>Unable to load OME-Zarr</h5>
+			)}
+		</RenderServerProvider>
+	);
 }
 /**
  * HEY!!!
@@ -112,17 +132,17 @@ export function OmezarrDemo() {
  *
  */
 function DataPlease() {
-    // load our canned data for now:
-    const [omezarr, setfile] = useState<OmeZarrDataset | undefined>(undefined);
-    useEffect(() => {
-        loadOmeZarr(demo_versa).then((dataset) => {
-            setfile(dataset);
-            console.log('loaded!');
-        });
-    }, []);
-    return (
-        <RenderServerProvider>
-            <SliceView omezarr={omezarr} />
-        </RenderServerProvider>
-    );
+	// load our canned data for now:
+	const [omezarr, setfile] = useState<OmeZarrDataset | undefined>(undefined);
+	useEffect(() => {
+		loadOmeZarr(demo_versa).then((dataset) => {
+			setfile(dataset);
+			console.log("loaded!");
+		});
+	}, []);
+	return (
+		<RenderServerProvider>
+			<SliceView omezarr={omezarr} />
+		</RenderServerProvider>
+	);
 }

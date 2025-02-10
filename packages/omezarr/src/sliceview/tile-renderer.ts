@@ -2,19 +2,19 @@
 // note that the ome-zarr data must have exactly 3 channels
 // the channels may be mapped to color-channels (RGB) with a basic 2-post gamut control
 
-import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
-import REGL, { type Framebuffer2D } from 'regl';
+import type { vec2, vec4 } from "@alleninstitute/vis-geometry";
+import REGL, { type Framebuffer2D } from "regl";
 
 type Props = {
-    target: Framebuffer2D | null;
-    tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
-    view: vec4; // [minx,miny,maxx,maxy] representing the camera in the same space as the tile's bounding box
-    Rgamut: vec2; // [min,max] RedOut = RedChannelValue-Rgamut.min/(Rgamut.max-Rgamut.min)
-    Ggamut: vec2; // [min,max] GreenOut = GreenChannelValue-Ggamut.min/(Ggamut.max-Ggamut.min)
-    Bgamut: vec2; // [min,max] BlueOut = BlueChannelValue-Bgamut.min/(Bgamut.max-Bgamut.min)
-    R: REGL.Texture2D;
-    G: REGL.Texture2D;
-    B: REGL.Texture2D;
+	target: Framebuffer2D | null;
+	tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
+	view: vec4; // [minx,miny,maxx,maxy] representing the camera in the same space as the tile's bounding box
+	Rgamut: vec2; // [min,max] RedOut = RedChannelValue-Rgamut.min/(Rgamut.max-Rgamut.min)
+	Ggamut: vec2; // [min,max] GreenOut = GreenChannelValue-Ggamut.min/(Ggamut.max-Ggamut.min)
+	Bgamut: vec2; // [min,max] BlueOut = BlueChannelValue-Bgamut.min/(Bgamut.max-Bgamut.min)
+	R: REGL.Texture2D;
+	G: REGL.Texture2D;
+	B: REGL.Texture2D;
 };
 /**
  *
@@ -24,21 +24,21 @@ type Props = {
  * the rendering is done in the given target buffer (or null for the screen).
  */
 export function buildTileRenderer(regl: REGL.Regl) {
-    const cmd = regl<
-        {
-            view: vec4;
-            tile: vec4;
-            R: REGL.Texture2D;
-            G: REGL.Texture2D;
-            B: REGL.Texture2D;
-            Rgamut: vec2;
-            Ggamut: vec2;
-            Bgamut: vec2;
-        },
-        { pos: REGL.BufferData },
-        Props
-    >({
-        vert: ` precision highp float;
+	const cmd = regl<
+		{
+			view: vec4;
+			tile: vec4;
+			R: REGL.Texture2D;
+			G: REGL.Texture2D;
+			B: REGL.Texture2D;
+			Rgamut: vec2;
+			Ggamut: vec2;
+			Bgamut: vec2;
+		},
+		{ pos: REGL.BufferData },
+		Props
+	>({
+		vert: ` precision highp float;
         attribute vec2 pos;
             
             uniform vec4 view;
@@ -57,7 +57,7 @@ export function buildTileRenderer(regl: REGL.Regl) {
                 gl_Position = vec4(p.x,p.y,0.0,1.0);
             }`,
 
-        frag: `
+		frag: `
     precision highp float;
     uniform sampler2D R;
     uniform sampler2D G;
@@ -80,26 +80,26 @@ export function buildTileRenderer(regl: REGL.Regl) {
            
             gl_FragColor = vec4(color, 1.0);
         }`,
-        framebuffer: regl.prop<Props, 'target'>('target'),
-        attributes: {
-            pos: [0, 0, 1, 0, 1, 1, 0, 1],
-        },
-        uniforms: {
-            tile: regl.prop<Props, 'tile'>('tile'),
-            view: regl.prop<Props, 'view'>('view'),
-            R: regl.prop<Props, 'R'>('R'),
-            G: regl.prop<Props, 'G'>('G'),
-            B: regl.prop<Props, 'B'>('B'),
-            Rgamut: regl.prop<Props, 'Rgamut'>('Rgamut'),
-            Ggamut: regl.prop<Props, 'Ggamut'>('Ggamut'),
-            Bgamut: regl.prop<Props, 'Bgamut'>('Bgamut'),
-        },
-        depth: {
-            enable: false,
-        },
-        count: 4,
-        primitive: 'triangle fan',
-    });
+		framebuffer: regl.prop<Props, "target">("target"),
+		attributes: {
+			pos: [0, 0, 1, 0, 1, 1, 0, 1],
+		},
+		uniforms: {
+			tile: regl.prop<Props, "tile">("tile"),
+			view: regl.prop<Props, "view">("view"),
+			R: regl.prop<Props, "R">("R"),
+			G: regl.prop<Props, "G">("G"),
+			B: regl.prop<Props, "B">("B"),
+			Rgamut: regl.prop<Props, "Rgamut">("Rgamut"),
+			Ggamut: regl.prop<Props, "Ggamut">("Ggamut"),
+			Bgamut: regl.prop<Props, "Bgamut">("Bgamut"),
+		},
+		depth: {
+			enable: false,
+		},
+		count: 4,
+		primitive: "triangle fan",
+	});
 
-    return (p: Props) => cmd(p);
+	return (p: Props) => cmd(p);
 }
