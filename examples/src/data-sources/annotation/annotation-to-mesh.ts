@@ -80,7 +80,10 @@ function closedPolygon(loop: PathCommand[]) {
 function onlyDefined<T>(collection: ReadonlyArray<T | undefined>): ReadonlyArray<T> {
     return collection.reduce(
         (defined, cur) => {
-            return cur !== undefined ? [...defined, cur] : defined;
+            if (cur !== undefined) {
+                (defined as T[]).push(cur);
+            }
+            return defined;
         },
         [] as ReadonlyArray<T>,
     );

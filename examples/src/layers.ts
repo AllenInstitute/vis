@@ -56,7 +56,7 @@ const MB = 1000 * KB;
 
 declare global {
     interface Window {
-        examples: Record<string, any>;
+        examples: Record<string, unknown>;
         demo: Demo;
     }
 }
@@ -224,7 +224,9 @@ export class Demo {
 
     deleteSelectedLayer() {
         const removed = this.layers.splice(this.selectedLayer, 1);
-        removed.forEach((l) => l.render.destroy());
+        for (const l of removed) {
+            l.render.destroy();
+        }
         this.uiChange();
     }
     addLayer(
@@ -315,7 +317,13 @@ export class Demo {
                 data.dataset.multiscales[0].axes,
                 data.dataset.multiscales[0].datasets[0],
             );
-            this.camera = { ...this.camera, view: Box2D.create([0, 0], s!) };
+
+            if (!s) {
+                console.warn('no size for plane', data.plane, data.dataset.multiscales[0].axes);
+                return;
+            }
+
+            this.camera = { ...this.camera, view: Box2D.create([0, 0], s) };
             this.uiChange();
         });
     }
@@ -430,7 +438,7 @@ export class Demo {
                         }
                         break;
                     case 'finished':
-                    case 'finished_synchronously':
+                    case 'finished_synchronously': {
                         // start the next layer
                         const next = layerPromises.shift();
                         if (!next) {
@@ -441,6 +449,7 @@ export class Demo {
                             // do the next layer
                             next();
                         }
+                    }
                 }
             };
             const settings = {
@@ -764,14 +773,14 @@ function demoTime(thing: HTMLCanvasElement) {
     });
     theDemo = new Demo(thing, regl);
 
-    window['demo'] = theDemo;
+    window.demo = theDemo;
     setupExampleData();
     uiroot.render(AppUi({ demo: theDemo }));
 }
 function setupExampleData() {
     // add a bunch of pre-selected layers to the window object for selection during demo time
     window.examples = {};
-    const prep = (key: string, thing: any) => {
+    const prep = (key: string, thing: unknown) => {
         window.examples[key] = thing;
     };
     prep('structureAnnotation', structureAnnotation);
@@ -848,6 +857,13 @@ const structureAnnotation: AnnotationGridConfig = {
         opacity: 0.7,
     },
 };
-const uiroot = createRoot(document.getElementById('sidebar')!);
+
+const sidebar = document.getElementById('sidebar');
+
+if (!sidebar) {
+    throw new Error('missing sidebar in DOM');
+}
+
+const uiroot = createRoot(sidebar);
 
 demoTime(document.getElementById('glCanvas') as HTMLCanvasElement);

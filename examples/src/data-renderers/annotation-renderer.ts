@@ -89,7 +89,7 @@ function renderSlideAnnotations(
     const { closedPolygons: polygons } = annotation;
     const fadedColor = (clr: vec4, opacity: number) => [clr[0], clr[1], clr[2], opacity] as vec4;
     if (settings.fill.opacity > 0.0) {
-        polygons.forEach((polygon) => {
+        for (const polygon of polygons) {
             const color = settings.fill.overrideColor
                 ? fadedColor(settings.fill.overrideColor, settings.fill.opacity)
                 : fadedColor(polygon.color, settings.fill.opacity);
@@ -107,7 +107,7 @@ function renderSlideAnnotations(
                 stencilMeshRenderer(...stencilBatch);
                 meshRenderer(...stencilBatch);
             }
-        });
+        }
     }
 
     if (settings.stroke.opacity > 0.0) {

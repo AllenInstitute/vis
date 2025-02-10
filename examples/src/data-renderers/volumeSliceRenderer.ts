@@ -124,7 +124,13 @@ export function renderGrid<C extends CacheContentType | object>(
             view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
         };
         const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
-        const realSize = sizeInUnits(plane, axes, best)!;
+        const realSize = sizeInUnits(plane, axes, best);
+
+        if (!realSize) {
+            console.warn('no size for plane', plane, axes, best);
+            continue;
+        }
+
         const offset = Vec2.mul(gridIndex, realSize);
         // the bounds of this slice might not even be in view!
         // if we did this a bit different... we could know from the index, without having to conditionally test... TODO

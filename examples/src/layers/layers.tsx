@@ -17,8 +17,9 @@ export function AppUi(props: { demo: Demo }) {
             >
                 {'📷'}
             </Button>
-            <label>{`Layer ${demo.selectedLayer}`}</label>
+            <label htmlFor="layer">{`Layer ${demo.selectedLayer}`}</label>
             <Button
+                name="layer"
                 onClick={() => {
                     demo.selectLayer(demo.selectedLayer - 1);
                 }}

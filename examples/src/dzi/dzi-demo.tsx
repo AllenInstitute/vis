@@ -1,7 +1,7 @@
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
 import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import React from 'react';
+import type React from 'react';
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { DziViewer } from './dzi-viewer';

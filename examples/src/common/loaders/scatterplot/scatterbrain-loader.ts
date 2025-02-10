@@ -148,9 +148,9 @@ function convertTree2D(
 }
 function mapBy<K extends string, T extends Record<K, string>>(items: readonly T[], k: K): Record<string, T> {
     const dictionary: Record<string, T> = {};
-    items.forEach((item) => {
+    for (const item of items) {
         dictionary[item[k]] = item;
-    });
+    }
     return dictionary;
 }
 export function isSlideViewData(data: ColumnarMetadata | SlideColumnarMetadata): data is SlideColumnarMetadata {
@@ -170,13 +170,14 @@ function loadSlideViewDataset(metadata: SlideColumnarMetadata, _datasetUrl: stri
     const bounds = Box2D.create([Number(minX), Number(minY)], [Number(maxX), Number(maxY)]);
 
     const columnInfo = pointAttributes.reduce(
-        (dictionary, attr) => ({
-            ...dictionary,
-            [attr.name]: {
-                elements: attr.elements,
-                type: attr.type,
-            } as const,
-        }),
+        (dictionary, attr) => {
+            return Object.assign(dictionary, {
+                [attr.name]: {
+                    elements: attr.elements,
+                    type: attr.type,
+                } as const,
+            });
+        },
         {} as Record<string, ColumnMetadata>,
     );
 
@@ -209,13 +210,14 @@ export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
     const spatialDimName = metadata.spatialColumn;
     const rootBounds = Box3D.create([box.lx, box.ly, box.lz], [box.ux, box.uy, box.uz]);
     const columnInfo = metadata.pointAttributes.reduce(
-        (dictionary, attr) => ({
-            ...dictionary,
-            [attr.name]: {
-                elements: attr.elements,
-                type: attr.type,
-            } as const,
-        }),
+        (dictionary, attr) => {
+            return Object.assign(dictionary, {
+                [attr.name]: {
+                    elements: attr.elements,
+                    type: attr.type,
+                } as const,
+            });
+        },
         {} as Record<string, ColumnMetadata>,
     );
     return {

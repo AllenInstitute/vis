@@ -10,8 +10,8 @@ type ZarrSliceRequest = {
     req: ZarrRequest;
     layerIndex: number;
 };
-function isSliceRequest(payload: any): payload is ZarrSliceRequest {
-    return typeof payload === 'object' && payload.type === 'ZarrSliceRequest';
+function isSliceRequest(payload: unknown): payload is ZarrSliceRequest {
+    return typeof payload === 'object' && payload !== null && 'type' in payload && payload.type === 'ZarrSliceRequest';
 }
 ctx.onmessage = (msg: MessageEvent<unknown>) => {
     const { data } = msg;

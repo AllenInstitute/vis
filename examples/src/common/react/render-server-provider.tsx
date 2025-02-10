@@ -3,7 +3,7 @@ import React, { createContext, useEffect, useRef, type PropsWithChildren } from 
 
 export const renderServerContext = createContext<RenderServer | null>(null);
 
-export function RenderServerProvider(props: PropsWithChildren<{}>) {
+export function RenderServerProvider(props: PropsWithChildren) {
     const server = useRef<RenderServer>();
     const { children } = props;
     useEffect(() => {
