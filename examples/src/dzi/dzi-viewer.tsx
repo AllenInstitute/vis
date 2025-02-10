@@ -76,13 +76,9 @@ export function DziViewer(props: Props) {
                 (e) => {
                     if (e.status === 'begin') {
                         server.regl?.clear({
-                           
                             framebuffer: e.target,
-                           
                             color: [0, 0, 0, 0],
-                           
                             depth: 1,
-                       ,
                         });
                     } else if (e.status === 'progress' || e.status === 'finished') {
                         e.server.copyToClient(compose);
