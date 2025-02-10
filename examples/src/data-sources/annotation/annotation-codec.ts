@@ -1,5 +1,5 @@
-import type { AnnotationCodec } from "./annotation-schema-type";
-import { parseSchema, compileSchema } from "kiwi-schema";
+import type { AnnotationCodec } from './annotation-schema-type';
+import { parseSchema, compileSchema } from 'kiwi-schema';
 
 export const AnnotationSchema = `
 enum PathCommandType {

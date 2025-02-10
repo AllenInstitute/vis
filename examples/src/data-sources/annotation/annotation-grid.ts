@@ -1,8 +1,8 @@
-import type { vec4 } from "@alleninstitute/vis-geometry";
-import type { SlideViewDataset } from "~/common/loaders/scatterplot/scatterbrain-loader";
+import type { vec4 } from '@alleninstitute/vis-geometry';
+import type { SlideViewDataset } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 export type AnnotationGridConfig = {
-	type: "AnnotationGridConfig";
+	type: 'AnnotationGridConfig';
 	url: string;
 	annotationUrl: string;
 	levelFeature: string;
@@ -16,7 +16,7 @@ export type AnnotationGridConfig = {
 	};
 };
 export type AnnotationGrid = {
-	type: "AnnotationGrid";
+	type: 'AnnotationGrid';
 	dataset: SlideViewDataset;
 	annotationBaseUrl: string;
 	levelFeature: string;

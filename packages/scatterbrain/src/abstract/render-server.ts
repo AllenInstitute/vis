@@ -1,16 +1,16 @@
-import { AsyncDataCache } from "../dataset-cache";
-import type { ReglCacheEntry } from "./types";
-import { Vec2, type vec2 } from "@alleninstitute/vis-geometry";
-import REGL from "regl";
-import { type AsyncFrameEvent, type RenderCallback } from "./async-frame";
-import { type FrameLifecycle } from "../render-queue";
+import { AsyncDataCache } from '../dataset-cache';
+import type { ReglCacheEntry } from './types';
+import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import REGL from 'regl';
+import { type AsyncFrameEvent, type RenderCallback } from './async-frame';
+import { type FrameLifecycle } from '../render-queue';
 
 function destroyer(item: ReglCacheEntry) {
 	switch (item.type) {
-		case "texture":
+		case 'texture':
 			item.texture.destroy();
 			break;
-		case "buffer":
+		case 'buffer':
 			item.buffer.destroy();
 			break;
 	}
@@ -51,34 +51,26 @@ export class RenderServer {
 	cache: AsyncDataCache<string, string, ReglCacheEntry>;
 	private clients: Map<Client, ClientEntry>;
 	private maxSize: vec2;
-	constructor(
-		maxSize: vec2,
-		extensions: string[],
-		cacheByteLimit: number = 2000 * oneMB,
-	) {
+	constructor(maxSize: vec2, extensions: string[], cacheByteLimit: number = 2000 * oneMB) {
 		this.canvas = new OffscreenCanvas(10, 10); // we always render to private buffers, so we dont need a real resolution here...
 		this.clients = new Map();
 		this.maxSize = maxSize;
 		this.refreshRequested = false;
-		const gl = this.canvas.getContext("webgl", {
+		const gl = this.canvas.getContext('webgl', {
 			alpha: true,
 			preserveDrawingBuffer: false,
 			antialias: true,
 			premultipliedAlpha: true,
 		});
 		if (!gl) {
-			throw new Error("WebGL not supported!");
+			throw new Error('WebGL not supported!');
 		}
 		const regl = REGL({
 			gl,
 			extensions,
 		});
 		this.regl = regl;
-		this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(
-			destroyer,
-			sizeOf,
-			cacheByteLimit,
-		);
+		this.cache = new AsyncDataCache<string, string, ReglCacheEntry>(destroyer, sizeOf, cacheByteLimit);
 	}
 	private copyToClient(frameInfo: ClientEntry, client: Client) {
 		// note: compared transferImageFromBitmap(transferImageToBitmap()), drawImage(canvas) and a few other variations
@@ -97,16 +89,12 @@ export class RenderServer {
 					data: new Uint8Array(copyBuffer),
 				});
 				// then put those bytes in the client canvas:
-				const ctx: CanvasRenderingContext2D = client.getContext("2d")!;
-				const img = new ImageData(
-					new Uint8ClampedArray(copyBuffer),
-					width,
-					height,
-				);
+				const ctx: CanvasRenderingContext2D = client.getContext('2d')!;
+				const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
 				updateRequested(ctx, img);
 			} catch (err) {
 				console.error(
-					"error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok",
+					'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok',
 				);
 			}
 		}
@@ -155,10 +143,7 @@ export class RenderServer {
 		if (previousEntry) {
 			previousEntry.updateRequested = null;
 			// the client is mutable - so every time we get a request, we have to check to see if it got resized
-			if (
-				client.width !== previousEntry.resolution[0] ||
-				client.height !== previousEntry.resolution[1]
-			) {
+			if (client.width !== previousEntry.resolution[0] || client.height !== previousEntry.resolution[1]) {
 				// handle resizing by deleting previously allocated resources:
 				previousEntry.image.destroy();
 				// the rest will get GC'd normally
@@ -172,11 +157,7 @@ export class RenderServer {
 		const image = this.regl!.framebuffer(...resolution);
 		return { resolution, copyBuffer, image };
 	}
-	beginRendering<D, I>(
-		renderFn: RenderFrameFn<D, I>,
-		callback: ServerCallback<D, I>,
-		client: Client,
-	) {
+	beginRendering<D, I>(renderFn: RenderFrameFn<D, I>, callback: ServerCallback<D, I>, client: Client) {
 		if (this.regl) {
 			const clientFrame = this.clients.get(client);
 			if (clientFrame && clientFrame.frame) {
@@ -188,8 +169,7 @@ export class RenderServer {
 				});
 				clientFrame.updateRequested = null;
 			}
-			const { image, resolution, copyBuffer } =
-				this.prepareToRenderToClient(client);
+			const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);
 			const hijack: RenderCallback<D, I> = (e) => {
 				callback({
 					...e,
@@ -200,7 +180,7 @@ export class RenderServer {
 						},
 					},
 				});
-				if (e.status === "finished" || e.status === "cancelled") {
+				if (e.status === 'finished' || e.status === 'cancelled') {
 					this.clientFrameFinished(client);
 				}
 			};

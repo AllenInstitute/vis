@@ -1,23 +1,18 @@
-import type REGL from "regl";
+import type REGL from 'regl';
 
 export type CachedTexture = {
 	texture: REGL.Texture2D;
 	bytes: number;
-	type: "texture";
+	type: 'texture';
 };
 export type CachedVertexBuffer = {
 	buffer: REGL.Buffer;
 	bytes: number;
-	type: "buffer";
+	type: 'buffer';
 };
 export type ReglCacheEntry = CachedTexture | CachedVertexBuffer;
 
-export type Renderer<
-	Dataset,
-	Item,
-	Settings,
-	GpuData extends Record<string, ReglCacheEntry>,
-> = {
+export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, ReglCacheEntry>> = {
 	/**
 	 * a function which returns items from the given dataset - this is the place to express spatial indexing
 	 * or any other filtering that may be appropriate
@@ -47,9 +42,7 @@ export type Renderer<
 	 * @param cacheData the results of fetching all the content for an Item
 	 * @returns true if the content matches the expectations of our rendering function
 	 */
-	isPrepared: (
-		cacheData: Record<string, ReglCacheEntry | undefined>,
-	) => cacheData is GpuData;
+	isPrepared: (cacheData: Record<string, ReglCacheEntry | undefined>) => cacheData is GpuData;
 	/**
 	 * actually render the content of an item
 	 * @param target REGL framebuffer to render to (null is the canvas to which regl is bound - it is shared and mutable!)
@@ -75,12 +68,7 @@ export type Renderer<
 	 * @param settings the configuration of the current rendering task
 	 * @returns a string, suitable for use in a cache
 	 */
-	cacheKey: (
-		item: Item,
-		requestKey: string,
-		data: Dataset,
-		settings: Settings,
-	) => string;
+	cacheKey: (item: Item, requestKey: string, data: Dataset, settings: Settings) => string;
 	/**
 	 * in some cases, rendering may rely on non-item-specific rendering resources (lookup tables, buffers, etc)
 	 * this function is the place to release those

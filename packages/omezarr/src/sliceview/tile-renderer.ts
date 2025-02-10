@@ -2,8 +2,8 @@
 // note that the ome-zarr data must have exactly 3 channels
 // the channels may be mapped to color-channels (RGB) with a basic 2-post gamut control
 
-import type { vec2, vec4 } from "@alleninstitute/vis-geometry";
-import REGL, { type Framebuffer2D } from "regl";
+import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import REGL, { type Framebuffer2D } from 'regl';
 
 type Props = {
 	target: Framebuffer2D | null;
@@ -80,25 +80,25 @@ export function buildTileRenderer(regl: REGL.Regl) {
            
             gl_FragColor = vec4(color, 1.0);
         }`,
-		framebuffer: regl.prop<Props, "target">("target"),
+		framebuffer: regl.prop<Props, 'target'>('target'),
 		attributes: {
 			pos: [0, 0, 1, 0, 1, 1, 0, 1],
 		},
 		uniforms: {
-			tile: regl.prop<Props, "tile">("tile"),
-			view: regl.prop<Props, "view">("view"),
-			R: regl.prop<Props, "R">("R"),
-			G: regl.prop<Props, "G">("G"),
-			B: regl.prop<Props, "B">("B"),
-			Rgamut: regl.prop<Props, "Rgamut">("Rgamut"),
-			Ggamut: regl.prop<Props, "Ggamut">("Ggamut"),
-			Bgamut: regl.prop<Props, "Bgamut">("Bgamut"),
+			tile: regl.prop<Props, 'tile'>('tile'),
+			view: regl.prop<Props, 'view'>('view'),
+			R: regl.prop<Props, 'R'>('R'),
+			G: regl.prop<Props, 'G'>('G'),
+			B: regl.prop<Props, 'B'>('B'),
+			Rgamut: regl.prop<Props, 'Rgamut'>('Rgamut'),
+			Ggamut: regl.prop<Props, 'Ggamut'>('Ggamut'),
+			Bgamut: regl.prop<Props, 'Bgamut'>('Bgamut'),
 		},
 		depth: {
 			enable: false,
 		},
 		count: 4,
-		primitive: "triangle fan",
+		primitive: 'triangle fan',
 	});
 
 	return (p: Props) => cmd(p);

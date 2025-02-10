@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import type { Demo } from "src/layers";
-import { InputSlider } from "@czi-sds/components";
+import React, { useState } from 'react';
+import type { Demo } from 'src/layers';
+import { InputSlider } from '@czi-sds/components';
 export function ScatterplotUI(props: { demo: Demo }) {
 	const { demo } = props;
 	// control the gamut with some sliders
 	const l = demo.layers[demo.selectedLayer];
 
-	if ((l && l.type === "scatterplot") || l.type === "scatterplotGrid") {
+	if ((l && l.type === 'scatterplot') || l.type === 'scatterplotGrid') {
 		return (
 			<div>
 				<label>point size</label>

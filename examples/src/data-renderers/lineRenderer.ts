@@ -1,6 +1,6 @@
-import type { box2D, vec2, vec4 } from "@alleninstitute/vis-geometry";
-import REGL, { type AttributeConfig } from "regl";
-import type { ColumnData } from "~/common/loaders/scatterplot/scatterbrain-loader";
+import type { box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
+import REGL, { type AttributeConfig } from 'regl';
+import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 type Attrs = { pos: REGL.AttributeConfig };
 type Unis = { view: vec4; color: vec4 };
@@ -34,11 +34,11 @@ export function buildLineRenderer(regl: REGL.Regl) {
 		frag,
 		vert,
 		uniforms: {
-			view: regl.prop<Props, "view">("view"),
-			color: regl.prop<Props, "color">("color"),
+			view: regl.prop<Props, 'view'>('view'),
+			color: regl.prop<Props, 'color'>('color'),
 		},
 		attributes: {
-			pos: regl.prop<Props, "pos">("pos"),
+			pos: regl.prop<Props, 'pos'>('pos'),
 		},
 		blend: {
 			enable: false,
@@ -46,16 +46,11 @@ export function buildLineRenderer(regl: REGL.Regl) {
 		depth: {
 			enable: false,
 		},
-		count: regl.prop<Props, "count">("count"),
-		primitive: "line strip",
-		framebuffer: regl.prop<Props, "target">("target"),
+		count: regl.prop<Props, 'count'>('count'),
+		primitive: 'line strip',
+		framebuffer: regl.prop<Props, 'target'>('target'),
 	});
-	return (
-		points: Float32Array,
-		color: vec4,
-		view: box2D,
-		target: REGL.Framebuffer2D | null,
-	) => {
+	return (points: Float32Array, color: vec4, view: box2D, target: REGL.Framebuffer2D | null) => {
 		const { minCorner, maxCorner } = view;
 		cmd({
 			target,
@@ -80,9 +75,9 @@ export function buildPathRenderer(regl: REGL.Regl) {
 		settings: { view: box2D; target: REGL.Framebuffer2D | null },
 		tasks: Record<string, ColumnData | object | undefined>,
 	) => {
-		const pos = tasks["position"];
+		const pos = tasks['position'];
 		const { view, target } = settings;
-		if (pos && "type" in pos && pos.type === "float") {
+		if (pos && 'type' in pos && pos.type === 'float') {
 			cmd(pos.data, item.color, view, target);
 		}
 	};

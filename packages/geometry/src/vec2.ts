@@ -1,4 +1,4 @@
-import { VectorLibFactory } from "./vector";
+import { VectorLibFactory } from './vector';
 
 export type vec2 = readonly [number, number];
 const isVec2 = (v: ReadonlyArray<number>): v is vec2 => v.length === 2;

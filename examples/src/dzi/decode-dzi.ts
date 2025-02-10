@@ -1,4 +1,4 @@
-import type { DziImage } from "@alleninstitute/vis-dzi";
+import type { DziImage } from '@alleninstitute/vis-dzi';
 
 // DZI files will come with XML or JSON to give you important information such as the width, height, and format.
 // Below is a function for parsing an xml with that data, althought sometimes it comes in JSON format.
@@ -11,35 +11,35 @@ import type { DziImage } from "@alleninstitute/vis-dzi";
  */
 function decodeDziXml(s: string, url: string): DziImage | undefined {
 	const parser = new DOMParser();
-	const doc = parser.parseFromString(s, "text/xml");
+	const doc = parser.parseFromString(s, 'text/xml');
 	// catch any errors if the xml is malformed
-	const err = doc.querySelector("Error");
+	const err = doc.querySelector('Error');
 	if (err) return undefined;
 
 	if (doc) {
-		const img = doc.getElementsByTagName("Image")[0];
-		const size = doc.getElementsByTagName("Size")[0];
+		const img = doc.getElementsByTagName('Image')[0];
+		const size = doc.getElementsByTagName('Size')[0];
 		// format: as jpg/png
 		// overlap: how much overlap there is between images so that we can compensate the rendering
 		// tile size: how big in pixels each tile is
 		const [format, overlap, tileSize] = [
-			img.getAttribute("Format"),
-			img.getAttribute("Overlap"),
-			img.getAttribute("TileSize"),
+			img.getAttribute('Format'),
+			img.getAttribute('Overlap'),
+			img.getAttribute('TileSize'),
 		];
 		if (size && format && overlap && tileSize) {
 			// width and height of the image, so we can properly size the view
-			const width = size.getAttribute("Width");
-			const height = size.getAttribute("Height");
+			const width = size.getAttribute('Width');
+			const height = size.getAttribute('Height');
 
 			// the url ends with .dzi to denote that we're reaching for a dzi file
 			// in order to get the images from that url we need to remove the .dzi
 			// and replace it with _files/ so that the image viewer knows where to look
-			const dataLoc = url.split(".dzi")[0];
+			const dataLoc = url.split('.dzi')[0];
 			if (width && height && dataLoc) {
 				return {
 					imagesUrl: `${dataLoc}_files/`,
-					format: format as "jpeg" | "png" | "jpg" | "JPG" | "PNG",
+					format: format as 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG',
 					overlap: Number.parseInt(overlap, 10),
 					tileSize: Number.parseInt(tileSize, 10),
 					size: {

@@ -1,34 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { RenderServerProvider } from "~/common/react/render-server-provider";
-import { SliceView } from "./sliceview";
-import {
-	type OmeZarrDataset,
-	loadOmeZarr,
-	sizeInUnits,
-} from "@alleninstitute/vis-omezarr";
-import { OmezarrViewer } from "./omezarr-viewer";
-import { type RenderSettings } from "@alleninstitute/vis-omezarr";
-import {
-	Box2D,
-	Vec2,
-	type box2D,
-	type Interval,
-	type vec2,
-} from "@alleninstitute/vis-geometry";
-import { pan, zoom } from "~/common/camera";
+import React, { useEffect, useMemo, useState } from 'react';
+import { RenderServerProvider } from '~/common/react/render-server-provider';
+import { SliceView } from './sliceview';
+import { type OmeZarrDataset, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
+import { OmezarrViewer } from './omezarr-viewer';
+import { type RenderSettings } from '@alleninstitute/vis-omezarr';
+import { Box2D, Vec2, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
+import { pan, zoom } from '~/common/camera';
 
-const demo_versa =
-	"https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
+const demo_versa = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/';
 
 const screenSize: vec2 = [500, 500];
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
-function makeZarrSettings(
-	screenSize: vec2,
-	view: box2D,
-	planeIdx: number,
-): RenderSettings {
+function makeZarrSettings(screenSize: vec2, view: box2D, planeIdx: number): RenderSettings {
 	return {
 		camera: { screenSize, view },
 		gamut: {
@@ -36,7 +21,7 @@ function makeZarrSettings(
 			G: { gamut: defaultInterval, index: 1 },
 			B: { gamut: defaultInterval, index: 2 },
 		},
-		plane: "xy",
+		plane: 'xy',
 		planeIndex: planeIdx,
 		tileSize: 256,
 	};
@@ -49,19 +34,14 @@ export function OmezarrDemo() {
 	const [dragging, setDragging] = useState(false);
 
 	const settings: RenderSettings | undefined = useMemo(
-		() =>
-			omezarr ? makeZarrSettings(screenSize, view, planeIndex) : undefined,
+		() => (omezarr ? makeZarrSettings(screenSize, view, planeIndex) : undefined),
 		[omezarr, view, planeIndex],
 	);
 
 	useEffect(() => {
 		loadOmeZarr(demo_versa).then((v) => {
 			setOmezarr(v);
-			const size = sizeInUnits(
-				"xy",
-				v.multiscales[0].axes,
-				v.multiscales[0].datasets[0],
-			);
+			const size = sizeInUnits('xy', v.multiscales[0].axes, v.multiscales[0].datasets[0]);
 			if (size) {
 				console.log(size);
 				setView(Box2D.create([0, 0], size));
@@ -101,8 +81,8 @@ export function OmezarrDemo() {
 			{omezarr && settings ? (
 				<>
 					<div>
-						<button onClick={() => handlePlaneIndex(-1)}>{"<-"}</button>
-						<button onClick={() => handlePlaneIndex(1)}>{"->"}</button>
+						<button onClick={() => handlePlaneIndex(-1)}>{'<-'}</button>
+						<button onClick={() => handlePlaneIndex(1)}>{'->'}</button>
 					</div>
 					<OmezarrViewer
 						omezarr={omezarr}
@@ -137,7 +117,7 @@ function DataPlease() {
 	useEffect(() => {
 		loadOmeZarr(demo_versa).then((dataset) => {
 			setfile(dataset);
-			console.log("loaded!");
+			console.log('loaded!');
 		});
 	}, []);
 	return (

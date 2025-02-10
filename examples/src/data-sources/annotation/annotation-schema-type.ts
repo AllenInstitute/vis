@@ -1,4 +1,4 @@
-export type PathCommandType = "MoveTo" | "LineTo" | "CurveTo" | "ClosePolygon";
+export type PathCommandType = 'MoveTo' | 'LineTo' | 'CurveTo' | 'ClosePolygon';
 
 export interface Color {
 	red: number;

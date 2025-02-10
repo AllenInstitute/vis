@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
 	buildDziRenderer,
 	type DziImage,
@@ -6,14 +6,11 @@ import {
 	type DziTile,
 	type GpuProps as CachedPixels,
 	buildAsyncDziRenderer,
-} from "@alleninstitute/vis-dzi";
-import {
-	buildAsyncRenderer,
-	type RenderFrameFn,
-} from "@alleninstitute/vis-scatterbrain";
-import { Vec2, type vec2 } from "@alleninstitute/vis-geometry";
-import { renderServerContext } from "~/common/react/render-server-provider";
-import React from "react";
+} from '@alleninstitute/vis-dzi';
+import { buildAsyncRenderer, type RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
+import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import { renderServerContext } from '~/common/react/render-server-provider';
+import React from 'react';
 
 type Props = {
 	id: string;
@@ -27,17 +24,7 @@ type Props = {
 } & DziRenderSettings;
 
 export function DziViewer(props: Props) {
-	const {
-		svgOverlay,
-		camera,
-		dzi,
-		onWheel,
-		id,
-		onMouseDown,
-		onMouseUp,
-		onMouseMove,
-		onMouseLeave,
-	} = props;
+	const { svgOverlay, camera, dzi, onWheel, id, onMouseDown, onMouseUp, onMouseMove, onMouseLeave } = props;
 	const server = useContext(renderServerContext);
 	const cnvs = useRef<HTMLCanvasElement>(null);
 
@@ -45,16 +32,7 @@ export function DziViewer(props: Props) {
 	// hence the awkwardness of refs + an effect to initialize the whole hting
 	const renderer =
 		useRef<
-			ReturnType<
-				typeof buildAsyncRenderer<
-					DziImage,
-					DziTile,
-					DziRenderSettings,
-					string,
-					string,
-					CachedPixels
-				>
-			>
+			ReturnType<typeof buildAsyncRenderer<DziImage, DziTile, DziRenderSettings, string, string, CachedPixels>>
 		>();
 
 	useEffect(() => {
@@ -81,26 +59,12 @@ export function DziViewer(props: Props) {
 				const wh = Vec2.sub(Vec2.mul(camera.view.maxCorner, svgSize), start);
 				const [sx, sy] = start;
 				const [sw, sh] = wh;
-				ctx.drawImage(
-					svgOverlay,
-					sx,
-					sy,
-					sw,
-					sh,
-					0,
-					0,
-					ctx.canvas.width,
-					ctx.canvas.height,
-				);
+				ctx.drawImage(svgOverlay, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
 			}
 		};
 
 		if (server && renderer.current && cnvs.current) {
-			const renderMyData: RenderFrameFn<DziImage, DziTile> = (
-				target,
-				cache,
-				callback,
-			) => {
+			const renderMyData: RenderFrameFn<DziImage, DziTile> = (target, cache, callback) => {
 				if (renderer.current) {
 					// erase the frame before we start drawing on it
 					return renderer.current(dzi, { camera }, callback, target, cache);
@@ -110,13 +74,13 @@ export function DziViewer(props: Props) {
 			server.beginRendering(
 				renderMyData,
 				(e) => {
-					if (e.status == "begin") {
+					if (e.status == 'begin') {
 						server.regl?.clear({
 							framebuffer: e.target,
 							color: [0, 0, 0, 0],
 							depth: 1,
 						});
-					} else if (e.status == "progress" || e.status == "finished") {
+					} else if (e.status == 'progress' || e.status == 'finished') {
 						e.server.copyToClient(compose);
 					}
 				},
@@ -131,11 +95,11 @@ export function DziViewer(props: Props) {
 		const handleWheel = (e: WheelEvent) => onWheel?.(e);
 		const canvas = cnvs;
 		if (canvas?.current) {
-			canvas.current.addEventListener("wheel", handleWheel, { passive: false });
+			canvas.current.addEventListener('wheel', handleWheel, { passive: false });
 		}
 		return () => {
 			if (canvas?.current) {
-				canvas.current.removeEventListener("wheel", handleWheel);
+				canvas.current.removeEventListener('wheel', handleWheel);
 			}
 		};
 	}, [onWheel]);

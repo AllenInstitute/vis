@@ -1,5 +1,5 @@
-import type { vec4 } from "@alleninstitute/vis-geometry";
-import REGL from "regl";
+import type { vec4 } from '@alleninstitute/vis-geometry';
+import REGL from 'regl';
 type Props = {
 	img: REGL.Texture2D;
 	view: vec4;
@@ -34,10 +34,7 @@ void main(){
     gl_FragColor = texture2D(img, uv);
 }
 `;
-export function buildTileRenderer(
-	regl: REGL.Regl,
-	blend: REGL.BlendingOptions,
-) {
+export function buildTileRenderer(regl: REGL.Regl, blend: REGL.BlendingOptions) {
 	const cmd = regl({
 		vert,
 		frag,
@@ -46,17 +43,17 @@ export function buildTileRenderer(
 		},
 		blend,
 		count: 4,
-		primitive: "triangle fan",
+		primitive: 'triangle fan',
 		attributes: {
 			position: [0, 0, 1, 0, 1, 1, 0, 1],
 		},
 		uniforms: {
-			img: regl.prop<Props, "img">("img"),
-			view: regl.prop<Props, "view">("view"),
-			tile: regl.prop<Props, "tile">("tile"),
-			depth: regl.prop<Props, "depth">("depth"),
+			img: regl.prop<Props, 'img'>('img'),
+			view: regl.prop<Props, 'view'>('view'),
+			tile: regl.prop<Props, 'tile'>('tile'),
+			depth: regl.prop<Props, 'depth'>('depth'),
 		},
-		framebuffer: regl.prop<Props, "target">("target"),
+		framebuffer: regl.prop<Props, 'target'>('target'),
 	});
 	return (p: Props) => cmd(p);
 }

@@ -1,27 +1,15 @@
-import {
-	beginLongRunningFrame,
-	type AsyncDataCache,
-} from "@alleninstitute/vis-scatterbrain";
-import type REGL from "regl";
-import { buildRenderer as buildScatterplotRenderer } from "./scatterplot";
-import { Box2D, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
-import { applyOptionalTrn } from "./utils";
-import type {
-	DynamicGrid,
-	DynamicGridSlide,
-} from "../data-sources/scatterplot/dynamic-grid";
-import type { RenderCallback } from "./types";
-import {
-	fetchItem,
-	getVisibleItemsInSlide,
-} from "~/common/loaders/scatterplot/data";
-import type {
-	ColumnarTree,
-	ColumnRequest,
-} from "~/common/loaders/scatterplot/scatterbrain-loader";
-import type { Camera } from "~/common/camera";
+import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
+import type REGL from 'regl';
+import { buildRenderer as buildScatterplotRenderer } from './scatterplot';
+import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import { applyOptionalTrn } from './utils';
+import type { DynamicGrid, DynamicGridSlide } from '../data-sources/scatterplot/dynamic-grid';
+import type { RenderCallback } from './types';
+import { fetchItem, getVisibleItemsInSlide } from '~/common/loaders/scatterplot/data';
+import type { ColumnarTree, ColumnRequest } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type { Camera } from '~/common/camera';
 type CacheContentType = {
-	type: "vbo";
+	type: 'vbo';
 	data: REGL.Buffer;
 };
 
@@ -36,11 +24,7 @@ export type RenderSettings<C> = {
 	queueInterval?: number;
 	cpuLimit?: number;
 };
-const cacheKey = (
-	reqKey: string,
-	item: ColumnarTree<vec2>,
-	settings: { colorBy: ColumnRequest },
-) =>
+const cacheKey = (reqKey: string, item: ColumnarTree<vec2>, settings: { colorBy: ColumnRequest }) =>
 	`${reqKey}:${item.content.name}:${settings.colorBy.name}|${settings.colorBy.type}`;
 export function renderSlide<C extends CacheContentType | object>(
 	target: REGL.Framebuffer2D | null,
@@ -68,12 +52,7 @@ export function renderSlide<C extends CacheContentType | object>(
 		view: applyOptionalTrn(camera.view, slide.toModelSpace, true),
 	};
 	// camera = camera.projection === 'webImage' ? flipY(camera) : camera;
-	const items = getVisibleItemsInSlide(
-		slide.dataset,
-		slide.slideId,
-		settings.camera.view,
-		10 * unitsPerPixel[0],
-	);
+	const items = getVisibleItemsInSlide(slide.dataset, slide.slideId, settings.camera.view, 10 * unitsPerPixel[0]);
 	// make the frame, return some junk
 	return beginLongRunningFrame(
 		concurrentTasks,
@@ -122,12 +101,9 @@ export function renderDynamicGrid<C extends CacheContentType | object>(
 		const realBounds = Box2D.translate(bounds, offset);
 		if (Box2D.intersection(view, realBounds)) {
 			items.push(
-				...getVisibleItemsInSlide(
-					grid.dataset,
-					slide.id,
-					settings.camera.view,
-					10 * unitsPerPixel[0],
-				).map((t) => ({ ...t, offset })),
+				...getVisibleItemsInSlide(grid.dataset, slide.id, settings.camera.view, 10 * unitsPerPixel[0]).map(
+					(t) => ({ ...t, offset }),
+				),
 			);
 		}
 	});

@@ -1,9 +1,9 @@
 // a helper to render a 2D layer, using regl
-import type { Image, ImageRenderer, RenderFn } from "./types";
-import { type BufferPair, swapBuffers } from "./buffer-pair";
-import type REGL from "regl";
-import type { FrameLifecycle, RenderCallback } from "../render-queue";
-import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import type { Image, ImageRenderer, RenderFn } from './types';
+import { type BufferPair, swapBuffers } from './buffer-pair';
+import type REGL from 'regl';
+import type { FrameLifecycle, RenderCallback } from '../render-queue';
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
 type EventType = Parameters<RenderCallback>[0];
 type RequiredSettings = { camera: { view: box2D }; callback: RenderCallback };
@@ -38,7 +38,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
 		this.renderFn = renderFn;
 	}
 	destroy() {
-		this.runningFrame?.cancelFrame("destroy this layer");
+		this.runningFrame?.cancelFrame('destroy this layer');
 		this.buffers.readFrom.texture.destroy();
 		this.buffers.writeTo.texture.destroy();
 	}
@@ -46,8 +46,8 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
 		return this.runningFrame !== null;
 	}
 
-	getRenderResults(stage: "prev" | "cur") {
-		return stage == "cur" ? this.buffers.writeTo : this.buffers.readFrom;
+	getRenderResults(stage: 'prev' | 'cur') {
+		return stage == 'cur' ? this.buffers.writeTo : this.buffers.readFrom;
 	}
 	onChange(
 		props: {
@@ -61,11 +61,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
 			this.runningFrame = null;
 			const { readFrom, writeTo } = this.buffers;
 			// copy our work to the prev-buffer...
-			if (
-				readFrom.bounds &&
-				writeTo.bounds &&
-				Box2D.intersection(readFrom.bounds, writeTo.bounds)
-			) {
+			if (readFrom.bounds && writeTo.bounds && Box2D.intersection(readFrom.bounds, writeTo.bounds)) {
 				const [width, height] = writeTo.resolution;
 				this.renderImg({
 					box: Box2D.toFlatArray(writeTo.bounds),
@@ -95,8 +91,8 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
 			callback: (ev: EventType) => {
 				const { status } = ev;
 				switch (status) {
-					case "finished":
-					case "finished_synchronously":
+					case 'finished':
+					case 'finished_synchronously':
 						this.buffers = swapBuffers(this.buffers);
 						// only erase... if we would have cancelled...
 						if (cancel) {
@@ -112,10 +108,6 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
 				callback?.(ev);
 			},
 		};
-		this.runningFrame = this.renderFn(
-			this.buffers.writeTo.texture,
-			data,
-			wrapCallback,
-		);
+		this.runningFrame = this.renderFn(this.buffers.writeTo.texture, data, wrapCallback);
 	}
 }

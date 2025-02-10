@@ -4,17 +4,17 @@ import {
 	loadScatterbrainJson,
 	isSlideViewData,
 	loadDataset,
-} from "~/common/loaders/scatterplot/scatterbrain-loader";
-import type { OptionalTransform, Simple2DTransform } from "../types";
+} from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type { OptionalTransform, Simple2DTransform } from '../types';
 
 export type ScatterplotGridConfig = {
-	type: "ScatterPlotGridConfig";
+	type: 'ScatterPlotGridConfig';
 	colorBy: ColumnRequest;
 	url: string;
 	trn?: Simple2DTransform | undefined;
 };
 export type ScatterPlotGridSlideConfig = {
-	type: "ScatterPlotGridSlideConfig";
+	type: 'ScatterPlotGridSlideConfig';
 	slideId: string;
 	colorBy: ColumnRequest;
 	url: string;
@@ -22,7 +22,7 @@ export type ScatterPlotGridSlideConfig = {
 };
 
 export type DynamicGridSlide = {
-	type: "DynamicGridSlide";
+	type: 'DynamicGridSlide';
 	dataset: SlideViewDataset;
 	slideId: string;
 	colorBy: ColumnRequest;
@@ -30,20 +30,17 @@ export type DynamicGridSlide = {
 } & OptionalTransform;
 
 export type DynamicGrid = {
-	type: "DynamicGrid";
+	type: 'DynamicGrid';
 	dataset: SlideViewDataset;
 	colorBy: ColumnRequest;
 	pointSize: number;
 } & OptionalTransform;
 
 // create the real deal from the config
-function assembleSlideConfig(
-	config: ScatterPlotGridSlideConfig,
-	dataset: SlideViewDataset,
-): DynamicGridSlide {
+function assembleSlideConfig(config: ScatterPlotGridSlideConfig, dataset: SlideViewDataset): DynamicGridSlide {
 	const { colorBy, slideId, trn } = config;
 	return {
-		type: "DynamicGridSlide",
+		type: 'DynamicGridSlide',
 		colorBy,
 		dataset,
 		slideId,
@@ -51,9 +48,7 @@ function assembleSlideConfig(
 		toModelSpace: trn,
 	};
 }
-export function createSlideDataset(
-	config: ScatterPlotGridSlideConfig,
-): Promise<DynamicGridSlide | undefined> {
+export function createSlideDataset(config: ScatterPlotGridSlideConfig): Promise<DynamicGridSlide | undefined> {
 	const { url } = config;
 	return loadScatterbrainJson(url).then((metadata) => {
 		if (isSlideViewData(metadata)) {
@@ -64,22 +59,17 @@ export function createSlideDataset(
 	});
 }
 
-function assembleGridConfig(
-	config: ScatterplotGridConfig,
-	dataset: SlideViewDataset,
-): DynamicGrid {
+function assembleGridConfig(config: ScatterplotGridConfig, dataset: SlideViewDataset): DynamicGrid {
 	const { colorBy, trn } = config;
 	return {
-		type: "DynamicGrid",
+		type: 'DynamicGrid',
 		colorBy,
 		dataset,
 		pointSize: 4,
 		toModelSpace: trn,
 	};
 }
-export function createGridDataset(
-	config: ScatterplotGridConfig,
-): Promise<DynamicGrid | undefined> {
+export function createGridDataset(config: ScatterplotGridConfig): Promise<DynamicGrid | undefined> {
 	const { url } = config;
 	return loadScatterbrainJson(url).then((metadata) => {
 		if (isSlideViewData(metadata)) {

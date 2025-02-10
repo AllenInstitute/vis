@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
 	buildAsyncOmezarrRenderer,
 	type ZarrDataset,
@@ -6,11 +6,11 @@ import {
 	defaultDecoder,
 	type RenderSettings,
 	type OmeZarrDataset,
-} from "@alleninstitute/vis-omezarr";
-import { type RenderFrameFn } from "@alleninstitute/vis-scatterbrain";
-import { useContext, useEffect, useRef } from "react";
-import type { vec2, box2D } from "@alleninstitute/vis-geometry";
-import { renderServerContext } from "~/common/react/render-server-provider";
+} from '@alleninstitute/vis-omezarr';
+import { type RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
+import { useContext, useEffect, useRef } from 'react';
+import type { vec2, box2D } from '@alleninstitute/vis-geometry';
+import { renderServerContext } from '~/common/react/render-server-provider';
 
 interface OmezarrViewerProps {
 	omezarr: OmeZarrDataset;
@@ -63,11 +63,7 @@ export function OmezarrViewer({
 	// render frames
 	useEffect(() => {
 		if (server && renderer.current && canvas.current && omezarr) {
-			const hey: RenderFrameFn<ZarrDataset, VoxelTile> = (
-				target,
-				cache,
-				callback,
-			) => {
+			const hey: RenderFrameFn<ZarrDataset, VoxelTile> = (target, cache, callback) => {
 				if (renderer.current) {
 					return renderer.current(omezarr, settings, callback, target, cache);
 				}
@@ -78,18 +74,18 @@ export function OmezarrViewer({
 				hey,
 				(e) => {
 					switch (e.status) {
-						case "begin":
+						case 'begin':
 							server.regl?.clear({
 								framebuffer: e.target,
 								color: [0, 0, 0, 0],
 								depth: 1,
 							});
 							break;
-						case "progress":
+						case 'progress':
 							// wanna see the tiles as they arrive?
 							e.server.copyToClient(compose);
 							break;
-						case "finished": {
+						case 'finished': {
 							e.server.copyToClient(compose);
 							break;
 						}
@@ -108,11 +104,11 @@ export function OmezarrViewer({
 		const c = canvas.current;
 		const handleWheel = (e: WheelEvent) => onWheel?.(e);
 		if (c) {
-			c.addEventListener("wheel", handleWheel, { passive: false });
+			c.addEventListener('wheel', handleWheel, { passive: false });
 		}
 		return () => {
 			if (c) {
-				c.removeEventListener("wheel", handleWheel);
+				c.removeEventListener('wheel', handleWheel);
 			}
 		};
 	});

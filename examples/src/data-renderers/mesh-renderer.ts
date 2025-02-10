@@ -1,5 +1,5 @@
-import type { vec4, vec2 } from "@alleninstitute/vis-geometry";
-import REGL from "regl";
+import type { vec4, vec2 } from '@alleninstitute/vis-geometry';
+import REGL from 'regl';
 
 const frag = `
 precision highp float;
@@ -44,22 +44,22 @@ type Props = {
 	target: REGL.Framebuffer | null;
 };
 
-type LoopProps = { count: number } & Omit<Props, "triangles">;
+type LoopProps = { count: number } & Omit<Props, 'triangles'>;
 
 export function buildLoopRenderer(regl: REGL.Regl) {
 	const cmd = regl<Uniforms, Attribs, LoopProps>({
 		vert,
 		frag,
-		primitive: "line loop",
+		primitive: 'line loop',
 		uniforms: {
-			view: regl.prop<LoopProps, "view">("view"),
-			offset: regl.prop<LoopProps, "offset">("offset"),
-			color: regl.prop<LoopProps, "color">("color"),
+			view: regl.prop<LoopProps, 'view'>('view'),
+			offset: regl.prop<LoopProps, 'offset'>('offset'),
+			color: regl.prop<LoopProps, 'color'>('color'),
 		},
-		attributes: { position: regl.prop<LoopProps, "position">("position") },
-		viewport: regl.prop<LoopProps, "viewport">("viewport"),
-		framebuffer: regl.prop<LoopProps, "target">("target"),
-		count: regl.prop<LoopProps, "count">("count"),
+		attributes: { position: regl.prop<LoopProps, 'position'>('position') },
+		viewport: regl.prop<LoopProps, 'viewport'>('viewport'),
+		framebuffer: regl.prop<LoopProps, 'target'>('target'),
+		count: regl.prop<LoopProps, 'count'>('count'),
 		depth: {
 			mask: false,
 			enable: false,
@@ -72,23 +72,20 @@ export function buildLoopRenderer(regl: REGL.Regl) {
 		cmd(args);
 	};
 }
-export function buildMeshRenderer(
-	regl: REGL.Regl,
-	mode: "draw-stencil" | "use-stencil",
-) {
+export function buildMeshRenderer(regl: REGL.Regl, mode: 'draw-stencil' | 'use-stencil') {
 	const cmd = regl<Uniforms, Attribs, Props>({
 		vert,
 		frag,
-		primitive: "triangle fan",
+		primitive: 'triangle fan',
 		uniforms: {
-			view: regl.prop<Props, "view">("view"),
-			offset: regl.prop<Props, "offset">("offset"),
-			color: regl.prop<Props, "color">("color"),
+			view: regl.prop<Props, 'view'>('view'),
+			offset: regl.prop<Props, 'offset'>('offset'),
+			color: regl.prop<Props, 'color'>('color'),
 		},
-		attributes: { position: regl.prop<Props, "position">("position") },
-		count: regl.prop<Props, "count">("count"),
-		viewport: regl.prop<Props, "viewport">("viewport"),
-		framebuffer: regl.prop<Props, "target">("target"),
+		attributes: { position: regl.prop<Props, 'position'>('position') },
+		count: regl.prop<Props, 'count'>('count'),
+		viewport: regl.prop<Props, 'viewport'>('viewport'),
+		framebuffer: regl.prop<Props, 'target'>('target'),
 		depth: {
 			mask: false,
 			enable: false,
@@ -96,21 +93,21 @@ export function buildMeshRenderer(
 		blend: {
 			enable: true,
 		},
-		...(mode === "draw-stencil"
+		...(mode === 'draw-stencil'
 			? {
 					colorMask: [false, false, false, false],
 					stencil: {
 						enable: true,
 						mask: -1,
 						func: {
-							cmp: "always",
+							cmp: 'always',
 							mask: -1,
 							ref: 0,
 						},
 						op: {
-							fail: "invert", // cmp is always - thus never fails...
-							zfail: "invert",
-							zpass: "invert",
+							fail: 'invert', // cmp is always - thus never fails...
+							zfail: 'invert',
+							zpass: 'invert',
 						},
 					},
 				}
@@ -120,14 +117,14 @@ export function buildMeshRenderer(
 						enable: true,
 						mask: 0,
 						func: {
-							cmp: "lequal",
+							cmp: 'lequal',
 							mask: -1,
 							ref: 1,
 						},
 						op: {
-							fail: "keep",
-							zfail: "keep",
-							zpass: "keep",
+							fail: 'keep',
+							zfail: 'keep',
+							zpass: 'keep',
 						},
 					},
 				}),

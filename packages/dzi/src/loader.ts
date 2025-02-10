@@ -1,10 +1,4 @@
-import {
-	type vec2,
-	type box2D,
-	Box2D,
-	type Interval,
-	Vec2,
-} from "@alleninstitute/vis-geometry";
+import { type vec2, type box2D, Box2D, type Interval, Vec2 } from '@alleninstitute/vis-geometry';
 
 type DziTilesRoot = `${string}_files/`;
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN
@@ -14,7 +8,7 @@ export type DziImage = {
 	// imagesUrl would be the path which contains all the files for the actual image tiles:
 	// in this example:
 	// http://blah.com/deepzoom_files/
-	format: "jpeg" | "png" | "jpg" | "JPG" | "PNG";
+	format: 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG';
 	overlap: number; // in pixels, ADDED every side of any given tile (for example, with overlap=1 and tilesize=256, you could see a jpeg of size 258x258).
 	// note that tiles on the edge wont have padding (on a per edge basis!)
 	tileSize: number;
@@ -53,15 +47,9 @@ function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
  * @param camera.screenSize the size, in output pixels, at which the requested region will be displayed.
  * @return a list of tiles at the most appropriate resolution which may be fetched and displayed
  */
-export function getVisibleTiles(
-	dzi: DziImage,
-	camera: { view: box2D; screenSize: vec2 },
-): DziTile[] {
+export function getVisibleTiles(dzi: DziImage, camera: { view: box2D; screenSize: vec2 }): DziTile[] {
 	const viewWidth = Box2D.size(camera.view)[0];
-	const layer = firstSuitableLayer(
-		dzi.size.width,
-		camera.screenSize[0] / viewWidth,
-	);
+	const layer = firstSuitableLayer(dzi.size.width, camera.screenSize[0] / viewWidth);
 	const layerResolution = imageSizeAtLayer(dzi, layer);
 
 	const availableTiles = tilesInLayer(dzi, layer);
@@ -78,10 +66,7 @@ export function getVisibleTiles(
 	// the given view is assumed to be a parameter (in the space [0:1]) of the image as a whole
 	// so, we must convert literal pixel boxes into their relative position in the image as a whole:
 	const tileBoxAsParameter = (tile: box2D) =>
-		Box2D.create(
-			Vec2.div(tile.minCorner, layerResolution),
-			Vec2.div(tile.maxCorner, layerResolution),
-		);
+		Box2D.create(Vec2.div(tile.minCorner, layerResolution), Vec2.div(tile.maxCorner, layerResolution));
 
 	const tiles: DziTile[] = availableTiles
 		.flatMap((row, rowIndex) => {
@@ -120,18 +105,11 @@ export function firstSuitableLayer(imageWidth: number, screenWidth: number) {
 function findLargestSingleTileLayer(dzi: DziImage): number {
 	return Math.floor(Math.log2(dzi.tileSize));
 }
-export function tileWithOverlap(
-	total: number,
-	step: number,
-	overlap: number,
-): Interval[] {
+export function tileWithOverlap(total: number, step: number, overlap: number): Interval[] {
 	const blocks: Interval[] = [];
 	let start = 0;
 	while (start < total) {
-		const next = Math.min(
-			total,
-			start + step + overlap + (start > 0 ? overlap : 0),
-		);
+		const next = Math.min(total, start + step + overlap + (start > 0 ? overlap : 0));
 		blocks.push({ min: start, max: next });
 		if (next >= total) {
 			return blocks;

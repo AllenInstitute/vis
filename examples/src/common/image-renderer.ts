@@ -1,5 +1,5 @@
-import type { vec2, vec4 } from "@alleninstitute/vis-geometry";
-import REGL, { type Framebuffer2D } from "regl";
+import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import REGL, { type Framebuffer2D } from 'regl';
 
 type Props = {
 	target: Framebuffer2D | null;
@@ -40,7 +40,7 @@ export function buildImageRenderer(regl: REGL.Regl) {
               
               gl_FragColor =texture2D(img, texCoord);
           }`,
-		framebuffer: regl.prop<Props, "target">("target"),
+		framebuffer: regl.prop<Props, 'target'>('target'),
 		attributes: {
 			pos: [0, 0, 1, 0, 1, 1, 0, 1],
 		},
@@ -48,19 +48,19 @@ export function buildImageRenderer(regl: REGL.Regl) {
 			enable: false,
 		},
 		uniforms: {
-			box: regl.prop<Props, "box">("box"),
-			view: regl.prop<Props, "view">("view"),
-			img: regl.prop<Props, "img">("img"),
+			box: regl.prop<Props, 'box'>('box'),
+			view: regl.prop<Props, 'view'>('view'),
+			img: regl.prop<Props, 'img'>('img'),
 		},
 		blend: {
 			enable: true,
 			func: {
-				src: "src alpha",
-				dst: "one minus src alpha",
+				src: 'src alpha',
+				dst: 'one minus src alpha',
 			},
 		},
 		count: 4,
-		primitive: "triangle fan",
+		primitive: 'triangle fan',
 		// ... more!
 	});
 	return cmd;

@@ -1,8 +1,8 @@
-import React from "react";
-import { BrowserRouter, Route, Routes } from "react-router";
-import { Home } from "./home";
-import { OmezarrDemo } from "./omezarr/omezarr-demo";
-import { DziDemo } from "./dzi/dzi-demo";
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router';
+import { Home } from './home';
+import { OmezarrDemo } from './omezarr/omezarr-demo';
+import { DziDemo } from './dzi/dzi-demo';
 
 export function App() {
 	return (

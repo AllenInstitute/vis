@@ -1,4 +1,4 @@
-import type { VectorLib } from "./vector";
+import type { VectorLib } from './vector';
 
 type VectorConstraint = ReadonlyArray<number>;
 export type box<V extends VectorConstraint> = {
@@ -10,11 +10,7 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
 	const create = (low: V, hi: V) => ({ minCorner: low, maxCorner: hi });
 	const isValid = (a: box<V>) => {
 		const diff = lib.sub(a.maxCorner, a.minCorner);
-		return (
-			lib.finite(a.maxCorner) &&
-			lib.finite(a.minCorner) &&
-			lib.all(diff, (v: number) => v > 0.0)
-		);
+		return lib.finite(a.maxCorner) && lib.finite(a.minCorner) && lib.all(diff, (v: number) => v > 0.0);
 	};
 	const union = (a: box<V>, b: box<V>) => ({
 		minCorner: lib.min(a.minCorner, b.minCorner),
@@ -33,8 +29,7 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
 			return false;
 		};
 		const vals: V[] = [];
-		const pickValue = (v: boolean, i: number) =>
-			v ? a.maxCorner[i] : a.minCorner[i];
+		const pickValue = (v: boolean, i: number) => (v ? a.maxCorner[i] : a.minCorner[i]);
 		do {
 			vals.push(what.map(pickValue) as unknown as V);
 		} while (next());
@@ -44,11 +39,7 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
 		// cornerIndex is based from the generated corners from box.corners
 		// The corner index corresponds to a binary representation where each bit represents a dimension.
 		// For example, in a 2D box, [[minX, minY], [minX, maxY], [maxX, minY], [maxX, maxY]] would be [[0,0], [0,1], [1,0], [1,1]]
-		const binaryIndex = cornerIndex
-			.toString(2)
-			.padStart(box.minCorner.length, "0")
-			.split("")
-			.map(Number);
+		const binaryIndex = cornerIndex.toString(2).padStart(box.minCorner.length, '0').split('').map(Number);
 
 		const newMinCorner = [...box.minCorner];
 		const newMaxCorner = [...box.maxCorner];
@@ -85,26 +76,20 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
 		return undefined;
 	};
 	const containsPoint = (box: box<V>, point: V) => {
-		const greaterThanMin = lib.all(
-			lib.sub(point, box.minCorner),
-			(v) => v > 0.0,
-		);
+		const greaterThanMin = lib.all(lib.sub(point, box.minCorner), (v) => v > 0.0);
 		const lessThanMax = lib.all(lib.sub(box.maxCorner, point), (v) => v >= 0.0);
 		return greaterThanMin && lessThanMax;
 	};
 
-	const toFlatArray = (box: box<V>) =>
-		[...box.minCorner, ...box.maxCorner] as const;
+	const toFlatArray = (box: box<V>) => [...box.minCorner, ...box.maxCorner] as const;
 	const size = (b: box<V>) => lib.sub(b.maxCorner, b.minCorner);
-	const midpoint = (b: box<V>) =>
-		lib.scale(lib.add(b.minCorner, b.maxCorner), 0.5);
+	const midpoint = (b: box<V>) => lib.scale(lib.add(b.minCorner, b.maxCorner), 0.5);
 	const map = (box: box<V>, fn: (v: V) => V) => ({
 		minCorner: fn(box.minCorner),
 		maxCorner: fn(box.maxCorner),
 	});
 	const scale = (box: box<V>, s: V) => map(box, (c: V) => lib.mul(s, c));
-	const translate = (box: box<V>, offset: V) =>
-		map(box, (c: V) => lib.add(c, offset));
+	const translate = (box: box<V>, offset: V) => map(box, (c: V) => lib.add(c, offset));
 	return {
 		create, // build a box
 		corners, // get all the corners of the box

@@ -1,19 +1,8 @@
-import {
-	Box2D,
-	Vec2,
-	type box2D,
-	type vec2,
-} from "@alleninstitute/vis-geometry";
-import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from "../zarr-data";
-import {
-	getSlice,
-	pickBestScale,
-	planeSizeInVoxels,
-	sizeInUnits,
-	uvForPlane,
-} from "../zarr-data";
-import type { VoxelTileImage } from "./slice-renderer";
-import type { Chunk } from "zarrita";
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
+import { getSlice, pickBestScale, planeSizeInVoxels, sizeInUnits, uvForPlane } from '../zarr-data';
+import type { VoxelTileImage } from './slice-renderer';
+import type { Chunk } from 'zarrita';
 
 export type VoxelTile = {
 	plane: AxisAlignedPlane; // the plane in which the tile sits
@@ -30,30 +19,15 @@ export type VoxelTile = {
  * @param size the size of the image at this level of detail
  * @param bounds visit only the tiles that are within the given bounds (in pixels)
  */
-function visitTilesWithin(
-	idealTilePx: vec2,
-	size: vec2,
-	bounds: box2D,
-	visit: (tile: box2D) => void,
-) {
+function visitTilesWithin(idealTilePx: vec2, size: vec2, bounds: box2D, visit: (tile: box2D) => void) {
 	const withinBoth = Box2D.intersection(bounds, Box2D.create([0, 0], size));
 	if (!withinBoth) {
 		return;
 	}
 	// convert the image into tile indexes:
-	const boundsInTiles = Box2D.map(withinBoth, (corner) =>
-		Vec2.div(corner, idealTilePx),
-	);
-	for (
-		let x = Math.floor(boundsInTiles.minCorner[0]);
-		x < Math.ceil(boundsInTiles.maxCorner[0]);
-		x += 1
-	) {
-		for (
-			let y = Math.floor(boundsInTiles.minCorner[1]);
-			y < Math.ceil(boundsInTiles.maxCorner[1]);
-			y += 1
-		) {
+	const boundsInTiles = Box2D.map(withinBoth, (corner) => Vec2.div(corner, idealTilePx));
+	for (let x = Math.floor(boundsInTiles.minCorner[0]); x < Math.ceil(boundsInTiles.maxCorner[0]); x += 1) {
+		for (let y = Math.floor(boundsInTiles.minCorner[1]); y < Math.ceil(boundsInTiles.maxCorner[1]); y += 1) {
 			// all tiles visited are always within both the bounds, and the image itself
 			const lo = Vec2.mul([x, y], idealTilePx);
 			const hi = Vec2.min(size, Vec2.add(lo, idealTilePx));
@@ -131,32 +105,11 @@ export function getVisibleTiles(
 		// then we inject the low-level of detail tiles into the returned result - the idea
 		// is that we draw the low LOD data underneath the desired LOD as a fallback to prevent flickering.
 		return [
-			...getVisibleTilesInLayer(
-				camera,
-				plane,
-				planeIndex,
-				dataset,
-				tileSize,
-				baselayerIndex,
-			),
-			...getVisibleTilesInLayer(
-				camera,
-				plane,
-				planeIndex,
-				dataset,
-				tileSize,
-				layerIndex,
-			),
+			...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, baselayerIndex),
+			...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex),
 		];
 	}
-	return getVisibleTilesInLayer(
-		camera,
-		plane,
-		planeIndex,
-		dataset,
-		tileSize,
-		layerIndex,
-	);
+	return getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex);
 }
 /**
  * a function which returns a promise of float32 data from the requested region of an omezarr dataset.
@@ -167,15 +120,9 @@ export function getVisibleTiles(
  * @param layerIndex an index into the LOD pyramid of the given ZarrDataset.
  * @returns the requested voxel information from the given layer of the given dataset.
  */
-export const defaultDecoder = (
-	metadata: ZarrDataset,
-	r: ZarrRequest,
-	layerIndex: number,
-): Promise<VoxelTileImage> => {
-	return getSlice(metadata, r, layerIndex).then(
-		(result: { shape: number[]; buffer: Chunk<"float32"> }) => {
-			const { shape, buffer } = result;
-			return { shape, data: new Float32Array(buffer.data) };
-		},
-	);
+export const defaultDecoder = (metadata: ZarrDataset, r: ZarrRequest, layerIndex: number): Promise<VoxelTileImage> => {
+	return getSlice(metadata, r, layerIndex).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
+		const { shape, buffer } = result;
+		return { shape, data: new Float32Array(buffer.data) };
+	});
 };

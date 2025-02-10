@@ -1,4 +1,4 @@
-import { Vec2, vec2 } from "./vec2";
+import { Vec2, vec2 } from './vec2';
 
 export type line = { start: vec2; end: vec2 };
 
@@ -23,10 +23,7 @@ export type line = { start: vec2; end: vec2 };
  * @param secondLine Second line to compare
  * @returns One if the lines intersect, zero otherwise
  */
-export function lineSegmentsIntersect(
-	firstLine: line,
-	secondLine: line,
-): 1 | 0 {
+export function lineSegmentsIntersect(firstLine: line, secondLine: line): 1 | 0 {
 	// given line segments a->b and c->d:
 	// make a vec for each point:
 	const { start: A, end: B } = firstLine;

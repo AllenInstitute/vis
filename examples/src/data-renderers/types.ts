@@ -1,7 +1,7 @@
 // generic rendering of renderable things...
 
-import type { Interval, box2D, vec2, vec4 } from "@alleninstitute/vis-geometry";
-import type { NormalStatus } from "@alleninstitute/vis-scatterbrain";
+import type { Interval, box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
+import type { NormalStatus } from '@alleninstitute/vis-scatterbrain';
 
 type ChannelSettings = {
 	gamut: Interval;
@@ -23,13 +23,11 @@ type Drawing = {
 	// todo more later...
 };
 export type AnnotationLayer = {
-	type: "AnnotationLayer";
+	type: 'AnnotationLayer';
 	dimensions: 2;
 	drawing: Drawing;
 };
 export type TwoDimensional = {
 	dimensions: 2;
 };
-export type RenderCallback = (
-	event: { status: NormalStatus } | { status: "error"; error: unknown },
-) => void;
+export type RenderCallback = (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void;

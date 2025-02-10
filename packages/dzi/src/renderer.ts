@@ -1,13 +1,13 @@
-import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
 	type Renderer,
 	type ReglCacheEntry,
 	type CachedTexture,
 	buildAsyncRenderer,
-} from "@alleninstitute/vis-scatterbrain";
-import type REGL from "regl";
-import { type DziImage, type DziTile, getVisibleTiles } from "./loader";
-import { buildTileRenderer } from "./tile-renderer";
+} from '@alleninstitute/vis-scatterbrain';
+import type REGL from 'regl';
+import { type DziImage, type DziTile, getVisibleTiles } from './loader';
+import { buildTileRenderer } from './tile-renderer';
 
 export type RenderSettings = {
 	camera: {
@@ -31,9 +31,7 @@ type GpuProps = {
  * @returns an object which can fetch tiles from a DeepZoomImage, determine the visibility of those tiles given a simple camera, and render said tiles
  * using regl (which uses webGL)
  */
-export function buildDziRenderer(
-	regl: REGL.Regl,
-): Renderer<DziImage, DziTile, RenderSettings, GpuProps> {
+export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, RenderSettings, GpuProps> {
 	const renderCmd = buildTileRenderer(regl, { enable: false });
 	const fetchDziTile = (
 		tile: DziTile,
@@ -46,10 +44,10 @@ export function buildDziRenderer(
 				return new Promise<ReglCacheEntry>((resolve, reject) => {
 					try {
 						const img = new Image();
-						img.crossOrigin = "anonymous";
+						img.crossOrigin = 'anonymous';
 						img.onload = (ev) => {
 							resolve({
-								type: "texture",
+								type: 'texture',
 								texture: regl.texture(img),
 								bytes: img.width * img.height * 4,
 							}); // close enough
@@ -70,8 +68,8 @@ export function buildDziRenderer(
 			return getVisibleTiles(dzi, settings.camera);
 		},
 		isPrepared: (cacheData): cacheData is GpuProps => {
-			const pixels = cacheData["pixels"];
-			return !!pixels && pixels.type === "texture";
+			const pixels = cacheData['pixels'];
+			return !!pixels && pixels.type === 'texture';
 		},
 		renderItem: (target, tile, _dzi, settings, gpuData) => {
 			const { pixels } = gpuData;

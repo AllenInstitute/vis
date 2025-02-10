@@ -1,21 +1,18 @@
-import type REGL from "regl";
-import {
-	beginLongRunningFrame,
-	type AsyncDataCache,
-} from "@alleninstitute/vis-scatterbrain";
-import type { RenderCallback } from "./types";
+import type REGL from 'regl';
+import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
+import type { RenderCallback } from './types';
 
-import { applyOptionalTrn } from "./utils";
-import { Box2D, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
-import type { AxisAlignedZarrSlice } from "../data-sources/ome-zarr/planar-slice";
-import type { AxisAlignedZarrSliceGrid } from "../data-sources/ome-zarr/slice-grid";
+import { applyOptionalTrn } from './utils';
+import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
+import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
 import {
 	pickBestScale,
 	sizeInUnits,
 	sizeInVoxels,
 	sliceDimensionForPlane,
 	uvForPlane,
-} from "@alleninstitute/vis-omezarr";
+} from '@alleninstitute/vis-omezarr';
 import {
 	cacheKeyFactory,
 	getVisibleTiles,
@@ -24,11 +21,11 @@ import {
 	type buildVersaRenderer,
 	type VoxelSliceRenderSettings,
 	type VoxelTile,
-} from "./versa-renderer";
-import type { Camera } from "~/common/camera";
+} from './versa-renderer';
+import type { Camera } from '~/common/camera';
 
 type Renderer = ReturnType<typeof buildVersaRenderer>;
-type CacheContentType = { type: "texture2D"; data: REGL.Texture2D };
+type CacheContentType = { type: 'texture2D'; data: REGL.Texture2D };
 
 export type RenderSettings<C> = {
 	camera: Camera;
@@ -53,21 +50,13 @@ function preferCachedEntries<C extends CacheContentType | object>(
 	},
 ) {
 	const { plane, planeIndex } = location;
-	const idealTiles = getVisibleTiles(
-		camera,
-		plane,
-		planeIndex,
-		grid.dataset,
-		offset,
-	);
+	const idealTiles = getVisibleTiles(camera, plane, planeIndex, grid.dataset, offset);
 	const fakes: VoxelTile[] = [];
 
 	for (const tile of idealTiles.tiles) {
 		const isCached = (t: VoxelTile) => {
 			const requests = requestsForTile(t, settings);
-			const cacheKeys = Object.keys(requests).map((rq) =>
-				cacheKeyFactory(rq, t, settings),
-			);
+			const cacheKeys = Object.keys(requests).map((rq) => cacheKeyFactory(rq, t, settings));
 			return cache.areKeysAllCached(cacheKeys);
 		};
 		if (!isCached(tile)) {
@@ -104,12 +93,7 @@ export function renderGrid<C extends CacheContentType | object>(
 	const rowSize = Math.floor(Math.sqrt(slices));
 	const allItems: VoxelTile[] = [];
 	const smokeAndMirrors: VoxelTile[] = [];
-	const best = pickBestScale(
-		dataset,
-		uvForPlane(plane),
-		camera.view,
-		camera.screen,
-	);
+	const best = pickBestScale(dataset, uvForPlane(plane), camera.view, camera.screen);
 
 	const renderSettings = {
 		dataset,
@@ -132,7 +116,7 @@ export function renderGrid<C extends CacheContentType | object>(
 		let param = i / slices;
 		const slice: AxisAlignedZarrSlice = {
 			...grid,
-			type: "AxisAlignedZarrSlice",
+			type: 'AxisAlignedZarrSlice',
 			planeParameter: param,
 		};
 		const curCam = {
@@ -144,34 +128,18 @@ export function renderGrid<C extends CacheContentType | object>(
 		const offset = Vec2.mul(gridIndex, realSize);
 		// the bounds of this slice might not even be in view!
 		// if we did this a bit different... we could know from the index, without having to conditionally test... TODO
-		if (
-			Box2D.intersection(
-				curCam.view,
-				Box2D.translate(Box2D.create([0, 0], realSize), offset),
-			)
-		) {
+		if (Box2D.intersection(curCam.view, Box2D.translate(Box2D.create([0, 0], realSize), offset))) {
 			const planeIndex = Math.round(param * (dim ?? 0));
-			const { fake, ideal } = preferCachedEntries(
-				grid,
-				renderSettings,
-				offset,
-				cache,
-				curCam,
-				{
-					plane,
-					planeIndex,
-				},
-			);
+			const { fake, ideal } = preferCachedEntries(grid, renderSettings, offset, cache, curCam, {
+				plane,
+				planeIndex,
+			});
 			// get all the items for the lowest level of detail:
 			smokeAndMirrors.push(...fake);
 			allItems.push(...ideal.tiles);
 		}
 	}
-	const frame = beginLongRunningFrame<
-		CacheContentType | object,
-		VoxelTile,
-		VoxelSliceRenderSettings
-	>(
+	const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(
 		concurrentTasks,
 		queueInterval,
 		[...smokeAndMirrors, ...allItems],
@@ -203,27 +171,13 @@ export function renderSlice<C extends CacheContentType | object>(
 		...camera,
 		view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
 	};
-	const best = pickBestScale(
-		dataset,
-		uvForPlane(plane),
-		camera.view,
-		desiredResolution,
-	);
+	const best = pickBestScale(dataset, uvForPlane(plane), camera.view, desiredResolution);
 	const axes = dataset.multiscales[0].axes;
 	const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
 	const planeIndex = Math.round(planeParameter * (dim ?? 0));
 
-	const items = getVisibleTiles(
-		{ ...camera, screen: desiredResolution },
-		plane,
-		planeIndex,
-		dataset,
-	);
-	const frame = beginLongRunningFrame<
-		CacheContentType | object,
-		VoxelTile,
-		VoxelSliceRenderSettings
-	>(
+	const items = getVisibleTiles({ ...camera, screen: desiredResolution }, plane, planeIndex, dataset);
+	const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(
 		concurrentTasks,
 		queueInterval,
 		items.tiles,

@@ -1,5 +1,5 @@
-import { partial } from "lodash";
-import { AsyncDataCache } from "./dataset-cache";
+import { partial } from 'lodash';
+import { AsyncDataCache } from './dataset-cache';
 
 /**
  * FrameLifecycle type that defines the functions a user can call to interact with the frame lifecycle.
@@ -23,15 +23,8 @@ export type FrameLifecycle = {
  *
  * `progress` - The frame is still running and has not finished
  */
-export type NormalStatus =
-	| "begun"
-	| "finished"
-	| "cancelled"
-	| "finished_synchronously"
-	| "progress";
-export type RenderCallback = (
-	event: { status: NormalStatus } | { status: "error"; error: unknown },
-) => void;
+export type NormalStatus = 'begun' | 'finished' | 'cancelled' | 'finished_synchronously' | 'progress';
+export type RenderCallback = (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void;
 /**
  * `beingLongRunningFrame` starts a long-running frame that will render a list of items asynchronously based on
  * the provided data, settings, and rendering functions.
@@ -64,22 +57,10 @@ export function beginLongRunningFrame<Column, Item, Settings>(
 	items: Item[],
 	mutableCache: AsyncDataCache<string, string, Column>,
 	settings: Settings,
-	requestsForItem: (
-		item: Item,
-		settings: Settings,
-		signal?: AbortSignal,
-	) => Record<string, () => Promise<Column>>,
-	render: (
-		item: Item,
-		settings: Settings,
-		columns: Record<string, Column | undefined>,
-	) => void,
+	requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
+	render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
 	lifecycleCallback: RenderCallback,
-	cacheKeyForRequest: (
-		requestKey: string,
-		item: Item,
-		settings: Settings,
-	) => string = (key) => key,
+	cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key,
 	queueTimeBudgetMS: number = queueProcessingIntervalMS / 3,
 ): FrameLifecycle {
 	const abort = new AbortController();
@@ -103,16 +84,11 @@ export function beginLongRunningFrame<Column, Item, Settings>(
 	for (let i = 0; i < items.length; i += 1) {
 		const itemToRender = items[i];
 		const requestFns = requestsForItem(itemToRender, settings, abort.signal);
-		const cacheKey = (rq: string) =>
-			cacheKeyForRequest(rq, itemToRender, settings);
+		const cacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
 		const cacheKeys = Object.keys(requestFns).map(cacheKey);
 
 		if (mutableCache.areKeysAllCached(cacheKeys)) {
-			const result = mutableCache.cacheAndUse(
-				requestFns,
-				partial(render, itemToRender, settings),
-				cacheKey,
-			);
+			const result = mutableCache.cacheAndUse(requestFns, partial(render, itemToRender, settings), cacheKey);
 			if (result !== undefined) {
 				// this is a problem - the cache reported that all the keys are in the cache, however this result is a cancellation callback,
 				// which indicates that the item could not be rendered right away, which should be impossible...
@@ -134,14 +110,14 @@ export function beginLongRunningFrame<Column, Item, Settings>(
 
 	if (queue.length === 0) {
 		// we did all the work - it was already cached
-		reportNormalStatus("finished_synchronously");
+		reportNormalStatus('finished_synchronously');
 		return { cancelFrame: () => {} };
 	}
 	// TODO: Re-examine lifecycle reporting, potentially unify all statuses into a single type
-	reportNormalStatus("begun");
+	reportNormalStatus('begun');
 	if (queue.length !== items.length) {
 		// We did some work, but there's some left
-		reportNormalStatus("progress");
+		reportNormalStatus('progress');
 	}
 	const doWorkOnQueue = (intervalId: number) => {
 		// try our best to cleanup if something goes awry
@@ -154,31 +130,28 @@ export function beginLongRunningFrame<Column, Item, Settings>(
 			abort.abort(err);
 			clearInterval(intervalId);
 			// pass the error somewhere better:
-			lifecycleCallback({ status: "error", error: err });
+			lifecycleCallback({ status: 'error', error: err });
 		};
-		while (
-			mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)
-		) {
+		while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
 			if (queue.length < 1) {
 				// we cant add anything to the in-flight staging area, the final task
 				// is already in flight
 				if (mutableCache.getNumPendingTasks() < 1) {
 					// we do want to wait for that last in-flight task to actually finish though:
 					clearInterval(intervalId);
-					reportNormalStatus("finished");
+					reportNormalStatus('finished');
 				}
 				return;
 			}
 			// We know there are items in the queue because of the check above, so we assert the type exist
 			const itemToRender = queue.shift()!;
-			const toCacheKey = (rq: string) =>
-				cacheKeyForRequest(rq, itemToRender, settings);
+			const toCacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
 			try {
 				const result = mutableCache.cacheAndUse(
 					requestsForItem(itemToRender, settings, abort.signal),
 					partial(render, itemToRender, settings),
 					toCacheKey,
-					() => reportNormalStatus("progress"),
+					() => reportNormalStatus('progress'),
 				);
 				if (result !== undefined) {
 					// put this cancel callback in a list where we can invoke if something goes wrong
@@ -194,19 +167,16 @@ export function beginLongRunningFrame<Column, Item, Settings>(
 			}
 		}
 	};
-	const interval = setInterval(
-		() => doWorkOnQueue(interval),
-		queueProcessingIntervalMS,
-	);
+	const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
 
 	// return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
 	// touched/referenced after cancellation, unless the author of render() did some super weird bad things
 	return {
 		cancelFrame: (reason?: string) => {
 			taskCancelCallbacks.forEach((cancelMe) => cancelMe());
-			abort.abort(new DOMException(reason, "AbortError"));
+			abort.abort(new DOMException(reason, 'AbortError'));
 			clearInterval(interval);
-			reportNormalStatus("cancelled");
+			reportNormalStatus('cancelled');
 		},
 	};
 }

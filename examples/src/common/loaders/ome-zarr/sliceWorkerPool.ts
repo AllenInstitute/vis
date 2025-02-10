@@ -1,5 +1,5 @@
-import { uniqueId } from "lodash";
-import type { ZarrDataset, ZarrRequest } from "@alleninstitute/vis-omezarr";
+import { uniqueId } from 'lodash';
+import type { ZarrDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
 
 type PromisifiedMessage = {
 	requestCacheKey: string;
@@ -8,7 +8,7 @@ type PromisifiedMessage = {
 	promise?: Promise<Slice> | undefined;
 };
 type ExpectedResultSlice = {
-	type: "slice";
+	type: 'slice';
 	id: string;
 } & Slice;
 type Slice = {
@@ -16,7 +16,7 @@ type Slice = {
 	shape: number[];
 };
 function isExpectedResult(obj: any): obj is ExpectedResultSlice {
-	return typeof obj === "object" && "type" in obj && obj.type === "slice";
+	return typeof obj === 'object' && 'type' in obj && obj.type === 'slice';
 }
 export class SliceWorkerPool {
 	private workers: Worker[];
@@ -25,10 +25,7 @@ export class SliceWorkerPool {
 	constructor(size: number) {
 		this.workers = new Array(size);
 		for (let i = 0; i < size; i++) {
-			this.workers[i] = new Worker(
-				new URL("./fetchSlice.worker.ts", import.meta.url),
-				{ type: "module" },
-			);
+			this.workers[i] = new Worker(new URL('./fetchSlice.worker.ts', import.meta.url), { type: 'module' });
 			this.workers[i].onmessage = (msg) => this.handleResponse(msg);
 		}
 		this.promises = {};
@@ -50,7 +47,7 @@ export class SliceWorkerPool {
 		this.which = (this.which + 1) % this.workers.length;
 	}
 	requestSlice(dataset: ZarrDataset, req: ZarrRequest, layerIndex: number) {
-		const reqId = uniqueId("rq");
+		const reqId = uniqueId('rq');
 		const cacheKey = JSON.stringify({ url: dataset.url, req, layerIndex });
 		// TODO caching I guess...
 		const eventually = new Promise<Slice>((resolve, reject) => {
@@ -62,7 +59,7 @@ export class SliceWorkerPool {
 			};
 			this.workers[this.which].postMessage({
 				id: reqId,
-				type: "ZarrSliceRequest",
+				type: 'ZarrSliceRequest',
 				metadata: dataset,
 				req,
 				layerIndex,

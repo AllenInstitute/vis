@@ -1,42 +1,35 @@
-export type WebGLSafeBasicType =
-	| "uint8"
-	| "uint16"
-	| "int8"
-	| "int16"
-	| "uint32"
-	| "int32"
-	| "float";
+export type WebGLSafeBasicType = 'uint8' | 'uint16' | 'int8' | 'int16' | 'uint32' | 'int32' | 'float';
 
 // lets help the compiler to know that these two types are related:
 export type TaggedFloat32Array = {
-	type: "float";
+	type: 'float';
 	data: Float32Array;
 };
 
 export type TaggedUint32Array = {
-	type: "uint32";
+	type: 'uint32';
 	data: Uint32Array;
 };
 export type TaggedInt32Array = {
-	type: "int32";
+	type: 'int32';
 	data: Int32Array;
 };
 
 export type TaggedUint16Array = {
-	type: "uint16";
+	type: 'uint16';
 	data: Uint16Array;
 };
 export type TaggedInt16Array = {
-	type: "int16";
+	type: 'int16';
 	data: Int16Array;
 };
 
 export type TaggedUint8Array = {
-	type: "uint8";
+	type: 'uint8';
 	data: Uint8Array;
 };
 export type TaggedInt8Array = {
-	type: "int8";
+	type: 'int8';
 	data: Int8Array;
 };
 
@@ -71,26 +64,23 @@ const SizeInBytes = {
 export function sizeInBytes(type: WebGLSafeBasicType) {
 	return SizeInBytes[type];
 }
-export function MakeTaggedBufferView(
-	type: WebGLSafeBasicType,
-	buffer: ArrayBuffer,
-): TaggedTypedArray {
+export function MakeTaggedBufferView(type: WebGLSafeBasicType, buffer: ArrayBuffer): TaggedTypedArray {
 	// note that TS is not smart enough to realize the mapping here, so we have 7 identical, spoonfed
 	// cases....
 	switch (type) {
-		case "uint8":
+		case 'uint8':
 			return { type, data: new BufferConstructors[type](buffer) };
-		case "int8":
+		case 'int8':
 			return { type, data: new BufferConstructors[type](buffer) };
-		case "uint16":
+		case 'uint16':
 			return { type, data: new BufferConstructors[type](buffer) };
-		case "int16":
+		case 'int16':
 			return { type, data: new BufferConstructors[type](buffer) };
-		case "uint32":
+		case 'uint32':
 			return { type, data: new BufferConstructors[type](buffer) };
-		case "int32":
+		case 'int32':
 			return { type, data: new BufferConstructors[type](buffer) };
-		case "float":
+		case 'float':
 			return { type, data: new BufferConstructors[type](buffer) };
 		default: {
 			// will be a compile error if we ever add any basic types

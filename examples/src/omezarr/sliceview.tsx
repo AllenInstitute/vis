@@ -1,15 +1,15 @@
-import { type box2D, Box2D, Vec2 } from "@alleninstitute/vis-geometry";
+import { type box2D, Box2D, Vec2 } from '@alleninstitute/vis-geometry';
 import {
 	buildAsyncOmezarrRenderer,
 	defaultDecoder,
 	type VoxelTile,
 	type ZarrDataset,
 	type RenderSettings,
-} from "@alleninstitute/vis-omezarr";
-import type { RenderFrameFn } from "@alleninstitute/vis-scatterbrain";
-import React, { useCallback, useState } from "react";
-import { useContext, useEffect, useRef } from "react";
-import { renderServerContext } from "~/common/react/render-server-provider";
+} from '@alleninstitute/vis-omezarr';
+import type { RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
+import React, { useCallback, useState } from 'react';
+import { useContext, useEffect, useRef } from 'react';
+import { renderServerContext } from '~/common/react/render-server-provider';
 type Props = {
 	omezarr: ZarrDataset | undefined;
 };
@@ -22,7 +22,7 @@ const settings: RenderSettings = {
 		G: { gamut: { min: 0, max: 100 }, index: 1 },
 		B: { gamut: { min: 0, max: 100 }, index: 2 },
 	},
-	plane: "xy",
+	plane: 'xy',
 	planeIndex: 3,
 	camera: {
 		// the omezarr renderer expects a box in whatever space is given by the omezarr file itself in its
@@ -59,11 +59,7 @@ export function SliceView(props: Props) {
 
 	useEffect(() => {
 		if (server && renderer.current && cnvs.current && omezarr) {
-			const renderFn: RenderFrameFn<ZarrDataset, VoxelTile> = (
-				target,
-				cache,
-				callback,
-			) => {
+			const renderFn: RenderFrameFn<ZarrDataset, VoxelTile> = (target, cache, callback) => {
 				if (renderer.current) {
 					return renderer.current(
 						omezarr,
@@ -80,17 +76,17 @@ export function SliceView(props: Props) {
 				// here's where we handle lifecycle events in that rendering function (its async and slow because it may have to fetch data from far away)
 				(e) => {
 					switch (e.status) {
-						case "begin":
+						case 'begin':
 							server.regl?.clear({
 								framebuffer: e.target,
 								color: [0, 0, 0, 0],
 								depth: 1,
 							});
 							break;
-						case "progress":
+						case 'progress':
 							e.server.copyToClient(compose);
 							break;
-						case "finished": {
+						case 'finished': {
 							// the bare minimum event handling would be this: copy webGL's work to the target canvas using the compose function
 							e.server.copyToClient(compose);
 						}
@@ -103,10 +99,7 @@ export function SliceView(props: Props) {
 	const pan = useCallback(
 		(e: React.MouseEvent<HTMLCanvasElement>) => {
 			if (e.ctrlKey) {
-				const pos = Vec2.div(
-					[-e.movementX, -e.movementY],
-					settings.camera.screenSize,
-				);
+				const pos = Vec2.div([-e.movementX, -e.movementY], settings.camera.screenSize);
 				const scaledOffset = Vec2.mul(pos, Box2D.size(view));
 				const v = Box2D.translate(view, scaledOffset);
 				setView(v);
@@ -116,16 +109,13 @@ export function SliceView(props: Props) {
 	);
 	return (
 		<canvas
-			id={"hey there"}
+			id={'hey there'}
 			ref={cnvs}
 			onMouseMove={pan}
 			onWheel={(e) => {
 				const scale = e.deltaY > 0 ? 1.1 : 0.9;
 				const m = Box2D.midpoint(view);
-				const v = Box2D.translate(
-					Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]),
-					m,
-				);
+				const v = Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m);
 				setView(v);
 			}}
 			width={settings.camera.screenSize[0]}

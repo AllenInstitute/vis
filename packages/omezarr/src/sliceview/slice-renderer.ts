@@ -1,19 +1,14 @@
-import REGL from "regl";
-import {
-	Box2D,
-	type Interval,
-	type box2D,
-	type vec2,
-} from "@alleninstitute/vis-geometry";
+import REGL from 'regl';
+import { Box2D, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
 	type Renderer,
 	type ReglCacheEntry,
 	type CachedTexture,
 	buildAsyncRenderer,
-} from "@alleninstitute/vis-scatterbrain";
-import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from "../zarr-data";
-import { buildTileRenderer } from "./tile-renderer";
-import { type VoxelTile, getVisibleTiles } from "./loader";
+} from '@alleninstitute/vis-scatterbrain';
+import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
+import { buildTileRenderer } from './tile-renderer';
+import { type VoxelTile, getVisibleTiles } from './loader';
 
 type RenderSettings = {
 	camera: {
@@ -23,7 +18,7 @@ type RenderSettings = {
 	planeIndex: number;
 	tileSize: number;
 	plane: AxisAlignedPlane;
-	gamut: Record<"R" | "G" | "B", { gamut: Interval; index: number }>;
+	gamut: Record<'R' | 'G' | 'B', { gamut: Interval; index: number }>;
 };
 export type OmeZarrDataset = ZarrDataset;
 
@@ -45,7 +40,7 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
 	const u = { min: min[0], max: max[0] };
 	const v = { min: min[1], max: max[1] };
 	switch (plane) {
-		case "xy":
+		case 'xy':
 			return {
 				x: u,
 				y: v,
@@ -53,7 +48,7 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
 				c: channel,
 				z: planeIndex,
 			};
-		case "xz":
+		case 'xz':
 			return {
 				x: u,
 				z: v,
@@ -61,7 +56,7 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
 				c: channel,
 				y: planeIndex,
 			};
-		case "yz":
+		case 'yz':
 			return {
 				y: u,
 				z: v,
@@ -71,25 +66,19 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
 			};
 	}
 }
-function isPrepared(
-	cacheData: Record<string, ReglCacheEntry | undefined>,
-): cacheData is ImageChannels {
+function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cacheData is ImageChannels {
 	return (
-		"R" in cacheData &&
-		"G" in cacheData &&
-		"B" in cacheData &&
-		cacheData.R?.type === "texture" &&
-		cacheData.G?.type === "texture" &&
-		cacheData.B?.type === "texture"
+		'R' in cacheData &&
+		'G' in cacheData &&
+		'B' in cacheData &&
+		cacheData.R?.type === 'texture' &&
+		cacheData.G?.type === 'texture' &&
+		cacheData.B?.type === 'texture'
 	);
 }
 const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max];
 
-type Decoder = (
-	dataset: OmeZarrDataset,
-	req: ZarrRequest,
-	layerIndex: number,
-) => Promise<VoxelTileImage>;
+type Decoder = (dataset: OmeZarrDataset, req: ZarrRequest, layerIndex: number) => Promise<VoxelTileImage>;
 export function buildOmeZarrSliceRenderer(
 	regl: REGL.Regl,
 	decoder: Decoder,
@@ -102,15 +91,15 @@ export function buildOmeZarrSliceRenderer(
 				data: data,
 				width: shape[1],
 				height: shape[0],
-				format: "luminance",
+				format: 'luminance',
 			}),
-			type: "texture",
+			type: 'texture',
 		};
 	}
 	const cmd = buildTileRenderer(regl);
 	return {
 		cacheKey: (item, requestKey, dataset, settings) => {
-			const col = requestKey as keyof RenderSettings["gamut"];
+			const col = requestKey as keyof RenderSettings['gamut'];
 			const index = settings.gamut[col]?.index ?? 0;
 			return `${dataset.url}_${JSON.stringify(item)}_ch=${index.toFixed(0)}`;
 		},
@@ -122,23 +111,11 @@ export function buildOmeZarrSliceRenderer(
 		fetchItemContent: (item, dataset, settings, signal) => {
 			return {
 				R: () =>
-					decoder(
-						dataset,
-						toZarrRequest(item, settings.gamut.R.index),
-						item.layerIndex,
-					).then(sliceAsTexture),
+					decoder(dataset, toZarrRequest(item, settings.gamut.R.index), item.layerIndex).then(sliceAsTexture),
 				G: () =>
-					decoder(
-						dataset,
-						toZarrRequest(item, settings.gamut.G.index),
-						item.layerIndex,
-					).then(sliceAsTexture),
+					decoder(dataset, toZarrRequest(item, settings.gamut.G.index), item.layerIndex).then(sliceAsTexture),
 				B: () =>
-					decoder(
-						dataset,
-						toZarrRequest(item, settings.gamut.B.index),
-						item.layerIndex,
-					).then(sliceAsTexture),
+					decoder(dataset, toZarrRequest(item, settings.gamut.B.index), item.layerIndex).then(sliceAsTexture),
 			};
 		},
 		isPrepared,

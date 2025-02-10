@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import delay from "lodash/delay";
-import { beginLongRunningFrame, type NormalStatus } from "../render-queue";
-import { AsyncDataCache } from "../dataset-cache";
-import { fakeFetch } from "./test-utils";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import delay from 'lodash/delay';
+import { beginLongRunningFrame, type NormalStatus } from '../render-queue';
+import { AsyncDataCache } from '../dataset-cache';
+import { fakeFetch } from './test-utils';
 
 type FakeTask = { id: number; color: string };
 type FakeItem = { id: number };
@@ -12,20 +12,16 @@ function cacheKey(item: FakeItem, settings: FakeSettings) {
 }
 
 // a few easy tests to start, we can get crazy later
-describe("beginLongRunningFrame", () => {
+describe('beginLongRunningFrame', () => {
 	let cache: AsyncDataCache<string, string, FakeTask> = new AsyncDataCache(
 		() => {},
 		() => 1,
 		9999,
 	);
 	let renderSequence: FakeTask[] = [];
-	function renderPretender(
-		item: FakeItem,
-		settings: FakeSettings,
-		tasks: Record<string, FakeTask | undefined>,
-	) {
+	function renderPretender(item: FakeItem, settings: FakeSettings, tasks: Record<string, FakeTask | undefined>) {
 		const tsk = tasks[cacheKey(item, settings)];
-		if (!tsk) throw new Error("undefined column!");
+		if (!tsk) throw new Error('undefined column!');
 		renderSequence.push(tsk);
 	}
 	const getPretendItemsToRender = (howMany: number) => {
@@ -37,28 +33,24 @@ describe("beginLongRunningFrame", () => {
 	};
 	function rq(item: FakeItem, settings: FakeSettings, signal?: AbortSignal) {
 		return {
-			[cacheKey(item, settings)]: () =>
-				fakeFetch({ id: item.id, color: settings.color }, signal),
+			[cacheKey(item, settings)]: () => fakeFetch({ id: item.id, color: settings.color }, signal),
 		};
 	}
 	// a less wordy fake frame:
 	const fakeFrame = (
 		items: number,
-		eventHandler: (
-			event: { status: NormalStatus } | { status: "error"; error: unknown },
-		) => void,
+		eventHandler: (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void,
 	) =>
 		beginLongRunningFrame<FakeTask, FakeItem, FakeSettings>(
 			5,
 			33,
 			getPretendItemsToRender(items),
 			cache,
-			{ color: "red" },
+			{ color: 'red' },
 			rq,
 			renderPretender,
 			eventHandler,
-			(rq: string, item: FakeItem, settings: FakeSettings) =>
-				cacheKey(item, settings),
+			(rq: string, item: FakeItem, settings: FakeSettings) => cacheKey(item, settings),
 			9999,
 		);
 	beforeEach(() => {
@@ -69,7 +61,7 @@ describe("beginLongRunningFrame", () => {
 		);
 		renderSequence = [];
 	});
-	it("runs the expected number of tasks", async () => {
+	it('runs the expected number of tasks', async () => {
 		let done: () => void;
 		const testOver = new Promise<void>((resolve, reject) => {
 			done = () => {
@@ -80,7 +72,7 @@ describe("beginLongRunningFrame", () => {
 		fakeFrame(9, (e) => {
 			events.push(e.status); // track the events for the test
 			switch (e.status) {
-				case "finished":
+				case 'finished':
 					done(); // if I dont get called, the test will fail very slowly
 					break;
 				default:
@@ -90,10 +82,10 @@ describe("beginLongRunningFrame", () => {
 		await testOver;
 		expect(renderSequence.length).toBe(9);
 		expect(events.length).toBe(9 + 2); // begin, ... progress x9 ..., finished
-		expect(events[0]).toEqual("begun");
-		expect(events[events.length - 1]).toEqual("finished");
+		expect(events[0]).toEqual('begun');
+		expect(events[events.length - 1]).toEqual('finished');
 	});
-	it("can be cancelled without crash", async () => {
+	it('can be cancelled without crash', async () => {
 		let done: () => void;
 		const testOver = new Promise<void>((resolve, reject) => {
 			done = () => resolve();
@@ -102,7 +94,7 @@ describe("beginLongRunningFrame", () => {
 			const frame = fakeFrame(9, (e) => {
 				expect(renderSequence.length).toBeLessThan(9);
 				switch (e.status) {
-					case "cancelled":
+					case 'cancelled':
 						done();
 						break;
 					default:
@@ -110,14 +102,14 @@ describe("beginLongRunningFrame", () => {
 				}
 			});
 			// cancel the fetch after brief delay to simulate cancelling partway through
-			delay(() => frame.cancelFrame("for testing"), 1);
+			delay(() => frame.cancelFrame('for testing'), 1);
 		} catch (err) {
 			// should not happen!
 			expect(err).not.toBeDefined();
 		}
 		await testOver;
 	});
-	it("synchronously completes the second frame, because the cache gets warmed up", async () => {
+	it('synchronously completes the second frame, because the cache gets warmed up', async () => {
 		const allEvents: string[] = [];
 		let done: () => void;
 		const testOver = new Promise<void>((resolve, reject) => {
@@ -125,16 +117,16 @@ describe("beginLongRunningFrame", () => {
 		});
 		fakeFrame(9, (e) => {
 			allEvents.push(e.status);
-			if (e.status === "finished") {
+			if (e.status === 'finished') {
 				// start the second frame after the first is done for this test:
 				// eslint-disable-next-line @typescript-eslint/no-shadow
 				fakeFrame(9, (e) => {
 					allEvents.push(e.status);
 					switch (e.status) {
-						case "finished_synchronously":
+						case 'finished_synchronously':
 							break;
 						default:
-							expect(e.status).toBe("finished_synchronously");
+							expect(e.status).toBe('finished_synchronously');
 					}
 					done();
 				});

@@ -1,7 +1,7 @@
-import { partial } from "lodash";
-import { AsyncDataCache } from "../dataset-cache";
-import type { ReglCacheEntry, Renderer } from "./types";
-import type REGL from "regl";
+import { partial } from 'lodash';
+import { AsyncDataCache } from '../dataset-cache';
+import type { ReglCacheEntry, Renderer } from './types';
+import type REGL from 'regl';
 
 /// THIS file is a copy of render-queue, but with some changes made that I hope will make the idea of beginLongRunningFrame easier to use ///
 // TODO: delete (or make deprecated) the old one
@@ -18,15 +18,15 @@ export type FrameLifecycle = {
 	cancelFrame: (reason?: string) => void;
 };
 
-export type FrameBegin = { status: "begin" };
+export type FrameBegin = { status: 'begin' };
 export type FrameProgress<Dataset, Item> = {
-	status: "progress";
+	status: 'progress';
 	dataset: Dataset;
 	renderedItems: ReadonlyArray<Item>;
 };
-export type FrameCancelled = { status: "cancelled" };
-export type FrameFinished = { status: "finished" };
-export type FrameError = { status: "error"; error: unknown };
+export type FrameCancelled = { status: 'cancelled' };
+export type FrameFinished = { status: 'finished' };
+export type FrameError = { status: 'error'; error: unknown };
 
 export type AsyncFrameEvent<Dataset, Item> =
 	| FrameBegin
@@ -34,9 +34,7 @@ export type AsyncFrameEvent<Dataset, Item> =
 	| FrameFinished
 	| FrameCancelled
 	| FrameError;
-export type RenderCallback<Dataset, Item> = (
-	event: AsyncFrameEvent<Dataset, Item>,
-) => void;
+export type RenderCallback<Dataset, Item> = (event: AsyncFrameEvent<Dataset, Item>) => void;
 
 export type RenderFrameConfig<
 	Dataset,
@@ -61,21 +59,9 @@ export type RenderFrameConfig<
 		signal?: AbortSignal,
 	) => Record<RqKey, () => Promise<CacheEntryType>>;
 	lifecycleCallback: RenderCallback<Dataset, Item>;
-	cacheKeyForRequest: (
-		item: Item,
-		requestKey: RqKey,
-		dataset: Dataset,
-		settings: Settings,
-	) => CacheKey;
-	isPrepared: (
-		cacheData: Record<RqKey, CacheEntryType | undefined>,
-	) => cacheData is GpuData;
-	renderItem: (
-		item: Item,
-		dataset: Dataset,
-		settings: Settings,
-		gpuData: GpuData,
-	) => void;
+	cacheKeyForRequest: (item: Item, requestKey: RqKey, dataset: Dataset, settings: Settings) => CacheKey;
+	isPrepared: (cacheData: Record<RqKey, CacheEntryType | undefined>) => cacheData is GpuData;
+	renderItem: (item: Item, dataset: Dataset, settings: Settings, gpuData: GpuData) => void;
 };
 
 export function beginFrame<
@@ -86,17 +72,7 @@ export function beginFrame<
 	CacheKey extends string,
 	CacheEntryType,
 	GpuData extends Record<RqKey, CacheEntryType>,
->(
-	config: RenderFrameConfig<
-		Dataset,
-		Item,
-		Settings,
-		RqKey,
-		CacheKey,
-		CacheEntryType,
-		GpuData
-	>,
-): FrameLifecycle {
+>(config: RenderFrameConfig<Dataset, Item, Settings, RqKey, CacheKey, CacheEntryType, GpuData>): FrameLifecycle {
 	const {
 		maximumInflightAsyncTasks,
 		queueTimeBudgetMS,
@@ -115,19 +91,13 @@ export function beginFrame<
 	const abort = new AbortController();
 	const queue: Item[] = [...items];
 	const taskCancelCallbacks: Array<() => void> = [];
-	const renderItemWrapper = (
-		itemToRender: Item,
-		maybe: Record<RqKey, CacheEntryType | undefined>,
-	) => {
+	const renderItemWrapper = (itemToRender: Item, maybe: Record<RqKey, CacheEntryType | undefined>) => {
 		if (isPrepared(maybe) && !abort.signal.aborted) {
 			renderItem(itemToRender, dataset, settings, maybe);
 		}
 	};
-	const reportStatus = (
-		event: AsyncFrameEvent<Dataset, Item>,
-		synchronous: boolean,
-	) => {
-		if (event.status !== "cancelled" && abort.signal.aborted) {
+	const reportStatus = (event: AsyncFrameEvent<Dataset, Item>, synchronous: boolean) => {
+		if (event.status !== 'cancelled' && abort.signal.aborted) {
 			return;
 		}
 		// we want to report our status, however the flow of events can be confusing -
@@ -154,28 +124,21 @@ export function beginFrame<
 			abort.abort(err);
 			clearInterval(intervalId);
 			// pass the error somewhere better:
-			reportStatus({ status: "error", error: err }, synchronous);
+			reportStatus({ status: 'error', error: err }, synchronous);
 		};
-		while (
-			mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)
-		) {
+		while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
 			// We know there are items in the queue because of the check above, so we assert the type exist
 			const itemToRender = queue.shift();
 			if (!itemToRender) {
 				break;
 			}
-			const toCacheKey = (rq: RqKey) =>
-				cacheKeyForRequest(itemToRender, rq, dataset, settings);
+			const toCacheKey = (rq: RqKey) => cacheKeyForRequest(itemToRender, rq, dataset, settings);
 			try {
 				const result = mutableCache.cacheAndUse(
 					requestsForItem(itemToRender, dataset, settings, abort.signal),
 					partial(renderItemWrapper, itemToRender),
 					toCacheKey,
-					() =>
-						reportStatus(
-							{ status: "progress", dataset, renderedItems: [itemToRender] },
-							synchronous,
-						),
+					() => reportStatus({ status: 'progress', dataset, renderedItems: [itemToRender] }, synchronous),
 				);
 				if (result !== undefined) {
 					// put this cancel callback in a list where we can invoke if something goes wrong
@@ -196,26 +159,23 @@ export function beginFrame<
 			if (mutableCache.getNumPendingTasks() < 1) {
 				// we do want to wait for that last in-flight task to actually finish though:
 				clearInterval(intervalId);
-				reportStatus({ status: "finished" }, synchronous);
+				reportStatus({ status: 'finished' }, synchronous);
 			}
 			return;
 		}
 	};
 
-	reportStatus({ status: "begin" }, true);
-	const interval = setInterval(
-		() => doWorkOnQueue(interval),
-		queueProcessingIntervalMS,
-	);
+	reportStatus({ status: 'begin' }, true);
+	const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
 	if (queue.length > 0) {
 		doWorkOnQueue(interval, false);
 	}
 	return {
 		cancelFrame: (reason?: string) => {
-			abort.abort(new DOMException(reason, "AbortError"));
+			abort.abort(new DOMException(reason, 'AbortError'));
 			taskCancelCallbacks.forEach((cancelMe) => cancelMe());
 			clearInterval(interval);
-			reportStatus({ status: "cancelled" }, true);
+			reportStatus({ status: 'cancelled' }, true);
 		},
 	};
 }
@@ -235,22 +195,8 @@ export function buildAsyncRenderer<
 		target: REGL.Framebuffer2D | null,
 		cache: AsyncDataCache<SemanticKey, CacheKeyType, ReglCacheEntry>,
 	) => {
-		const {
-			renderItem,
-			isPrepared,
-			cacheKey,
-			fetchItemContent,
-			getVisibleItems,
-		} = renderer;
-		const config: RenderFrameConfig<
-			Dataset,
-			Item,
-			Settings,
-			string,
-			string,
-			ReglCacheEntry,
-			GpuData
-		> = {
+		const { renderItem, isPrepared, cacheKey, fetchItemContent, getVisibleItems } = renderer;
+		const config: RenderFrameConfig<Dataset, Item, Settings, string, string, ReglCacheEntry, GpuData> = {
 			queueProcessingIntervalMS: 33,
 			maximumInflightAsyncTasks: 5,
 			queueTimeBudgetMS: 16,

@@ -1,5 +1,5 @@
-import type { box2D } from "./box2D";
-import { Vec2, type vec2 } from "./vec2";
+import type { box2D } from './box2D';
+import { Vec2, type vec2 } from './vec2';
 
 export type rectangle2D = {
 	center: vec2;
@@ -15,11 +15,7 @@ export function getMinimumBoundingBox(rect: rectangle2D): box2D {
 	};
 }
 // return a rectangle scaled by scale, with the origin of the scaling at the given point
-export const scaleFromPoint = (
-	rect: rectangle2D,
-	scale: number,
-	point: vec2,
-) => {
+export const scaleFromPoint = (rect: rectangle2D, scale: number, point: vec2) => {
 	const centerFromOrigin = Vec2.sub(rect.center, point);
 	const newCenter = Vec2.add(Vec2.scale(centerFromOrigin, scale), point);
 	return {
@@ -30,11 +26,7 @@ export const scaleFromPoint = (
 };
 
 // linearly interpolate start --> end
-export function interpolateRectangles<T extends rectangle2D>(
-	start: T,
-	end: T,
-	parameter: number,
-): T {
+export function interpolateRectangles<T extends rectangle2D>(start: T, end: T, parameter: number): T {
 	return {
 		...start,
 		center: Vec2.mix(start.center, end.center, parameter),

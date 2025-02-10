@@ -19,9 +19,7 @@ type reduceOp<T> = (a: T) => number;
 type unaryOp<T> = (a: T) => T;
 type predOp<T> = (a: T) => boolean;
 type VectorConstraint = ReadonlyArray<number>;
-function componentOpFn<T extends VectorConstraint>(
-	op: binOp<number>,
-): binOp<T> {
+function componentOpFn<T extends VectorConstraint>(op: binOp<number>): binOp<T> {
 	return (a: T, b: T) => {
 		const r: Array<number> = [...a];
 		for (let i = 0; i < a.length; i += 1) {
@@ -32,9 +30,7 @@ function componentOpFn<T extends VectorConstraint>(
 		return r as unknown as T;
 	};
 }
-function componentUnaryOpFn<T extends VectorConstraint>(
-	op: unaryOp<number>,
-): unaryOp<T> {
+function componentUnaryOpFn<T extends VectorConstraint>(op: unaryOp<number>): unaryOp<T> {
 	return (a: T) => {
 		const r: Array<number> = [...a];
 		for (let i = 0; i < a.length; i += 1) {
@@ -45,9 +41,7 @@ function componentUnaryOpFn<T extends VectorConstraint>(
 		return r as unknown as T;
 	};
 }
-function reduceComponentOpFn<T extends VectorConstraint>(
-	op: binOp<number>,
-): reduceOp<T> {
+function reduceComponentOpFn<T extends VectorConstraint>(op: binOp<number>): reduceOp<T> {
 	return (a: T) => {
 		let r: number = a[0];
 		for (let i = 1; i < a.length; i += 1) {
@@ -56,9 +50,7 @@ function reduceComponentOpFn<T extends VectorConstraint>(
 		return r;
 	};
 }
-function scalarOpFn<T extends VectorConstraint>(
-	op: scalarOp<number>,
-): scalarOp<T> {
+function scalarOpFn<T extends VectorConstraint>(op: scalarOp<number>): scalarOp<T> {
 	return (a: T, scalar: number) => {
 		const r: Array<number> = [...a];
 		for (let i = 0; i < a.length; i += 1) {
@@ -139,8 +131,7 @@ export function VectorLibFactory<V extends VectorConstraint>(): VectorLib<V> {
 	const any = (vec: V, op: predOp<number>) => anyCmp<V>(op)(vec);
 	const all = (vec: V, op: predOp<number>) => allCmp<V>(op)(vec);
 	const exactlyEqual = (a: V, b: V) => all(sub(a, b), (v) => v === 0);
-	const map = (v: V, fn: (c: number, index: number) => number) =>
-		v.map(fn) as unknown as V;
+	const map = (v: V, fn: (c: number, index: number) => number) => v.map(fn) as unknown as V;
 	// return a re-indexed vector - for example
 	// swizzle([33,22,11], [1,1,0])==> [22,22,33]
 	// note that passing invalid indexes will result in values of undefined in affected components of the result

@@ -1,15 +1,7 @@
-import REGL, { type Framebuffer2D } from "regl";
-import {
-	Box2D,
-	type box2D,
-	type vec2,
-	type vec4,
-} from "@alleninstitute/vis-geometry";
-import type {
-	ColumnarTree,
-	ColumnBuffer,
-} from "~/common/loaders/scatterplot/scatterbrain-loader";
-import type { RenderSettings } from "~/common/loaders/scatterplot/data";
+import REGL, { type Framebuffer2D } from 'regl';
+import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import type { ColumnarTree, ColumnBuffer } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type { RenderSettings } from '~/common/loaders/scatterplot/data';
 
 type Props = {
 	view: vec4;
@@ -59,22 +51,22 @@ export function buildRenderer(regl: REGL.Regl) {
         gl_FragColor = clr;
     }`,
 		attributes: {
-			color: regl.prop<Props, "color">("color"),
-			position: regl.prop<Props, "position">("position"),
+			color: regl.prop<Props, 'color'>('color'),
+			position: regl.prop<Props, 'position'>('position'),
 		},
 		uniforms: {
-			itemDepth: regl.prop<Props, "itemDepth">("itemDepth"),
-			view: regl.prop<Props, "view">("view"),
-			offset: regl.prop<Props, "offset">("offset"),
-			pointSize: regl.prop<Props, "pointSize">("pointSize"),
+			itemDepth: regl.prop<Props, 'itemDepth'>('itemDepth'),
+			view: regl.prop<Props, 'view'>('view'),
+			offset: regl.prop<Props, 'offset'>('offset'),
+			pointSize: regl.prop<Props, 'pointSize'>('pointSize'),
 		},
 
 		blend: {
 			enable: false,
 		},
-		framebuffer: regl.prop<Props, "target">("target"),
-		count: regl.prop<Props, "count">("count"),
-		primitive: "points",
+		framebuffer: regl.prop<Props, 'target'>('target'),
+		count: regl.prop<Props, 'count'>('count'),
+		primitive: 'points',
 	});
 	const renderDots = (
 		item: ColumnarTree<vec2> & { offset?: vec2 | undefined },
@@ -87,10 +79,10 @@ export function buildRenderer(regl: REGL.Regl) {
 		if (
 			color &&
 			position &&
-			"type" in color &&
-			"type" in position &&
-			color.type === "vbo" &&
-			position.type === "vbo"
+			'type' in color &&
+			'type' in position &&
+			color.type === 'vbo' &&
+			position.type === 'vbo'
 		) {
 			cmd({
 				view: Box2D.toFlatArray(settings.view),
@@ -104,7 +96,7 @@ export function buildRenderer(regl: REGL.Regl) {
 			});
 		} else {
 			// todo freak out!
-			throw new Error("omg the internet lied to me");
+			throw new Error('omg the internet lied to me');
 		}
 	};
 	return renderDots;

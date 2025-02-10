@@ -1,4 +1,4 @@
-import type { vec2 } from "@alleninstitute/vis-geometry";
+import type { vec2 } from '@alleninstitute/vis-geometry';
 export type MaybePromise<T> = T | Promise<T>;
 
 // we'd like to be able to configure a layer with a simple payload

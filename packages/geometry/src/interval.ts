@@ -64,7 +64,5 @@ export function intersection(a: Interval, b: Interval): Interval | undefined {
  * @returns x iff x is within interval (or if interval is invalid), interval.min if x<interval.min, interval.max else
  */
 export function limit(interval: Interval, x: number) {
-	return isValid(interval, 0)
-		? Math.min(Math.max(x, interval.min), interval.max)
-		: x;
+	return isValid(interval, 0) ? Math.min(Math.max(x, interval.min), interval.max) : x;
 }

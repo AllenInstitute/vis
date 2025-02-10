@@ -1,10 +1,6 @@
-import type { box } from "../BoundingBox";
+import type { box } from '../BoundingBox';
 
-export type SpatialTreeInterface<
-	Tree,
-	Content,
-	V extends ReadonlyArray<number>,
-> = {
+export type SpatialTreeInterface<Tree, Content, V extends ReadonlyArray<number>> = {
 	bounds: (t: Tree) => box<V>;
 	content: (t: Tree) => Content;
 	children: (t: Tree) => ReadonlyArray<Tree>;

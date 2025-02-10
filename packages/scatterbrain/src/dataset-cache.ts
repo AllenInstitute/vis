@@ -1,10 +1,6 @@
 type MaybePromise<D> = D | Promise<D>;
 type RecordKey = string | number | symbol;
-export interface AsyncCache<
-	SemanticKey extends RecordKey,
-	CacheKey extends RecordKey,
-	D,
-> {
+export interface AsyncCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> {
 	isCached(k: CacheKey): boolean;
 	getCachedUNSAFE(k: CacheKey): D | undefined;
 	cacheAndUse(
@@ -16,11 +12,7 @@ export interface AsyncCache<
 
 type useFn<K extends RecordKey, D> = (items: Record<K, D>) => void;
 type cancelFn = () => void;
-type MutablePendingRequest<
-	SemanticKey extends RecordKey,
-	CacheKey extends RecordKey,
-	D,
-> = {
+type MutablePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> = {
 	runner: useFn<SemanticKey, D>;
 	awaiting: Map<CacheKey, Set<SemanticKey>>;
 	blocking: Set<CacheKey>; // these are the cache keys associated with the items in 'ready' - we keep them around to make it easy to make sure we dont delete something we assume we have
@@ -28,11 +20,7 @@ type MutablePendingRequest<
 	ready: Record<SemanticKey, D>;
 };
 // return true if the request is completely satisfied, false if its still awaiting more entries
-function updatePendingRequest<
-	SemanticKey extends RecordKey,
-	CacheKey extends RecordKey,
-	D,
->(
+function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>(
 	req: MutablePendingRequest<SemanticKey, CacheKey, D>,
 	key: SemanticKey,
 	cacheKey: CacheKey,
@@ -68,11 +56,8 @@ type MutableCacheEntry<D> = {
  * }
  
  */
-export class AsyncDataCache<
-	SemanticKey extends RecordKey,
-	CacheKey extends RecordKey,
-	D,
-> implements AsyncCache<SemanticKey, CacheKey, D>
+export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>
+	implements AsyncCache<SemanticKey, CacheKey, D>
 {
 	private limit: number;
 	private size: (d: D) => number;
@@ -90,26 +75,17 @@ export class AsyncDataCache<
 	 * note that this limit is not a hard limit - old entries are evicted when new data is fetched, but the limit may be exceeded occasionally
 	 * a reasonable implementation may simply return 1 for size, and a desired occupancy count for the limit
 	 */
-	constructor(
-		destroy: (data: D) => void,
-		size: (data: D) => number,
-		cacheLimit: number,
-	) {
+	constructor(destroy: (data: D) => void, size: (data: D) => number, cacheLimit: number) {
 		this.size = size;
 		this.destroyer = destroy;
 		this.limit = cacheLimit;
 		this.entries = new Map<CacheKey, MutableCacheEntry<D>>();
-		this.pendingRequests = new Set<
-			MutablePendingRequest<SemanticKey, CacheKey, D>
-		>();
+		this.pendingRequests = new Set<MutablePendingRequest<SemanticKey, CacheKey, D>>();
 	}
 	private usedSpace() {
 		// Map uses iterators, so we're in for-loop territory here
 		let sum = 0;
-		this.entries.forEach(
-			(entry) =>
-				(sum += entry.data instanceof Promise ? 0 : this.size(entry.data)),
-		);
+		this.entries.forEach((entry) => (sum += entry.data instanceof Promise ? 0 : this.size(entry.data)));
 		return sum;
 	}
 	private countRequests() {
@@ -146,9 +122,7 @@ export class AsyncDataCache<
 					});
 				}
 			});
-			const priority = candidates.sort(
-				(a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp,
-			);
+			const priority = candidates.sort((a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp);
 			for (const evictMe of priority) {
 				used -= this.size(evictMe.data);
 				this.destroyer(evictMe.data);
@@ -168,9 +142,7 @@ export class AsyncDataCache<
 	 */
 	isCached(key: CacheKey): boolean {
 		// the key exists, and the value associated is not a promise
-		return (
-			this.entries.has(key) && !(this.entries.get(key)?.data instanceof Promise)
-		);
+		return this.entries.has(key) && !(this.entries.get(key)?.data instanceof Promise);
 	}
 
 	/**
@@ -231,11 +203,7 @@ export class AsyncDataCache<
 		}
 		removeUs.forEach((finished) => this.pendingRequests.delete(finished));
 	}
-	private prepareCache(
-		semanticKey: SemanticKey,
-		cacheKey: CacheKey,
-		getter: () => Promise<D>,
-	) {
+	private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
 		let promise: Promise<D>;
 		let entry = this.entries.get(cacheKey);
 		const data = entry?.data;
@@ -283,14 +251,9 @@ export class AsyncDataCache<
 			}
 		});
 		for (const semanticKey of keys) {
-			const result = this.prepareCache(
-				semanticKey,
-				toCacheKey(semanticKey),
-				workingSet[semanticKey],
-			);
+			const result = this.prepareCache(semanticKey, toCacheKey(semanticKey), workingSet[semanticKey]);
 			if (result instanceof Promise) {
-				const prom =
-					taskFinished !== undefined ? result.then(taskFinished) : result;
+				const prom = taskFinished !== undefined ? result.then(taskFinished) : result;
 				prom.catch((_reason) => {
 					// delete the failed entry from the cache
 					// also remove the entire request it belongs to
@@ -300,14 +263,7 @@ export class AsyncDataCache<
 					// still get called
 				});
 			} else {
-				if (
-					updatePendingRequest(
-						req,
-						semanticKey,
-						toCacheKey(semanticKey),
-						result,
-					)
-				) {
+				if (updatePendingRequest(req, semanticKey, toCacheKey(semanticKey), result)) {
 					use(req.ready);
 					if (taskFinished !== undefined) {
 						Promise.resolve().then(taskFinished); // we did the task synchronously...

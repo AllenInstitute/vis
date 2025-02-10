@@ -1,15 +1,12 @@
-import type REGL from "regl";
-import {
-	beginLongRunningFrame,
-	type AsyncDataCache,
-} from "@alleninstitute/vis-scatterbrain";
-import type { RenderCallback } from "./types";
-import { Box2D, type box2D } from "@alleninstitute/vis-geometry";
-import type { Path, buildPathRenderer } from "./lineRenderer";
-import { flatten } from "lodash";
-import type { OptionalTransform } from "../data-sources/types";
-import type { Camera } from "~/common/camera";
-import type { ColumnData } from "~/common/loaders/scatterplot/scatterbrain-loader";
+import type REGL from 'regl';
+import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
+import type { RenderCallback } from './types';
+import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
+import type { Path, buildPathRenderer } from './lineRenderer';
+import { flatten } from 'lodash';
+import type { OptionalTransform } from '../data-sources/types';
+import type { Camera } from '~/common/camera';
+import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 
@@ -34,7 +31,7 @@ function requestsForPath(p: Path) {
 	return {
 		position: () =>
 			Promise.resolve({
-				type: "float",
+				type: 'float',
 				data: new Float32Array(flatten(p.points)),
 			}),
 	};
@@ -46,11 +43,7 @@ export function renderAnnotationLayer(
 ) {
 	const { camera, cache, renderer, callback } = settings;
 	const items = getVisibleStrokes(camera, layer);
-	return beginLongRunningFrame<
-		ColumnData | object,
-		Path,
-		{ view: box2D; target: REGL.Framebuffer2D | null }
-	>(
+	return beginLongRunningFrame<ColumnData | object, Path, { view: box2D; target: REGL.Framebuffer2D | null }>(
 		5,
 		33,
 		items,
