@@ -14,7 +14,25 @@ updates:
 
     # Packages
     - package-ecosystem: 'pnpm'
+      directory: '/packages/dzi'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+
+    - package-ecosystem: 'pnpm'
       directory: '/packages/geometry'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+    
+    - package-ecosystem: 'pnpm'
+      directory: '/packages/omezarr'
       schedule:
           interval: 'monthly'
       reviewers:
@@ -33,34 +51,7 @@ updates:
 
     # Examples
     - package-ecosystem: 'pnpm'
-      directory: '/apps/common'
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-    
-    - package-ecosystem: 'pnpm'
-      directory: '/apps/layers'
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-  
-    - package-ecosystem: 'pnpm'
-      directory: '/apps/omezarr-viewer'
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-    
-    - package-ecosystem: 'pnpm'
-      directory: '/app/scatterplot'
+      directory: '/examples'
       schedule:
           interval: 'monthly'
       reviewers:
