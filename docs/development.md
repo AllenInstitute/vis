@@ -19,7 +19,7 @@ To run the formatter, use the following command:
 pnpm run fmt
 ```
 
-You can also run the linter and formatter at the same time:
+You can also run the linter and formatter at the same time to see if there are issues (without fixing them):
 ```sh
 pnpm run checks
 ```
@@ -30,7 +30,7 @@ pnpm run checks:fix
 ```
 
 ## Testing
-We use [Jest](https://jestjs.io) for testing.
+We use [Vitest](https://vitest.dev/) for testing.
 
 To run the tests, use the following command:
 ```sh

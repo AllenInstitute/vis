@@ -113,7 +113,7 @@ export function renderGrid<C extends CacheContentType | object>(
     for (let i = 0; i < slices; i++) {
         const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)];
 
-        const param = i / slices;
+        let param = i / slices;
         const slice: AxisAlignedZarrSlice = {
             ...grid,
             type: 'AxisAlignedZarrSlice',

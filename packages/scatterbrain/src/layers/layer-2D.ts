@@ -54,7 +54,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
             readonly data: Readonly<Renderable>;
             readonly settings: Readonly<RenderSettings>;
         },
-        cancel = true,
+        cancel: boolean = true,
     ) {
         if (cancel && this.runningFrame) {
             this.runningFrame.cancelFrame();

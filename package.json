@@ -8,7 +8,9 @@
         "check": "biome check .",
         "check:fix": "biome check . --write",
         "fmt": "biome format . --write",
-        "lint": "biome lint ."
+        "fmt:check": "biome format .",
+        "lint": "biome lint . --write",
+        "lint:check": "biome lint ."
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
