@@ -19,7 +19,7 @@ To run the formatter, use the following command:
 pnpm run fmt
 ```
 
-You can also run the linter and formatter at the same time:
+You can also run the linter and formatter at the same time to see if there are issues (without fixing them):
 ```sh
 pnpm run checks
 ```
@@ -27,15 +27,6 @@ pnpm run checks
 And you can auto-apply simple fixes to both lints and formatting with the following:
 ```sh
 pnpm run checks:fix
-```
-
-Formatting and linting also have their individual `:fix` commands:
-```sH
-pnpm run fmt:fix
-```
-
-```sh
-pnpm run lint:fix
 ```
 
 ## Testing
