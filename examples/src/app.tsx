@@ -5,14 +5,14 @@ import { OmezarrDemo } from './omezarr/omezarr-demo';
 import { DziDemo } from './dzi/dzi-demo';
 
 export function App() {
-	return (
-		<BrowserRouter>
-			<Routes>
-				<Route index element={<Home />} />
-				<Route path="/dzi" element={<DziDemo />} />
-				<Route path="/omezarr" element={<OmezarrDemo />} />
-				<Route path="/layers" />
-			</Routes>
-		</BrowserRouter>
-	);
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route index element={<Home />} />
+                <Route path="/dzi" element={<DziDemo />} />
+                <Route path="/omezarr" element={<OmezarrDemo />} />
+                <Route path="/layers" />
+            </Routes>
+        </BrowserRouter>
+    );
 }

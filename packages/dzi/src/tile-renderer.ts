@@ -1,11 +1,11 @@
 import type { vec4 } from '@alleninstitute/vis-geometry';
 import REGL from 'regl';
 type Props = {
-	img: REGL.Texture2D;
-	view: vec4;
-	tile: vec4;
-	depth: number;
-	target: REGL.Framebuffer2D | null;
+    img: REGL.Texture2D;
+    view: vec4;
+    tile: vec4;
+    depth: number;
+    target: REGL.Framebuffer2D | null;
 };
 const vert = `
 precision highp float;
@@ -35,25 +35,25 @@ void main(){
 }
 `;
 export function buildTileRenderer(regl: REGL.Regl, blend: REGL.BlendingOptions) {
-	const cmd = regl({
-		vert,
-		frag,
-		depth: {
-			enable: true,
-		},
-		blend,
-		count: 4,
-		primitive: 'triangle fan',
-		attributes: {
-			position: [0, 0, 1, 0, 1, 1, 0, 1],
-		},
-		uniforms: {
-			img: regl.prop<Props, 'img'>('img'),
-			view: regl.prop<Props, 'view'>('view'),
-			tile: regl.prop<Props, 'tile'>('tile'),
-			depth: regl.prop<Props, 'depth'>('depth'),
-		},
-		framebuffer: regl.prop<Props, 'target'>('target'),
-	});
-	return (p: Props) => cmd(p);
+    const cmd = regl({
+        vert,
+        frag,
+        depth: {
+            enable: true,
+        },
+        blend,
+        count: 4,
+        primitive: 'triangle fan',
+        attributes: {
+            position: [0, 0, 1, 0, 1, 1, 0, 1],
+        },
+        uniforms: {
+            img: regl.prop<Props, 'img'>('img'),
+            view: regl.prop<Props, 'view'>('view'),
+            tile: regl.prop<Props, 'tile'>('tile'),
+            depth: regl.prop<Props, 'depth'>('depth'),
+        },
+        framebuffer: regl.prop<Props, 'target'>('target'),
+    });
+    return (p: Props) => cmd(p);
 }

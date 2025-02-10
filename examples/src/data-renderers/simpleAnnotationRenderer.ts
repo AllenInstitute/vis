@@ -11,50 +11,50 @@ import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loade
 type Renderer = ReturnType<typeof buildPathRenderer>;
 
 export type SimpleAnnotation = {
-	paths: Array<Path>;
+    paths: Array<Path>;
 } & OptionalTransform;
 export type RenderSettings = {
-	camera: Camera;
-	cache: AsyncDataCache<string, string, ColumnData | object>;
-	renderer: Renderer;
-	callback: RenderCallback;
-	regl: REGL.Regl;
-	concurrentTasks?: number;
-	queueInterval?: number;
-	cpuLimit?: number;
+    camera: Camera;
+    cache: AsyncDataCache<string, string, ColumnData | object>;
+    renderer: Renderer;
+    callback: RenderCallback;
+    regl: REGL.Regl;
+    concurrentTasks?: number;
+    queueInterval?: number;
+    cpuLimit?: number;
 };
 function getVisibleStrokes(camera: Camera, layer: SimpleAnnotation) {
-	return layer.paths.filter((p) => !!Box2D.intersection(camera.view, p.bounds));
+    return layer.paths.filter((p) => !!Box2D.intersection(camera.view, p.bounds));
 }
 
 function requestsForPath(p: Path) {
-	return {
-		position: () =>
-			Promise.resolve({
-				type: 'float',
-				data: new Float32Array(flatten(p.points)),
-			}),
-	};
+    return {
+        position: () =>
+            Promise.resolve({
+                type: 'float',
+                data: new Float32Array(flatten(p.points)),
+            }),
+    };
 }
 export function renderAnnotationLayer(
-	target: REGL.Framebuffer2D | null,
-	layer: SimpleAnnotation & OptionalTransform,
-	settings: RenderSettings,
+    target: REGL.Framebuffer2D | null,
+    layer: SimpleAnnotation & OptionalTransform,
+    settings: RenderSettings,
 ) {
-	const { camera, cache, renderer, callback } = settings;
-	const items = getVisibleStrokes(camera, layer);
-	return beginLongRunningFrame<ColumnData | object, Path, { view: box2D; target: REGL.Framebuffer2D | null }>(
-		5,
-		33,
-		items,
-		cache,
-		{
-			view: camera.view,
-			target,
-		},
-		requestsForPath,
-		renderer,
-		callback,
-		(rq: string, path: Path) => `${rq}_${path.id}_${path.points.length}`,
-	);
+    const { camera, cache, renderer, callback } = settings;
+    const items = getVisibleStrokes(camera, layer);
+    return beginLongRunningFrame<ColumnData | object, Path, { view: box2D; target: REGL.Framebuffer2D | null }>(
+        5,
+        33,
+        items,
+        cache,
+        {
+            view: camera.view,
+            target,
+        },
+        requestsForPath,
+        renderer,
+        callback,
+        (rq: string, path: Path) => `${rq}_${path.id}_${path.points.length}`,
+    );
 }

@@ -33,12 +33,12 @@ message Annotation {
 
 let codec: AnnotationCodec | undefined;
 export function getAnnotationCodec() {
-	if (!codec) {
-		try {
-			codec = compileSchema(parseSchema(AnnotationSchema));
-		} catch (err) {
-			return undefined;
-		}
-	}
-	return codec;
+    if (!codec) {
+        try {
+            codec = compileSchema(parseSchema(AnnotationSchema));
+        } catch (err) {
+            return undefined;
+        }
+    }
+    return codec;
 }

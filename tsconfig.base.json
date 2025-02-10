@@ -1,10 +1,10 @@
 {
-	"compilerOptions": {
-		"strict": true,
-		"verbatimModuleSyntax": true,
-		"esModuleInterop": true,
-		"exactOptionalPropertyTypes": true,
-		"forceConsistentCasingInFileNames": true,
-		"skipLibCheck": true
-	}
+    "compilerOptions": {
+        "strict": true,
+        "verbatimModuleSyntax": true,
+        "esModuleInterop": true,
+        "exactOptionalPropertyTypes": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true
+    }
 }

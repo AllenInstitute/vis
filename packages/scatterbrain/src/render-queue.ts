@@ -7,7 +7,7 @@ import { AsyncDataCache } from './dataset-cache';
  * Currently only supports `cancelFrame` to allow the user to cancel the frame on an ad-hoc basis.
  */
 export type FrameLifecycle = {
-	cancelFrame: (reason?: string) => void;
+    cancelFrame: (reason?: string) => void;
 };
 
 /**
@@ -52,131 +52,131 @@ export type RenderCallback = (event: { status: NormalStatus } | { status: 'error
  * @returns A FrameLifecycle object with a cancelFrame function to allow users to cancel the frame when necessary
  */
 export function beginLongRunningFrame<Column, Item, Settings>(
-	maximumInflightAsyncTasks: number,
-	queueProcessingIntervalMS: number,
-	items: Item[],
-	mutableCache: AsyncDataCache<string, string, Column>,
-	settings: Settings,
-	requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
-	render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
-	lifecycleCallback: RenderCallback,
-	cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key,
-	queueTimeBudgetMS: number = queueProcessingIntervalMS / 3,
+    maximumInflightAsyncTasks: number,
+    queueProcessingIntervalMS: number,
+    items: Item[],
+    mutableCache: AsyncDataCache<string, string, Column>,
+    settings: Settings,
+    requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
+    render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
+    lifecycleCallback: RenderCallback,
+    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key,
+    queueTimeBudgetMS: number = queueProcessingIntervalMS / 3,
 ): FrameLifecycle {
-	const abort = new AbortController();
-	const queue: Item[] = [];
-	const taskCancelCallbacks: Array<() => void> = [];
+    const abort = new AbortController();
+    const queue: Item[] = [];
+    const taskCancelCallbacks: Array<() => void> = [];
 
-	const reportNormalStatus = (status: NormalStatus) => {
-		// we want to report our status, however the flow of events can be confusing -
-		// our callers anticipate an asynchronous (long running) frame to be started,
-		// but there are scenarios in which the whole thing is completely synchronous
-		// callers who are scheduling things may be surprised that their frame finished
-		// before the code that handles it appears to start. thus, we make the entire lifecycle callback
-		// system async, to prevent surprises.
-		Promise.resolve().then(() => lifecycleCallback({ status }));
-	};
-	// when starting a frame, we greedily attempt to render any tasks that are already in the cache
-	// however, if there is too much overhead (or too many tasks) we would risk hogging the main thread
-	// thus - obey the limit (its a soft limit)
-	const startTime = performance.now();
+    const reportNormalStatus = (status: NormalStatus) => {
+        // we want to report our status, however the flow of events can be confusing -
+        // our callers anticipate an asynchronous (long running) frame to be started,
+        // but there are scenarios in which the whole thing is completely synchronous
+        // callers who are scheduling things may be surprised that their frame finished
+        // before the code that handles it appears to start. thus, we make the entire lifecycle callback
+        // system async, to prevent surprises.
+        Promise.resolve().then(() => lifecycleCallback({ status }));
+    };
+    // when starting a frame, we greedily attempt to render any tasks that are already in the cache
+    // however, if there is too much overhead (or too many tasks) we would risk hogging the main thread
+    // thus - obey the limit (its a soft limit)
+    const startTime = performance.now();
 
-	for (let i = 0; i < items.length; i += 1) {
-		const itemToRender = items[i];
-		const requestFns = requestsForItem(itemToRender, settings, abort.signal);
-		const cacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
-		const cacheKeys = Object.keys(requestFns).map(cacheKey);
+    for (let i = 0; i < items.length; i += 1) {
+        const itemToRender = items[i];
+        const requestFns = requestsForItem(itemToRender, settings, abort.signal);
+        const cacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
+        const cacheKeys = Object.keys(requestFns).map(cacheKey);
 
-		if (mutableCache.areKeysAllCached(cacheKeys)) {
-			const result = mutableCache.cacheAndUse(requestFns, partial(render, itemToRender, settings), cacheKey);
-			if (result !== undefined) {
-				// this is a problem - the cache reported that all the keys are in the cache, however this result is a cancellation callback,
-				// which indicates that the item could not be rendered right away, which should be impossible...
-				// TODO
-				taskCancelCallbacks.push(result);
-			}
-		} else {
-			// areKeysAllCached returned false - enqueue for later
-			queue.push(itemToRender);
-		}
-		if (performance.now() - startTime > queueTimeBudgetMS) {
-			// we've used up all our time - enqueue all remaining tasks
-			if (i < items.length - 1) {
-				queue.push(...items.slice(i + 1));
-			}
-			break;
-		}
-	}
+        if (mutableCache.areKeysAllCached(cacheKeys)) {
+            const result = mutableCache.cacheAndUse(requestFns, partial(render, itemToRender, settings), cacheKey);
+            if (result !== undefined) {
+                // this is a problem - the cache reported that all the keys are in the cache, however this result is a cancellation callback,
+                // which indicates that the item could not be rendered right away, which should be impossible...
+                // TODO
+                taskCancelCallbacks.push(result);
+            }
+        } else {
+            // areKeysAllCached returned false - enqueue for later
+            queue.push(itemToRender);
+        }
+        if (performance.now() - startTime > queueTimeBudgetMS) {
+            // we've used up all our time - enqueue all remaining tasks
+            if (i < items.length - 1) {
+                queue.push(...items.slice(i + 1));
+            }
+            break;
+        }
+    }
 
-	if (queue.length === 0) {
-		// we did all the work - it was already cached
-		reportNormalStatus('finished_synchronously');
-		return { cancelFrame: () => {} };
-	}
-	// TODO: Re-examine lifecycle reporting, potentially unify all statuses into a single type
-	reportNormalStatus('begun');
-	if (queue.length !== items.length) {
-		// We did some work, but there's some left
-		reportNormalStatus('progress');
-	}
-	const doWorkOnQueue = (intervalId: number) => {
-		// try our best to cleanup if something goes awry
-		const startWorkTime = performance.now();
-		const cleanupOnError = (err: unknown) => {
-			// clear the queue and the staging area (inFlight)
-			taskCancelCallbacks.forEach((cancelMe) => cancelMe());
-			queue.splice(0, queue.length);
-			// stop fetching
-			abort.abort(err);
-			clearInterval(intervalId);
-			// pass the error somewhere better:
-			lifecycleCallback({ status: 'error', error: err });
-		};
-		while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
-			if (queue.length < 1) {
-				// we cant add anything to the in-flight staging area, the final task
-				// is already in flight
-				if (mutableCache.getNumPendingTasks() < 1) {
-					// we do want to wait for that last in-flight task to actually finish though:
-					clearInterval(intervalId);
-					reportNormalStatus('finished');
-				}
-				return;
-			}
-			// We know there are items in the queue because of the check above, so we assert the type exist
-			const itemToRender = queue.shift()!;
-			const toCacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
-			try {
-				const result = mutableCache.cacheAndUse(
-					requestsForItem(itemToRender, settings, abort.signal),
-					partial(render, itemToRender, settings),
-					toCacheKey,
-					() => reportNormalStatus('progress'),
-				);
-				if (result !== undefined) {
-					// put this cancel callback in a list where we can invoke if something goes wrong
-					// note that it is harmless to cancel a task that was completed
-					taskCancelCallbacks.push(result);
-				}
-			} catch (err) {
-				cleanupOnError(err);
-			}
-			if (performance.now() - startWorkTime > queueTimeBudgetMS) {
-				// used up all our time - leave remaining work for later
-				break;
-			}
-		}
-	};
-	const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
+    if (queue.length === 0) {
+        // we did all the work - it was already cached
+        reportNormalStatus('finished_synchronously');
+        return { cancelFrame: () => {} };
+    }
+    // TODO: Re-examine lifecycle reporting, potentially unify all statuses into a single type
+    reportNormalStatus('begun');
+    if (queue.length !== items.length) {
+        // We did some work, but there's some left
+        reportNormalStatus('progress');
+    }
+    const doWorkOnQueue = (intervalId: number) => {
+        // try our best to cleanup if something goes awry
+        const startWorkTime = performance.now();
+        const cleanupOnError = (err: unknown) => {
+            // clear the queue and the staging area (inFlight)
+            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            queue.splice(0, queue.length);
+            // stop fetching
+            abort.abort(err);
+            clearInterval(intervalId);
+            // pass the error somewhere better:
+            lifecycleCallback({ status: 'error', error: err });
+        };
+        while (mutableCache.getNumPendingTasks() < Math.max(maximumInflightAsyncTasks, 1)) {
+            if (queue.length < 1) {
+                // we cant add anything to the in-flight staging area, the final task
+                // is already in flight
+                if (mutableCache.getNumPendingTasks() < 1) {
+                    // we do want to wait for that last in-flight task to actually finish though:
+                    clearInterval(intervalId);
+                    reportNormalStatus('finished');
+                }
+                return;
+            }
+            // We know there are items in the queue because of the check above, so we assert the type exist
+            const itemToRender = queue.shift()!;
+            const toCacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
+            try {
+                const result = mutableCache.cacheAndUse(
+                    requestsForItem(itemToRender, settings, abort.signal),
+                    partial(render, itemToRender, settings),
+                    toCacheKey,
+                    () => reportNormalStatus('progress'),
+                );
+                if (result !== undefined) {
+                    // put this cancel callback in a list where we can invoke if something goes wrong
+                    // note that it is harmless to cancel a task that was completed
+                    taskCancelCallbacks.push(result);
+                }
+            } catch (err) {
+                cleanupOnError(err);
+            }
+            if (performance.now() - startWorkTime > queueTimeBudgetMS) {
+                // used up all our time - leave remaining work for later
+                break;
+            }
+        }
+    };
+    const interval = setInterval(() => doWorkOnQueue(interval), queueProcessingIntervalMS);
 
-	// return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
-	// touched/referenced after cancellation, unless the author of render() did some super weird bad things
-	return {
-		cancelFrame: (reason?: string) => {
-			taskCancelCallbacks.forEach((cancelMe) => cancelMe());
-			abort.abort(new DOMException(reason, 'AbortError'));
-			clearInterval(interval);
-			reportNormalStatus('cancelled');
-		},
-	};
+    // return a function to allow our caller to cancel the frame - guaranteed that no settings/data will be
+    // touched/referenced after cancellation, unless the author of render() did some super weird bad things
+    return {
+        cancelFrame: (reason?: string) => {
+            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            abort.abort(new DOMException(reason, 'AbortError'));
+            clearInterval(interval);
+            reportNormalStatus('cancelled');
+        },
+    };
 }

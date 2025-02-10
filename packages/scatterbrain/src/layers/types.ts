@@ -3,23 +3,23 @@ import type { FrameLifecycle } from '../render-queue';
 import type REGL from 'regl';
 
 export type RenderFn<Data, Settings> = (
-	target: REGL.Framebuffer2D | null,
-	thing: Readonly<Data>,
-	settings: Readonly<Settings>,
+    target: REGL.Framebuffer2D | null,
+    thing: Readonly<Data>,
+    settings: Readonly<Settings>,
 ) => FrameLifecycle;
 
 export type Image = {
-	resolution: vec2;
-	texture: REGL.Framebuffer2D;
-	bounds: box2D | undefined; // if undefined, it means we allocated the texture, but its empty and should not be used (except to fill it)
+    resolution: vec2;
+    texture: REGL.Framebuffer2D;
+    bounds: box2D | undefined; // if undefined, it means we allocated the texture, but its empty and should not be used (except to fill it)
 };
 
 type ImageRendererProps = {
-	target: REGL.Framebuffer2D | null;
-	box: vec4;
-	view: vec4;
-	viewport: REGL.BoundingBox;
-	img: REGL.Texture2D | REGL.Framebuffer2D;
+    target: REGL.Framebuffer2D | null;
+    box: vec4;
+    view: vec4;
+    viewport: REGL.BoundingBox;
+    img: REGL.Texture2D | REGL.Framebuffer2D;
 };
 
 // a function which renders an axis aligned image to another axis aligned image - no funny buisness
