@@ -8,7 +8,6 @@ import {
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
-import type React from 'react';
 import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 

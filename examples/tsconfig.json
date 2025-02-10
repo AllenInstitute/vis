@@ -6,7 +6,7 @@
         "verbatimModuleSyntax": true,
         "module": "es2022",
         "moduleResolution": "Bundler",
-        "jsx": "react",
+        "jsx": "react-jsx",
         "baseUrl": "./",
         "paths": {
             "~/*": ["./src/*"]

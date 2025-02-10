@@ -9,7 +9,6 @@ import {
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import type { RenderFrameFn, buildAsyncRenderer } from '@alleninstitute/vis-scatterbrain';
 import { useContext, useEffect, useRef, useState } from 'react';
-import type React from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 
 type Props = {

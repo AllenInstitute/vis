@@ -1,7 +1,6 @@
 import { Box2D, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { type OmeZarrDataset, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
-import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '~/common/react/render-server-provider';
