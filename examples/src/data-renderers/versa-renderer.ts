@@ -1,15 +1,16 @@
-import REGL, { type Framebuffer2D } from 'regl';
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
-import { omit } from 'lodash';
 import {
+    type ZarrDataset,
+    type ZarrRequest,
     pickBestScale,
     planeSizeInVoxels,
     sizeInUnits,
-    type ZarrDataset,
-    type ZarrRequest,
 } from '@alleninstitute/vis-omezarr';
-import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
+import { omit } from 'lodash';
+import type REGL from 'regl';
+import type { Framebuffer2D } from 'regl';
 import type { Camera } from '~/common/camera';
+import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
 
 const TILE_SIZE = 256;
 
@@ -124,7 +125,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
     return (
         item: VoxelTile,
         settings: VoxelSliceRenderSettings,
-        channels: Record<string, Bfr | object | undefined>
+        channels: Record<string, Bfr | object | undefined>,
     ) => {
         const { view, viewport, gamut, target, rotation } = settings;
         const { realBounds } = item;
@@ -269,7 +270,7 @@ export function getVisibleTiles(
     plane: AxisAlignedPlane,
     planeIndex: number,
     dataset: ZarrDataset,
-    offset?: vec2
+    offset?: vec2,
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
     // const { axes, datasets } = dataset.multiscales[0];
     // const zIndex = indexOfDimension(axes, sliceDimension[plane]);

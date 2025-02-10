@@ -1,14 +1,14 @@
-import REGL from 'regl';
 import { Box2D, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
-    type Renderer,
-    type ReglCacheEntry,
     type CachedTexture,
+    type ReglCacheEntry,
+    type Renderer,
     buildAsyncRenderer,
 } from '@alleninstitute/vis-scatterbrain';
+import type REGL from 'regl';
 import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
-import { buildTileRenderer } from './tile-renderer';
 import { type VoxelTile, getVisibleTiles } from './loader';
+import { buildTileRenderer } from './tile-renderer';
 
 type RenderSettings = {
     camera: {
@@ -81,13 +81,18 @@ const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max];
 type Decoder = (dataset: OmeZarrDataset, req: ZarrRequest, layerIndex: number) => Promise<VoxelTileImage>;
 export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
-    decoder: Decoder
+    decoder: Decoder,
 ): Renderer<OmeZarrDataset, VoxelTile, RenderSettings, ImageChannels> {
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
         const { data, shape } = slice;
         return {
             bytes: data.byteLength,
-            texture: regl.texture({ data: data, width: shape[1], height: shape[0], format: 'luminance' }),
+            texture: regl.texture({
+                data: data,
+                width: shape[1],
+                height: shape[0],
+                format: 'luminance',
+            }),
             type: 'texture',
         };
     }

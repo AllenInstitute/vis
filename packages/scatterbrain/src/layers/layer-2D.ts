@@ -1,9 +1,9 @@
-// a helper to render a 2D layer, using regl
-import type { Image, ImageRenderer, RenderFn } from './types';
-import { type BufferPair, swapBuffers } from './buffer-pair';
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { FrameLifecycle, RenderCallback } from '../render-queue';
-import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { type BufferPair, swapBuffers } from './buffer-pair';
+// a helper to render a 2D layer, using regl
+import type { Image, ImageRenderer, RenderFn } from './types';
 
 type EventType = Parameters<RenderCallback>[0];
 type RequiredSettings = { camera: { view: box2D }; callback: RenderCallback };
@@ -18,11 +18,19 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
         regl: REGL.Regl,
         imgRenderer: ImageRenderer,
         renderFn: RenderFn<Renderable, RenderSettings & RequiredSettings>,
-        resolution: vec2
+        resolution: vec2,
     ) {
         this.buffers = {
-            readFrom: { resolution, texture: regl.framebuffer(...resolution), bounds: undefined },
-            writeTo: { resolution, texture: regl.framebuffer(...resolution), bounds: undefined },
+            readFrom: {
+                resolution,
+                texture: regl.framebuffer(...resolution),
+                bounds: undefined,
+            },
+            writeTo: {
+                resolution,
+                texture: regl.framebuffer(...resolution),
+                bounds: undefined,
+            },
         };
         this.renderImg = imgRenderer;
         this.regl = regl;
@@ -46,7 +54,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
             readonly data: Readonly<Renderable>;
             readonly settings: Readonly<RenderSettings>;
         },
-        cancel: boolean = true
+        cancel = true,
     ) {
         if (cancel && this.runningFrame) {
             this.runningFrame.cancelFrame();
@@ -68,7 +76,11 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
                     view: Box2D.toFlatArray(readFrom.bounds),
                 });
             }
-            this.regl.clear({ framebuffer: this.buffers.writeTo.texture, color: [0, 0, 0, 0], depth: 1 });
+            this.regl.clear({
+                framebuffer: this.buffers.writeTo.texture,
+                color: [0, 0, 0, 0],
+                depth: 1,
+            });
         }
         const { data, settings } = props;
         const { camera, callback } = settings;

@@ -1,5 +1,5 @@
-import type { vec4, vec2 } from '@alleninstitute/vis-geometry';
-import REGL from 'regl';
+import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import type REGL from 'regl';
 
 const frag = `
 precision highp float;

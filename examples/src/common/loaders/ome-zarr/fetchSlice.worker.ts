@@ -1,6 +1,6 @@
+import { type ZarrDataset, type ZarrRequest, getSlice } from '@alleninstitute/vis-omezarr';
 // a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
 import type { Chunk } from 'zarrita';
-import { type ZarrDataset, type ZarrRequest, getSlice } from '@alleninstitute/vis-omezarr';
 
 const ctx = self;
 type ZarrSliceRequest = {
@@ -11,7 +11,7 @@ type ZarrSliceRequest = {
     layerIndex: number;
 };
 function isSliceRequest(payload: any): payload is ZarrSliceRequest {
-    return typeof payload === 'object' && payload['type'] === 'ZarrSliceRequest';
+    return typeof payload === 'object' && payload.type === 'ZarrSliceRequest';
 }
 ctx.onmessage = (msg: MessageEvent<unknown>) => {
     const { data } = msg;

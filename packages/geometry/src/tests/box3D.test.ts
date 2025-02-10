@@ -1,6 +1,6 @@
+import { describe, expect, test } from 'vitest';
 import { Box3D } from '../box3D';
 import { Vec3 } from '../vec3';
-import { describe, expect, test } from 'vitest';
 describe('Box3D', () => {
     // Basic box to use throughout the tests
     const box = Box3D.create([1, 2, 3], [3, 4, 5]);
@@ -33,17 +33,19 @@ describe('Box3D', () => {
     });
     test('map', () => {
         expect(Box3D.map(Box3D.create([0, 0, 0], [1, 1, 1]), (v) => Vec3.scale(v, 300))).toStrictEqual(
-            Box3D.create([0, 0, 0], [300, 300, 300])
+            Box3D.create([0, 0, 0], [300, 300, 300]),
         );
     });
     test('isValid', () => {
         const validBox = Box3D.isValid(box);
         expect(validBox).toBeTruthy();
 
-        const nanBox = Box3D.isValid(Box3D.create([NaN, NaN, NaN], [1, 1, 1]));
+        const nanBox = Box3D.isValid(Box3D.create([Number.NaN, Number.NaN, Number.NaN], [1, 1, 1]));
         expect(nanBox).toBeFalsy();
 
-        const infinityBox = Box3D.isValid(Box3D.create([Infinity, Infinity, Infinity], [1, 1, 1]));
+        const infinityBox = Box3D.isValid(
+            Box3D.create([Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY], [1, 1, 1]),
+        );
         expect(infinityBox).toBeFalsy();
 
         const noAreaBox = Box3D.isValid(Box3D.create([0, 0, 0], [0, 0, 0]));

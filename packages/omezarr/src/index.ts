@@ -4,7 +4,11 @@ export {
     buildAsyncOmezarrRenderer,
     type VoxelTileImage,
 } from './sliceview/slice-renderer';
-export { type VoxelTile, defaultDecoder, getVisibleTiles } from './sliceview/loader';
+export {
+    type VoxelTile,
+    defaultDecoder,
+    getVisibleTiles,
+} from './sliceview/loader';
 export { buildTileRenderer } from './sliceview/tile-renderer';
 export { load as loadOmeZarr } from './zarr-data';
 export {

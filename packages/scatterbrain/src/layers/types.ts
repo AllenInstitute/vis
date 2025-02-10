@@ -1,11 +1,11 @@
 import type { box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
-import type { FrameLifecycle } from '../render-queue';
 import type REGL from 'regl';
+import type { FrameLifecycle } from '../render-queue';
 
 export type RenderFn<Data, Settings> = (
     target: REGL.Framebuffer2D | null,
     thing: Readonly<Data>,
-    settings: Readonly<Settings>
+    settings: Readonly<Settings>,
 ) => FrameLifecycle;
 
 export type Image = {

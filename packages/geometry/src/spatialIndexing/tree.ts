@@ -10,7 +10,7 @@ export function visitBFS<Tree>(
     tree: Tree,
     children: (t: Tree) => ReadonlyArray<Tree>,
     visitor: (tree: Tree) => void,
-    traversalPredicate?: (t: Tree) => boolean
+    traversalPredicate?: (t: Tree) => boolean,
 ): void {
     const frontier: Tree[] = [tree];
     while (frontier.length > 0) {

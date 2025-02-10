@@ -1,4 +1,4 @@
-import { type box2D, type vec2, Box2D, Vec2, Vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, Vec2, Vec4, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import type { Annotation, Path, PathCommand } from './annotation-schema-type';
 import type { AnnotationMesh, AnnotationPolygon, ClosedLoop } from './types';
 // a helper function, which does a first path over commands, grouping them into closed loops
@@ -26,7 +26,7 @@ function groupLoops(path: Path) {
                 }
                 return loops;
             },
-            [[]] as PathCommand[][]
+            [[]] as PathCommand[][],
         ) ?? [];
     return closed.filter((loop) => loop.length > 0);
 }
@@ -51,7 +51,10 @@ function closedPolygon(loop: PathCommand[]) {
     if (loop[0].data.length < 2) return undefined;
 
     const firstPoint: vec2 = [loop[0].data[0], loop[0].data[1]];
-    const initialState: { data: number[]; bounds: box2D } = { data: [], bounds: Box2D.create(firstPoint, firstPoint) };
+    const initialState: { data: number[]; bounds: box2D } = {
+        data: [],
+        bounds: Box2D.create(firstPoint, firstPoint),
+    };
 
     return loop.reduce((acc, command) => {
         const data: number[] = acc.data;
@@ -75,9 +78,12 @@ function closedPolygon(loop: PathCommand[]) {
     }, initialState);
 }
 function onlyDefined<T>(collection: ReadonlyArray<T | undefined>): ReadonlyArray<T> {
-    return collection.reduce((defined, cur) => {
-        return cur !== undefined ? [...defined, cur] : defined;
-    }, [] as ReadonlyArray<T>);
+    return collection.reduce(
+        (defined, cur) => {
+            return cur !== undefined ? [...defined, cur] : defined;
+        },
+        [] as ReadonlyArray<T>,
+    );
 }
 
 // intersection stuff:
@@ -177,8 +183,10 @@ export function findFirstHit(annotation: AnnotationMesh, p: vec2): AnnotationPol
 
 export function MeshFromAnnotation(annotation: Annotation): AnnotationMesh | undefined {
     const groups =
-        annotation.closedPolygons?.map((path) => ({ path, loops: onlyDefined(groupLoops(path).map(closedPolygon)) })) ??
-        [];
+        annotation.closedPolygons?.map((path) => ({
+            path,
+            loops: onlyDefined(groupLoops(path).map(closedPolygon)),
+        })) ?? [];
 
     if (groups.length < 1) {
         return {
@@ -190,7 +198,7 @@ export function MeshFromAnnotation(annotation: Annotation): AnnotationMesh | und
     // we have to pre-allocate a big pile of 32-bit floats, so we have to count all the lengths:
     const totalNumbers = groups.reduce(
         (sum, group) => sum + group.loops.reduce((total, loop) => total + (loop?.data.length ?? 0), 0),
-        0
+        0,
     );
 
     const points = new Float32Array(totalNumbers);

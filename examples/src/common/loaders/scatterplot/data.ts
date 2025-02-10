@@ -1,16 +1,16 @@
 // todo rename this file
 
-import { Box2D, visitBFS, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type box2D, type vec2, visitBFS } from '@alleninstitute/vis-geometry';
+import type REGL from 'regl';
 import {
-    fetchColumn,
     type ColumnData,
     type ColumnRequest,
     type ColumnarNode,
     type ColumnarTree,
     type SlideViewDataset,
+    fetchColumn,
     type loadDataset,
 } from './scatterbrain-loader';
-import REGL from 'regl';
 export type Dataset = ReturnType<typeof loadDataset>;
 export type RenderSettings = {
     dataset: Dataset;
@@ -27,14 +27,14 @@ function isVisible(view: box2D, sizeLimit: number, tree: ColumnarTree<vec2>) {
 }
 export function getVisibleItems(dataset: Dataset, view: box2D, sizeLimit: number) {
     const hits: ColumnarTree<vec2>[] = [];
-    let tree = 'slides' in dataset ? Object.values(dataset.slides)[0].tree : dataset.tree;
+    const tree = 'slides' in dataset ? Object.values(dataset.slides)[0].tree : dataset.tree;
     visitBFS(
         tree,
         (t: ColumnarTree<vec2>) => t.children,
         (tree) => {
             hits.push(tree);
         },
-        (tree) => isVisible(view, sizeLimit, tree)
+        (tree) => isVisible(view, sizeLimit, tree),
     );
     return hits;
 }
@@ -53,7 +53,7 @@ export function getVisibleItemsInSlide(dataset: SlideViewDataset, slide: string,
         (tree) => {
             hits.push(tree);
         },
-        (tree) => isVisible(view, sizeLimit, tree)
+        (tree) => isVisible(view, sizeLimit, tree),
     );
     return hits;
 }
@@ -67,7 +67,7 @@ function fetchAndUpload(
     settings: { dataset: Dataset; regl: REGL.Regl },
     node: ColumnarNode<vec2>,
     req: ColumnRequest,
-    signal?: AbortSignal | undefined
+    signal?: AbortSignal | undefined,
 ) {
     const { dataset, regl } = settings;
     return fetchColumn(node, dataset, req, signal).then((cd) => toReglBuffer(cd, regl));

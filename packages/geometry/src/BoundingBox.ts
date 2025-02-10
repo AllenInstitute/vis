@@ -84,7 +84,10 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
     const toFlatArray = (box: box<V>) => [...box.minCorner, ...box.maxCorner] as const;
     const size = (b: box<V>) => lib.sub(b.maxCorner, b.minCorner);
     const midpoint = (b: box<V>) => lib.scale(lib.add(b.minCorner, b.maxCorner), 0.5);
-    const map = (box: box<V>, fn: (v: V) => V) => ({ minCorner: fn(box.minCorner), maxCorner: fn(box.maxCorner) });
+    const map = (box: box<V>, fn: (v: V) => V) => ({
+        minCorner: fn(box.minCorner),
+        maxCorner: fn(box.maxCorner),
+    });
     const scale = (box: box<V>, s: V) => map(box, (c: V) => lib.mul(s, c));
     const translate = (box: box<V>, offset: V) => map(box, (c: V) => lib.add(c, offset));
     return {

@@ -1,6 +1,6 @@
+import { Button, InputSlider } from '@czi-sds/components';
 import React from 'react';
 import type { Demo } from 'src/layers';
-import { InputSlider, Button } from '@czi-sds/components';
 export function ContactSheetUI(props: { demo: Demo }) {
     const { demo } = props;
     // control the gamut with some sliders
@@ -8,8 +8,9 @@ export function ContactSheetUI(props: { demo: Demo }) {
     if (l && l.type === 'volumeGrid') {
         return (
             <div>
-                <label>RGB </label>
+                <label htmlFor="rgb">RGB </label>
                 <InputSlider
+                    name="rgb"
                     min={0}
                     max={1000}
                     value={[l.data.gamut.R.gamut.min, l.data.gamut.R.gamut.max]}
@@ -33,22 +34,13 @@ export function ContactSheetUI(props: { demo: Demo }) {
                         demo.setGamutChannel('B', value as number[]);
                     }}
                 />
-                <Button
-                    key={'xy'}
-                    onClick={() => demo.setPlane('xy')}
-                >
+                <Button key={'xy'} onClick={() => demo.setPlane('xy')}>
                     xy
                 </Button>
-                <Button
-                    key={'yz'}
-                    onClick={() => demo.setPlane('yz')}
-                >
+                <Button key={'yz'} onClick={() => demo.setPlane('yz')}>
                     yz
                 </Button>
-                <Button
-                    key={'xz'}
-                    onClick={() => demo.setPlane('xz')}
-                >
+                <Button key={'xz'} onClick={() => demo.setPlane('xz')}>
                     xz
                 </Button>
             </div>

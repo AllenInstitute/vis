@@ -1,9 +1,9 @@
 import {
     type ColumnRequest,
     type SlideViewDataset,
-    loadScatterbrainJson,
     isSlideViewData,
     loadDataset,
+    loadScatterbrainJson,
 } from '~/common/loaders/scatterplot/scatterbrain-loader';
 import type { OptionalTransform, Simple2DTransform } from '../types';
 

@@ -1,5 +1,5 @@
 import type { vec4 } from '@alleninstitute/vis-geometry';
-import REGL from 'regl';
+import type REGL from 'regl';
 type Props = {
     img: REGL.Texture2D;
     view: vec4;

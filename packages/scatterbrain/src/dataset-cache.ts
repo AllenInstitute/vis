@@ -6,7 +6,7 @@ export interface AsyncCache<SemanticKey extends RecordKey, CacheKey extends Reco
     cacheAndUse(
         workingSet: Record<SemanticKey, () => Promise<D>>,
         use: (items: Record<SemanticKey, D>) => void,
-        cacheKey: (semantic: SemanticKey) => CacheKey
+        cacheKey: (semantic: SemanticKey) => CacheKey,
     ): cancelFn | undefined;
 }
 
@@ -24,7 +24,7 @@ function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends Re
     req: MutablePendingRequest<SemanticKey, CacheKey, D>,
     key: SemanticKey,
     cacheKey: CacheKey,
-    item: D
+    item: D,
 ): boolean {
     if (req.awaiting.has(cacheKey)) {
         const remaningAwaited = req.awaiting.get(cacheKey);
@@ -105,13 +105,21 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     private evictIfFull() {
         // find entries which have 0 pending requests, and are not themselves promises...
         let used = this.usedSpace();
-        const candidates: { key: CacheKey; data: D; lastRequestedTimestamp: number }[] = [];
+        const candidates: {
+            key: CacheKey;
+            data: D;
+            lastRequestedTimestamp: number;
+        }[] = [];
         if (used > this.limit) {
             // its potentially a bit slow to do this:
             const counts = this.countRequests();
             this.entries.forEach((entry, key) => {
                 if (!(entry.data instanceof Promise) && (counts[key] ?? 0) < 1) {
-                    candidates.push({ key, data: entry.data, lastRequestedTimestamp: entry.lastRequestedTimestamp });
+                    candidates.push({
+                        key,
+                        data: entry.data,
+                        lastRequestedTimestamp: entry.lastRequestedTimestamp,
+                    });
                 }
             });
             const priority = candidates.sort((a, b) => a.lastRequestedTimestamp - b.lastRequestedTimestamp);
@@ -197,7 +205,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     }
     private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
         let promise: Promise<D>;
-        let entry = this.entries.get(cacheKey);
+        const entry = this.entries.get(cacheKey);
         const data = entry?.data;
         // we either return early (data is cached)
         // or we initialize promise (either getter() or a pre-existing request for the same cachekey)
@@ -226,7 +234,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         use: (items: Record<SemanticKey, D>) => void,
         toCacheKey: (semanticKey: SemanticKey) => CacheKey,
         // TODO: consider removing taskFinished - it would be more simple to let the caller handle this in their use() function
-        taskFinished?: () => void
+        taskFinished?: () => void,
     ): cancelFn | undefined {
         const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[];
         const req: MutablePendingRequest<SemanticKey, CacheKey, D> = {

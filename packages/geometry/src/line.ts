@@ -1,4 +1,4 @@
-import { Vec2, vec2 } from './vec2';
+import { Vec2, type vec2 } from './vec2';
 
 export type line = { start: vec2; end: vec2 };
 

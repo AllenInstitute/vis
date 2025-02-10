@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { line, lineSegmentsIntersect } from '../line';
+import { type line, lineSegmentsIntersect } from '../line';
 
 describe('line', () => {
     test('lineSegmentsIntersect finds intersection', () => {

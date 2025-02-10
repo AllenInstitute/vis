@@ -1,5 +1,5 @@
-import { Vec3 } from '../vec3';
 import { describe, expect, test } from 'vitest';
+import { Vec3 } from '../vec3';
 describe('Vec3', () => {
     test('add', () => {
         const result = Vec3.add([2, 3, 4], [4, 5, 6]);
@@ -79,17 +79,17 @@ describe('Vec3', () => {
         expect(result).toStrictEqual([2 / length, 3 / length, 4 / length]);
 
         const noLength = Vec3.normalize([0, 0, 0]);
-        expect(noLength).toStrictEqual([NaN, NaN, NaN]);
+        expect(noLength).toStrictEqual([Number.NaN, Number.NaN, Number.NaN]);
     });
 
     test('finite', () => {
         const result = Vec3.finite([2, 3, 4]);
         expect(result).toBeTruthy();
 
-        const infinityResult = Vec3.finite([Infinity, 2, 3]);
+        const infinityResult = Vec3.finite([Number.POSITIVE_INFINITY, 2, 3]);
         expect(infinityResult).toBeFalsy();
 
-        const nanResult = Vec3.finite([NaN, 2, 3]);
+        const nanResult = Vec3.finite([Number.NaN, 2, 3]);
         expect(nanResult).toBeFalsy();
     });
 

@@ -1,4 +1,4 @@
-import { type vec2, type box2D, Box2D, type Interval, Vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
 type DziTilesRoot = `${string}_files/`;
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN
@@ -30,7 +30,7 @@ export type DziTile = {
 function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
     return `${dzi.imagesUrl}${level.toFixed(0)}/${tile.col.toFixed(0)}_${tile.row.toFixed(0)}.${dzi.format}`;
 }
-// some quick notes on this deepzoom image format:
+// some quick notes on this deep zoom image format:
 // 1. image / tile names are given by {column}_{row}.{format}
 // 2. a layer (which may contain multiple tiles) is a folder
 // 2.1 that folder contains all the tiles for that layer.
@@ -93,7 +93,7 @@ export function getVisibleTiles(dzi: DziImage, camera: { view: box2D; screenSize
 export function firstSuitableLayer(imageWidth: number, screenWidth: number) {
     const idealLayer = Math.ceil(Math.log2(screenWidth));
     const biggestRealLayer = Math.ceil(Math.log2(imageWidth));
-    return Math.min(biggestRealLayer, idealLayer);
+    return Math.max(0, Math.min(biggestRealLayer, idealLayer));
 }
 
 /**
@@ -121,14 +121,22 @@ export function tileWithOverlap(total: number, step: number, overlap: number): I
 function boxFromRowCol(row: Interval, col: Interval) {
     return Box2D.create([col.min, row.min], [col.max, row.max]);
 }
+
+const logBaseHalf = (x: number) => Math.log2(x) / Math.log2(0.5);
+
 export function imageSizeAtLayer(dzi: DziImage, layer: number) {
-    const { size } = dzi;
-    const layerMaxSize = 2 ** layer;
-    let total: vec2 = [size.width, size.height];
-    while (total[0] > layerMaxSize || total[1] > layerMaxSize) {
-        total = Vec2.ceil(Vec2.scale(total, 1 / 2));
-    }
-    return total;
+    const { size: dim } = dzi;
+    const layerMaxSize = 2 ** (isFinite(layer) ? Math.max(0, layer) : 0);
+    const size: vec2 = [dim.width, dim.height];
+    // the question is how many times do we need to divide size
+    // by 2 to make it less than layerMaxSize?
+    // solve for N, X = the larger the image dimensions:
+    // X * (0.5^N) <= maxLayerSize ...
+    // 0.5^N = maxLayerSize/X ...
+    // log_0.5(maxLayerSize/X) = N
+    const bigger = Math.max(size[0], size[1]);
+    const N = Math.ceil(logBaseHalf(layerMaxSize / bigger));
+    return Vec2.ceil(Vec2.scale(size, 0.5 ** N));
 }
 export function tilesInLayer(dzi: DziImage, layer: number): box2D[][] {
     const { overlap, tileSize } = dzi;
