@@ -1,5 +1,4 @@
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
-import { some } from 'lodash';
 import * as zarr from 'zarrita';
 
 // documentation for ome-zarr datasets (from which these types are built)
@@ -240,7 +239,7 @@ export function planeSizeInVoxels(
 function buildQuery(r: Readonly<ZarrRequest>, axes: readonly AxisDesc[], shape: number[]) {
     const ordered = axes.map((a) => r[a.name as OmeDimension]);
     // if any are undefined, throw up
-    if (some(ordered, (a) => a === undefined)) {
+    if (ordered.some((a) => a === undefined)) {
         throw new Error('request does not match expected dimensions of ome-zarr dataset!');
     }
 

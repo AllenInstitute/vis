@@ -1,7 +1,5 @@
 version: 2
 updates:
-    open-pull-requests-limit: 5
-
     # We need to point to each package.json, so this file will be a bit verbose
 
     # Root package.json

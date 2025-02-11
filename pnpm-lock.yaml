@@ -29,6 +29,9 @@ importers:
       typescript:
         specifier: 5.3.3
         version: 5.3.3
+      vitest:
+        specifier: 1.4.0
+        version: 1.4.0(@types/node@22.10.5)(lightningcss@1.28.2)
 
   examples:
     dependencies:
@@ -114,9 +117,6 @@ importers:
       '@vitejs/plugin-react-swc':
         specifier: 3.5.0
         version: 3.5.0(@swc/helpers@0.5.15)(vite@5.3.5(@types/node@22.1.0)(lightningcss@1.28.2))
-      typescript:
-        specifier: 5.3.3
-        version: 5.3.3
       vite:
         specifier: 5.3.5
         version: 5.3.5(@types/node@22.1.0)(lightningcss@1.28.2)
@@ -129,49 +129,11 @@ importers:
       '@alleninstitute/vis-scatterbrain':
         specifier: workspace:*
         version: link:../scatterbrain
-      lodash:
-        specifier: 4.17.21
-        version: 4.17.21
       regl:
         specifier: 2.1.0
         version: 2.1.0
-    devDependencies:
-      '@parcel/packager-ts':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))
-      '@parcel/transformer-typescript-types':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(typescript@5.3.3)
-      '@types/lodash':
-        specifier: 4.14.202
-        version: 4.14.202
-      parcel:
-        specifier: 2.12.0
-        version: 2.12.0(@swc/helpers@0.5.15)(postcss@8.4.49)(typescript@5.3.3)
-      typescript:
-        specifier: 5.3.3
-        version: 5.3.3
-      vitest:
-        specifier: 1.4.0
-        version: 1.4.0(@types/node@22.10.5)(lightningcss@1.28.2)
 
-  packages/geometry:
-    devDependencies:
-      '@parcel/packager-ts':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))
-      '@parcel/transformer-typescript-types':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(typescript@5.3.3)
-      parcel:
-        specifier: 2.12.0
-        version: 2.12.0(@swc/helpers@0.5.15)(postcss@8.4.49)(typescript@5.3.3)
-      typescript:
-        specifier: 5.3.3
-        version: 5.3.3
-      vitest:
-        specifier: 1.4.0
-        version: 1.4.0(@types/node@22.10.5)(lightningcss@1.28.2)
+  packages/geometry: {}
 
   packages/omezarr:
     dependencies:
@@ -181,31 +143,12 @@ importers:
       '@alleninstitute/vis-scatterbrain':
         specifier: workspace:*
         version: link:../scatterbrain
-      lodash:
-        specifier: 4.17.21
-        version: 4.17.21
       regl:
         specifier: 2.1.0
         version: 2.1.0
       zarrita:
         specifier: 0.4.0-next.14
         version: 0.4.0-next.14
-    devDependencies:
-      '@parcel/packager-ts':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))
-      '@parcel/transformer-typescript-types':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(typescript@5.3.3)
-      '@types/lodash':
-        specifier: 4.14.202
-        version: 4.14.202
-      parcel:
-        specifier: 2.12.0
-        version: 2.12.0(@swc/helpers@0.5.15)(postcss@8.4.49)(typescript@5.3.3)
-      typescript:
-        specifier: 5.3.3
-        version: 5.3.3
 
   packages/scatterbrain:
     dependencies:
@@ -219,24 +162,9 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
     devDependencies:
-      '@parcel/packager-ts':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))
-      '@parcel/transformer-typescript-types':
-        specifier: 2.12.0
-        version: 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(typescript@5.3.3)
       '@types/lodash':
         specifier: 4.14.202
         version: 4.14.202
-      parcel:
-        specifier: 2.12.0
-        version: 2.12.0(@swc/helpers@0.5.15)(postcss@8.4.49)(typescript@5.3.3)
-      typescript:
-        specifier: 5.3.3
-        version: 5.3.3
-      vitest:
-        specifier: 1.4.0
-        version: 1.4.0(@types/node@22.10.5)(lightningcss@1.28.2)
 
 packages:
 
@@ -2740,15 +2668,13 @@ snapshots:
     transitivePeerDependencies:
       - '@parcel/core'
 
-  '@parcel/cache@2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)':
+  '@parcel/cache@2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))':
     dependencies:
       '@parcel/core': 2.12.0(@swc/helpers@0.5.15)
       '@parcel/fs': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)
       '@parcel/logger': 2.12.0
       '@parcel/utils': 2.12.0
       lmdb: 2.8.5
-    transitivePeerDependencies:
-      - '@swc/helpers'
 
   '@parcel/codeframe@2.12.0':
     dependencies:
@@ -2808,7 +2734,7 @@ snapshots:
   '@parcel/core@2.12.0(@swc/helpers@0.5.15)':
     dependencies:
       '@mischnic/json-sourcemap': 0.1.1
-      '@parcel/cache': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)
+      '@parcel/cache': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))
       '@parcel/diagnostic': 2.12.0
       '@parcel/events': 2.12.0
       '@parcel/fs': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)
@@ -3246,7 +3172,7 @@ snapshots:
 
   '@parcel/types@2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)':
     dependencies:
-      '@parcel/cache': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)
+      '@parcel/cache': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))
       '@parcel/diagnostic': 2.12.0
       '@parcel/fs': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)
       '@parcel/package-manager': 2.12.0(@parcel/core@2.12.0(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)
