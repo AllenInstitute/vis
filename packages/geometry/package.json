@@ -41,5 +41,6 @@
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/AllenInstitute"
-    }
+    },
+    "packageManager": "pnpm@9.14.2"
 }

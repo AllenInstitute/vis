@@ -1,0 +1,60 @@
+version: 2
+updates:
+    # We need to point to each package.json, so this file will be a bit verbose
+
+    # Root package.json
+    - package-ecosystem: 'npm'
+      directory: '/'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+
+    # Packages
+    - package-ecosystem: 'npm'
+      directory: '/packages/dzi'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+
+    - package-ecosystem: 'npm'
+      directory: '/packages/geometry'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+    
+    - package-ecosystem: 'npm'
+      directory: '/packages/omezarr'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+    
+    - package-ecosystem: 'npm'
+      directory: '/packages/scatterbrain'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
+
+    # Examples
+    - package-ecosystem: 'npm'
+      directory: '/examples'
+      schedule:
+          interval: 'monthly'
+      reviewers:
+          - 'AllenInstitute/app-dev'
+      commit-message:
+          prefix: 'chore(deps):'
