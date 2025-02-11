@@ -1,10 +1,13 @@
 version: 2
 updates:
+    open-pull-requests-limit: 5
+
     # We need to point to each package.json, so this file will be a bit verbose
 
     # Root package.json
     - package-ecosystem: 'npm'
       directory: '/'
+      open-pull-requests-limit: 2
       schedule:
           interval: 'monthly'
       reviewers:
@@ -15,6 +18,7 @@ updates:
     # Packages
     - package-ecosystem: 'npm'
       directory: '/packages/dzi'
+      open-pull-requests-limit: 2
       schedule:
           interval: 'monthly'
       reviewers:
@@ -24,6 +28,7 @@ updates:
 
     - package-ecosystem: 'npm'
       directory: '/packages/geometry'
+      open-pull-requests-limit: 2
       schedule:
           interval: 'monthly'
       reviewers:
@@ -33,6 +38,7 @@ updates:
     
     - package-ecosystem: 'npm'
       directory: '/packages/omezarr'
+      open-pull-requests-limit: 2
       schedule:
           interval: 'monthly'
       reviewers:
@@ -42,6 +48,7 @@ updates:
     
     - package-ecosystem: 'npm'
       directory: '/packages/scatterbrain'
+      open-pull-requests-limit: 2
       schedule:
           interval: 'monthly'
       reviewers:
@@ -52,6 +59,7 @@ updates:
     # Examples
     - package-ecosystem: 'npm'
       directory: '/examples'
+      open-pull-requests-limit: 2
       schedule:
           interval: 'monthly'
       reviewers:
