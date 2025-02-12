@@ -29,7 +29,8 @@
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
         "dev": "vite",
-        "test": "vitest --watch"
+        "test": "vitest --watch",
+        "test:ci": "vitest run"
     },
     "repository": {
         "type": "git",
