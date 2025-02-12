@@ -130,8 +130,8 @@ importers:
         specifier: workspace:*
         version: link:../scatterbrain
       regl:
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.1.1
+        version: 2.1.1
 
   packages/geometry: {}
 
@@ -144,8 +144,8 @@ importers:
         specifier: workspace:*
         version: link:../scatterbrain
       regl:
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.1.1
+        version: 2.1.1
       zarrita:
         specifier: 0.4.0-next.14
         version: 0.4.0-next.14
@@ -159,8 +159,8 @@ importers:
         specifier: 4.17.21
         version: 4.17.21
       regl:
-        specifier: 2.1.0
-        version: 2.1.0
+        specifier: 2.1.1
+        version: 2.1.1
     devDependencies:
       '@types/lodash':
         specifier: 4.14.202
@@ -1944,6 +1944,9 @@ packages:
 
   regl@2.1.0:
     resolution: {integrity: sha512-oWUce/aVoEvW5l2V0LK7O5KJMzUSKeiOwFuJehzpSFd43dO5spP9r+sSUfhKtsky4u6MCqWJaRL+abzExynfTg==}
+
+  regl@2.1.1:
+    resolution: {integrity: sha512-+IOGrxl3FZ8ZM9ixCWQZzFRiRn7Rzn9bu3iFHwg/yz4tlOUQgbO4PHLgG+1ZT60zcIV8tief6Qrmyl8qcoJP0g==}
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -4155,6 +4158,8 @@ snapshots:
   regenerator-runtime@0.14.1: {}
 
   regl@2.1.0: {}
+
+  regl@2.1.1: {}
 
   resolve-from@4.0.0: {}
 
