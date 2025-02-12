@@ -147,8 +147,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zarrita:
-        specifier: 0.4.0-next.14
-        version: 0.4.0-next.14
+        specifier: 0.4.0-next.19
+        version: 0.4.0-next.19
 
   packages/scatterbrain:
     dependencies:
@@ -2185,6 +2185,9 @@ packages:
 
   zarrita@0.4.0-next.14:
     resolution: {integrity: sha512-B5a3Nw31EEaxjI0yh+CJuSdqDo3f0KnCrf8aZiDj4Nhrsi/Jau7Mtc7Yo6T3SmM6AInTmA/VNv/FKT5ZLfADTQ==}
+
+  zarrita@0.4.0-next.19:
+    resolution: {integrity: sha512-7/O3ph+5BGnZ36Bc+DjMym2M1C/xY/klMn4V4N0FpOXFlAsUpvNqFqgYID1p8SdjJNh+aF4QFmuOoxceyz6KKA==}
 
 snapshots:
 
@@ -4378,6 +4381,12 @@ snapshots:
   yocto-queue@1.1.1: {}
 
   zarrita@0.4.0-next.14:
+    dependencies:
+      '@zarrita/core': 0.1.0-next.17
+      '@zarrita/indexing': 0.1.0-next.19
+      '@zarrita/storage': 0.1.0-next.8
+
+  zarrita@0.4.0-next.19:
     dependencies:
       '@zarrita/core': 0.1.0-next.17
       '@zarrita/indexing': 0.1.0-next.19
