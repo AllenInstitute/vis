@@ -147,8 +147,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zarrita:
-        specifier: 0.4.0-next.14
-        version: 0.4.0-next.14
+        specifier: 0.4.0-next.24
+        version: 0.4.0-next.24
 
   packages/scatterbrain:
     dependencies:
@@ -1260,17 +1260,14 @@ packages:
   '@vitest/utils@1.4.0':
     resolution: {integrity: sha512-mx3Yd1/6e2Vt/PUC98DcqTirtfxUyAZ32uK82r8rZzbtBeBo+nqgnjx/LvqQdWsrvNtm14VmurNgcf4nqY5gJg==}
 
-  '@zarrita/core@0.1.0-next.17':
-    resolution: {integrity: sha512-VTf1KWLz3vqX4IUdg1lJYBpHo/cT3NbpFQ47JOCEaVsmGv09So5yY7UkXPTQ6ef7oy9BFven7sD5EKSutiFn8A==}
+  '@zarrita/core@0.1.0-next.21':
+    resolution: {integrity: sha512-BgAM9feJ/23HCUsoYpEecJxr7lTzPzkBUJjuX2N9Bk9FotEKiPBTciO4qIV5dKoSySO4PLkblxMK3Q4UPiq+5w==}
 
-  '@zarrita/indexing@0.1.0-next.19':
-    resolution: {integrity: sha512-GRu6CxtEeXnZUYR0Z/sEGFPcll7pG2Ek9muUkdpl5U5fUdPW7YaSj1tMBxDFhkgw9MNy87ksnN2VO4Tgjjl5fw==}
+  '@zarrita/indexing@0.1.0-next.23':
+    resolution: {integrity: sha512-qSj4gdZdELbzsKe0swjqsu1FkqBFxZ1aSXAWtI/Xqb3ZIsYGIbCMY0UgK3voW6Ivg2GyxbVTizuMroI6pjhMOw==}
 
-  '@zarrita/storage@0.1.0-next.8':
-    resolution: {integrity: sha512-9d8bIaR2JuiG98gg5lF15Tpgc/+G/XOXlY53UtVP0LABwHbrIGFzpO2djzGB5bQe1jDj92VeXE8Z525Bs2vb6Q==}
-
-  '@zarrita/typedarray@0.1.0-next.4':
-    resolution: {integrity: sha512-sGqc5Ldh8nt/FE9gDA89OsL+FH37wgSxCF1Liv08O8SbZ4w3N48Wngv0EWAXvU1aSEdGhb2ABtSfErVDwnp45Q==}
+  '@zarrita/storage@0.1.0-next.9':
+    resolution: {integrity: sha512-6zlrk2CkLPbGmj+LJlKSX11UKTstCJgH5WnkIje74LawjdJqR/rCFF894bMZgTBnkRmkhYtoFoKzDY2yBsMNRw==}
 
   abortcontroller-polyfill@1.7.8:
     resolution: {integrity: sha512-9f1iZ2uWh92VcrU9Y8x+LdM4DLj75VE0MJB8zuF1iUnroEptStw+DQ8EQPMUdfe5k+PkB1uUfDQfWbhstH8LrQ==}
@@ -2185,6 +2182,9 @@ packages:
 
   zarrita@0.4.0-next.14:
     resolution: {integrity: sha512-B5a3Nw31EEaxjI0yh+CJuSdqDo3f0KnCrf8aZiDj4Nhrsi/Jau7Mtc7Yo6T3SmM6AInTmA/VNv/FKT5ZLfADTQ==}
+
+  zarrita@0.4.0-next.24:
+    resolution: {integrity: sha512-3+ssr3EnfRodvqJVdEu8ahblJrwEcEROxkko/ylV6KujJNGqWrV9ra+e3MS5KOrZS2eH4/ERzJFhMpionQTivA==}
 
 snapshots:
 
@@ -3495,24 +3495,20 @@ snapshots:
       loupe: 2.3.7
       pretty-format: 29.7.0
 
-  '@zarrita/core@0.1.0-next.17':
+  '@zarrita/core@0.1.0-next.21':
     dependencies:
-      '@zarrita/storage': 0.1.0-next.8
-      '@zarrita/typedarray': 0.1.0-next.4
+      '@zarrita/storage': 0.1.0-next.9
       numcodecs: 0.3.2
 
-  '@zarrita/indexing@0.1.0-next.19':
+  '@zarrita/indexing@0.1.0-next.23':
     dependencies:
-      '@zarrita/core': 0.1.0-next.17
-      '@zarrita/storage': 0.1.0-next.8
-      '@zarrita/typedarray': 0.1.0-next.4
+      '@zarrita/core': 0.1.0-next.21
+      '@zarrita/storage': 0.1.0-next.9
 
-  '@zarrita/storage@0.1.0-next.8':
+  '@zarrita/storage@0.1.0-next.9':
     dependencies:
       reference-spec-reader: 0.2.0
       unzipit: 1.4.3
-
-  '@zarrita/typedarray@0.1.0-next.4': {}
 
   abortcontroller-polyfill@1.7.8: {}
 
@@ -4379,6 +4375,12 @@ snapshots:
 
   zarrita@0.4.0-next.14:
     dependencies:
-      '@zarrita/core': 0.1.0-next.17
-      '@zarrita/indexing': 0.1.0-next.19
-      '@zarrita/storage': 0.1.0-next.8
+      '@zarrita/core': 0.1.0-next.21
+      '@zarrita/indexing': 0.1.0-next.23
+      '@zarrita/storage': 0.1.0-next.9
+
+  zarrita@0.4.0-next.24:
+    dependencies:
+      '@zarrita/core': 0.1.0-next.21
+      '@zarrita/indexing': 0.1.0-next.23
+      '@zarrita/storage': 0.1.0-next.9
