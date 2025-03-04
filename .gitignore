@@ -4,3 +4,4 @@ dst
 .vscode
 .DS_Store
 .parcel-cache
+coverage
