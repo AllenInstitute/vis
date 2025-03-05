@@ -118,7 +118,9 @@ export function beginFrame<
         const startWorkTime = performance.now();
         const cleanupOnError = (err: unknown) => {
             // clear the queue and the staging area (inFlight)
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            for (const cancelMe of taskCancelCallbacks) {
+                cancelMe();
+            }
             queue.splice(0, queue.length);
             // stop fetching
             abort.abort(err);
@@ -173,7 +175,9 @@ export function beginFrame<
     return {
         cancelFrame: (reason?: string) => {
             abort.abort(new DOMException(reason, 'AbortError'));
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            for (const cancelMe of taskCancelCallbacks) {
+                cancelMe();
+            }
             clearInterval(interval);
             reportStatus({ status: 'cancelled' }, true);
         },

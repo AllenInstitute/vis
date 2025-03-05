@@ -184,14 +184,14 @@ export function sizeInUnits(
     let size: vec2 = vxls;
     // now, just apply the correct transforms, if they exist...
 
-    dataset.coordinateTransformations.forEach((trn) => {
+    for (const trn of dataset.coordinateTransformations) {
         if (isScaleTransform(trn)) {
             // try to apply it!
             const uIndex = indexOfDimension(axes, planeUV.u);
             const vIndex = indexOfDimension(axes, planeUV.v);
             size = Vec2.mul(size, [trn.scale[uIndex], trn.scale[vIndex]]);
         }
-    });
+    }
     return size;
 }
 /**
@@ -247,7 +247,8 @@ function buildQuery(r: Readonly<ZarrRequest>, axes: readonly AxisDesc[], shape: 
         const bounds = { min: 0, max: shape[i] };
         if (d === null) {
             return d;
-        } else if (typeof d === 'number') {
+        }
+        if (typeof d === 'number') {
             return limit(bounds, d);
         }
         return zarr.slice(limit(bounds, d.min), limit(bounds, d.max));
@@ -285,7 +286,7 @@ export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex
     const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
     const arr = await zarr.open(root.resolve(level.path), { kind: 'array' });
     const result = await zarr.get(arr, buildQuery(r, axes, level.shape));
-    if (typeof result == 'number') {
+    if (typeof result === 'number') {
         throw new Error('oh noes, slice came back all weird');
     }
     return {

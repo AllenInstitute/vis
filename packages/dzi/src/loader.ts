@@ -126,7 +126,7 @@ const logBaseHalf = (x: number) => Math.log2(x) / Math.log2(0.5);
 
 export function imageSizeAtLayer(dzi: DziImage, layer: number) {
     const { size: dim } = dzi;
-    const layerMaxSize = 2 ** (isFinite(layer) ? Math.max(0, layer) : 0);
+    const layerMaxSize = 2 ** (Number.isFinite(layer) ? Math.max(0, layer) : 0);
     const size: vec2 = [dim.width, dim.height];
     // the question is how many times do we need to divide size
     // by 2 to make it less than layerMaxSize?

@@ -16,12 +16,12 @@ export function visitBFS<Tree>(
     while (frontier.length > 0) {
         const cur = frontier.shift()!;
         visitor(cur);
-        children(cur).forEach((c) => {
+        for (const c of children(cur)) {
             if (traversalPredicate?.(c) ?? true) {
                 // predicate?.(c) is true false or undefined. if its undefined, we coerce it to true with ??
                 // because we want to always traverse children if the predicate isn't given
                 frontier.push(c);
             }
-        });
+        }
     }
 }

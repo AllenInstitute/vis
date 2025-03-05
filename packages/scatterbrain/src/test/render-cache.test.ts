@@ -8,7 +8,7 @@ type Data = { pretend: vec3 };
 
 type Entry = {
     resolveMe: () => void;
-    rejectMe: (reason?: any) => void;
+    rejectMe: (reason?: unknown) => void;
 };
 class PromiseFarm {
     entries: Map<Promise<unknown>, Entry>;
@@ -22,7 +22,7 @@ class PromiseFarm {
         const prom = new Promise<T>((resolve, reject) => {
             this.staging[reqId] = {
                 resolveMe: () => resolve(t),
-                rejectMe: (reason: any) => reject(reason),
+                rejectMe: (reason: unknown) => reject(reason),
             };
         });
         this.entries.set(prom, this.staging[reqId]);
@@ -37,7 +37,7 @@ class PromiseFarm {
         }
         return false;
     }
-    mockReject(p: Promise<unknown>, reason: any) {
+    mockReject(p: Promise<unknown>, reason: unknown) {
         const found = this.entries.get(p);
         if (found) {
             found.rejectMe(reason);
@@ -91,9 +91,9 @@ describe('async cache', () => {
         } as const;
     };
     const resolveFakePromises = async (lies: readonly Promise<unknown>[]): Promise<void> => {
-        lies.forEach((p) => {
+        for (const p of lies) {
             mockPromises.mockResolve(p);
-        });
+        }
         // because the promises are mega hackified, even though we call resolve, the event system hasn't had a chance to catch up
         // so - we have to inject a fake wait in here to give all the promises we just resolved a chance to run for realsies
         await Promise.resolve();
@@ -203,7 +203,7 @@ describe('async cache', () => {
             // each of our tasks requests two chunks of data
             // the cache has a limit of 10 items (see beforeEach)
             const allKeysSoFar: string[] = [];
-            let reallySlowRequest: Promise<unknown>;
+            let reallySlowRequest: Promise<unknown> | undefined;
             for (let i = 0; i < 6; i++) {
                 const { fetchers, id, spies } = fetchFakeItem(i, [255, 0, i], [1, 2 * i, 3 * i]);
                 const toCacheKey = partial(cacheKey, { id });
@@ -241,7 +241,10 @@ describe('async cache', () => {
             expect(cache.isCached(cacheKey({ id: 1 }, 'position'))).toBeFalsy();
 
             // finally, resolve that first stalled request, and observe us fulfilling our first render task:
-            await resolveFakePromises([reallySlowRequest!]);
+            if (!reallySlowRequest) {
+                throw new Error('reallySlowRequest was never set!');
+            }
+            await resolveFakePromises([reallySlowRequest]);
             expect(cache.getNumPendingTasks()).toBe(0);
             // expect everything to have been rendered, regardless of all this cache nonsense
             expect(rendered.length).toEqual(7); // id=0...5, 99

@@ -160,7 +160,7 @@ export class RenderServer {
     beginRendering<D, I>(renderFn: RenderFrameFn<D, I>, callback: ServerCallback<D, I>, client: Client) {
         if (this.regl) {
             const clientFrame = this.clients.get(client);
-            if (clientFrame && clientFrame.frame) {
+            if (clientFrame?.frame) {
                 clientFrame.frame.cancelFrame();
                 this.regl.clear({
                     framebuffer: clientFrame.image,
