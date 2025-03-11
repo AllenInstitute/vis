@@ -47,7 +47,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
     }
 
     getRenderResults(stage: 'prev' | 'cur') {
-        return stage == 'cur' ? this.buffers.writeTo : this.buffers.readFrom;
+        return stage === 'cur' ? this.buffers.writeTo : this.buffers.readFrom;
     }
     onChange(
         props: {

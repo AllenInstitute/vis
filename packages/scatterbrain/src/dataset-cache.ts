@@ -85,7 +85,9 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     private usedSpace() {
         // Map uses iterators, so we're in for-loop territory here
         let sum = 0;
-        this.entries.forEach((entry) => (sum += entry.data instanceof Promise ? 0 : this.size(entry.data)));
+        for (const entry of this.entries.values()) {
+            sum += entry.data instanceof Promise ? 0 : this.size(entry.data);
+        }
         return sum;
     }
     private countRequests() {
@@ -201,7 +203,9 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
                 removeUs.push(req);
             }
         }
-        removeUs.forEach((finished) => this.pendingRequests.delete(finished));
+        for (const finished of removeUs) {
+            this.pendingRequests.delete(finished);
+        }
     }
     private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
         let promise: Promise<D>;
@@ -243,13 +247,13 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
             runner: use,
             blocking: new Set<CacheKey>(),
         };
-        keys.forEach((k) => {
+        for (const k of keys) {
             if (req.awaiting.has(toCacheKey(k))) {
                 req.awaiting.get(toCacheKey(k))?.add(k);
             } else {
                 req.awaiting.set(toCacheKey(k), new Set<SemanticKey>([k]));
             }
-        });
+        }
         for (const semanticKey of keys) {
             const result = this.prepareCache(semanticKey, toCacheKey(semanticKey), workingSet[semanticKey]);
             if (result instanceof Promise) {

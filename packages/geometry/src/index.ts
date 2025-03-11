@@ -13,7 +13,7 @@ export type { box3D } from './box3D';
 export {
     size,
     within,
-    isFinite,
+    isFiniteInterval,
     isValid,
     fixOrder,
     intersection,

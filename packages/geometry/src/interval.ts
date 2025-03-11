@@ -25,7 +25,7 @@ export function within(i: Interval, x: number): boolean {
  * @param i a given interval
  * @returns true iff its min and max values are both finite, non-NaN values
  */
-export function isFinite(i: Interval) {
+export function isFiniteInterval(i: Interval) {
     return Number.isFinite(i.min) && Number.isFinite(i.max);
 }
 /**
@@ -35,7 +35,7 @@ export function isFinite(i: Interval) {
  * @return true iff the given interval i is at least as big as minSize, and min <= max, and isFinite(i)
  */
 export function isValid(i: Interval, minSize: number) {
-    return size(i) >= Math.abs(minSize) && isFinite(i) && i.max >= i.min;
+    return size(i) >= Math.abs(minSize) && isFiniteInterval(i) && i.max >= i.min;
 }
 /**
  *

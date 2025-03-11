@@ -124,7 +124,9 @@ export function beginLongRunningFrame<Column, Item, Settings>(
         const startWorkTime = performance.now();
         const cleanupOnError = (err: unknown) => {
             // clear the queue and the staging area (inFlight)
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            for (const cancelMe of taskCancelCallbacks) {
+                cancelMe();
+            }
             queue.splice(0, queue.length);
             // stop fetching
             abort.abort(err);
@@ -173,7 +175,9 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     // touched/referenced after cancellation, unless the author of render() did some super weird bad things
     return {
         cancelFrame: (reason?: string) => {
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            for (const cancelMe of taskCancelCallbacks) {
+                cancelMe();
+            }
             abort.abort(new DOMException(reason, 'AbortError'));
             clearInterval(interval);
             reportNormalStatus('cancelled');
