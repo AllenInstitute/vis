@@ -147,8 +147,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zarrita:
-        specifier: 0.4.0-next.14
-        version: 0.4.0-next.14
+        specifier: 0.5.0
+        version: 0.5.0
 
   packages/scatterbrain:
     dependencies:
@@ -1291,6 +1291,9 @@ packages:
   '@zarrita/indexing@0.1.0-next.19':
     resolution: {integrity: sha512-GRu6CxtEeXnZUYR0Z/sEGFPcll7pG2Ek9muUkdpl5U5fUdPW7YaSj1tMBxDFhkgw9MNy87ksnN2VO4Tgjjl5fw==}
 
+  '@zarrita/storage@0.1.0':
+    resolution: {integrity: sha512-lSGDQik2fLt/UyvWzWd23sJFHckEmk50F9Baz2XlbgFQhvd2EVBcHGweOTBhu3c5SB05TzOnlY1M1i2FMDi6YA==}
+
   '@zarrita/storage@0.1.0-next.8':
     resolution: {integrity: sha512-9d8bIaR2JuiG98gg5lF15Tpgc/+G/XOXlY53UtVP0LABwHbrIGFzpO2djzGB5bQe1jDj92VeXE8Z525Bs2vb6Q==}
 
@@ -2084,6 +2087,9 @@ packages:
 
   zarrita@0.4.0-next.14:
     resolution: {integrity: sha512-B5a3Nw31EEaxjI0yh+CJuSdqDo3f0KnCrf8aZiDj4Nhrsi/Jau7Mtc7Yo6T3SmM6AInTmA/VNv/FKT5ZLfADTQ==}
+
+  zarrita@0.5.0:
+    resolution: {integrity: sha512-wyvnnzeXh9rBCZxsn6GEW4oXDv3LD2f4KSJ6LLFjYaMNtmAtaSt3qEO3fHuuq0VZWUGb8cjTYDEtwJTa09wp6g==}
 
 snapshots:
 
@@ -3391,6 +3397,11 @@ snapshots:
       '@zarrita/storage': 0.1.0-next.8
       '@zarrita/typedarray': 0.1.0-next.4
 
+  '@zarrita/storage@0.1.0':
+    dependencies:
+      reference-spec-reader: 0.2.0
+      unzipit: 1.4.3
+
   '@zarrita/storage@0.1.0-next.8':
     dependencies:
       reference-spec-reader: 0.2.0
@@ -4147,3 +4158,8 @@ snapshots:
       '@zarrita/core': 0.1.0-next.17
       '@zarrita/indexing': 0.1.0-next.19
       '@zarrita/storage': 0.1.0-next.8
+
+  zarrita@0.5.0:
+    dependencies:
+      '@zarrita/storage': 0.1.0
+      numcodecs: 0.3.2
