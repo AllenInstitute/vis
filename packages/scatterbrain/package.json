@@ -44,7 +44,7 @@
         "registry": "https://npm.pkg.github.com/AllenInstitute"
     },
     "devDependencies": {
-        "@types/lodash": "4.14.202"
+        "@types/lodash": "4.17.16"
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
