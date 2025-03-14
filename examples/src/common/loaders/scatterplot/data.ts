@@ -11,6 +11,7 @@ import {
     fetchColumn,
     type loadDataset,
 } from './scatterbrain-loader';
+import { logger } from '@alleninstitute/vis-scatterbrain';
 export type Dataset = ReturnType<typeof loadDataset>;
 export type RenderSettings = {
     dataset: Dataset;
@@ -41,7 +42,7 @@ export function getVisibleItems(dataset: Dataset, view: box2D, sizeLimit: number
 export function getVisibleItemsInSlide(dataset: SlideViewDataset, slide: string, view: box2D, sizeLimit: number) {
     const theSlide = dataset.slides[slide];
     if (!theSlide) {
-        console.log('nope', Object.keys(dataset.slides));
+        logger.info('nope', Object.keys(dataset.slides));
         return [];
     }
 

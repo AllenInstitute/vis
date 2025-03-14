@@ -1,4 +1,5 @@
 import { type ZarrDataset, type ZarrRequest, getSlice } from '@alleninstitute/vis-omezarr';
+import { logger } from '@alleninstitute/vis-scatterbrain';
 // a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
 import type { Chunk } from 'zarrita';
 
@@ -25,6 +26,6 @@ ctx.onmessage = (msg: MessageEvent<unknown>) => {
             });
         }
     } catch (err) {
-        console.error(err);
+        logger.error('OMEZarr fetch onmessage error', err);
     }
 };

@@ -1,4 +1,4 @@
-import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-scatterbrain';
+import { type AsyncDataCache, beginLongRunningFrame, logger } from '@alleninstitute/vis-scatterbrain';
 import type REGL from 'regl';
 import type { RenderCallback } from './types';
 
@@ -127,7 +127,7 @@ export function renderGrid<C extends CacheContentType | object>(
         const realSize = sizeInUnits(plane, axes, best);
 
         if (!realSize) {
-            console.warn('no size for plane', plane, axes, best);
+            logger.warn('no size for plane', plane, axes, best);
             continue;
         }
 

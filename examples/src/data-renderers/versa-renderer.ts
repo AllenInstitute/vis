@@ -6,6 +6,7 @@ import {
     planeSizeInVoxels,
     sizeInUnits,
 } from '@alleninstitute/vis-omezarr';
+import { logger } from '@alleninstitute/vis-scatterbrain';
 import { omit } from 'lodash';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
@@ -132,7 +133,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
         const { R, G, B } = channels;
 
         if (!isTexture(R) || !isTexture(G) || !isTexture(B)) {
-            console.log('missing data: ', R, G, B);
+            logger.warn('missing data: ', R, G, B);
             return;
         }
 

@@ -1,6 +1,7 @@
 import { Box2D, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { type OmeZarrDataset, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
+import { logger } from '@alleninstitute/vis-scatterbrain';
 import { useEffect, useMemo, useState } from 'react';
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '~/common/react/render-server-provider';
@@ -28,6 +29,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, planeIdx: number): Rend
 }
 
 export function OmezarrDemo() {
+    const [demoUrl, setDemoUrl] = useState<string>(demo_versa);
     const [omezarr, setOmezarr] = useState<OmeZarrDataset>();
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeIndex, setPlaneIndex] = useState(0);
@@ -39,15 +41,15 @@ export function OmezarrDemo() {
     );
 
     useEffect(() => {
-        loadOmeZarr(demo_versa).then((v) => {
+        loadOmeZarr(demoUrl).then((v) => {
             setOmezarr(v);
             const size = sizeInUnits('xy', v.multiscales[0].axes, v.multiscales[0].datasets[0]);
             if (size) {
-                console.log(size);
+                logger.info('size', size);
                 setView(Box2D.create([0, 0], size));
             }
         });
-    }, []);
+    }, [demoUrl]);
 
     const handleZoom = (e: WheelEvent) => {
         e.preventDefault();
@@ -81,6 +83,12 @@ export function OmezarrDemo() {
             {omezarr && settings ? (
                 <>
                     <div>
+                        <input
+                            type="text"
+                            value={demoUrl}
+                            onChange={(e) => setDemoUrl(e.target.value)}
+                            style={{ width: '700px' }}
+                        />
                         <button type="button" onClick={() => handlePlaneIndex(-1)}>
                             {'<-'}
                         </button>
@@ -121,7 +129,7 @@ function DataPlease() {
     useEffect(() => {
         loadOmeZarr(demo_versa).then((dataset) => {
             setfile(dataset);
-            console.log('loaded!');
+            logger.info('loaded!');
         });
     }, []);
     return (
