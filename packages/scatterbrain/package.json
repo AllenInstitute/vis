@@ -34,7 +34,8 @@
         "build": "parcel build --no-cache",
         "watch": "parcel watch",
         "test": "vitest --watch",
-        "test:ci": "vitest run"
+        "test:ci": "vitest run",
+        "coverage": "vitest run --coverage"
     },
     "repository": {
         "type": "git",
