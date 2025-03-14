@@ -15,3 +15,5 @@ export type {
     Renderer,
 } from './abstract/types';
 export { RenderServer } from './abstract/render-server';
+
+export { logger } from './logger';

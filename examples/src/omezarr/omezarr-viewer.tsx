@@ -49,7 +49,7 @@ export function OmezarrViewer({
     // setup renderer and delete it when component goes away
     useEffect(() => {
         const c = canvas?.current;
-        if (server?.regl) {
+        if (server?.regl && omezarr) {
             renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
         }
         return () => {
@@ -57,7 +57,7 @@ export function OmezarrViewer({
                 server?.destroyClient(c);
             }
         };
-    }, [server]);
+    }, [server, omezarr]);
 
     // render frames
     useEffect(() => {

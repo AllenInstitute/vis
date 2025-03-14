@@ -1,4 +1,5 @@
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
+import { logger } from '@alleninstitute/vis-scatterbrain';
 import * as zarr from 'zarrita';
 
 // documentation for ome-zarr datasets (from which these types are built)
@@ -256,11 +257,11 @@ function buildQuery(r: Readonly<ZarrRequest>, axes: readonly AxisDesc[], shape: 
 }
 
 export async function explain(z: ZarrDataset) {
-    console.dir(z);
+    logger.dir(z);
     const root = zarr.root(new zarr.FetchStore(z.url));
     for (const d of z.multiscales[0].datasets) {
         zarr.open(root.resolve(d.path), { kind: 'array' }).then((arr) => {
-            console.dir(arr);
+            logger.dir(arr);
         });
     }
 }
