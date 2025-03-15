@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-omezarr",
-    "version": "0.0.4",
+    "version": "0.0.7",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -17,6 +17,10 @@
         {
             "name": "Su Li",
             "email": "su.li@alleninstitute.org"
+        },
+        {
+            "name": "Joel Arbuckle",
+            "email": "joel.arbuckle@alleninstitute.org"
         }
     ],
     "license": "BSD-3-Clause",
@@ -43,7 +47,7 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-scatterbrain": "workspace:*",
         "regl": "2.1.0",
-        "zarrita": "0.4.0-next.14"
+        "zarrita": "0.5.0"
     },
     "packageManager": "pnpm@9.14.2"
 }
