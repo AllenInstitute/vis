@@ -1,6 +1,12 @@
 import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { sizeInUnits } from '@alleninstitute/vis-omezarr';
-import { AsyncDataCache, type FrameLifecycle, type NormalStatus, ReglLayer2D } from '@alleninstitute/vis-scatterbrain';
+import {
+    AsyncDataCache,
+    type FrameLifecycle,
+    logger,
+    type NormalStatus,
+    ReglLayer2D,
+} from '@alleninstitute/vis-scatterbrain';
 import { saveAs } from 'file-saver';
 import { createRoot } from 'react-dom/client';
 import REGL from 'regl';
@@ -72,7 +78,7 @@ function destroyer(item: CacheEntry) {
             break;
         default:
             // @ts-expect-error
-            console.error(item.data, 'implement a destroyer for this case!');
+            logger.error(item.data, 'implement a destroyer for this case!');
             break;
     }
 }
@@ -218,7 +224,7 @@ export class Demo {
     selectLayer(layer: number) {
         this.selectedLayer = Math.min(this.layers.length - 1, Math.max(0, layer));
         const yay = this.layers[this.selectedLayer];
-        console.log('selected:', yay.data);
+        logger.info('selected:', yay.data);
         this.uiChange();
     }
 
@@ -319,7 +325,7 @@ export class Demo {
             );
 
             if (!s) {
-                console.warn('no size for plane', data.plane, data.dataset.multiscales[0].axes);
+                logger.warn('no size for plane', data.plane, data.dataset.multiscales[0].axes);
                 return;
             }
 
@@ -434,7 +440,7 @@ export class Demo {
                         break;
                     case 'progress':
                         if (Math.random() > 0.7) {
-                            console.log('...');
+                            logger.info('...');
                         }
                         break;
                     case 'finished':

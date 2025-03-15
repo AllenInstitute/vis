@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { DziViewer } from './dzi-viewer';
+import { logger } from '@alleninstitute/vis-scatterbrain';
 
 // We know the sizes and formats ahead of time for these examples,
 // if you'd like to see how to get this data from an endpoint with a dzi file check out use-dzi-image.ts
@@ -78,7 +79,7 @@ export function DziDemo() {
 
     useEffect(() => {
         overlay.current.onload = () => {
-            console.log('loaded svg!');
+            logger.info('loaded svg!');
         };
         overlay.current.src =
             'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-22-07-pathology-image-move/pat_images_JGCXWER774NLNWX2NNR/7179-A6-I6-MTG-classified/annotation.svg';
