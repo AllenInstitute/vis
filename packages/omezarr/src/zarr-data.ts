@@ -1,12 +1,71 @@
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import * as zarr from 'zarrita';
+import { z } from 'zod';
 
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
 //
 export type ZarrDataset = Awaited<ReturnType<typeof loadMetadata>>;
+
+const ZarrAxisSchema = z.object({
+    name: z.string(),
+    type: z.string(),
+    scale: z.number().optional(),
+    unit: z.string().optional()
+});
+
+const ZarrCoordinateTranslationSchema = z.object({
+    transform: z.number().array().min(4).max(5),
+    type: z.literal('translation')
+});
+
+const ZarrCoordinateScaleSchema = z.object({
+    scale: z.number().array().min(4).max(5),
+    type: z.literal('scale')
+});
+
+const ZarrCoordinateTransformSchema = z.discriminatedUnion('type', [
+    ZarrCoordinateTranslationSchema,
+    ZarrCoordinateScaleSchema
+]);
+
+const ZarrDatasetSchema = z.object({
+    coordinateTransformations: ZarrCoordinateTransformSchema.array().nonempty(),
+    path: z.string()
+});
+
+const ZarrMultiscaleSchema = z.object({
+    axes: ZarrAxisSchema.array().nonempty(),
+    datasets: ZarrDatasetSchema.array().nonempty(),
+    name: z.string(),
+    version: z.string()
+});
+
+const ZarrOmeroChannelWindowSchema = z.object({
+    min: z.number(),
+    start: z.number(),
+    end: z.number(),
+    max: z.number()
+});
+
+const ZarrOmeroChannelSchema = z.object({
+    active: z.boolean(),
+    color: z.string(),
+    label: z.string(),
+    window: ZarrOmeroChannelWindowSchema
+});
+
+const ZarrOmeroSchema = z.object({
+    channels: ZarrOmeroChannelSchema.array().nonempty()
+});
+
+const ZarrAttrsSchema = z.object({
+    multiscales: ZarrMultiscaleSchema.array().nonempty(),
+    omero: ZarrOmeroSchema
+});
+
 type AxisDesc = {
     name: string; // x or y or z or time or ?
     type: string; // space or time or ?
@@ -33,12 +92,28 @@ type DatasetDesc = {
 type DatasetWithShape = DatasetDesc & {
     shape: number[];
 };
-type ZarrAttr = {
+type ZarrMultiscaleDesc = {
     axes: ReadonlyArray<AxisDesc>;
     datasets: ReadonlyArray<DatasetDesc>;
 };
+type ZarrOmeroChannelWindowDesc = {
+    min: number;
+    start: number;
+    end: number;
+    max: number;
+};
+type ZarrOmeroChannelDesc = {
+    active: boolean;
+    color: string;
+    label: string;
+    window: ZarrOmeroChannelWindowDesc;
+};
+type ZarrOmeroChannels = {
+    channels: ReadonlyArray<ZarrOmeroChannelDesc>;
+};
 type ZarrAttrs = {
-    multiscales: ReadonlyArray<ZarrAttr>;
+    multiscales: ReadonlyArray<ZarrMultiscaleDesc>;
+    omero: ZarrOmeroChannels;
 };
 
 async function getRawInfo(store: zarr.FetchStore) {
