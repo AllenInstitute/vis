@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-geometry",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -21,6 +21,10 @@
         {
             "name": "Su Li",
             "email": "su.li@alleninstitute.org"
+        },
+        {
+            "name": "Joel Arbuckle",
+            "email": "joel.arbuckle@alleninstitute.org"
         }
     ],
     "license": "BSD-3-Clause",

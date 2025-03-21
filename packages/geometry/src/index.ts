@@ -25,4 +25,12 @@ export {
     scaleFromPoint,
     interpolateRectangles,
 } from './Rectangle2D';
+export {
+    type CartesianAxis,
+    type OrthogonalCartesianAxes,
+    type UVAxes,
+    type UVAxisMapping,
+    type OrthogonalAxisMapping,
+    CartesianPlane 
+} from './plane';
 export { type SpatialTreeInterface, visitBFS } from './spatialIndexing/tree';
