@@ -1,4 +1,4 @@
-import { ZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
+import { type ZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';

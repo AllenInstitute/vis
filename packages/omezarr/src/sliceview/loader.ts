@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, Vec2, type box2D, type OrthogonalCartesianAxes, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type CartesianPlane, Vec2, type box2D, type OrthogonalCartesianAxes, type vec2 } from '@alleninstitute/vis-geometry';
 import type { Chunk } from 'zarrita';
 import type { ZarrRequest } from '../zarr/loading';
 import { loadSlice, pickBestScale, planeSizeInVoxels, sizeInUnits } from '../zarr/loading';

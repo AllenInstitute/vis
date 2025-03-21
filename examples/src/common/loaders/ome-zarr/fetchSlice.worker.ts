@@ -1,4 +1,4 @@
-import { ZarrMetadata, type ZarrShapedDataset, type ZarrRequest, loadSlice } from '@alleninstitute/vis-omezarr';
+import { type ZarrMetadata, type ZarrShapedDataset, type ZarrRequest, loadSlice } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import type { Chunk, Float32 } from 'zarrita';
 

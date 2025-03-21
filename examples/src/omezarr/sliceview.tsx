@@ -2,7 +2,7 @@ import { Box2D, CartesianPlane, Vec2, type box2D } from '@alleninstitute/vis-geo
 import {
     type RenderSettings,
     type VoxelTile,
-    ZarrMetadata,
+    type ZarrMetadata,
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';

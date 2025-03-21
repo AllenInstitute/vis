@@ -2,8 +2,7 @@ import type { box2D, vec2 } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
-    type ZarrDataset,
-    ZarrMetadata,
+    type ZarrMetadata,
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';

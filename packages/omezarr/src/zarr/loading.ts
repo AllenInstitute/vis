@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type CartesianPlane, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import { VisZarrDataError } from '../errors';
 import { OmeZarrArray,  OmeZarrAttrsSchema, OmeZarrMetadata, type OmeZarrAttrs, type OmeZarrAxis, type ZarrDimension, type OmeZarrShapedDataset } from './types';
@@ -21,7 +21,7 @@ async function loadZarrAttrsFile(store: zarr.FetchStore): Promise<OmeZarrAttrs> 
     }
 }
 
-async function loadZarrArrayFile(store: zarr.FetchStore, path: string, version: number = 2, loadV2Attrs: boolean = true): Promise<OmeZarrArray> {
+async function loadZarrArrayFile(store: zarr.FetchStore, path: string, version = 2, loadV2Attrs = true): Promise<OmeZarrArray> {
     const root = zarr.root(store);
     let array;
     if (version === 3) {

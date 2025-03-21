@@ -1,6 +1,6 @@
-import { Box2D, CartesianPlane, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, type CartesianPlane, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import {
-    ZarrMetadata,
+    type ZarrMetadata,
     type ZarrRequest,
     pickBestScale,
     planeSizeInVoxels,

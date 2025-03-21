@@ -2,7 +2,7 @@
 
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
 import { logger } from '@alleninstitute/vis-scatterbrain';
-import * as zarr from 'zarrita';
+import type * as zarr from 'zarrita';
 import { z } from 'zod';
 
 export type ZarrDimension = 't' | 'c' | 'z' | 'y' | 'x';

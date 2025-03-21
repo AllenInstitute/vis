@@ -1,5 +1,5 @@
 import { Box2D, CartesianPlane, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { ZarrMetadata, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
+import { type ZarrMetadata, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import { useEffect, useMemo, useState } from 'react';

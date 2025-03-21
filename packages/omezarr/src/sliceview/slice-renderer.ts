@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type CartesianPlane, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type CachedTexture,
     type ReglCacheEntry,
