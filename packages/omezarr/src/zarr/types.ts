@@ -379,6 +379,7 @@ export class OmeZarrMetadata {
                 logger.debug('encountered index error when retrieving shaped dataset; returning undefined');
                 return undefined;
             }
+            throw e;
         }
     }
 
@@ -393,6 +394,7 @@ export class OmeZarrMetadata {
                 logger.debug('encountered index error when retrieving shaped dataset; returning undefined');
                 return undefined;
             }
+            throw e;
         }
     }
 
