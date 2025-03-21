@@ -256,15 +256,22 @@ describe('async cache', () => {
             // each of our tasks requests two chunks of data
             // the cache has a limit of 10 items (see beforeEach)
             const allKeysSoFar: string[] = [];
-            let first: ReturnType<typeof fetchFakeItem> & {
-                toCacheKey: (rq: Columns) => string;
+            const {
+                fetchers: firstFetcher,
+                id: firstId,
+                spies: firstSpies,
+            } = fetchFakeItem(0, [255, 0, 0], [1, 2 * 0, 3 * 0]);
+            const first = {
+                fetchers: firstFetcher,
+                id: firstId,
+                spies: firstSpies,
+                toCacheKey: partial(cacheKey, { id: firstId }),
             };
-            for (let i = 0; i < 5; i++) {
+            // Start a 1 since we've already initialized the first fake
+            for (let i = 1; i < 5; i++) {
                 const { fetchers, id, spies } = fetchFakeItem(i, [255, 0, i], [1, 2 * i, 3 * i]);
                 const toCacheKey = partial(cacheKey, { id });
-                if (i === 0) {
-                    first = { fetchers, id, spies, toCacheKey };
-                }
+
                 const result = cache.cacheAndUse(fetchers, render, toCacheKey);
                 // store all the cache keys so we can expect them later
                 allKeysSoFar.push(toCacheKey('color'), toCacheKey('position'));
@@ -274,9 +281,9 @@ describe('async cache', () => {
             expect(cache.areKeysAllCached(allKeysSoFar)).toBe(true);
             expect(cache.getNumPendingTasks()).toBe(0);
             // now - re-request the first task (pretend to 'render' it again)
-            const again = first!; // renaming first as again to avoid many copies of the ! operator
-            cache.cacheAndUse(again.fetchers, render, again.toCacheKey);
-            await resolveFakePromises(again.spies);
+
+            cache.cacheAndUse(first.fetchers, render, first.toCacheKey);
+            await resolveFakePromises(first.spies);
             expect(cache.getNumPendingTasks()).toBe(0);
             // now request a new thing - this should cause the cache to remove at least one item
             const { fetchers, id, spies } = fetchFakeItem(99, [99, 99, 99], [9, 9, 9]);
