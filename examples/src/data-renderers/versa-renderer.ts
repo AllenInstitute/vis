@@ -1,6 +1,6 @@
-import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import {
-    type ZarrDataset,
+    ZarrMetadata,
     type ZarrRequest,
     pickBestScale,
     planeSizeInVoxels,
@@ -153,10 +153,9 @@ export function buildVersaRenderer(regl: REGL.Regl) {
 }
 type Bfr = { type: 'texture2D'; data: REGL.Texture2D };
 
-type Tile = { bounds: box2D };
 export type VoxelSliceRenderSettings = {
     regl: REGL.Regl;
-    dataset: ZarrDataset;
+    metadata: ZarrMetadata;
     view: box2D;
     rotation: number;
     gamut: Record<'R' | 'G' | 'B', { gamut: Interval; index: number }>;
@@ -165,7 +164,7 @@ export type VoxelSliceRenderSettings = {
 };
 export type AxisAlignedPlane = 'xy' | 'yz' | 'xz';
 export type VoxelTile = {
-    plane: AxisAlignedPlane;
+    plane: CartesianPlane;
     realBounds: box2D;
     bounds: box2D; // in voxels, in the plane
     planeIndex: number;
@@ -178,7 +177,7 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     const { minCorner: min, maxCorner: max } = bounds;
     const u = { min: min[0], max: max[0] };
     const v = { min: min[1], max: max[1] };
-    switch (plane) {
+    switch (plane.axes) {
         case 'xy':
             return {
                 x: u,
@@ -206,17 +205,17 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     }
 }
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-    return `${settings.dataset.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${
+    return `${settings.metadata.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${
         settings.gamut[col as 'R' | 'G' | 'B'].index
     }`;
 }
 
-function reqSlice(dataset: ZarrDataset, req: ZarrRequest, layerIndex: number) {
+function reqSlice(dataset: ZarrMetadata, req: ZarrRequest, layerIndex: number) {
     return getSlicePool().requestSlice(dataset, req, layerIndex);
 }
 const LUMINANCE = 'luminance';
 export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, signal?: AbortSignal) {
-    const { dataset, regl } = settings;
+    const { metadata, regl } = settings;
     const handleResponse = (vxl: Awaited<ReturnType<typeof reqSlice>>) => {
         const { shape, data } = vxl;
         const r = regl.texture({
@@ -230,15 +229,15 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
     // lets hope the browser caches our 3x repeat calls to teh same data...
     return {
         R: async () => {
-            const vxl = await reqSlice(dataset, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
+            const vxl = await reqSlice(metadata, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
             return { type: 'texture2D', data: handleResponse(vxl) };
         },
         G: async () => {
-            const vxl = await reqSlice(dataset, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
+            const vxl = await reqSlice(metadata, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
             return { type: 'texture2D', data: handleResponse(vxl) };
         },
         B: async () => {
-            const vxl = await reqSlice(dataset, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
+            const vxl = await reqSlice(metadata, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
             return { type: 'texture2D', data: handleResponse(vxl) };
         },
     };
@@ -255,33 +254,24 @@ function getAllTiles(idealTilePx: vec2, layerSize: vec2) {
     }
     return tiles;
 }
-const uvTable = {
-    xy: { u: 'x', v: 'y' },
-    xz: { u: 'x', v: 'z' },
-    yz: { u: 'y', v: 'z' },
-} as const;
-const sliceDimension = {
-    xy: 'z',
-    xz: 'y',
-    yz: 'x',
-} as const;
 
 export function getVisibleTiles(
     camera: Camera,
-    plane: AxisAlignedPlane,
+    plane: CartesianPlane,
     planeIndex: number,
-    dataset: ZarrDataset,
+    metadata: ZarrMetadata,
     offset?: vec2,
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
+
     // const { axes, datasets } = dataset.multiscales[0];
     // const zIndex = indexOfDimension(axes, sliceDimension[plane]);
     // const sliceSize = sizeInUnits(uvTable[plane], dataset.multiscales[0].axes, dataset.multiscales[0].datasets[0])!;
-    const layer = pickBestScale(dataset, uvTable[plane], camera.view, camera.screen);
+    const layer = pickBestScale(metadata, plane, camera.view, camera.screen);
     // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
-    const layerIndex = dataset.multiscales[0].datasets.indexOf(layer);
+    const layerIndex = metadata.attrs.multiscales[0].datasets.indexOf(layer);
 
-    const size = planeSizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, layer);
-    const realSize = sizeInUnits(uvTable[plane], dataset.multiscales[0].axes, layer);
+    const size = planeSizeInVoxels(plane, metadata.attrs.multiscales[0].axes, layer);
+    const realSize = sizeInUnits(plane, metadata.attrs.multiscales[0].axes, layer);
     if (!size || !realSize) return { layer: layerIndex, view: Box2D.create([0, 0], [1, 1]), tiles: [] };
     const scale = Vec2.div(realSize, size);
     // to go from a voxel-box to a real-box (easier than you think, as both have an origin at 0,0, because we only support scale...)

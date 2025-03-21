@@ -1,4 +1,4 @@
-import type { ZarrDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
+import type { ZarrDataset, ZarrMetadata, ZarrRequest } from '@alleninstitute/vis-omezarr';
 import { uniqueId } from 'lodash';
 
 type PromisifiedMessage = {
@@ -46,9 +46,9 @@ export class SliceWorkerPool {
     private roundRobin() {
         this.which = (this.which + 1) % this.workers.length;
     }
-    requestSlice(dataset: ZarrDataset, req: ZarrRequest, layerIndex: number) {
+    requestSlice(metadata: ZarrMetadata, req: ZarrRequest, layerIndex: number) {
         const reqId = uniqueId('rq');
-        const cacheKey = JSON.stringify({ url: dataset.url, req, layerIndex });
+        const cacheKey = JSON.stringify({ url: metadata.url, req, layerIndex });
         // TODO caching I guess...
         const eventually = new Promise<Slice>((resolve, reject) => {
             this.promises[reqId] = {
@@ -60,7 +60,7 @@ export class SliceWorkerPool {
             this.workers[this.which].postMessage({
                 id: reqId,
                 type: 'ZarrSliceRequest',
-                metadata: dataset,
+                metadata,
                 req,
                 layerIndex,
             });

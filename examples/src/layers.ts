@@ -318,14 +318,19 @@ export class Demo {
                 data,
                 render: layer,
             });
+            const axes = data.metadata.attrs.multiscales[0].axes;
+            const dataset = data.metadata.getFirstShapedDataset(0);
+            if (!dataset) {
+                throw new Error('invalid Zarr data: dataset 0 not found!');
+            }
             const s = sizeInUnits(
                 data.plane,
-                data.dataset.multiscales[0].axes,
-                data.dataset.multiscales[0].datasets[0],
+                axes,
+                dataset,
             );
 
             if (!s) {
-                logger.warn('no size for plane', data.plane, data.dataset.multiscales[0].axes);
+                logger.warn('no size for plane', data.plane, axes);
                 return;
             }
 

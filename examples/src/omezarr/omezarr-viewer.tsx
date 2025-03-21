@@ -1,9 +1,9 @@
 import type { box2D, vec2 } from '@alleninstitute/vis-geometry';
 import {
-    type OmeZarrDataset,
     type RenderSettings,
     type VoxelTile,
     type ZarrDataset,
+    ZarrMetadata,
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
@@ -12,7 +12,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 
 interface OmezarrViewerProps {
-    omezarr: OmeZarrDataset;
+    omezarr: ZarrMetadata;
     id: string;
     screenSize: vec2;
     settings: RenderSettings;
@@ -62,7 +62,7 @@ export function OmezarrViewer({
     // render frames
     useEffect(() => {
         if (server && renderer.current && canvas.current && omezarr) {
-            const hey: RenderFrameFn<ZarrDataset, VoxelTile> = (target, cache, callback) => {
+            const hey: RenderFrameFn<ZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     return renderer.current(omezarr, settings, callback, target, cache);
                 }

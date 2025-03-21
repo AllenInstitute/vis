@@ -2,20 +2,17 @@ import { type AsyncDataCache, beginLongRunningFrame, logger } from '@alleninstit
 import type REGL from 'regl';
 import type { RenderCallback } from './types';
 
-import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     pickBestScale,
     sizeInUnits,
     sizeInVoxels,
-    sliceDimensionForPlane,
-    uvForPlane,
 } from '@alleninstitute/vis-omezarr';
 import type { Camera } from '~/common/camera';
 import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
 import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
 import { applyOptionalTrn } from './utils';
 import {
-    type AxisAlignedPlane,
     type VoxelSliceRenderSettings,
     type VoxelTile,
     type buildVersaRenderer,
@@ -45,12 +42,12 @@ function preferCachedEntries<C extends CacheContentType | object>(
     cache: AsyncDataCache<string, string, C>,
     camera: Camera,
     location: {
-        plane: AxisAlignedPlane;
-        planeIndex: number;
+        plane: CartesianPlane;
+        orthoVal: number;
     },
 ) {
-    const { plane, planeIndex } = location;
-    const idealTiles = getVisibleTiles(camera, plane, planeIndex, grid.dataset, offset);
+    const { plane, orthoVal } = location;
+    const idealTiles = getVisibleTiles(camera, plane, orthoVal, grid.metadata, offset);
     const fakes: VoxelTile[] = [];
 
     for (const tile of idealTiles.tiles) {
@@ -65,8 +62,8 @@ function preferCachedEntries<C extends CacheContentType | object>(
             const lowerLOD = getVisibleTiles(
                 { ...camera, view: tile.realBounds, screen: [1, 1] },
                 plane,
-                planeIndex,
-                grid.dataset,
+                orthoVal,
+                grid.metadata,
                 offset,
             );
             fakes.push(...lowerLOD.tiles);
@@ -85,18 +82,19 @@ export function renderGrid<C extends CacheContentType | object>(
 ) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
-    const { dataset, gamut, plane, slices } = grid;
-    const { axes } = dataset.multiscales[0];
+    const { metadata, gamut, plane: aaPlane, slices } = grid;
+    const plane = new CartesianPlane(aaPlane);
+    const { axes } = metadata.attrs.multiscales[0];
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 10;
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33;
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined;
     const rowSize = Math.floor(Math.sqrt(slices));
     const allItems: VoxelTile[] = [];
     const smokeAndMirrors: VoxelTile[] = [];
-    const best = pickBestScale(dataset, uvForPlane(plane), camera.view, camera.screen);
+    const best = pickBestScale(metadata, plane, camera.view, camera.screen);
 
     const renderSettings = {
-        dataset,
+        metadata,
         gamut,
         regl,
         rotation: grid.rotation,
@@ -116,6 +114,7 @@ export function renderGrid<C extends CacheContentType | object>(
         const param = i / slices;
         const slice: AxisAlignedZarrSlice = {
             ...grid,
+            plane: new CartesianPlane(grid.plane),
             type: 'AxisAlignedZarrSlice',
             planeParameter: param,
         };
@@ -123,7 +122,7 @@ export function renderGrid<C extends CacheContentType | object>(
             ...camera,
             view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
         };
-        const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
+        const dim = sizeInVoxels(plane.ortho, axes, best);
         const realSize = sizeInUnits(plane, axes, best);
 
         if (!realSize) {
@@ -135,10 +134,10 @@ export function renderGrid<C extends CacheContentType | object>(
         // the bounds of this slice might not even be in view!
         // if we did this a bit different... we could know from the index, without having to conditionally test... TODO
         if (Box2D.intersection(curCam.view, Box2D.translate(Box2D.create([0, 0], realSize), offset))) {
-            const planeIndex = Math.round(param * (dim ?? 0));
+            const orthoVal = Math.round(param * (dim ?? 0));
             const { fake, ideal } = preferCachedEntries(grid, renderSettings, offset, cache, curCam, {
                 plane,
-                planeIndex,
+                orthoVal,
             });
             // get all the items for the lowest level of detail:
             smokeAndMirrors.push(...fake);
@@ -167,7 +166,7 @@ export function renderSlice<C extends CacheContentType | object>(
 ) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
-    const { dataset, planeParameter, gamut, plane } = slice;
+    const { metadata, planeParameter, gamut, plane } = slice;
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 5;
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33;
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined;
@@ -177,19 +176,19 @@ export function renderSlice<C extends CacheContentType | object>(
         ...camera,
         view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
     };
-    const best = pickBestScale(dataset, uvForPlane(plane), camera.view, desiredResolution);
-    const axes = dataset.multiscales[0].axes;
-    const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
-    const planeIndex = Math.round(planeParameter * (dim ?? 0));
+    const best = pickBestScale(metadata, plane, camera.view, desiredResolution);
+    const axes = metadata.attrs.multiscales[0].axes;
+    const dim = sizeInVoxels(plane.ortho, axes, best);
+    const orthoVal = Math.round(planeParameter * (dim ?? 0));
 
-    const items = getVisibleTiles({ ...camera, screen: desiredResolution }, plane, planeIndex, dataset);
+    const items = getVisibleTiles({ ...camera, screen: desiredResolution }, plane, orthoVal, metadata);
     const frame = beginLongRunningFrame<CacheContentType | object, VoxelTile, VoxelSliceRenderSettings>(
         concurrentTasks,
         queueInterval,
         items.tiles,
         cache,
         {
-            dataset,
+            metadata,
             gamut,
             regl,
             rotation: slice.rotation,
