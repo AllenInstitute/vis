@@ -117,9 +117,7 @@ export function pickBestScale(
             const planeSizeBest = planeSizeInVoxels(plane, axes, bestSoFar);
             const planeSizeCur = planeSizeInVoxels(plane, axes, cur);
             if (!planeSizeBest || !planeSizeCur) {
-                const message = 'invalid Zarr data: could not determine the size of the plane in voxels';
-                logger.error(message);
-                throw new VisZarrDataError(message);
+                return bestSoFar;
             }
             return (
                 dstToDesired(vxlPitch(planeSizeBest), pxPitch) >
