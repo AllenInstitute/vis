@@ -197,12 +197,10 @@ export class OmeZarrMetadata {
                     return -1;
                 }
                 return multiscale;
-            } else {
-                return this.#attrs.multiscales.findIndex((m) => m.name === multiscale);
             }
-        } else {
-            return 0;
+            return this.#attrs.multiscales.findIndex((m) => m.name === multiscale);
         }
+        return 0;
     }
 
     #getValidMultiscaleIndex(multiscale?: number | string): number {
@@ -223,12 +221,10 @@ export class OmeZarrMetadata {
         if (typeof dataset === 'number') {
             if (dataset < 0 || dataset >= datasets.length) {
                 return -1;
-            } else {
-                return dataset;
             }
-        } else {
-            return datasets.findIndex((d) => d.path === dataset);
+            return dataset;
         }
+        return datasets.findIndex((d) => d.path === dataset);
     }
 
     #getValidDatasetIndex(dataset: number | string, multiscaleIndex: number): number {
@@ -247,8 +243,7 @@ export class OmeZarrMetadata {
     #getShapeX(array: OmeZarrArray, multiscaleIndex: number): number {
         const shape = array.shape;
         if (!shape || shape.length < 4) {
-            const message = `invalid dataset: .zarray formatting invalid, `+
-                `found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
+            const message = `invalid dataset: .zarray formatting invalid, found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
             logger.error(message);
             throw new VisZarrDataError(message);
         }
@@ -262,8 +257,7 @@ export class OmeZarrMetadata {
     #getShapeY(array: OmeZarrArray, multiscaleIndex: number): number {
         const shape = array.shape;
         if (!shape || shape.length < 4) {
-            const message = `invalid dataset: .zarray formatting invalid, `+
-                `found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
+            const message = `invalid dataset: .zarray formatting invalid, found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
             logger.error(message);
             throw new VisZarrDataError(message);
         }
@@ -277,8 +271,7 @@ export class OmeZarrMetadata {
     #getShapeZ(array: OmeZarrArray, multiscaleIndex: number): number {
         const shape = array.shape;
         if (!shape || shape.length < 4) {
-            const message = `invalid dataset: .zarray formatting invalid, `+
-                `found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
+            const message = `invalid dataset: .zarray formatting invalid, found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
             logger.error(message);
             throw new VisZarrDataError(message);
         }
@@ -370,9 +363,8 @@ export class OmeZarrMetadata {
             if (e instanceof VisZarrIndexError) {
                 logger.debug('encountered index error when retrieving shaped dataset; returning undefined');
                 return undefined;
-            } else {
-                throw e;
             }
+            throw e;
         }
     }
 
