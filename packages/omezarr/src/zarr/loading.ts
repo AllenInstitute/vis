@@ -1,8 +1,9 @@
 import { Box2D, type CartesianPlane, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
 import { logger } from '@alleninstitute/vis-scatterbrain';
-import { VisZarrDataError } from '../errors';
+import { VisZarrDataError, VisZarrError } from '../errors';
 import { OmeZarrArray,  OmeZarrAttrsSchema, OmeZarrMetadata, type OmeZarrAttrs, type OmeZarrAxis, type ZarrDimension, type OmeZarrShapedDataset } from './types';
 import * as zarr from 'zarrita';
+import { ZodError } from 'zod';
 
 // Documentation for OME-Zarr datasets (from which these types are built)
 // can be found here:
@@ -13,17 +14,18 @@ import * as zarr from 'zarrita';
 async function loadZarrAttrsFile(store: zarr.FetchStore): Promise<OmeZarrAttrs> {
     const group = await zarr.open(store, { kind: 'group' });
     try {
-        console.log(group);
         return OmeZarrAttrsSchema.parse(group.attrs);
     } catch (e) {
-        console.log(group);
+        if (e instanceof ZodError) {
+            logger.error('could not load Zarr file: parsing failed');
+        }
         throw e;
     }
 }
 
 async function loadZarrArrayFile(store: zarr.FetchStore, path: string, version = 2, loadV2Attrs = true): Promise<OmeZarrArray> {
     const root = zarr.root(store);
-    let array;
+    let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
     if (version === 3) {
         array = await zarr.open.v3(root.resolve(path), { kind: 'array' });
     } else if (version === 2) {
@@ -36,6 +38,9 @@ async function loadZarrArrayFile(store: zarr.FetchStore, path: string, version =
     try {
         return new OmeZarrArray(path, array);
     } catch (e) {
+        if (e instanceof ZodError) {
+            logger.error('could not load Zarr file: parsing failed');
+        }
         throw e;
     }
 }
@@ -50,11 +55,9 @@ async function loadZarrArrayFile(store: zarr.FetchStore, path: string, version =
  */
 export async function loadMetadata(url: string): Promise<OmeZarrMetadata> {
     const store = new zarr.FetchStore(url);
-    console.log(`loading group for ${url}`);
     const attrs: OmeZarrAttrs = await loadZarrAttrsFile(store);
     const arrays = await Promise.all(attrs.multiscales.map((multiscale) => {
         return multiscale.datasets?.map(async (dataset) => {
-            console.log(`loading array for ${dataset.path}`);
             return await loadZarrArrayFile(store, dataset.path);
         }) ?? [];
     }).reduce((prev, curr) => prev.concat(curr)).filter((v) => v !== undefined));
@@ -87,9 +90,14 @@ export function pickBestScale(
     if (!firstDataset) {
         const message = 'invalid Zarr data: no datasets found';
         logger.error(message);
-        throw new VisZarrDataError(message)
+        throw new VisZarrDataError(message);
     }
-    const realSize = sizeInUnits(plane, axes, firstDataset)!;
+    const realSize = sizeInUnits(plane, axes, firstDataset);
+    if (!realSize) {
+        const message = 'invalid Zarr data: could not determine the size of the plane in the given units';
+        logger.error(message);
+        throw new VisZarrDataError(message);
+    }
 
     const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
     // size, in dataspace, of a pixel 1/res
@@ -105,11 +113,19 @@ export function pickBestScale(
     };
     // we assume the datasets are ordered... hmmm TODO
     const choice = datasets.reduce(
-        (bestSoFar, cur) =>
-            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
-                ? cur
-                : bestSoFar,
+        (bestSoFar, cur) => {
+            const planeSizeBest = planeSizeInVoxels(plane, axes, bestSoFar);
+            const planeSizeCur = planeSizeInVoxels(plane, axes, cur);
+            if (!planeSizeBest || !planeSizeCur) {
+                const message = 'invalid Zarr data: could not determine the size of the plane in voxels';
+                logger.error(message);
+                throw new VisZarrDataError(message);
+            }
+            return (
+                dstToDesired(vxlPitch(planeSizeBest), pxPitch) >
+                dstToDesired(vxlPitch(planeSizeCur), pxPitch)
+            ) ? cur : bestSoFar;
+        },
         datasets[0],
     );
     return choice ?? datasets[datasets.length - 1];
