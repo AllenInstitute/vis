@@ -128,7 +128,11 @@ export function pickBestScale(
 ) {
     const datasets = dataset.multiscales[0].datasets;
     const axes = dataset.multiscales[0].axes;
-    const realSize = sizeInUnits(plane, axes, datasets[0])!;
+    const realSize = sizeInUnits(plane, axes, datasets[0]);
+
+    if (!realSize) {
+        throw new Error('Could not get size of plane');
+    }
 
     const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
     // size, in dataspace, of a pixel 1/res
@@ -143,14 +147,24 @@ export function pickBestScale(
         return Vec2.length(Vec2.sub(a, goal));
     };
     // we assume the datasets are ordered... hmmm TODO
-    const choice = datasets.reduce(
-        (bestSoFar, cur) =>
-            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-            dstToDesired(vxlPitch(planeSizeInVoxels(plane, axes, cur)!), pxPitch)
-                ? cur
-                : bestSoFar,
-        datasets[0],
-    );
+    const choice = datasets.reduce((bestSoFar, cur) => {
+        const bestSoFarPlaneSize = planeSizeInVoxels(plane, axes, bestSoFar);
+        const currentPlaneSize = planeSizeInVoxels(plane, axes, cur);
+
+        // If we can't get the size of the planes, we can't compare it, just continue with the best so far
+        if (bestSoFarPlaneSize === undefined || currentPlaneSize === undefined) {
+            return bestSoFar;
+        }
+
+        const bestSoFarDstToDesired = dstToDesired(vxlPitch(bestSoFarPlaneSize), pxPitch);
+        const currentDstToDesired = dstToDesired(vxlPitch(currentPlaneSize), pxPitch);
+
+        if (bestSoFarDstToDesired > currentDstToDesired) {
+            return cur;
+        }
+
+        return bestSoFar;
+    }, datasets[0]);
     return choice ?? datasets[datasets.length - 1];
 }
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
