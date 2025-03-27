@@ -1,12 +1,12 @@
-import type REGL from 'regl';
-import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
-import type { RenderCallback } from './types';
 import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
-import type { Path, buildPathRenderer } from './lineRenderer';
+import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-scatterbrain';
 import { flatten } from 'lodash';
-import type { OptionalTransform } from '../data-sources/types';
+import type REGL from 'regl';
 import type { Camera } from '~/common/camera';
 import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type { OptionalTransform } from '../data-sources/types';
+import type { Path, buildPathRenderer } from './lineRenderer';
+import type { RenderCallback } from './types';
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 
@@ -39,7 +39,7 @@ function requestsForPath(p: Path) {
 export function renderAnnotationLayer(
     target: REGL.Framebuffer2D | null,
     layer: SimpleAnnotation & OptionalTransform,
-    settings: RenderSettings
+    settings: RenderSettings,
 ) {
     const { camera, cache, renderer, callback } = settings;
     const items = getVisibleStrokes(camera, layer);
@@ -55,6 +55,6 @@ export function renderAnnotationLayer(
         requestsForPath,
         renderer,
         callback,
-        (rq: string, path: Path) => `${rq}_${path.id}_${path.points.length}`
+        (rq: string, path: Path) => `${rq}_${path.id}_${path.points.length}`,
     );
 }

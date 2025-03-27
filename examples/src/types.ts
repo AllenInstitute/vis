@@ -1,20 +1,20 @@
 import type { box2D } from '@alleninstitute/vis-geometry';
+import type { ReglLayer2D } from '@alleninstitute/vis-scatterbrain';
 import type REGL from 'regl';
-import { type RenderSettings as SlideRenderSettings } from './data-renderers/dynamicGridSlideRenderer';
-import { type RenderSettings as SliceRenderSettings } from './data-renderers/volumeSliceRenderer';
-import {
-    type RenderSettings as AnnotationRenderSettings,
-    type SimpleAnnotation,
-} from './data-renderers/simpleAnnotationRenderer';
-import type { AxisAlignedZarrSlice } from './data-sources/ome-zarr/planar-slice';
-import type { DynamicGrid, DynamicGridSlide } from './data-sources/scatterplot/dynamic-grid';
-import type { AxisAlignedZarrSliceGrid } from './data-sources/ome-zarr/slice-grid';
 import type {
     RenderSettings as AnnotationGridRenderSettings,
     CacheContentType as GpuMesh,
 } from './data-renderers/annotation-renderer';
+import type { RenderSettings as SlideRenderSettings } from './data-renderers/dynamicGridSlideRenderer';
+import type {
+    RenderSettings as AnnotationRenderSettings,
+    SimpleAnnotation,
+} from './data-renderers/simpleAnnotationRenderer';
+import type { RenderSettings as SliceRenderSettings } from './data-renderers/volumeSliceRenderer';
 import type { AnnotationGrid } from './data-sources/annotation/annotation-grid';
-import type { ReglLayer2D } from '@alleninstitute/vis-scatterbrain';
+import type { AxisAlignedZarrSlice } from './data-sources/ome-zarr/planar-slice';
+import type { AxisAlignedZarrSliceGrid } from './data-sources/ome-zarr/slice-grid';
+import type { DynamicGrid, DynamicGridSlide } from './data-sources/scatterplot/dynamic-grid';
 // note: right now, all layers should be considered 2D, and WebGL only...
 export type Image = {
     texture: REGL.Framebuffer2D;

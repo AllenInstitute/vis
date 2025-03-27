@@ -1,5 +1,5 @@
 import { partial } from 'lodash';
-import { AsyncDataCache } from './dataset-cache';
+import type { AsyncDataCache } from './dataset-cache';
 
 /**
  * FrameLifecycle type that defines the functions a user can call to interact with the frame lifecycle.
@@ -61,7 +61,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
     lifecycleCallback: RenderCallback,
     cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key,
-    queueTimeBudgetMS: number = queueProcessingIntervalMS / 3
+    queueTimeBudgetMS: number = queueProcessingIntervalMS / 3,
 ): FrameLifecycle {
     const abort = new AbortController();
     const queue: Item[] = [];
@@ -124,7 +124,9 @@ export function beginLongRunningFrame<Column, Item, Settings>(
         const startWorkTime = performance.now();
         const cleanupOnError = (err: unknown) => {
             // clear the queue and the staging area (inFlight)
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            for (const cancelMe of taskCancelCallbacks) {
+                cancelMe();
+            }
             queue.splice(0, queue.length);
             // stop fetching
             abort.abort(err);
@@ -143,15 +145,21 @@ export function beginLongRunningFrame<Column, Item, Settings>(
                 }
                 return;
             }
-            // We know there are items in the queue because of the check above, so we assert the type exist
-            const itemToRender = queue.shift()!;
+
+            const itemToRender = queue.shift();
+            if (itemToRender === undefined) {
+                // This should logically never happen, but if it does something is wrong so we emit an error
+                cleanupOnError(new Error('Internal error: itemToRender was undefined'));
+                return;
+            }
+
             const toCacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
             try {
                 const result = mutableCache.cacheAndUse(
                     requestsForItem(itemToRender, settings, abort.signal),
                     partial(render, itemToRender, settings),
                     toCacheKey,
-                    () => reportNormalStatus('progress')
+                    () => reportNormalStatus('progress'),
                 );
                 if (result !== undefined) {
                     // put this cancel callback in a list where we can invoke if something goes wrong
@@ -173,7 +181,9 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     // touched/referenced after cancellation, unless the author of render() did some super weird bad things
     return {
         cancelFrame: (reason?: string) => {
-            taskCancelCallbacks.forEach((cancelMe) => cancelMe());
+            for (const cancelMe of taskCancelCallbacks) {
+                cancelMe();
+            }
             abort.abort(new DOMException(reason, 'AbortError'));
             clearInterval(interval);
             reportNormalStatus('cancelled');

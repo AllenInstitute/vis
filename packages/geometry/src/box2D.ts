@@ -1,6 +1,6 @@
 import { BoxClassFactory, type box } from './BoundingBox';
 import type { rectangle2D } from './Rectangle2D';
-import { type vec2, Vec2 } from './vec2';
+import { Vec2, type vec2 } from './vec2';
 
 export type box2D = box<vec2>;
 

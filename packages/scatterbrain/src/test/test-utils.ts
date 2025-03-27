@@ -10,6 +10,6 @@ export const fakeFetch = <FakeTask>(data: FakeTask, signal?: AbortSignal): Promi
                     resolve(data);
                 }
             },
-            100 * Math.random() + 50
+            100 * Math.random() + 50,
         );
     });

@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { tilesInLayer, type DziImage, tileWithOverlap, imageSizeAtLayer, firstSuitableLayer } from './loader';
 import { Box2D } from '@alleninstitute/vis-geometry';
+import { logger } from '@alleninstitute/vis-scatterbrain';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type DziImage, firstSuitableLayer, imageSizeAtLayer, tileWithOverlap, tilesInLayer } from './loader';
 
 describe('tiling math', () => {
     const highsmith: DziImage = {
@@ -30,7 +31,7 @@ describe('tiling math', () => {
     });
     it('divide 512 into 2 chunks', () => {
         const intervals = tileWithOverlap(512, 256, 1);
-        console.log(intervals);
+        logger.info('intervals', intervals);
         expect(intervals.length).toEqual(2);
         expect(intervals[0].min).toBe(0);
         expect(intervals[0].max).toBe(257);

@@ -1,4 +1,4 @@
-import { type vec2, type box2D, Box2D, type Interval, Vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
 type DziTilesRoot = `${string}_files/`;
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN
@@ -30,7 +30,7 @@ export type DziTile = {
 function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
     return `${dzi.imagesUrl}${level.toFixed(0)}/${tile.col.toFixed(0)}_${tile.row.toFixed(0)}.${dzi.format}`;
 }
-// some quick notes on this deepzoom image format:
+// some quick notes on this deep zoom image format:
 // 1. image / tile names are given by {column}_{row}.{format}
 // 2. a layer (which may contain multiple tiles) is a folder
 // 2.1 that folder contains all the tiles for that layer.
@@ -126,7 +126,7 @@ const logBaseHalf = (x: number) => Math.log2(x) / Math.log2(0.5);
 
 export function imageSizeAtLayer(dzi: DziImage, layer: number) {
     const { size: dim } = dzi;
-    const layerMaxSize = 2 ** (isFinite(layer) ? Math.max(0, layer) : 0);
+    const layerMaxSize = 2 ** (Number.isFinite(layer) ? Math.max(0, layer) : 0);
     const size: vec2 = [dim.width, dim.height];
     // the question is how many times do we need to divide size
     // by 2 to make it less than layerMaxSize?

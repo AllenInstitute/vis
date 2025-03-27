@@ -1,6 +1,6 @@
 import { Box2D, Box3D, Vec3, type box, type box3D, type vec2, type vec3 } from '@alleninstitute/vis-geometry';
-import { MakeTaggedBufferView, type TaggedTypedArray, type WebGLSafeBasicType } from '../../typed-array';
 import type REGL from 'regl';
+import { MakeTaggedBufferView, type TaggedTypedArray, type WebGLSafeBasicType } from '../../typed-array';
 
 type volumeBound = {
     lx: number;
@@ -120,7 +120,7 @@ function convertTree2D(
     bounds: box3D,
     depth: number,
     metadataPath: string,
-    genePath: string
+    genePath: string,
 ): ColumnarTree<vec2> {
     const safeName = sanitizeName(n.file);
     return {
@@ -140,17 +140,17 @@ function convertTree2D(
                           getChildBoundsUsingPotreeIndexing(bounds, getRelativeIndex(safeName, sanitizeName(c.file))),
                           depth + 1,
                           metadataPath,
-                          genePath
-                      )
+                          genePath,
+                      ),
                   )
                 : [],
     };
 }
 function mapBy<K extends string, T extends Record<K, string>>(items: readonly T[], k: K): Record<string, T> {
     const dictionary: Record<string, T> = {};
-    items.forEach((item) => {
+    for (const item of items) {
         dictionary[item[k]] = item;
-    });
+    }
     return dictionary;
 }
 export function isSlideViewData(data: ColumnarMetadata | SlideColumnarMetadata): data is SlideColumnarMetadata {
@@ -170,14 +170,15 @@ function loadSlideViewDataset(metadata: SlideColumnarMetadata, _datasetUrl: stri
     const bounds = Box2D.create([Number(minX), Number(minY)], [Number(maxX), Number(maxY)]);
 
     const columnInfo = pointAttributes.reduce(
-        (dictionary, attr) => ({
-            ...dictionary,
-            [attr.name]: {
-                elements: attr.elements,
-                type: attr.type,
-            } as const,
-        }),
-        {} as Record<string, ColumnMetadata>
+        (dictionary, attr) => {
+            return Object.assign(dictionary, {
+                [attr.name]: {
+                    elements: attr.elements,
+                    type: attr.type,
+                } as const,
+            });
+        },
+        {} as Record<string, ColumnMetadata>,
     );
 
     const slideTrees: SlideTree[] = slides.map((slide) => {
@@ -209,14 +210,15 @@ export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
     const spatialDimName = metadata.spatialColumn;
     const rootBounds = Box3D.create([box.lx, box.ly, box.lz], [box.ux, box.uy, box.uz]);
     const columnInfo = metadata.pointAttributes.reduce(
-        (dictionary, attr) => ({
-            ...dictionary,
-            [attr.name]: {
-                elements: attr.elements,
-                type: attr.type,
-            } as const,
-        }),
-        {} as Record<string, ColumnMetadata>
+        (dictionary, attr) => {
+            return Object.assign(dictionary, {
+                [attr.name]: {
+                    elements: attr.elements,
+                    type: attr.type,
+                } as const,
+            });
+        },
+        {} as Record<string, ColumnMetadata>,
     );
     return {
         dimensions: 2,
@@ -255,20 +257,22 @@ export async function fetchColumn(
     node: ColumnarNode<ReadonlyArray<number>>,
     dataset: ReturnType<typeof loadDataset>,
     column: ColumnRequest,
-    signal?: AbortSignal
+    signal?: AbortSignal,
 ): Promise<ColumnData> {
     const referenceIdForEmbedding = dataset.visualizationReferenceId;
     const getColumnUrl = (columnName: string) => `${node.url}${columnName}/${referenceIdForEmbedding}/${node.name}.bin`;
     const getGeneUrl = (columnName: string) =>
         `${dataset.geneUrl}${columnName}/${referenceIdForEmbedding}/${node.name}.bin`;
     if (column.type === 'QUANTITATIVE') {
-        const buff = await fetch(getGeneUrl(column.name), { signal: signal ?? null }).then((resp) =>
-            resp.arrayBuffer()
-        );
+        const buff = await fetch(getGeneUrl(column.name), {
+            signal: signal ?? null,
+        }).then((resp) => resp.arrayBuffer());
         return { ...MakeTaggedBufferView('float', buff), elements: 1 };
     }
     const info = dataset.columnInfo[column.name];
-    const buff = await fetch(getColumnUrl(column.name), { signal: signal ?? null }).then((resp) => resp.arrayBuffer());
+    const buff = await fetch(getColumnUrl(column.name), {
+        signal: signal ?? null,
+    }).then((resp) => resp.arrayBuffer());
 
     return { ...MakeTaggedBufferView(info.type, buff), elements: info.elements };
 }

@@ -1,5 +1,5 @@
-import { uniqueId } from 'lodash';
 import type { ZarrDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
+import { uniqueId } from 'lodash';
 
 type PromisifiedMessage = {
     requestCacheKey: string;
@@ -15,8 +15,8 @@ type Slice = {
     data: Float32Array;
     shape: number[];
 };
-function isExpectedResult(obj: any): obj is ExpectedResultSlice {
-    return typeof obj === 'object' && 'type' in obj && obj.type === 'slice';
+function isExpectedResult(obj: unknown): obj is ExpectedResultSlice {
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'slice';
 }
 export class SliceWorkerPool {
     private workers: Worker[];

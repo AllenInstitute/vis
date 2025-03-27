@@ -1,5 +1,6 @@
 import type { box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
-import REGL, { type AttributeConfig } from 'regl';
+import type REGL from 'regl';
+import type { AttributeConfig } from 'regl';
 import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 type Attrs = { pos: REGL.AttributeConfig };
@@ -73,9 +74,9 @@ export function buildPathRenderer(regl: REGL.Regl) {
     return (
         item: Path,
         settings: { view: box2D; target: REGL.Framebuffer2D | null },
-        tasks: Record<string, ColumnData | object | undefined>
+        tasks: Record<string, ColumnData | object | undefined>,
     ) => {
-        const pos = tasks['position'];
+        const pos = tasks.position;
         const { view, target } = settings;
         if (pos && 'type' in pos && pos.type === 'float') {
             cmd(pos.data, item.color, view, target);

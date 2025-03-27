@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import delay from 'lodash/delay';
-import { beginLongRunningFrame, type NormalStatus } from '../render-queue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AsyncDataCache } from '../dataset-cache';
+import { type NormalStatus, beginLongRunningFrame } from '../render-queue';
 import { fakeFetch } from './test-utils';
 
 type FakeTask = { id: number; color: string };
@@ -16,7 +16,7 @@ describe('beginLongRunningFrame', () => {
     let cache: AsyncDataCache<string, string, FakeTask> = new AsyncDataCache(
         () => {},
         () => 1,
-        9999
+        9999,
     );
     let renderSequence: FakeTask[] = [];
     function renderPretender(item: FakeItem, settings: FakeSettings, tasks: Record<string, FakeTask | undefined>) {
@@ -39,7 +39,7 @@ describe('beginLongRunningFrame', () => {
     // a less wordy fake frame:
     const fakeFrame = (
         items: number,
-        eventHandler: (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void
+        eventHandler: (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void,
     ) =>
         beginLongRunningFrame<FakeTask, FakeItem, FakeSettings>(
             5,
@@ -51,13 +51,13 @@ describe('beginLongRunningFrame', () => {
             renderPretender,
             eventHandler,
             (rq: string, item: FakeItem, settings: FakeSettings) => cacheKey(item, settings),
-            9999
+            9999,
         );
     beforeEach(() => {
         cache = new AsyncDataCache(
             () => {},
             () => 1,
-            9999
+            9999,
         );
         renderSequence = [];
     });

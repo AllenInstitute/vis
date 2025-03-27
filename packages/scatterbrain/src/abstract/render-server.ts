@@ -1,9 +1,10 @@
-import { AsyncDataCache } from '../dataset-cache';
-import type { ReglCacheEntry } from './types';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import REGL from 'regl';
-import { type AsyncFrameEvent, type RenderCallback } from './async-frame';
-import { type FrameLifecycle } from '../render-queue';
+import { AsyncDataCache } from '../dataset-cache';
+import type { FrameLifecycle } from '../render-queue';
+import type { AsyncFrameEvent, RenderCallback } from './async-frame';
+import type { ReglCacheEntry } from './types';
+import { logger } from '../logger';
 
 function destroyer(item: ReglCacheEntry) {
     switch (item.type) {
@@ -32,19 +33,22 @@ type ServerActions = {
     copyToClient: (composite: Compositor) => void;
 };
 type Compositor = (ctx: CanvasRenderingContext2D, glImage: ImageData) => void;
-type RenderEvent<D, I> = AsyncFrameEvent<D, I> & { target: REGL.Framebuffer2D | null; server: ServerActions };
+type RenderEvent<D, I> = AsyncFrameEvent<D, I> & {
+    target: REGL.Framebuffer2D | null;
+    server: ServerActions;
+};
 type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
 type RenderFrameFn<D, I> = (
     target: REGL.Framebuffer2D | null,
     cache: AsyncDataCache<string, string, ReglCacheEntry>,
-    callback: RenderCallback<D, I>
+    callback: RenderCallback<D, I>,
 ) => FrameLifecycle | null;
 
 type Client = HTMLCanvasElement;
 export class RenderServer {
     private canvas: OffscreenCanvas;
     private refreshRequested: boolean;
-    regl: REGL.Regl | null;
+    regl: REGL.Regl;
     cache: AsyncDataCache<string, string, ReglCacheEntry>;
     private clients: Map<Client, ClientEntry>;
     private maxSize: vec2;
@@ -77,14 +81,27 @@ export class RenderServer {
         if (updateRequested) {
             try {
                 // read directly from the framebuffer to which we render:
-                this.regl?.read({ framebuffer: image, x: 0, y: 0, width, height, data: new Uint8Array(copyBuffer) });
+                this.regl?.read({
+                    framebuffer: image,
+                    x: 0,
+                    y: 0,
+                    width,
+                    height,
+                    data: new Uint8Array(copyBuffer),
+                });
                 // then put those bytes in the client canvas:
-                const ctx: CanvasRenderingContext2D = client.getContext('2d')!;
+                const ctx = client.getContext('2d');
+
+                if (!ctx) {
+                    logger.error('Could not get 2d context');
+                    throw new Error('Could not get 2d context');
+                }
+
                 const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
                 updateRequested(ctx, img);
             } catch (err) {
-                console.error(
-                    'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok'
+                logger.error(
+                    'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok',
                 );
             }
         }
@@ -144,15 +161,19 @@ export class RenderServer {
         }
         const resolution = Vec2.min(this.maxSize, [client.width, client.height]);
         const copyBuffer = new ArrayBuffer(resolution[0] * resolution[1] * 4);
-        const image = this.regl!.framebuffer(...resolution);
+        const image = this.regl.framebuffer(...resolution);
         return { resolution, copyBuffer, image };
     }
     beginRendering<D, I>(renderFn: RenderFrameFn<D, I>, callback: ServerCallback<D, I>, client: Client) {
         if (this.regl) {
             const clientFrame = this.clients.get(client);
-            if (clientFrame && clientFrame.frame) {
+            if (clientFrame?.frame) {
                 clientFrame.frame.cancelFrame();
-                this.regl.clear({ framebuffer: clientFrame.image, color: [0, 0, 0, 0], depth: 0 });
+                this.regl.clear({
+                    framebuffer: clientFrame.image,
+                    color: [0, 0, 0, 0],
+                    depth: 0,
+                });
                 clientFrame.updateRequested = null;
             }
             const { image, resolution, copyBuffer } = this.prepareToRenderToClient(client);

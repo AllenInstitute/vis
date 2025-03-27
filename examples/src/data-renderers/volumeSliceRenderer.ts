@@ -1,11 +1,8 @@
+import { type AsyncDataCache, beginLongRunningFrame, logger } from '@alleninstitute/vis-scatterbrain';
 import type REGL from 'regl';
-import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
 import type { RenderCallback } from './types';
 
-import { applyOptionalTrn } from './utils';
 import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
-import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
-import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
 import {
     pickBestScale,
     sizeInUnits,
@@ -13,16 +10,19 @@ import {
     sliceDimensionForPlane,
     uvForPlane,
 } from '@alleninstitute/vis-omezarr';
+import type { Camera } from '~/common/camera';
+import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
+import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
+import { applyOptionalTrn } from './utils';
 import {
+    type AxisAlignedPlane,
+    type VoxelSliceRenderSettings,
+    type VoxelTile,
+    type buildVersaRenderer,
     cacheKeyFactory,
     getVisibleTiles,
     requestsForTile,
-    type AxisAlignedPlane,
-    type buildVersaRenderer,
-    type VoxelSliceRenderSettings,
-    type VoxelTile,
 } from './versa-renderer';
-import type { Camera } from '~/common/camera';
 
 type Renderer = ReturnType<typeof buildVersaRenderer>;
 type CacheContentType = { type: 'texture2D'; data: REGL.Texture2D };
@@ -47,7 +47,7 @@ function preferCachedEntries<C extends CacheContentType | object>(
     location: {
         plane: AxisAlignedPlane;
         planeIndex: number;
-    }
+    },
 ) {
     const { plane, planeIndex } = location;
     const idealTiles = getVisibleTiles(camera, plane, planeIndex, grid.dataset, offset);
@@ -67,7 +67,7 @@ function preferCachedEntries<C extends CacheContentType | object>(
                 plane,
                 planeIndex,
                 grid.dataset,
-                offset
+                offset,
             );
             fakes.push(...lowerLOD.tiles);
         }
@@ -81,7 +81,7 @@ function preferCachedEntries<C extends CacheContentType | object>(
 export function renderGrid<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     grid: AxisAlignedZarrSliceGrid,
-    settings: RenderSettings<C>
+    settings: RenderSettings<C>,
 ) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
@@ -113,11 +113,24 @@ export function renderGrid<C extends CacheContentType | object>(
     for (let i = 0; i < slices; i++) {
         const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)];
 
-        let param = i / slices;
-        const slice: AxisAlignedZarrSlice = { ...grid, type: 'AxisAlignedZarrSlice', planeParameter: param };
-        const curCam = { ...camera, view: applyOptionalTrn(camera.view, slice.toModelSpace, true) };
+        const param = i / slices;
+        const slice: AxisAlignedZarrSlice = {
+            ...grid,
+            type: 'AxisAlignedZarrSlice',
+            planeParameter: param,
+        };
+        const curCam = {
+            ...camera,
+            view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
+        };
         const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
-        const realSize = sizeInUnits(plane, axes, best)!;
+        const realSize = sizeInUnits(plane, axes, best);
+
+        if (!realSize) {
+            logger.warn('no size for plane', plane, axes, best);
+            continue;
+        }
+
         const offset = Vec2.mul(gridIndex, realSize);
         // the bounds of this slice might not even be in view!
         // if we did this a bit different... we could know from the index, without having to conditionally test... TODO
@@ -142,7 +155,7 @@ export function renderGrid<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKeyFactory,
-        cpuLimit
+        cpuLimit,
     );
     return frame;
 }
@@ -150,7 +163,7 @@ export function renderGrid<C extends CacheContentType | object>(
 export function renderSlice<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     slice: AxisAlignedZarrSlice,
-    settings: RenderSettings<C>
+    settings: RenderSettings<C>,
 ) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
@@ -160,7 +173,10 @@ export function renderSlice<C extends CacheContentType | object>(
     cpuLimit = cpuLimit ? Math.abs(cpuLimit) : undefined;
     const desiredResolution = camera.screen;
     // convert planeParameter to planeIndex - which requires knowing the bounds of the appropriate dimension
-    camera = { ...camera, view: applyOptionalTrn(camera.view, slice.toModelSpace, true) };
+    camera = {
+        ...camera,
+        view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
+    };
     const best = pickBestScale(dataset, uvForPlane(plane), camera.view, desiredResolution);
     const axes = dataset.multiscales[0].axes;
     const dim = sizeInVoxels(sliceDimensionForPlane(plane), axes, best);
@@ -190,7 +206,7 @@ export function renderSlice<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKeyFactory,
-        cpuLimit
+        cpuLimit,
     );
     return frame;
 }

@@ -1,4 +1,4 @@
-import type { vec4, box2D } from '@alleninstitute/vis-geometry';
+import type { box2D, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 
 export type ClosedLoop = {

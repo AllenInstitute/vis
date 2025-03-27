@@ -1,62 +1,68 @@
 import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import REGL from 'regl';
-import { AsyncDataCache, ReglLayer2D, type FrameLifecycle, type NormalStatus } from '@alleninstitute/vis-scatterbrain';
+import { sizeInUnits } from '@alleninstitute/vis-omezarr';
 import {
+    AsyncDataCache,
+    type FrameLifecycle,
+    logger,
+    type NormalStatus,
+    ReglLayer2D,
+} from '@alleninstitute/vis-scatterbrain';
+import { saveAs } from 'file-saver';
+import { createRoot } from 'react-dom/client';
+import REGL from 'regl';
+import type { Camera } from './common/camera';
+import { buildImageRenderer } from './common/image-renderer';
+import type { ColumnRequest } from './common/loaders/scatterplot/scatterbrain-loader';
+import {
+    type RenderSettings as AnnotationGridRenderSettings,
+    type LoopRenderer,
+    type MeshRenderer,
+    renderAnnotationGrid,
+} from './data-renderers/annotation-renderer';
+import {
+    type RenderSettings as SlideRenderSettings,
     renderDynamicGrid,
     renderSlide,
-    type RenderSettings as SlideRenderSettings,
 } from './data-renderers/dynamicGridSlideRenderer';
+import { buildPathRenderer } from './data-renderers/lineRenderer';
+import { buildLoopRenderer, buildMeshRenderer } from './data-renderers/mesh-renderer';
+import { buildRenderer } from './data-renderers/scatterplot';
 import {
-    renderGrid,
-    renderSlice,
-    type RenderSettings as SliceRenderSettings,
-} from './data-renderers/volumeSliceRenderer';
-import {
-    renderAnnotationLayer,
     type RenderSettings as AnnotationRenderSettings,
     type SimpleAnnotation,
+    renderAnnotationLayer,
 } from './data-renderers/simpleAnnotationRenderer';
-import { buildPathRenderer } from './data-renderers/lineRenderer';
 import type { ColorMapping, RenderCallback } from './data-renderers/types';
-import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from './data-sources/ome-zarr/planar-slice';
+import { type AxisAlignedPlane, buildVersaRenderer } from './data-renderers/versa-renderer';
 import {
-    createGridDataset,
-    createSlideDataset,
+    type RenderSettings as SliceRenderSettings,
+    renderGrid,
+    renderSlice,
+} from './data-renderers/volumeSliceRenderer';
+import type { AnnotationGrid, AnnotationGridConfig } from './data-sources/annotation/annotation-grid';
+import { type AxisAlignedZarrSlice, type ZarrSliceConfig, createZarrSlice } from './data-sources/ome-zarr/planar-slice';
+import {
+    type AxisAlignedZarrSliceGrid,
+    type ZarrSliceGridConfig,
+    createZarrSliceGrid,
+} from './data-sources/ome-zarr/slice-grid';
+import {
     type DynamicGrid,
     type DynamicGridSlide,
     type ScatterPlotGridSlideConfig,
     type ScatterplotGridConfig,
+    createGridDataset,
+    createSlideDataset,
 } from './data-sources/scatterplot/dynamic-grid';
 import type { OptionalTransform } from './data-sources/types';
-import type { CacheEntry, AnnotationLayer, Layer } from './types';
-import { AppUi } from './app';
-import { createRoot } from 'react-dom/client';
-import {
-    createZarrSliceGrid,
-    type AxisAlignedZarrSliceGrid,
-    type ZarrSliceGridConfig,
-} from './data-sources/ome-zarr/slice-grid';
-import {
-    renderAnnotationGrid,
-    type LoopRenderer,
-    type MeshRenderer,
-    type RenderSettings as AnnotationGridRenderSettings,
-} from './data-renderers/annotation-renderer';
-import { buildLoopRenderer, buildMeshRenderer } from './data-renderers/mesh-renderer';
-import { saveAs } from 'file-saver';
-import type { AnnotationGrid, AnnotationGridConfig } from './data-sources/annotation/annotation-grid';
-import { buildRenderer } from './data-renderers/scatterplot';
-import { sizeInUnits } from '@alleninstitute/vis-omezarr';
-import type { ColumnRequest } from './common/loaders/scatterplot/scatterbrain-loader';
-import { buildVersaRenderer, type AxisAlignedPlane } from './data-renderers/versa-renderer';
-import { buildImageRenderer } from './common/image-renderer';
-import type { Camera } from './common/camera';
+import { AppUi } from './layers/layers';
+import type { AnnotationLayer, CacheEntry, Layer } from './types';
 const KB = 1000;
 const MB = 1000 * KB;
 
 declare global {
     interface Window {
-        examples: Record<string, any>;
+        examples: Record<string, unknown>;
         demo: Demo;
     }
 }
@@ -72,7 +78,7 @@ function destroyer(item: CacheEntry) {
             break;
         default:
             // @ts-expect-error
-            console.error(item.data, 'implement a destroyer for this case!');
+            logger.error(item.data, 'implement a destroyer for this case!');
             break;
     }
 }
@@ -111,8 +117,8 @@ export class Demo {
     loopRenderer: LoopRenderer;
     meshRenderer: MeshRenderer;
     stencilMeshRenderer: MeshRenderer;
-    private refreshRequested: number = 0;
-    private redrawRequested: number = 0;
+    private refreshRequested = 0;
+    private redrawRequested = 0;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.canvas = canvas;
         this.mouse = 'up';
@@ -203,7 +209,7 @@ export class Demo {
                     this.regl,
                     this.imgRenderer,
                     renderDynamicGrid<CacheEntry>,
-                    [w, h]
+                    [w, h],
                 );
                 this.layers.push({
                     type: 'scatterplotGrid',
@@ -218,13 +224,15 @@ export class Demo {
     selectLayer(layer: number) {
         this.selectedLayer = Math.min(this.layers.length - 1, Math.max(0, layer));
         const yay = this.layers[this.selectedLayer];
-        console.log('selected:', yay.data);
+        logger.info('selected:', yay.data);
         this.uiChange();
     }
 
     deleteSelectedLayer() {
         const removed = this.layers.splice(this.selectedLayer, 1);
-        removed.forEach((l) => l.render.destroy());
+        for (const l of removed) {
+            l.render.destroy();
+        }
         this.uiChange();
     }
     addLayer(
@@ -233,7 +241,7 @@ export class Demo {
             | ZarrSliceConfig
             | ZarrSliceGridConfig
             | ScatterPlotGridSlideConfig
-            | AnnotationGridConfig
+            | AnnotationGridConfig,
     ) {
         switch (config.type) {
             case 'AnnotationGridConfig':
@@ -257,7 +265,7 @@ export class Demo {
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
-                [w, h]
+                [w, h],
             ),
         });
         this.uiChange();
@@ -273,7 +281,7 @@ export class Demo {
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
-                [w, h]
+                [w, h],
             ),
         });
         this.uiChange();
@@ -286,7 +294,7 @@ export class Demo {
                     this.regl,
                     this.imgRenderer,
                     renderSlide<CacheEntry>,
-                    [w, h]
+                    [w, h],
                 );
                 this.layers.push({
                     type: 'scatterplot',
@@ -313,9 +321,15 @@ export class Demo {
             const s = sizeInUnits(
                 data.plane,
                 data.dataset.multiscales[0].axes,
-                data.dataset.multiscales[0].datasets[0]
+                data.dataset.multiscales[0].datasets[0],
             );
-            this.camera = { ...this.camera, view: Box2D.create([0, 0], s!) };
+
+            if (!s) {
+                logger.warn('no size for plane', data.plane, data.dataset.multiscales[0].axes);
+                return;
+            }
+
+            this.camera = { ...this.camera, view: Box2D.create([0, 0], s) };
             this.uiChange();
         });
     }
@@ -344,7 +358,7 @@ export class Demo {
                         this.regl,
                         this.imgRenderer,
                         renderAnnotationGrid,
-                        [w, h]
+                        [w, h],
                     ),
                 });
                 // look at it!
@@ -360,7 +374,7 @@ export class Demo {
                 this.regl,
                 this.imgRenderer,
                 renderGrid<CacheEntry>,
-                [w, h]
+                [w, h],
             );
             this.layers.push({
                 type: 'volumeGrid',
@@ -380,8 +394,12 @@ export class Demo {
         const h = w * aspect;
         // make it be upside down!
         const pixels = await this.takeSnapshot(
-            { view, screen: [w, h], projection: projection === 'webImage' ? 'cartesian' : 'webImage' },
-            this.layers
+            {
+                view,
+                screen: [w, h],
+                projection: projection === 'webImage' ? 'cartesian' : 'webImage',
+            },
+            this.layers,
         );
         // create an offscreen canvas...
         const cnvs = new OffscreenCanvas(w, h);
@@ -413,7 +431,7 @@ export class Demo {
 
             const layerPromises: Array<() => FrameLifecycle> = [];
             const nextLayerWhenFinished: RenderCallback = (
-                e: { status: NormalStatus } | { status: 'error'; error: unknown }
+                e: { status: NormalStatus } | { status: 'error'; error: unknown },
             ) => {
                 const { status } = e;
                 switch (status) {
@@ -422,11 +440,11 @@ export class Demo {
                         break;
                     case 'progress':
                         if (Math.random() > 0.7) {
-                            console.log('...');
+                            logger.info('...');
                         }
                         break;
                     case 'finished':
-                    case 'finished_synchronously':
+                    case 'finished_synchronously': {
                         // start the next layer
                         const next = layerPromises.shift();
                         if (!next) {
@@ -437,6 +455,7 @@ export class Demo {
                             // do the next layer
                             next();
                         }
+                    }
                 }
             };
             const settings = {
@@ -449,27 +468,42 @@ export class Demo {
                 switch (layer.type) {
                     case 'volumeGrid':
                         layerPromises.push(() =>
-                            renderGrid<CacheEntry>(target, layer.data, { ...settings, renderer: renderers[layer.type] })
+                            renderGrid<CacheEntry>(target, layer.data, {
+                                ...settings,
+                                renderer: renderers[layer.type],
+                            }),
                         );
                         break;
                     case 'annotationGrid':
                         layerPromises.push(() =>
-                            renderAnnotationGrid(target, layer.data, { ...settings, renderers: renderers[layer.type] })
+                            renderAnnotationGrid(target, layer.data, {
+                                ...settings,
+                                renderers: renderers[layer.type],
+                            }),
                         );
                         break;
                     case 'volumeSlice':
                         layerPromises.push(() =>
-                            renderSlice(target, layer.data, { ...settings, renderer: renderers[layer.type] })
+                            renderSlice(target, layer.data, {
+                                ...settings,
+                                renderer: renderers[layer.type],
+                            }),
                         );
                         break;
                     case 'scatterplot':
                         layerPromises.push(() =>
-                            renderSlide(target, layer.data, { ...settings, renderer: renderers[layer.type] })
+                            renderSlide(target, layer.data, {
+                                ...settings,
+                                renderer: renderers[layer.type],
+                            }),
                         );
                         break;
                     case 'annotationLayer':
                         layerPromises.push(() =>
-                            renderAnnotationLayer(target, layer.data, { ...settings, renderer: renderers[layer.type] })
+                            renderAnnotationLayer(target, layer.data, {
+                                ...settings,
+                                renderer: renderers[layer.type],
+                            }),
                         );
                         break;
                     case 'scatterplotGrid':
@@ -477,7 +511,7 @@ export class Demo {
                             renderDynamicGrid<CacheEntry>(target, layer.data, {
                                 ...settings,
                                 renderer: renderers[layer.type],
-                            })
+                            }),
                         );
                         break;
                 }
@@ -548,7 +582,7 @@ export class Demo {
                             renderer: renderers[layer.type],
                         },
                     },
-                    this.mode === 'pan'
+                    this.mode === 'pan',
                 ); // dont cancel while drawing
             } else if (layer.type === 'volumeGrid') {
                 layer.render.onChange({
@@ -622,7 +656,11 @@ export class Demo {
                 const { screen, view } = this.camera;
                 const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
                 const c = Vec2.mul(p, Box2D.size(view));
-                this.camera = { ...this.camera, view: Box2D.translate(view, c), screen };
+                this.camera = {
+                    ...this.camera,
+                    view: Box2D.translate(view, c),
+                    screen,
+                };
                 this.onCameraChanged();
             }
         } else if (curLayer && curLayer.type === 'annotationLayer') {
@@ -682,7 +720,10 @@ export class Demo {
     refreshScreen() {
         const flipBox = (box: box2D): box2D => {
             const { minCorner, maxCorner } = box;
-            return { minCorner: [minCorner[0], maxCorner[1]], maxCorner: [maxCorner[0], minCorner[1]] };
+            return {
+                minCorner: [minCorner[0], maxCorner[1]],
+                maxCorner: [maxCorner[0], minCorner[1]],
+            };
         };
         const flipped = Box2D.toFlatArray(flipBox(this.camera.view));
         this.regl.clear({ framebuffer: null, color: [0, 0, 0, 1], depth: 1 });
@@ -738,14 +779,14 @@ function demoTime(thing: HTMLCanvasElement) {
     });
     theDemo = new Demo(thing, regl);
 
-    window['demo'] = theDemo;
+    window.demo = theDemo;
     setupExampleData();
     uiroot.render(AppUi({ demo: theDemo }));
 }
 function setupExampleData() {
     // add a bunch of pre-selected layers to the window object for selection during demo time
     window.examples = {};
-    const prep = (key: string, thing: any) => {
+    const prep = (key: string, thing: unknown) => {
         window.examples[key] = thing;
     };
     prep('structureAnnotation', structureAnnotation);
@@ -822,6 +863,13 @@ const structureAnnotation: AnnotationGridConfig = {
         opacity: 0.7,
     },
 };
-const uiroot = createRoot(document.getElementById('sidebar')!);
+
+const sidebar = document.getElementById('sidebar');
+
+if (!sidebar) {
+    throw new Error('missing sidebar in DOM');
+}
+
+const uiroot = createRoot(sidebar);
 
 demoTime(document.getElementById('glCanvas') as HTMLCanvasElement);
