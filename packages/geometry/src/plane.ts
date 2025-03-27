@@ -1,16 +1,15 @@
-
 export type CartesianAxis = 'x' | 'y' | 'z';
 
 export type OrthogonalCartesianAxes = 'xy' | 'xz' | 'yz';
 
-export type UVAxes = { u: CartesianAxis, v: CartesianAxis };
+export type UVAxes = { u: CartesianAxis; v: CartesianAxis };
 
 export type UVAxisMapping = {
-    [prop in OrthogonalCartesianAxes]: UVAxes
+    [prop in OrthogonalCartesianAxes]: UVAxes;
 };
 
 export type OrthogonalAxisMapping = {
-    [prop in OrthogonalCartesianAxes]: CartesianAxis
+    [prop in OrthogonalCartesianAxes]: CartesianAxis;
 };
 
 export class CartesianPlane {
@@ -49,7 +48,7 @@ export class CartesianPlane {
     }
 
     get uv(): UVAxes {
-        return {...this.#uv};
+        return { ...this.#uv };
     }
 
     get ortho(): CartesianAxis {

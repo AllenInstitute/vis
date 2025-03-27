@@ -12,8 +12,8 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
     {
         multiscales: [
             {
-                name: "test",
-                version: "2",
+                name: 'test',
+                version: '2',
                 axes: [
                     {
                         name: 'c',
@@ -48,7 +48,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '0'
+                        path: '0',
                     },
                     {
                         coordinateTransformations: [
@@ -61,7 +61,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '1'
+                        path: '1',
                     },
                     {
                         coordinateTransformations: [
@@ -74,7 +74,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '2'
+                        path: '2',
                     },
                     {
                         coordinateTransformations: [
@@ -87,7 +87,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '3'
+                        path: '3',
                     },
                     {
                         coordinateTransformations: [
@@ -100,7 +100,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '4'
+                        path: '4',
                     },
                     {
                         coordinateTransformations: [
@@ -113,7 +113,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '5'
+                        path: '5',
                     },
                     {
                         coordinateTransformations: [
@@ -126,7 +126,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '6'
+                        path: '6',
                     },
                     {
                         coordinateTransformations: [
@@ -139,7 +139,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '7'
+                        path: '7',
                     },
                     {
                         coordinateTransformations: [
@@ -152,7 +152,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '8'
+                        path: '8',
                     },
                     {
                         coordinateTransformations: [
@@ -165,7 +165,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
                                 type: 'translation',
                             },
                         ],
-                        path: '9'
+                        path: '9',
                     },
                 ],
             },
@@ -176,65 +176,65 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
             shape: [3, 142, 29998, 39998],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         // typecasting here intentionally, to avoid having to create and load a full valid OME-Zarr dataset for unit testing purposes
         // TODO potentially convert these to integration tests, within which loading a file would be appropriate
         new OmeZarrArray('1', {
             shape: [3, 142, 14999, 19999],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('2', {
             shape: [3, 142, 7499, 9999],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('3', {
             shape: [3, 142, 3749, 4999],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('4', {
             shape: [3, 142, 1874, 2499],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('5', {
             shape: [3, 142, 937, 1249],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('6', {
             shape: [3, 142, 468, 624],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('7', {
             shape: [3, 142, 234, 312],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('8', {
             shape: [3, 142, 117, 156],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>), 
+            attrs: {},
+        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
         new OmeZarrArray('9', {
             shape: [3, 142, 58, 78],
             dtype: 'float32',
             chunks: [],
-            attrs: {}
+            attrs: {},
         } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-    ]
+    ],
 );
 
 describe('omezarr basic tiled loading', () => {

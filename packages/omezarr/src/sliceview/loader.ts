@@ -1,4 +1,11 @@
-import { Box2D, type CartesianPlane, Vec2, type box2D, type OrthogonalCartesianAxes, type vec2 } from '@alleninstitute/vis-geometry';
+import {
+    Box2D,
+    type CartesianPlane,
+    Vec2,
+    type box2D,
+    type OrthogonalCartesianAxes,
+    type vec2,
+} from '@alleninstitute/vis-geometry';
 import type { Chunk } from 'zarrita';
 import type { ZarrRequest } from '../zarr/loading';
 import { loadSlice, pickBestScale, planeSizeInVoxels, sizeInUnits } from '../zarr/loading';
@@ -118,7 +125,11 @@ export function getVisibleTiles(
  * @param layerIndex an index into the LOD pyramid of the given ZarrDataset.
  * @returns the requested voxel information from the given layer of the given dataset.
  */
-export const defaultDecoder = (metadata: OmeZarrMetadata, r: ZarrRequest, level: OmeZarrShapedDataset): Promise<VoxelTileImage> => {
+export const defaultDecoder = (
+    metadata: OmeZarrMetadata,
+    r: ZarrRequest,
+    level: OmeZarrShapedDataset,
+): Promise<VoxelTileImage> => {
     return loadSlice(metadata, r, level).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
         const { shape, buffer } = result;
         return { shape, data: new Float32Array(buffer.data) };

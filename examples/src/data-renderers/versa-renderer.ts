@@ -1,4 +1,12 @@
-import { Box2D, type CartesianPlane, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import {
+    Box2D,
+    type CartesianPlane,
+    type Interval,
+    Vec2,
+    type box2D,
+    type vec2,
+    type vec4,
+} from '@alleninstitute/vis-geometry';
 import {
     type ZarrMetadata,
     type ZarrRequest,
@@ -262,10 +270,6 @@ export function getVisibleTiles(
     metadata: ZarrMetadata,
     offset?: vec2,
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
-
-    // const { axes, datasets } = dataset.multiscales[0];
-    // const zIndex = indexOfDimension(axes, sliceDimension[plane]);
-    // const sliceSize = sizeInUnits(uvTable[plane], dataset.multiscales[0].axes, dataset.multiscales[0].datasets[0])!;
     const layer = pickBestScale(metadata, plane, camera.view, camera.screen);
     // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
     const layerIndex = metadata.attrs.multiscales[0].datasets.indexOf(layer);
@@ -276,14 +280,12 @@ export function getVisibleTiles(
     const scale = Vec2.div(realSize, size);
     // to go from a voxel-box to a real-box (easier than you think, as both have an origin at 0,0, because we only support scale...)
     const vxlToReal = (vxl: box2D) => Box2D.translate(Box2D.scale(vxl, scale), offset ?? [0, 0]);
-    // const realToVxl = (real: box2D) => Box2D.scale(real, Vec2.div(size, realSize));
-
+    
     // find the tiles, in voxels, to request...
     const allTiles = getAllTiles([TILE_SIZE, TILE_SIZE], size);
     const inView = allTiles.filter((tile) => !!Box2D.intersection(camera.view, vxlToReal(tile)));
     // camera.view is in a made up dataspace, where 1=height of the current dataset
     // thus, we have to convert it into a voxel-space camera for intersections
-    // const voxelView = realToVxl(camera.view);
     return {
         layer: layerIndex,
         view: camera.view,

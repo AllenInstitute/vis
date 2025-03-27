@@ -31,6 +31,6 @@ export {
     type UVAxes,
     type UVAxisMapping,
     type OrthogonalAxisMapping,
-    CartesianPlane 
+    CartesianPlane,
 } from './plane';
 export { type SpatialTreeInterface, visitBFS } from './spatialIndexing/tree';

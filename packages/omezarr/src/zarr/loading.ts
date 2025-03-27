@@ -1,7 +1,23 @@
-import { Box2D, type CartesianPlane, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
+import {
+    Box2D,
+    type CartesianPlane,
+    type Interval,
+    Vec2,
+    type box2D,
+    limit,
+    type vec2,
+} from '@alleninstitute/vis-geometry';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import { VisZarrDataError, VisZarrError } from '../errors';
-import { OmeZarrArray,  OmeZarrAttrsSchema, OmeZarrMetadata, type OmeZarrAttrs, type OmeZarrAxis, type ZarrDimension, type OmeZarrShapedDataset } from './types';
+import {
+    OmeZarrArray,
+    OmeZarrAttrsSchema,
+    OmeZarrMetadata,
+    type OmeZarrAttrs,
+    type OmeZarrAxis,
+    type ZarrDimension,
+    type OmeZarrShapedDataset,
+} from './types';
 import * as zarr from 'zarrita';
 import { ZodError } from 'zod';
 
@@ -23,7 +39,12 @@ async function loadZarrAttrsFile(store: zarr.FetchStore): Promise<OmeZarrAttrs> 
     }
 }
 
-async function loadZarrArrayFile(store: zarr.FetchStore, path: string, version = 2, loadV2Attrs = true): Promise<OmeZarrArray> {
+async function loadZarrArrayFile(
+    store: zarr.FetchStore,
+    path: string,
+    version = 2,
+    loadV2Attrs = true,
+): Promise<OmeZarrArray> {
     const root = zarr.root(store);
     let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
     if (version === 3) {
@@ -56,11 +77,18 @@ async function loadZarrArrayFile(store: zarr.FetchStore, path: string, version =
 export async function loadMetadata(url: string): Promise<OmeZarrMetadata> {
     const store = new zarr.FetchStore(url);
     const attrs: OmeZarrAttrs = await loadZarrAttrsFile(store);
-    const arrays = await Promise.all(attrs.multiscales.map((multiscale) => {
-        return multiscale.datasets?.map(async (dataset) => {
-            return await loadZarrArrayFile(store, dataset.path);
-        }) ?? [];
-    }).reduce((prev, curr) => prev.concat(curr)).filter((v) => v !== undefined));
+    const arrays = await Promise.all(
+        attrs.multiscales
+            .map((multiscale) => {
+                return (
+                    multiscale.datasets?.map(async (dataset) => {
+                        return await loadZarrArrayFile(store, dataset.path);
+                    }) ?? []
+                );
+            })
+            .reduce((prev, curr) => prev.concat(curr))
+            .filter((v) => v !== undefined),
+    );
     return new OmeZarrMetadata(url, attrs, arrays);
 }
 
@@ -112,20 +140,16 @@ export function pickBestScale(
         return Vec2.length(Vec2.sub(a, goal));
     };
     // we assume the datasets are ordered... hmmm TODO
-    const choice = datasets.reduce(
-        (bestSoFar, cur) => {
-            const planeSizeBest = planeSizeInVoxels(plane, axes, bestSoFar);
-            const planeSizeCur = planeSizeInVoxels(plane, axes, cur);
-            if (!planeSizeBest || !planeSizeCur) {
-                return bestSoFar;
-            }
-            return (
-                dstToDesired(vxlPitch(planeSizeBest), pxPitch) >
-                dstToDesired(vxlPitch(planeSizeCur), pxPitch)
-            ) ? cur : bestSoFar;
-        },
-        datasets[0],
-    );
+    const choice = datasets.reduce((bestSoFar, cur) => {
+        const planeSizeBest = planeSizeInVoxels(plane, axes, bestSoFar);
+        const planeSizeCur = planeSizeInVoxels(plane, axes, cur);
+        if (!planeSizeBest || !planeSizeCur) {
+            return bestSoFar;
+        }
+        return dstToDesired(vxlPitch(planeSizeBest), pxPitch) > dstToDesired(vxlPitch(planeSizeCur), pxPitch)
+            ? cur
+            : bestSoFar;
+    }, datasets[0]);
     return choice ?? datasets[datasets.length - 1];
 }
 
@@ -205,7 +229,7 @@ export function planeSizeInVoxels(
     const vI = indexFor(plane.v, axes);
     if (uI === -1 || vI === -1) {
         return undefined;
-    } 
+    }
 
     return [dataset.shape[uI], dataset.shape[vI]] as const;
 }
@@ -255,7 +279,7 @@ export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level
     if (!level) {
         const message = 'invalid Zarr data: no datasets found';
         logger.error(message);
-        throw new VisZarrDataError(message)
+        throw new VisZarrDataError(message);
     }
     const arr = metadata.arrays.find((a) => a.path === level.path);
     if (!arr) {

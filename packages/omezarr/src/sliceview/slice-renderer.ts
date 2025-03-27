@@ -110,12 +110,9 @@ export function buildOmeZarrSliceRenderer(
         },
         fetchItemContent: (item, dataset, settings, signal) => {
             return {
-                R: () =>
-                    decoder(dataset, toZarrRequest(item, settings.gamut.R.index), item.level).then(sliceAsTexture),
-                G: () =>
-                    decoder(dataset, toZarrRequest(item, settings.gamut.G.index), item.level).then(sliceAsTexture),
-                B: () =>
-                    decoder(dataset, toZarrRequest(item, settings.gamut.B.index), item.level).then(sliceAsTexture),
+                R: () => decoder(dataset, toZarrRequest(item, settings.gamut.R.index), item.level).then(sliceAsTexture),
+                G: () => decoder(dataset, toZarrRequest(item, settings.gamut.G.index), item.level).then(sliceAsTexture),
+                B: () => decoder(dataset, toZarrRequest(item, settings.gamut.B.index), item.level).then(sliceAsTexture),
             };
         },
         isPrepared,

@@ -323,11 +323,7 @@ export class Demo {
             if (!dataset) {
                 throw new Error('invalid Zarr data: dataset 0 not found!');
             }
-            const s = sizeInUnits(
-                data.plane,
-                axes,
-                dataset,
-            );
+            const s = sizeInUnits(data.plane, axes, dataset);
 
             if (!s) {
                 logger.warn('no size for plane', data.plane, axes);

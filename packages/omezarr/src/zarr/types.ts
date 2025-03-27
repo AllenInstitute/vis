@@ -1,5 +1,3 @@
-
-
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import type * as zarr from 'zarrita';
@@ -23,7 +21,7 @@ export const OmeZarrAxisSchema: z.ZodType<OmeZarrAxis> = z.object({
     name: z.string(),
     type: z.string(),
     scale: z.number().optional(),
-    unit: z.string().optional()
+    unit: z.string().optional(),
 });
 
 export type OmeZarrCoordinateTranslation = {
@@ -32,12 +30,12 @@ export type OmeZarrCoordinateTranslation = {
 };
 
 // due to a difference in types between ZodObject and ZodType,
-// currently this schema cannot be associated directly with 
+// currently this schema cannot be associated directly with
 // ZarrCoordinateScale using z.ZodType<T>
 // TODO try to fix this in the future
 export const OmeZarrCoordinateTranslationSchema = z.object({
     translation: z.number().array().min(4).max(5),
-    type: z.literal('translation')
+    type: z.literal('translation'),
 });
 
 export type OmeZarrCoordinateScale = {
@@ -46,19 +44,19 @@ export type OmeZarrCoordinateScale = {
 };
 
 // due to a difference in types between ZodObject and ZodType,
-// currently this schema cannot be associated directly with 
+// currently this schema cannot be associated directly with
 // ZarrCoordinateScale using z.ZodType<T>
 // TODO try to fix this in the future
 export const OmeZarrCoordinateScaleSchema = z.object({
     scale: z.number().array().min(4).max(5),
-    type: z.literal('scale')
+    type: z.literal('scale'),
 });
 
 export type OmeZarrCoordinateTransform = OmeZarrCoordinateTranslation | OmeZarrCoordinateScale;
 
 export const OmeZarrCoordinateTransformSchema: z.ZodType<OmeZarrCoordinateTransform> = z.discriminatedUnion('type', [
     OmeZarrCoordinateTranslationSchema,
-    OmeZarrCoordinateScaleSchema
+    OmeZarrCoordinateScaleSchema,
 ]);
 
 export type OmeZarrDataset = {
@@ -72,7 +70,7 @@ export type OmeZarrShapedDataset = OmeZarrDataset & {
 
 export const OmeZarrDatasetSchema: z.ZodType<OmeZarrDataset> = z.object({
     coordinateTransformations: OmeZarrCoordinateTransformSchema.array().nonempty(),
-    path: z.string()
+    path: z.string(),
 });
 
 export type OmeZarrMultiscale = {
@@ -100,7 +98,7 @@ export const OmeZarrOmeroChannelWindowSchema: z.ZodType<OmeZarrOmeroChannelWindo
     min: z.number(),
     start: z.number(),
     end: z.number(),
-    max: z.number()
+    max: z.number(),
 });
 
 export type OmeZarrOmeroChannel = {
@@ -114,7 +112,7 @@ export const OmeZarrOmeroChannelSchema: z.ZodType<OmeZarrOmeroChannel> = z.objec
     active: z.boolean().optional(),
     color: z.string(),
     label: z.string().optional(),
-    window: OmeZarrOmeroChannelWindowSchema
+    window: OmeZarrOmeroChannelWindowSchema,
 });
 
 export type OmeZarrOmero = {
@@ -122,7 +120,7 @@ export type OmeZarrOmero = {
 };
 
 export const OmeZarrOmeroSchema: z.ZodType<OmeZarrOmero> = z.object({
-    channels: OmeZarrOmeroChannelSchema.array().nonempty()
+    channels: OmeZarrOmeroChannelSchema.array().nonempty(),
 });
 
 export type OmeZarrAttrs = {
@@ -132,9 +130,8 @@ export type OmeZarrAttrs = {
 
 export const OmeZarrAttrsSchema: z.ZodType<OmeZarrAttrs> = z.object({
     multiscales: OmeZarrMultiscaleSchema.array().nonempty(),
-    omero: OmeZarrOmeroSchema.optional()
+    omero: OmeZarrOmeroSchema.optional(),
 });
-
 
 // For details on Zarr Array Metadata format, see: https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html
 export class OmeZarrArray {
@@ -185,7 +182,7 @@ export class OmeZarrMetadata {
     get attrs(): OmeZarrAttrs {
         return this.#attrs;
     }
-    
+
     get arrays(): ReadonlyArray<OmeZarrArray> {
         return this.#arrays;
     }
@@ -237,7 +234,7 @@ export class OmeZarrMetadata {
         return datasetIndex;
     }
 
-    /** Private function that retrieves the X value from the `shape` of a given array, within a 
+    /** Private function that retrieves the X value from the `shape` of a given array, within a
      * specific multiscale representation of the data.
      */
     #getShapeX(array: OmeZarrArray, multiscaleIndex: number): number {
@@ -251,7 +248,7 @@ export class OmeZarrMetadata {
         return shape[shapeIndex];
     }
 
-    /** Private function that retrieves the Y value from the `shape` of a given array, within a 
+    /** Private function that retrieves the Y value from the `shape` of a given array, within a
      * specific multiscale representation of the data.
      */
     #getShapeY(array: OmeZarrArray, multiscaleIndex: number): number {
@@ -265,7 +262,7 @@ export class OmeZarrMetadata {
         return shape[shapeIndex];
     }
 
-    /** Private function that retrieves the Z value from the `shape` of a given array, within a 
+    /** Private function that retrieves the Z value from the `shape` of a given array, within a
      * specific multiscale representation of the data.
      */
     #getShapeZ(array: OmeZarrArray, multiscaleIndex: number): number {
@@ -286,28 +283,30 @@ export class OmeZarrMetadata {
      * the maximum value of one of the dimensions (t, c, z, y, x). It compares across all
      * the values of that dimension for all zarrays/datasets within a given multiscale
      * representation of the data.
-     * 
+     *
      * Note: Typically, we only receive the last 4 elements in the `shape` of a zarray.
-     * 
+     *
      * @param getShapeElement a function that retrieves one element from the `shape` of
      * a zarray
      * @returns the maxium value of that element across all arrays within the given
      * multiscale representation
      */
     #getShapeElementMax(
-        getShapeElement: (a: OmeZarrArray, multiscaleIndex: number) => number, 
-        multiscale?: number | string
+        getShapeElement: (a: OmeZarrArray, multiscaleIndex: number) => number,
+        multiscale?: number | string,
     ): number {
         const multiscaleIndex = this.#getValidMultiscaleIndex(multiscale);
-        return this.#attrs.multiscales[multiscaleIndex].datasets.map((dataset) => {
-            const array = this.#arrays.find((a) => a.path === dataset.path);
-            if (!array) {
-                const message = `invalid dataset: .zarray missing for dataset [${multiscaleIndex}/${dataset.path}]`;
-                logger.error(message);
-                throw new VisZarrDataError(message);
-            }
-            return getShapeElement(array, multiscaleIndex);
-        }).reduce((prev, curr) => Math.max(prev, curr));
+        return this.#attrs.multiscales[multiscaleIndex].datasets
+            .map((dataset) => {
+                const array = this.#arrays.find((a) => a.path === dataset.path);
+                if (!array) {
+                    const message = `invalid dataset: .zarray missing for dataset [${multiscaleIndex}/${dataset.path}]`;
+                    logger.error(message);
+                    throw new VisZarrDataError(message);
+                }
+                return getShapeElement(array, multiscaleIndex);
+            })
+            .reduce((prev, curr) => Math.max(prev, curr));
     }
 
     /**
@@ -349,7 +348,7 @@ export class OmeZarrMetadata {
         }
         return {
             ...dataset,
-            shape: array.shape
+            shape: array.shape,
         };
     }
 
