@@ -280,7 +280,7 @@ export function getVisibleTiles(
     const scale = Vec2.div(realSize, size);
     // to go from a voxel-box to a real-box (easier than you think, as both have an origin at 0,0, because we only support scale...)
     const vxlToReal = (vxl: box2D) => Box2D.translate(Box2D.scale(vxl, scale), offset ?? [0, 0]);
-    
+
     // find the tiles, in voxels, to request...
     const allTiles = getAllTiles([TILE_SIZE, TILE_SIZE], size);
     const inView = allTiles.filter((tile) => !!Box2D.intersection(camera.view, vxlToReal(tile)));
