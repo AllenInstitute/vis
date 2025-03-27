@@ -4,6 +4,7 @@ import { AsyncDataCache } from '../dataset-cache';
 import type { FrameLifecycle } from '../render-queue';
 import type { AsyncFrameEvent, RenderCallback } from './async-frame';
 import type { ReglCacheEntry } from './types';
+import { logger } from '../logger';
 
 function destroyer(item: ReglCacheEntry) {
     switch (item.type) {
@@ -47,7 +48,7 @@ type Client = HTMLCanvasElement;
 export class RenderServer {
     private canvas: OffscreenCanvas;
     private refreshRequested: boolean;
-    regl: REGL.Regl | null;
+    regl: REGL.Regl;
     cache: AsyncDataCache<string, string, ReglCacheEntry>;
     private clients: Map<Client, ClientEntry>;
     private maxSize: vec2;
@@ -89,11 +90,17 @@ export class RenderServer {
                     data: new Uint8Array(copyBuffer),
                 });
                 // then put those bytes in the client canvas:
-                const ctx: CanvasRenderingContext2D = client.getContext('2d')!;
+                const ctx = client.getContext('2d');
+
+                if (!ctx) {
+                    logger.error('Could not get 2d context');
+                    throw new Error('Could not get 2d context');
+                }
+
                 const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
                 updateRequested(ctx, img);
             } catch (err) {
-                console.error(
+                logger.error(
                     'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok',
                 );
             }
@@ -154,7 +161,7 @@ export class RenderServer {
         }
         const resolution = Vec2.min(this.maxSize, [client.width, client.height]);
         const copyBuffer = new ArrayBuffer(resolution[0] * resolution[1] * 4);
-        const image = this.regl!.framebuffer(...resolution);
+        const image = this.regl.framebuffer(...resolution);
         return { resolution, copyBuffer, image };
     }
     beginRendering<D, I>(renderFn: RenderFrameFn<D, I>, callback: ServerCallback<D, I>, client: Client) {

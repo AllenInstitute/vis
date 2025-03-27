@@ -145,8 +145,14 @@ export function beginLongRunningFrame<Column, Item, Settings>(
                 }
                 return;
             }
-            // We know there are items in the queue because of the check above, so we assert the type exist
-            const itemToRender = queue.shift()!;
+
+            const itemToRender = queue.shift();
+            if (itemToRender === undefined) {
+                // This should logically never happen, but if it does something is wrong so we emit an error
+                cleanupOnError(new Error('Internal error: itemToRender was undefined'));
+                return;
+            }
+
             const toCacheKey = (rq: string) => cacheKeyForRequest(rq, itemToRender, settings);
             try {
                 const result = mutableCache.cacheAndUse(
