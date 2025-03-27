@@ -387,7 +387,8 @@ export class OmeZarrMetadata {
         let multiscaleIndex: number;
         try {
             multiscaleIndex = this.#getValidMultiscaleIndex(multiscale);
-            const dataset = this.#attrs.multiscales[multiscaleIndex].datasets[0];
+            const datasets = this.#attrs.multiscales[multiscaleIndex].datasets;
+            const dataset = datasets[datasets.length - 1];
             return this.#makeShapedDataset(dataset, multiscaleIndex, 0);
         } catch (e) {
             if (e instanceof VisZarrIndexError) {
