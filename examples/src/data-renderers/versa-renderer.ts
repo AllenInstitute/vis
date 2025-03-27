@@ -8,7 +8,7 @@ import {
     type vec4,
 } from '@alleninstitute/vis-geometry';
 import {
-    type ZarrMetadata,
+    type OmeZarrMetadata,
     type ZarrRequest,
     pickBestScale,
     planeSizeInVoxels,
@@ -163,7 +163,7 @@ type Bfr = { type: 'texture2D'; data: REGL.Texture2D };
 
 export type VoxelSliceRenderSettings = {
     regl: REGL.Regl;
-    metadata: ZarrMetadata;
+    metadata: OmeZarrMetadata;
     view: box2D;
     rotation: number;
     gamut: Record<'R' | 'G' | 'B', { gamut: Interval; index: number }>;
@@ -218,7 +218,7 @@ export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSli
     }`;
 }
 
-function reqSlice(dataset: ZarrMetadata, req: ZarrRequest, layerIndex: number) {
+function reqSlice(dataset: OmeZarrMetadata, req: ZarrRequest, layerIndex: number) {
     return getSlicePool().requestSlice(dataset, req, layerIndex);
 }
 const LUMINANCE = 'luminance';
@@ -267,7 +267,7 @@ export function getVisibleTiles(
     camera: Camera,
     plane: CartesianPlane,
     planeIndex: number,
-    metadata: ZarrMetadata,
+    metadata: OmeZarrMetadata,
     offset?: vec2,
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
     const layer = pickBestScale(metadata, plane, camera.view, camera.screen);
