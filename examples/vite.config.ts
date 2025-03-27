@@ -5,14 +5,6 @@ import { defineConfig } from 'vite';
 export default defineConfig({
     // `base` enables GitHub Pages deployment to function
     base: '/vis/',
-    build: {
-        rollupOptions: {
-            input: {
-                layers: path.resolve(__dirname, './layers.html'),
-                dzi: path.resolve(__dirname, './dzi.html'),
-            },
-        },
-    },
     plugins: [react()],
     resolve: {
         alias: {
