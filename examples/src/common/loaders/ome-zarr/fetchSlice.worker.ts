@@ -1,4 +1,4 @@
-import { type ZarrMetadata, type ZarrShapedDataset, type ZarrRequest, loadSlice } from '@alleninstitute/vis-omezarr';
+import { type OmeZarrMetadata, type OmeZarrShapedDataset, type ZarrRequest, loadSlice } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import type { Chunk, Float32 } from 'zarrita';
 
@@ -9,9 +9,9 @@ const ctx = self;
 type ZarrSliceRequest = {
     id: string;
     type: 'ZarrSliceRequest';
-    metadata: ZarrMetadata;
+    metadata: OmeZarrMetadata;
     req: ZarrRequest;
-    level: ZarrShapedDataset;
+    level: OmeZarrShapedDataset;
 };
 
 function isSliceRequest(payload: unknown): payload is ZarrSliceRequest {

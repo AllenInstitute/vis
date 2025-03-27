@@ -1,5 +1,5 @@
 import { Box2D, CartesianPlane, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { type ZarrMetadata, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
+import { type OmeZarrMetadata, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import { useEffect, useMemo, useState } from 'react';
@@ -30,7 +30,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number): Rend
 
 export function OmezarrDemo() {
     const [demoUrl, setDemoUrl] = useState<string>(demo_versa);
-    const [omezarr, setOmezarr] = useState<ZarrMetadata>();
+    const [omezarr, setOmezarr] = useState<OmeZarrMetadata>();
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeIndex, setPlaneIndex] = useState(0);
     const [dragging, setDragging] = useState(false);
@@ -129,7 +129,7 @@ export function OmezarrDemo() {
  */
 function DataPlease() {
     // load our canned data for now:
-    const [omezarr, setfile] = useState<ZarrMetadata | undefined>(undefined);
+    const [omezarr, setfile] = useState<OmeZarrMetadata | undefined>(undefined);
     useEffect(() => {
         loadOmeZarr(demo_versa).then((dataset) => {
             setfile(dataset);

@@ -1,4 +1,4 @@
-import { type ZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
+import { type OmeZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
@@ -14,14 +14,14 @@ export type ZarrSliceGridConfig = {
 };
 export type AxisAlignedZarrSliceGrid = {
     type: 'AxisAlignedZarrSliceGrid';
-    metadata: ZarrMetadata;
+    metadata: OmeZarrMetadata;
     plane: AxisAlignedPlane;
     slices: number;
     gamut: ColorMapping;
     rotation: number;
 } & OptionalTransform;
 
-function assembleZarrSliceGrid(config: ZarrSliceGridConfig, metadata: ZarrMetadata): AxisAlignedZarrSliceGrid {
+function assembleZarrSliceGrid(config: ZarrSliceGridConfig, metadata: OmeZarrMetadata): AxisAlignedZarrSliceGrid {
     const { rotation, trn } = config;
     return {
         ...config,

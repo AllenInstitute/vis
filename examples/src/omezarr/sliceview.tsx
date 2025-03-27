@@ -2,7 +2,7 @@ import { Box2D, CartesianPlane, Vec2, type box2D } from '@alleninstitute/vis-geo
 import {
     type RenderSettings,
     type VoxelTile,
-    type ZarrMetadata,
+    type OmeZarrMetadata,
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
@@ -11,7 +11,7 @@ import { useCallback, useState } from 'react';
 import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 type Props = {
-    omezarr: ZarrMetadata | undefined;
+    omezarr: OmeZarrMetadata | undefined;
 };
 const settings: RenderSettings = {
     tileSize: 256,
@@ -59,7 +59,7 @@ export function SliceView(props: Props) {
 
     useEffect(() => {
         if (server && renderer.current && cnvs.current && omezarr) {
-            const renderFn: RenderFrameFn<ZarrMetadata, VoxelTile> = (target, cache, callback) => {
+            const renderFn: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     return renderer.current(
                         omezarr,

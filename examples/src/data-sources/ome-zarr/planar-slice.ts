@@ -1,4 +1,4 @@
-import { type ZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
+import { type OmeZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
@@ -15,13 +15,13 @@ export type ZarrSliceConfig = {
 
 export type AxisAlignedZarrSlice = {
     type: 'AxisAlignedZarrSlice';
-    metadata: ZarrMetadata;
+    metadata: OmeZarrMetadata;
     plane: CartesianPlane;
     planeParameter: number;
     gamut: ColorMapping;
     rotation: number;
 } & OptionalTransform;
-function assembleZarrSlice(config: ZarrSliceConfig, metadata: ZarrMetadata): AxisAlignedZarrSlice {
+function assembleZarrSlice(config: ZarrSliceConfig, metadata: OmeZarrMetadata): AxisAlignedZarrSlice {
     const { rotation, trn } = config;
     return {
         ...config,
