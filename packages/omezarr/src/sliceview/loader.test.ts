@@ -251,8 +251,11 @@ describe('omezarr basic tiled loading', () => {
             expect(visible.length).toBe(1);
             const expectedLayer = exampleOmeZarr.getShapedDataset(9, 0);
             expect(expectedLayer).toBeDefined();
+            if (expectedLayer === undefined) {
+                throw new Error('invalid test condition: passed expect.toBeDefined while still undefined');
+            }
             // we expect to be seeing the lowest resolution layer with our very zoomed out, low res camera
-            const [_c, _z, y, x] = expectedLayer!.shape;
+            const [_c, _z, y, x] = expectedLayer.shape;
             expect(visible[0].bounds).toEqual(Box2D.create([0, 0], [x, y]));
         });
     });
@@ -264,11 +267,15 @@ describe('omezarr basic tiled loading', () => {
             expect(firstDataset).toBeDefined();
             expect(lastDataset).toBeDefined();
 
-            const layer9xy = sizeInUnits(new CartesianPlane('xy'), axes, lastDataset!);
-            const layer0xy = sizeInUnits(new CartesianPlane('xy'), axes, firstDataset!);
+            if (firstDataset === undefined || lastDataset === undefined) {
+                throw new Error('invalid test condition: passed expect.toBeDefined while still undefined');
+            }
 
-            const layer9yz = sizeInUnits(new CartesianPlane('yz'), axes, lastDataset!);
-            const layer0yz = sizeInUnits(new CartesianPlane('yz'), axes, firstDataset!);
+            const layer9xy = sizeInUnits(new CartesianPlane('xy'), axes, lastDataset);
+            const layer0xy = sizeInUnits(new CartesianPlane('xy'), axes, firstDataset);
+
+            const layer9yz = sizeInUnits(new CartesianPlane('yz'), axes, lastDataset);
+            const layer0yz = sizeInUnits(new CartesianPlane('yz'), axes, firstDataset);
             // we're looking at the highest resolution and lowest resolution layers.
             // I think in an ideal world, we'd expect each layer to end up having an exactly equal size,
             // however I think that isnt happening here for floating-point reasons - so the small differences are acceptable.
