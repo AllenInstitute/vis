@@ -337,13 +337,14 @@ export class OmeZarrMetadata {
     maxOrthogonal(plane: CartesianPlane, multiscale: number | string = 0): number {
         if (plane.ortho === 'x') {
             return this.maxX(multiscale);
-        } else if (plane.ortho === 'y') {
-            return this.maxY(multiscale);
-        } else if (plane.ortho === 'z') {
-            return this.maxZ(multiscale);
-        } else {
-            throw new VisZarrDataError(`invalid plane: ortho set to '${plane.ortho}'`);
         }
+        if (plane.ortho === 'y') {
+            return this.maxY(multiscale);
+        }
+        if (plane.ortho === 'z') {
+            return this.maxZ(multiscale);
+        }
+        throw new VisZarrDataError(`invalid plane: ortho set to '${plane.ortho}'`);
     }
 
     #makeShapedDataset(dataset: OmeZarrDataset, multiscaleIndex: number, datasetIndex: number) {

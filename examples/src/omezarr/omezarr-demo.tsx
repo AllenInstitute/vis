@@ -1,4 +1,12 @@
-import { Box2D, CartesianPlane, type Interval, PLANE_XY, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import {
+    Box2D,
+    CartesianPlane,
+    type Interval,
+    PLANE_XY,
+    Vec2,
+    type box2D,
+    type vec2,
+} from '@alleninstitute/vis-geometry';
 import { type OmeZarrMetadata, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-scatterbrain';
