@@ -1,4 +1,4 @@
-import type { CartesianPlane } from '@alleninstitute/vis-geometry';
+import type { CartesianPlane, Interval } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import type * as zarr from 'zarrita';
@@ -121,6 +121,14 @@ export type OmeZarrOmero = {
     channels: OmeZarrOmeroChannel[];
 };
 
+export type OmeZarrColorChannel = {
+    color: string;
+    window: Interval;
+    range: Interval;
+    active?: boolean | undefined;
+    label?: string | undefined;
+};
+
 export const OmeZarrOmeroSchema: z.ZodType<OmeZarrOmero> = z.object({
     channels: OmeZarrOmeroChannelSchema.array().nonempty(),
 });
@@ -152,6 +160,21 @@ export type DehydratedOmeZarrMetadata = {
     arrays: OmeZarrArrayMetadata[];
     zarrVersion: number;
 };
+
+export function convertFromOmeroToColorChannels(omero: OmeZarrOmero): OmeZarrColorChannel[] {
+    return omero.channels.map((ch) => convertFromOmeroChannelToColorChannel(ch));
+}
+
+export function convertFromOmeroChannelToColorChannel(omeroChannel: OmeZarrOmeroChannel): OmeZarrColorChannel {
+    const active = omeroChannel.active;
+    const label = omeroChannel.label;
+    const color = omeroChannel.color;
+    const { min: winMin, max: winMax } = omeroChannel.window;
+    const { start: ranMin, end: ranMax } = omeroChannel.window;
+    const window: Interval = { min: winMin, max: winMax };
+    const range: Interval = { min: ranMin, max: ranMax };
+    return { active, label, color, window, range };
+}
 
 export class OmeZarrMetadata {
     #url: string;
@@ -420,5 +443,34 @@ export class OmeZarrMetadata {
     static async rehydrate(dehydrated: DehydratedOmeZarrMetadata): Promise<OmeZarrMetadata> {
         const { url, attrs, arrays, zarrVersion } = dehydrated;
         return new OmeZarrMetadata(url, attrs, arrays, zarrVersion);
+    }
+
+    #getChannelByMask(colorMask: string): OmeZarrColorChannel | undefined {
+        if (!this.#attrs.omero || !this.#attrs.omero.channels) {
+            return undefined;
+        }
+        const omeroChannel = this.#attrs.omero.channels.find((ch) => {
+            ch.color === colorMask;
+        });
+        if (!omeroChannel) {
+            return undefined;
+        }
+        return convertFromOmeroChannelToColorChannel(omeroChannel);
+    }
+
+    get colorChannels(): OmeZarrColorChannel[] {
+        return !!this.#attrs.omero ? convertFromOmeroToColorChannels(this.#attrs.omero) : [];
+    }
+
+    get redChannel(): OmeZarrColorChannel | undefined {
+        return this.#getChannelByMask('#FF0000');
+    }
+
+    get greenChannel(): OmeZarrColorChannel | undefined {
+        return this.#getChannelByMask('#00FF00');
+    }
+
+    get blueChannel(): OmeZarrColorChannel | undefined {
+        return this.#getChannelByMask('#0000FF');
     }
 }
