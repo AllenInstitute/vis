@@ -262,7 +262,7 @@ function buildQuery(r: Readonly<ZarrRequest>, axes: readonly OmeZarrAxis[], shap
     const ordered = axes.map((a) => r[a.name as ZarrDimension]);
     // if any are undefined, throw up
     if (ordered.some((a) => a === undefined)) {
-        throw new Error('request does not match expected dimensions of ome-zarr dataset!');
+        throw new VisZarrDataError('request does not match expected dimensions of OME-Zarr dataset');
     }
 
     return ordered.map((d, i) => {
@@ -319,8 +319,4 @@ export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level
         shape: result.shape,
         buffer: result,
     };
-}
-
-export async function load(url: string) {
-    return loadMetadata(url);
 }

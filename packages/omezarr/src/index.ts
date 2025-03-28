@@ -3,14 +3,13 @@ export {
     buildAsyncOmezarrRenderer,
     type VoxelTileImage,
 } from './sliceview/slice-renderer';
-export { VisZarrError } from './errors';
+export { VisZarrError, VisZarrDataError, VisZarrIndexError } from './errors';
 export {
     type VoxelTile,
     defaultDecoder,
     getVisibleTiles,
 } from './sliceview/loader';
 export { buildTileRenderer } from './sliceview/tile-renderer';
-export { load as loadOmeZarr } from './zarr/loading';
 export {
     type ZarrDimension,
     type OmeZarrAxis,

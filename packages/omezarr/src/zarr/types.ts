@@ -162,7 +162,7 @@ export type DehydratedOmeZarrMetadata = {
 };
 
 export function convertFromOmeroToColorChannels(omero: OmeZarrOmero): OmeZarrColorChannel[] {
-    return omero.channels.map((ch) => convertFromOmeroChannelToColorChannel(ch));
+    return omero.channels.map(convertFromOmeroChannelToColorChannel);
 }
 
 export function convertFromOmeroChannelToColorChannel(omeroChannel: OmeZarrOmeroChannel): OmeZarrColorChannel {

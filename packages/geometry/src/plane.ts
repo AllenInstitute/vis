@@ -18,15 +18,15 @@ export class CartesianPlane {
     #ortho: CartesianAxis;
 
     static uvTable: UVAxisMapping = {
-        xy: { u: 'x' as CartesianAxis, v: 'y' as CartesianAxis },
-        xz: { u: 'x' as CartesianAxis, v: 'z' as CartesianAxis },
-        yz: { u: 'y' as CartesianAxis, v: 'z' as CartesianAxis },
+        xy: { u: 'x', v: 'y' },
+        xz: { u: 'x', v: 'z' },
+        yz: { u: 'y', v: 'z' },
     };
 
     static orthogonalAxisTable: OrthogonalAxisMapping = {
-        xy: 'z' as CartesianAxis,
-        xz: 'y' as CartesianAxis,
-        yz: 'x' as CartesianAxis,
+        xy: 'z',
+        xz: 'y',
+        yz: 'x',
     };
 
     constructor(plane: OrthogonalCartesianAxes) {
