@@ -459,7 +459,7 @@ export class OmeZarrMetadata {
     }
 
     get colorChannels(): OmeZarrColorChannel[] {
-        return !!this.#attrs.omero ? convertFromOmeroToColorChannels(this.#attrs.omero) : [];
+        return this.#attrs.omero ? convertFromOmeroToColorChannels(this.#attrs.omero) : [];
     }
 
     get redChannel(): OmeZarrColorChannel | undefined {
