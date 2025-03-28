@@ -47,9 +47,14 @@ async function loadZarrAttrsFileFromStore(store: zarr.FetchStore): Promise<OmeZa
 type OmeZarrArrayMetadataLoad = {
     metadata: OmeZarrArrayMetadata;
     raw: zarr.Array<zarr.DataType, zarr.FetchStore>;
-}
+};
 
-export async function loadZarrArrayFile(url: string, path: string, version = 2, loadV2Attrs = true): Promise<OmeZarrArrayMetadata> {
+export async function loadZarrArrayFile(
+    url: string,
+    path: string,
+    version = 2,
+    loadV2Attrs = true,
+): Promise<OmeZarrArrayMetadata> {
     const store = new zarr.FetchStore(url);
     const result = await loadZarrArrayFileFromStore(store, path, version, loadV2Attrs);
     return result.metadata;
@@ -91,7 +96,7 @@ async function loadZarrArrayFileFromStore(
  * The object returned from this function can be passed to most of the other utilities for ome-zarr data
  * manipulation.
  */
-export async function loadMetadata(url: string, version: number = 2, loadV2ArrayAttrs: boolean = true): Promise<OmeZarrMetadata> {
+export async function loadMetadata(url: string, version = 2, loadV2ArrayAttrs = true): Promise<OmeZarrMetadata> {
     const store = new zarr.FetchStore(url);
     const attrs: OmeZarrAttrs = await loadZarrAttrsFileFromStore(store);
     const arrays = await Promise.all(
@@ -99,7 +104,8 @@ export async function loadMetadata(url: string, version: number = 2, loadV2Array
             .map((multiscale) => {
                 return (
                     multiscale.datasets?.map(async (dataset) => {
-                        return (await loadZarrArrayFileFromStore(store, dataset.path, version, loadV2ArrayAttrs)).metadata;
+                        return (await loadZarrArrayFileFromStore(store, dataset.path, version, loadV2ArrayAttrs))
+                            .metadata;
                     }) ?? []
                 );
             })

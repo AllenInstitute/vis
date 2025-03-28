@@ -142,7 +142,7 @@ export type DehydratedOmeZarrArray = {
 export type OmeZarrArrayMetadata = {
     path: string;
     shape: number[];
-    attrs?: Record<string, unknown> | undefined 
+    attrs?: Record<string, unknown> | undefined;
 };
 
 export type DehydratedOmeZarrMetadata = {
@@ -343,7 +343,7 @@ export class OmeZarrMetadata {
         return {
             ...dataset,
             shape: array.shape,
-            multiscaleIndex
+            multiscaleIndex,
         };
     }
 
@@ -398,7 +398,7 @@ export class OmeZarrMetadata {
         const datasets = this.#attrs.multiscales[multiscaleIndex].datasets;
         return datasets.map((dataset, i) => this.#makeShapedDataset(dataset, multiscaleIndex, i));
     }
-    
+
     dehydrate(): DehydratedOmeZarrMetadata {
         return { url: this.#url, attrs: this.#attrs, arrays: [...this.#arrays], zarrVersion: this.#zarrVersion };
     }

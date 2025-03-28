@@ -1,4 +1,4 @@
-import type { DehydratedOmeZarrMetadata, OmeZarrShapedDataset, ZarrRequest } from "@alleninstitute/vis-omezarr";
+import type { DehydratedOmeZarrMetadata, OmeZarrShapedDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
 
 export type ZarrSliceRequest = {
     id: string;
