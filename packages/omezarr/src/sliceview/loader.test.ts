@@ -4,7 +4,7 @@
 import { Box2D, CartesianPlane, type box2D } from '@alleninstitute/vis-geometry';
 import { describe, expect, it } from 'vitest';
 import type * as zarr from 'zarrita';
-import { OmeZarrArray, OmeZarrMetadata } from '../zarr/types';
+import { OmeZarrMetadata } from '../zarr/types';
 import { sizeInUnits } from '../zarr/loading';
 import { getVisibleTiles } from './loader';
 const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
@@ -172,69 +172,48 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
         ],
     },
     [
-        new OmeZarrArray('0', {
+        {
+            path: '0',
             shape: [3, 142, 29998, 39998],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        // typecasting here intentionally, to avoid having to create and load a full valid OME-Zarr dataset for unit testing purposes
-        // TODO potentially convert these to integration tests, within which loading a file would be appropriate
-        new OmeZarrArray('1', {
+        },
+        {
+            path: '1',
             shape: [3, 142, 14999, 19999],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('2', {
+        },
+        {
+            path: '2',
             shape: [3, 142, 7499, 9999],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('3', {
+        },
+        {
+            path: '3',
             shape: [3, 142, 3749, 4999],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('4', {
+        },
+        {
+            path: '4',
             shape: [3, 142, 1874, 2499],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('5', {
+        },
+        {
+            path: '5',
             shape: [3, 142, 937, 1249],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('6', {
+        },
+        {
+            path: '6',
             shape: [3, 142, 468, 624],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('7', {
+        },
+        {
+            path: '7',
             shape: [3, 142, 234, 312],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('8', {
+        },
+        {
+            path: '8',
             shape: [3, 142, 117, 156],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
-        new OmeZarrArray('9', {
+        },
+        {
+            path: '9',
             shape: [3, 142, 58, 78],
-            dtype: 'float32',
-            chunks: [],
-            attrs: {},
-        } as unknown as zarr.Array<zarr.DataType, zarr.FetchStore>),
+        },
     ],
+    2,
 );
 
 describe('omezarr basic tiled loading', () => {
