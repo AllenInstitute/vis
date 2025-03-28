@@ -39,7 +39,7 @@ jobs:
                   node-version: '22'
                   cache: 'pnpm'
             - name: Login to NPM Registry
-              run: pnpm config set "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}
+              run: pnpm config set "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}"
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
             - name: Build
