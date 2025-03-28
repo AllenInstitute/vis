@@ -1,4 +1,4 @@
 export const RedirectToLayersHTML = () => {
-    window.location.href = "/vis/layers.html";
+    window.location.href = '/vis/layers.html';
     return <></>;
 };

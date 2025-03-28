@@ -7,7 +7,7 @@ import { RedirectToLayersHTML } from './layers/tempLayers';
 
 export function App() {
     return (
-        <BrowserRouter basename='/vis'>
+        <BrowserRouter basename="/vis">
             <Routes>
                 <Route index element={<Home />} />
                 <Route path="/dzi" element={<DziDemo />} />
