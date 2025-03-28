@@ -10,9 +10,9 @@ export function App() {
         <BrowserRouter basename="/vis">
             <Routes>
                 <Route index element={<Home />} />
-                <Route path="/dzi" element={<DziDemo />} />
-                <Route path="/omezarr" element={<OmezarrDemo />} />
-                <Route path="/layers" element={<RedirectToLayersHTML />} />
+                <Route path="dzi" element={<DziDemo />} />
+                <Route path="omezarr" element={<OmezarrDemo />} />
+                <Route path="layers" />
             </Routes>
         </BrowserRouter>
     );

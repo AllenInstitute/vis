@@ -15,7 +15,7 @@ export function Home() {
                     <br />
                 </li>
                 <li>
-                    <a href="/vis/layers">Layers</a>
+                    <a href="/vis/layers">Layers (only works on local demo site)</a>
                     <br />
                 </li>
             </ul>
