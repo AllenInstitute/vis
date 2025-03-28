@@ -1,15 +1,23 @@
-import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import {
+    Box2D,
+    type CartesianPlane,
+    Vec2,
+    type box2D,
+    type OrthogonalCartesianAxes,
+    type vec2,
+} from '@alleninstitute/vis-geometry';
 import type { Chunk } from 'zarrita';
-import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
-import { getSlice, pickBestScale, planeSizeInVoxels, sizeInUnits, uvForPlane } from '../zarr-data';
+import type { ZarrRequest } from '../zarr/loading';
+import { loadSlice, pickBestScale, planeSizeInVoxels, sizeInUnits } from '../zarr/loading';
 import type { VoxelTileImage } from './slice-renderer';
+import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
 export type VoxelTile = {
-    plane: AxisAlignedPlane; // the plane in which the tile sits
+    plane: OrthogonalCartesianAxes; // the plane in which the tile sits
     realBounds: box2D; // in the space given by the axis descriptions of the omezarr dataset
     bounds: box2D; // in voxels, in the plane
-    planeIndex: number; // the index of this slice along the axis being sliced (orthogonal to plane)
-    layerIndex: number; // the index in the resolution pyramid of the omezarr dataset
+    orthoVal: number; // the value along the orthogonal axis to the plane (e.g. the slice index along Z relative to an XY plane)
+    level: OmeZarrShapedDataset; // the index in the resolution pyramid of the omezarr dataset
 };
 
 /**
@@ -35,22 +43,20 @@ function visitTilesWithin(idealTilePx: vec2, size: vec2, bounds: box2D, visit: (
         }
     }
 }
+
 function getVisibleTilesInLayer(
     camera: {
         view: box2D;
         screenSize: vec2;
     },
-    plane: AxisAlignedPlane,
-    planeIndex: number,
-    dataset: ZarrDataset,
+    plane: CartesianPlane,
+    orthoVal: number,
+    dataset: OmeZarrMetadata,
     tileSize: number,
-    layerIndex: number,
+    level: OmeZarrShapedDataset,
 ) {
-    const uv = uvForPlane(plane);
-    const layer = dataset.multiscales[0].datasets[layerIndex];
-    if (!layer) return [];
-    const size = planeSizeInVoxels(uv, dataset.multiscales[0].axes, layer);
-    const realSize = sizeInUnits(uv, dataset.multiscales[0].axes, layer);
+    const size = planeSizeInVoxels(plane, dataset.attrs.multiscales[0].axes, level);
+    const realSize = sizeInUnits(plane, dataset.attrs.multiscales[0].axes, level);
     if (!size || !realSize) return [];
     const scale = Vec2.div(realSize, size);
     const vxlToReal = (vxl: box2D) => Box2D.scale(vxl, scale);
@@ -58,58 +64,57 @@ function getVisibleTilesInLayer(
     const visibleTiles: VoxelTile[] = [];
     visitTilesWithin([tileSize, tileSize], size, realToVxl(camera.view), (uv) => {
         visibleTiles.push({
-            plane,
+            plane: plane.axes,
             realBounds: vxlToReal(uv),
             bounds: uv,
-            planeIndex,
-            layerIndex,
+            orthoVal,
+            level,
         });
     });
     return visibleTiles;
 }
+
 /**
- * get tiles of the omezarr image which are visible (intersect with @param camera.view).
+ * Gets the list of tiles of the given OME-Zarr image which are visible (i.e. they intersect with @param camera.view).
  * @param camera an object describing the current view: the region of the omezarr, and the resolution at which it
  * will be displayed.
- * @param plane the plane (eg. 'xy') from which to draw tiles
- * @param planeIndex the index of the plane along the orthogonal axis (if plane is xy, then the planes are slices along the Z axis)
- * note that not all ome-zarr LOD layers can be expected to have the same number of slices! an index which exists at a high LOD may not
+ * @param plane the plane (eg. CartesianPlane('xy')) from which to draw tiles
+ * @param orthoVal the value of the dimension orthogonal to the reference plane, e.g. the Z value relative to an XY plane. This gives
+ * which XY slice of voxels to display within the overall XYZ space of the 3D image.
+ * Note that not all OME-Zarr LOD layers can be expected to have the same number of slices! An index which exists at a high LOD may not
  * exist at a low LOD.
- * @param dataset the omezarr image to pull tiles from
- * @param tileSize the size of the tiles, in pixels. it is recommended to use a size that agrees with the chunking used in the dataset, however,
+ * @param metadata the OME-Zarr image to pull tiles from
+ * @param tileSize the size of the tiles, in pixels. It is recommended to use a size that agrees with the chunking used in the dataset; however,
  * other utilities in this library will stitch together chunks to satisfy the requested tile size.
- * @returns an array of objects representing tiles (bounding information, etc) which are visible from the given dataset.
+ * @returns an array of objects representing tiles (bounding information, etc.) which are visible within the given dataset
  */
 export function getVisibleTiles(
     camera: {
         view: box2D;
         screenSize: vec2;
     },
-    plane: AxisAlignedPlane,
-    planeIndex: number,
-    dataset: ZarrDataset,
+    plane: CartesianPlane,
+    orthoVal: number,
+    metadata: OmeZarrMetadata,
     tileSize: number,
 ): VoxelTile[] {
-    const uv = uvForPlane(plane);
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
-    const layer = pickBestScale(dataset, uv, camera.view, camera.screenSize);
+    const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
     // using [1,1] here is asking for the best LOD to fill a single pixel - aka
     // the lowest LOD - this is safer than just assuming that layer will be
     // the first or last in the list.
-    const baseLayer = pickBestScale(dataset, uv, camera.view, [1, 1]);
-    const layerIndex = dataset.multiscales[0].datasets.indexOf(layer);
-    const baselayerIndex = dataset.multiscales[0].datasets.indexOf(baseLayer);
+    const baseLayer = pickBestScale(metadata, plane, camera.view, [1, 1]);
     if (layer.path !== baseLayer.path) {
         // if the layer we want to draw is not the lowest-level of detail,
         // then we inject the low-level of detail tiles into the returned result - the idea
         // is that we draw the low LOD data underneath the desired LOD as a fallback to prevent flickering.
         return [
-            ...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, baselayerIndex),
-            ...getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex),
+            ...getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, baseLayer),
+            ...getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, layer),
         ];
     }
-    return getVisibleTilesInLayer(camera, plane, planeIndex, dataset, tileSize, layerIndex);
+    return getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, layer);
 }
 /**
  * a function which returns a promise of float32 data from the requested region of an omezarr dataset.
@@ -120,8 +125,12 @@ export function getVisibleTiles(
  * @param layerIndex an index into the LOD pyramid of the given ZarrDataset.
  * @returns the requested voxel information from the given layer of the given dataset.
  */
-export const defaultDecoder = (metadata: ZarrDataset, r: ZarrRequest, layerIndex: number): Promise<VoxelTileImage> => {
-    return getSlice(metadata, r, layerIndex).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
+export const defaultDecoder = (
+    metadata: OmeZarrMetadata,
+    r: ZarrRequest,
+    level: OmeZarrShapedDataset,
+): Promise<VoxelTileImage> => {
+    return loadSlice(metadata, r, level).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
         const { shape, buffer } = result;
         return { shape, data: new Float32Array(buffer.data) };
     });

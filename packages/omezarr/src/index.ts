@@ -1,25 +1,51 @@
 export {
-    type OmeZarrDataset,
     buildOmeZarrSliceRenderer,
     buildAsyncOmezarrRenderer,
     type VoxelTileImage,
 } from './sliceview/slice-renderer';
+export { VisZarrError, VisZarrDataError, VisZarrIndexError } from './errors';
 export {
     type VoxelTile,
     defaultDecoder,
     getVisibleTiles,
 } from './sliceview/loader';
 export { buildTileRenderer } from './sliceview/tile-renderer';
-export { load as loadOmeZarr } from './zarr-data';
+export {
+    type ZarrDimension,
+    type OmeZarrAxis,
+    type OmeZarrCoordinateTranslation,
+    type OmeZarrCoordinateScale,
+    type OmeZarrCoordinateTransform,
+    type OmeZarrDataset,
+    type OmeZarrShapedDataset,
+    type OmeZarrMultiscale,
+    type OmeZarrOmeroChannelWindow,
+    type OmeZarrOmeroChannel,
+    type OmeZarrOmero,
+    type OmeZarrAttrs,
+    type OmeZarrArrayMetadata,
+    OmeZarrAxisSchema,
+    OmeZarrCoordinateTranslationSchema,
+    OmeZarrCoordinateScaleSchema,
+    OmeZarrCoordinateTransformSchema,
+    OmeZarrDatasetSchema,
+    OmeZarrMultiscaleSchema,
+    OmeZarrOmeroChannelWindowSchema,
+    OmeZarrOmeroChannelSchema,
+    OmeZarrOmeroSchema,
+    OmeZarrAttrsSchema,
+    OmeZarrMetadata,
+    type DehydratedOmeZarrArray,
+    type DehydratedOmeZarrMetadata,
+} from './zarr/types';
 export {
     loadMetadata,
+    loadZarrArrayFile,
+    loadZarrAttrsFile,
     pickBestScale,
-    getSlice,
+    loadSlice,
     sizeInUnits,
     sizeInVoxels,
-    sliceDimensionForPlane,
-    uvForPlane,
     planeSizeInVoxels,
-    type ZarrDataset,
     type ZarrRequest,
-} from './zarr-data';
+} from './zarr/loading';
