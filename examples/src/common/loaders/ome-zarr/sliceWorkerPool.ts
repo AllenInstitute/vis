@@ -1,5 +1,7 @@
 import type { OmeZarrMetadata, ZarrRequest } from '@alleninstitute/vis-omezarr';
+import { logger } from '@alleninstitute/vis-scatterbrain';
 import { uniqueId } from 'lodash';
+import type { ZarrSliceRequest } from './types';
 
 type PromisifiedMessage = {
     requestCacheKey: string;
@@ -49,6 +51,12 @@ export class SliceWorkerPool {
     requestSlice(metadata: OmeZarrMetadata, req: ZarrRequest, layerIndex: number) {
         const reqId = uniqueId('rq');
         const cacheKey = JSON.stringify({ url: metadata.url, req, layerIndex });
+        const level = metadata.getShapedDataset(layerIndex, 0);
+        if (!level) {
+            const message = `cannot request slice: invalid layer index: ${layerIndex}`;
+            logger.error(message);
+            throw new Error(message);
+        }
         // TODO caching I guess...
         const eventually = new Promise<Slice>((resolve, reject) => {
             this.promises[reqId] = {
@@ -57,13 +65,14 @@ export class SliceWorkerPool {
                 reject,
                 promise: undefined, // ill get added to the map once I am fully defined!
             };
-            this.workers[this.which].postMessage({
+            const message: ZarrSliceRequest = {
                 id: reqId,
                 type: 'ZarrSliceRequest',
-                metadata,
+                metadata: metadata.dehydrate(),
                 req,
-                layerIndex,
-            });
+                level,
+            };
+            this.workers[this.which].postMessage(message);
             this.roundRobin();
         });
         this.promises[reqId].promise = eventually;

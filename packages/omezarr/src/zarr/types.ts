@@ -66,6 +66,7 @@ export type OmeZarrDataset = {
 
 export type OmeZarrShapedDataset = OmeZarrDataset & {
     shape: ReadonlyArray<number>;
+    multiscaleIndex: number;
 };
 
 export const OmeZarrDatasetSchema: z.ZodType<OmeZarrDataset> = z.object({
@@ -133,46 +134,35 @@ export const OmeZarrAttrsSchema: z.ZodType<OmeZarrAttrs> = z.object({
     omero: OmeZarrOmeroSchema.optional(),
 });
 
+export type DehydratedOmeZarrArray = {
+    path: string;
+};
+
 // For details on Zarr Array Metadata format, see: https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html
-export class OmeZarrArray {
-    #path: string;
-    #raw: zarr.Array<zarr.DataType, zarr.FetchStore>;
+export type OmeZarrArrayMetadata = {
+    path: string;
+    shape: number[];
+    attrs?: Record<string, unknown> | undefined 
+};
 
-    constructor(path: string, raw: zarr.Array<zarr.DataType, zarr.FetchStore>) {
-        this.#path = path;
-        this.#raw = raw;
-    }
-
-    get path(): string {
-        return this.#path;
-    }
-
-    get raw(): zarr.Array<zarr.DataType, zarr.FetchStore> {
-        return this.#raw;
-    }
-
-    get shape(): number[] {
-        return this.#raw.shape;
-    }
-
-    get dtype(): zarr.DataType {
-        return this.#raw.dtype;
-    }
-
-    get customAttrs(): Record<string, unknown> {
-        return this.#raw.attrs;
-    }
-}
+export type DehydratedOmeZarrMetadata = {
+    url: string;
+    attrs: OmeZarrAttrs;
+    arrays: OmeZarrArrayMetadata[];
+    zarrVersion: number;
+};
 
 export class OmeZarrMetadata {
     #url: string;
     #attrs: OmeZarrAttrs;
-    #arrays: ReadonlyArray<OmeZarrArray>;
+    #arrays: ReadonlyArray<OmeZarrArrayMetadata>;
+    #zarrVersion: number;
 
-    constructor(url: string, attrs: OmeZarrAttrs, arrays: ReadonlyArray<OmeZarrArray>) {
+    constructor(url: string, attrs: OmeZarrAttrs, arrays: ReadonlyArray<OmeZarrArrayMetadata>, zarrVersion: number) {
         this.#url = url;
         this.#attrs = attrs;
         this.#arrays = arrays;
+        this.#zarrVersion = zarrVersion;
     }
 
     get url(): string {
@@ -183,8 +173,12 @@ export class OmeZarrMetadata {
         return this.#attrs;
     }
 
-    get arrays(): ReadonlyArray<OmeZarrArray> {
+    get arrays(): ReadonlyArray<OmeZarrArrayMetadata> {
         return this.#arrays;
+    }
+
+    get zarrVersion(): number {
+        return this.#zarrVersion;
     }
 
     #getMultiscaleIndex(multiscale?: number | string): number {
@@ -237,7 +231,7 @@ export class OmeZarrMetadata {
     /** Private function that retrieves the X value from the `shape` of a given array, within a
      * specific multiscale representation of the data.
      */
-    #getShapeX(array: OmeZarrArray, multiscaleIndex: number): number {
+    #getShapeX(array: OmeZarrArrayMetadata, multiscaleIndex: number): number {
         const shape = array.shape;
         if (!shape || shape.length < 4) {
             const message = `invalid dataset: .zarray formatting invalid, found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
@@ -251,7 +245,7 @@ export class OmeZarrMetadata {
     /** Private function that retrieves the Y value from the `shape` of a given array, within a
      * specific multiscale representation of the data.
      */
-    #getShapeY(array: OmeZarrArray, multiscaleIndex: number): number {
+    #getShapeY(array: OmeZarrArrayMetadata, multiscaleIndex: number): number {
         const shape = array.shape;
         if (!shape || shape.length < 4) {
             const message = `invalid dataset: .zarray formatting invalid, found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
@@ -265,7 +259,7 @@ export class OmeZarrMetadata {
     /** Private function that retrieves the Z value from the `shape` of a given array, within a
      * specific multiscale representation of the data.
      */
-    #getShapeZ(array: OmeZarrArray, multiscaleIndex: number): number {
+    #getShapeZ(array: OmeZarrArrayMetadata, multiscaleIndex: number): number {
         const shape = array.shape;
         if (!shape || shape.length < 4) {
             const message = `invalid dataset: .zarray formatting invalid, found array without valid shape; path [${multiscaleIndex}/${array.path}]`;
@@ -292,7 +286,7 @@ export class OmeZarrMetadata {
      * multiscale representation
      */
     #getShapeElementMax(
-        getShapeElement: (a: OmeZarrArray, multiscaleIndex: number) => number,
+        getShapeElement: (a: OmeZarrArrayMetadata, multiscaleIndex: number) => number,
         multiscale?: number | string,
     ): number {
         const multiscaleIndex = this.#getValidMultiscaleIndex(multiscale);
@@ -349,6 +343,7 @@ export class OmeZarrMetadata {
         return {
             ...dataset,
             shape: array.shape,
+            multiscaleIndex
         };
     }
 
@@ -402,5 +397,14 @@ export class OmeZarrMetadata {
         const multiscaleIndex = this.#getValidMultiscaleIndex(multiscale);
         const datasets = this.#attrs.multiscales[multiscaleIndex].datasets;
         return datasets.map((dataset, i) => this.#makeShapedDataset(dataset, multiscaleIndex, i));
+    }
+    
+    dehydrate(): DehydratedOmeZarrMetadata {
+        return { url: this.#url, attrs: this.#attrs, arrays: [...this.#arrays], zarrVersion: this.#zarrVersion };
+    }
+
+    static async rehydrate(dehydrated: DehydratedOmeZarrMetadata): Promise<OmeZarrMetadata> {
+        const { url, attrs, arrays, zarrVersion } = dehydrated;
+        return new OmeZarrMetadata(url, attrs, arrays, zarrVersion);
     }
 }

@@ -272,7 +272,7 @@ export function getVisibleTiles(
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
     const layer = pickBestScale(metadata, plane, camera.view, camera.screen);
     // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
-    const layerIndex = metadata.attrs.multiscales[0].datasets.indexOf(layer);
+    const layerIndex = metadata.attrs.multiscales[0].datasets.findIndex((ds) => ds.path === layer.path);
 
     const size = planeSizeInVoxels(plane, metadata.attrs.multiscales[0].axes, layer);
     const realSize = sizeInUnits(plane, metadata.attrs.multiscales[0].axes, layer);

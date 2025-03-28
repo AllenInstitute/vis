@@ -24,6 +24,7 @@ export {
     type OmeZarrOmeroChannel,
     type OmeZarrOmero,
     type OmeZarrAttrs,
+    type OmeZarrArrayMetadata,
     OmeZarrAxisSchema,
     OmeZarrCoordinateTranslationSchema,
     OmeZarrCoordinateScaleSchema,
@@ -34,11 +35,14 @@ export {
     OmeZarrOmeroChannelSchema,
     OmeZarrOmeroSchema,
     OmeZarrAttrsSchema,
-    OmeZarrArray,
     OmeZarrMetadata,
+    type DehydratedOmeZarrArray,
+    type DehydratedOmeZarrMetadata,
 } from './zarr/types';
 export {
     loadMetadata,
+    loadZarrArrayFile,
+    loadZarrAttrsFile,
     pickBestScale,
     loadSlice,
     sizeInUnits,

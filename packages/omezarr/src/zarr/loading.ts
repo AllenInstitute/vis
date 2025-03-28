@@ -8,15 +8,15 @@ import {
     type vec2,
 } from '@alleninstitute/vis-geometry';
 import { logger } from '@alleninstitute/vis-scatterbrain';
-import { VisZarrDataError, VisZarrError } from '../errors';
+import { VisZarrDataError } from '../errors';
 import {
-    OmeZarrArray,
     OmeZarrAttrsSchema,
     OmeZarrMetadata,
     type OmeZarrAttrs,
     type OmeZarrAxis,
     type ZarrDimension,
     type OmeZarrShapedDataset,
+    type OmeZarrArrayMetadata,
 } from './types';
 import * as zarr from 'zarrita';
 import { ZodError } from 'zod';
@@ -27,7 +27,12 @@ import { ZodError } from 'zod';
 // - array metadata: v2: https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html#arrays
 //                   v3: https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#array-metadata
 
-async function loadZarrAttrsFile(store: zarr.FetchStore): Promise<OmeZarrAttrs> {
+export async function loadZarrAttrsFile(url: string): Promise<OmeZarrAttrs> {
+    const store = new zarr.FetchStore(url);
+    return loadZarrAttrsFileFromStore(store);
+}
+
+async function loadZarrAttrsFileFromStore(store: zarr.FetchStore): Promise<OmeZarrAttrs> {
     const group = await zarr.open(store, { kind: 'group' });
     try {
         return OmeZarrAttrsSchema.parse(group.attrs);
@@ -39,12 +44,23 @@ async function loadZarrAttrsFile(store: zarr.FetchStore): Promise<OmeZarrAttrs> 
     }
 }
 
-async function loadZarrArrayFile(
+type OmeZarrArrayMetadataLoad = {
+    metadata: OmeZarrArrayMetadata;
+    raw: zarr.Array<zarr.DataType, zarr.FetchStore>;
+}
+
+export async function loadZarrArrayFile(url: string, path: string, version = 2, loadV2Attrs = true): Promise<OmeZarrArrayMetadata> {
+    const store = new zarr.FetchStore(url);
+    const result = await loadZarrArrayFileFromStore(store, path, version, loadV2Attrs);
+    return result.metadata;
+}
+
+async function loadZarrArrayFileFromStore(
     store: zarr.FetchStore,
     path: string,
     version = 2,
     loadV2Attrs = true,
-): Promise<OmeZarrArray> {
+): Promise<OmeZarrArrayMetadataLoad> {
     const root = zarr.root(store);
     let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
     if (version === 3) {
@@ -56,8 +72,9 @@ async function loadZarrArrayFile(
         logger.error(message);
         throw new VisZarrDataError(message);
     }
+    const { shape, attrs } = array;
     try {
-        return new OmeZarrArray(path, array);
+        return { metadata: { path, shape, attrs }, raw: array };
     } catch (e) {
         if (e instanceof ZodError) {
             logger.error('could not load Zarr file: parsing failed');
@@ -74,22 +91,22 @@ async function loadZarrArrayFile(
  * The object returned from this function can be passed to most of the other utilities for ome-zarr data
  * manipulation.
  */
-export async function loadMetadata(url: string): Promise<OmeZarrMetadata> {
+export async function loadMetadata(url: string, version: number = 2, loadV2ArrayAttrs: boolean = true): Promise<OmeZarrMetadata> {
     const store = new zarr.FetchStore(url);
-    const attrs: OmeZarrAttrs = await loadZarrAttrsFile(store);
+    const attrs: OmeZarrAttrs = await loadZarrAttrsFileFromStore(store);
     const arrays = await Promise.all(
         attrs.multiscales
             .map((multiscale) => {
                 return (
                     multiscale.datasets?.map(async (dataset) => {
-                        return await loadZarrArrayFile(store, dataset.path);
+                        return (await loadZarrArrayFileFromStore(store, dataset.path, version, loadV2ArrayAttrs)).metadata;
                     }) ?? []
                 );
             })
             .reduce((prev, curr) => prev.concat(curr))
             .filter((v) => v !== undefined),
     );
-    return new OmeZarrMetadata(url, attrs, arrays);
+    return new OmeZarrMetadata(url, attrs, arrays, version);
 }
 
 export type ZarrRequest = Record<ZarrDimension, number | Interval | null>;
@@ -111,7 +128,7 @@ export function pickBestScale(
     plane: CartesianPlane,
     relativeView: box2D, // a box in data-unit-space
     displayResolution: vec2, // in the plane given above
-) {
+): OmeZarrShapedDataset {
     const datasets = zarr.getAllShapedDatasets(0);
     const axes = zarr.attrs.multiscales[0].axes;
     const firstDataset = datasets[0];
@@ -273,7 +290,7 @@ export function indexOfDimension(axes: readonly OmeZarrAxis[], dim: ZarrDimensio
  */
 export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level: OmeZarrShapedDataset) {
     // put the request in native order
-    const root = zarr.root(new zarr.FetchStore(metadata.url));
+    const store = new zarr.FetchStore(metadata.url);
     const scene = metadata.attrs.multiscales[0];
     const { axes } = scene;
     if (!level) {
@@ -287,7 +304,8 @@ export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level
         logger.error(message);
         throw new VisZarrDataError(message);
     }
-    const result = await zarr.get(arr.raw, buildQuery(r, axes, level.shape));
+    const { raw } = await loadZarrArrayFileFromStore(store, arr.path, 2, false);
+    const result = await zarr.get(raw, buildQuery(r, axes, level.shape));
     if (typeof result === 'number') {
         throw new Error('oh noes, slice came back all weird');
     }
