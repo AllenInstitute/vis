@@ -1,3 +1,4 @@
+import type { CartesianPlane } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
 import { logger } from '@alleninstitute/vis-scatterbrain';
 import type * as zarr from 'zarrita';
@@ -309,7 +310,7 @@ export class OmeZarrMetadata {
      * @param multiscale the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
-    maxXShape(multiscale: number | string = 0): number {
+    maxX(multiscale: number | string = 0): number {
         return this.#getShapeElementMax(this.#getShapeX, multiscale);
     }
 
@@ -319,7 +320,7 @@ export class OmeZarrMetadata {
      * @param multiscale the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
-    maxYShape(multiscale: number | string = 0): number {
+    maxY(multiscale: number | string = 0): number {
         return this.#getShapeElementMax(this.#getShapeY, multiscale);
     }
 
@@ -329,8 +330,20 @@ export class OmeZarrMetadata {
      * @param multiscale the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
-    maxZShape(multiscale: number | string = 0): number {
+    maxZ(multiscale: number | string = 0): number {
         return this.#getShapeElementMax(this.#getShapeZ, multiscale);
+    }
+
+    maxOrthogonal(plane: CartesianPlane, multiscale: number | string = 0): number {
+        if (plane.ortho === 'x') {
+            return this.maxX(multiscale);
+        } else if (plane.ortho === 'y') {
+            return this.maxY(multiscale);
+        } else if (plane.ortho === 'z') {
+            return this.maxZ(multiscale);
+        } else {
+            throw new VisZarrDataError(`invalid plane: ortho set to '${plane.ortho}'`);
+        }
     }
 
     #makeShapedDataset(dataset: OmeZarrDataset, multiscaleIndex: number, datasetIndex: number) {
