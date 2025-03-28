@@ -7,15 +7,15 @@ export function Home() {
             <br />
             <ul>
                 <li>
-                    <a href="/dzi">Deep Zoom Image</a>
+                    <a href="/vis/dzi">Deep Zoom Image</a>
                     <br />
                 </li>
                 <li>
-                    <a href="/omezarr">OMEZARR</a>
+                    <a href="/vis/omezarr">OMEZARR</a>
                     <br />
                 </li>
                 <li>
-                    <a href="/layers">Layers</a>
+                    <a href="/vis/layers">Layers</a>
                     <br />
                 </li>
             </ul>
