@@ -59,3 +59,7 @@ export class CartesianPlane {
         return this.#uv.u !== this.#uv.v;
     }
 }
+
+export const PLANE_XY = new CartesianPlane('xy');
+export const PLANE_XZ = new CartesianPlane('xz');
+export const PLANE_YZ = new CartesianPlane('yz');

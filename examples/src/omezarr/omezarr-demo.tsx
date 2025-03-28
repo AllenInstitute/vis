@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, type Interval, PLANE_XY, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { type OmeZarrMetadata, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-scatterbrain';
@@ -22,7 +22,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number): Rend
             G: { gamut: defaultInterval, index: 1 },
             B: { gamut: defaultInterval, index: 2 },
         },
-        plane: new CartesianPlane('xy'),
+        plane: PLANE_XY,
         orthoVal,
         tileSize: 256,
     };

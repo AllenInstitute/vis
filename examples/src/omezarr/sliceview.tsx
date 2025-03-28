@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, Vec2, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
@@ -22,7 +22,7 @@ const settings: RenderSettings = {
         G: { gamut: { min: 0, max: 100 }, index: 1 },
         B: { gamut: { min: 0, max: 100 }, index: 2 },
     },
-    plane: new CartesianPlane('xy'),
+    plane: PLANE_XY,
     orthoVal: 3,
     camera: {
         // the omezarr renderer expects a box in whatever space is given by the omezarr file itself in its

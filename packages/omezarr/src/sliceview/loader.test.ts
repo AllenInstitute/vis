@@ -1,7 +1,7 @@
 // TODO Unit test for loading is no longer feasible, as it requires an actual Zarr group + arrays to resolve correctly.
 // Best bet is to create a proper fake OmeZarr dataset and do a "unit" (really, integration) test that way.
 
-import { Box2D, CartesianPlane, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, PLANE_XY, PLANE_YZ, type box2D } from '@alleninstitute/vis-geometry';
 import { describe, expect, it } from 'vitest';
 import type * as zarr from 'zarrita';
 import { OmeZarrMetadata } from '../zarr/types';
@@ -224,7 +224,7 @@ describe('omezarr basic tiled loading', () => {
                 maxCorner: [28, 35],
             };
             const camera = { view, screenSize: [210, 210] as const };
-            const visible = getVisibleTiles(camera, new CartesianPlane('xy'), 2, exampleOmeZarr, 256);
+            const visible = getVisibleTiles(camera, PLANE_XY, 2, exampleOmeZarr, 256);
             // this is a basic regression test: we had a bug which would result in
             // tiles from the image being larger than the image itself (they would be the given tile size)
             expect(visible.length).toBe(1);
@@ -250,11 +250,11 @@ describe('omezarr basic tiled loading', () => {
                 throw new Error('invalid test condition: passed expect.toBeDefined while still undefined');
             }
 
-            const layer9xy = sizeInUnits(new CartesianPlane('xy'), axes, lastDataset);
-            const layer0xy = sizeInUnits(new CartesianPlane('xy'), axes, firstDataset);
+            const layer9xy = sizeInUnits(PLANE_XY, axes, lastDataset);
+            const layer0xy = sizeInUnits(PLANE_XY, axes, firstDataset);
 
-            const layer9yz = sizeInUnits(new CartesianPlane('yz'), axes, lastDataset);
-            const layer0yz = sizeInUnits(new CartesianPlane('yz'), axes, firstDataset);
+            const layer9yz = sizeInUnits(PLANE_YZ, axes, lastDataset);
+            const layer0yz = sizeInUnits(PLANE_YZ, axes, firstDataset);
             // we're looking at the highest resolution and lowest resolution layers.
             // I think in an ideal world, we'd expect each layer to end up having an exactly equal size,
             // however I think that isnt happening here for floating-point reasons - so the small differences are acceptable.
