@@ -1,8 +1,8 @@
-import { Box2D, Vec2, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
-    type ZarrDataset,
+    type OmeZarrMetadata,
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
@@ -11,7 +11,7 @@ import { useCallback, useState } from 'react';
 import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 type Props = {
-    omezarr: ZarrDataset | undefined;
+    omezarr: OmeZarrMetadata | undefined;
 };
 const settings: RenderSettings = {
     tileSize: 256,
@@ -22,8 +22,8 @@ const settings: RenderSettings = {
         G: { gamut: { min: 0, max: 100 }, index: 1 },
         B: { gamut: { min: 0, max: 100 }, index: 2 },
     },
-    plane: 'xy',
-    planeIndex: 3,
+    plane: PLANE_XY,
+    orthoVal: 3,
     camera: {
         // the omezarr renderer expects a box in whatever space is given by the omezarr file itself in its
         // axes metadata = for example, millimeters. if you load a volume that says its 30mm X 30mm X 10mm,
@@ -59,7 +59,7 @@ export function SliceView(props: Props) {
 
     useEffect(() => {
         if (server && renderer.current && cnvs.current && omezarr) {
-            const renderFn: RenderFrameFn<ZarrDataset, VoxelTile> = (target, cache, callback) => {
+            const renderFn: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     return renderer.current(
                         omezarr,

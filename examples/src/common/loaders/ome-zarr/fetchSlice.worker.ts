@@ -1,31 +1,26 @@
-import { type ZarrDataset, type ZarrRequest, getSlice } from '@alleninstitute/vis-omezarr';
+import { loadSlice, OmeZarrMetadata } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-scatterbrain';
-// a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
 import type { Chunk, Float32 } from 'zarrita';
+import { isSliceRequest } from './types';
+
+// a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
 
 const ctx = self;
-type ZarrSliceRequest = {
-    id: string;
-    type: 'ZarrSliceRequest';
-    metadata: ZarrDataset;
-    req: ZarrRequest;
-    layerIndex: number;
-};
-function isSliceRequest(payload: unknown): payload is ZarrSliceRequest {
-    return typeof payload === 'object' && payload !== null && 'type' in payload && payload.type === 'ZarrSliceRequest';
-}
+
 ctx.onmessage = (msg: MessageEvent<unknown>) => {
     const { data } = msg;
     try {
         if (isSliceRequest(data)) {
-            const { metadata, req, layerIndex, id } = data;
-            getSlice(metadata, req, layerIndex).then((result: { shape: number[]; buffer: Chunk<Float32> }) => {
-                const { shape, buffer } = result;
-                const flaots = new Float32Array(buffer.data);
-                ctx.postMessage({ type: 'slice', id, shape, data: flaots }, { transfer: [flaots.buffer] });
+            const { metadata: dehydratedMetadata, req, level, id } = data;
+            OmeZarrMetadata.rehydrate(dehydratedMetadata).then((metadata) => {
+                loadSlice(metadata, req, level).then((result: { shape: number[]; buffer: Chunk<Float32> }) => {
+                    const { shape, buffer } = result;
+                    const data = new Float32Array(buffer.data);
+                    ctx.postMessage({ type: 'slice', id, shape, data }, { transfer: [data.buffer] });
+                });
             });
         }
     } catch (err) {
-        logger.error('OMEZarr fetch onmessage error', err);
+        logger.error('OME-Zarr fetch onmessage error', err);
     }
 };

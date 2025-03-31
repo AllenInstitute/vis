@@ -152,6 +152,9 @@ importers:
       zarrita:
         specifier: 0.5.0
         version: 0.5.0
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
 
   packages/scatterbrain:
     dependencies:
@@ -2309,6 +2312,9 @@ packages:
 
   zarrita@0.5.0:
     resolution: {integrity: sha512-wyvnnzeXh9rBCZxsn6GEW4oXDv3LD2f4KSJ6LLFjYaMNtmAtaSt3qEO3fHuuq0VZWUGb8cjTYDEtwJTa09wp6g==}
+
+  zod@3.24.2:
+    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
 snapshots:
 
@@ -4643,3 +4649,5 @@ snapshots:
     dependencies:
       '@zarrita/storage': 0.1.0
       numcodecs: 0.3.2
+
+  zod@3.24.2: {}

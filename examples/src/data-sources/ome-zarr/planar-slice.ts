@@ -1,7 +1,8 @@
-import { type ZarrDataset, loadMetadata } from '@alleninstitute/vis-omezarr';
+import { type OmeZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
+import { CartesianPlane } from '@alleninstitute/vis-geometry';
 export type ZarrSliceConfig = {
     type: 'zarrSliceConfig';
     url: string;
@@ -14,25 +15,26 @@ export type ZarrSliceConfig = {
 
 export type AxisAlignedZarrSlice = {
     type: 'AxisAlignedZarrSlice';
-    dataset: ZarrDataset;
-    plane: AxisAlignedPlane;
+    metadata: OmeZarrMetadata;
+    plane: CartesianPlane;
     planeParameter: number;
     gamut: ColorMapping;
     rotation: number;
 } & OptionalTransform;
-function assembleZarrSlice(config: ZarrSliceConfig, dataset: ZarrDataset): AxisAlignedZarrSlice {
+function assembleZarrSlice(config: ZarrSliceConfig, metadata: OmeZarrMetadata): AxisAlignedZarrSlice {
     const { rotation, trn } = config;
     return {
         ...config,
+        plane: new CartesianPlane(config.plane),
         type: 'AxisAlignedZarrSlice',
-        dataset,
+        metadata,
         toModelSpace: trn,
         rotation: rotation ?? 0,
     };
 }
 export function createZarrSlice(config: ZarrSliceConfig): Promise<AxisAlignedZarrSlice> {
     const { url } = config;
-    return loadMetadata(url).then((dataset) => {
-        return assembleZarrSlice(config, dataset);
+    return loadMetadata(url).then((metadata) => {
+        return assembleZarrSlice(config, metadata);
     });
 }
