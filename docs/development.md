@@ -36,3 +36,13 @@ To run the tests, use the following command:
 ```sh
 pnpm run test
 ```
+
+### Test Coverage
+We use [Istanbul](https://istanbul.js.org/) for test coverage.
+
+To check coverage, use the following command:
+```sh
+pnpm run coverage
+```
+
+This will output coverage information to the CLI and also generate an HTML report in the `coverage` directory.
