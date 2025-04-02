@@ -1,10 +1,5 @@
 import { Box2D, type CartesianPlane, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import {
-    type CachedTexture,
-    type ReglCacheEntry,
-    type Renderer,
-    buildAsyncRenderer,
-} from '@alleninstitute/vis-scatterbrain';
+import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRenderer } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';

@@ -7,7 +7,7 @@ import {
     limit,
     type vec2,
 } from '@alleninstitute/vis-geometry';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 import { VisZarrDataError } from '../errors';
 import {
     OmeZarrAttrsSchema,

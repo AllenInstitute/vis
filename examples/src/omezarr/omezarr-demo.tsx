@@ -9,7 +9,7 @@ import {
 } from '@alleninstitute/vis-geometry';
 import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 import { useEffect, useMemo, useState } from 'react';
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '~/common/react/render-server-provider';

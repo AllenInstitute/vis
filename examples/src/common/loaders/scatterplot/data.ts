@@ -11,7 +11,7 @@ import {
     fetchColumn,
     type loadDataset,
 } from './scatterbrain-loader';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 export type Dataset = ReturnType<typeof loadDataset>;
 export type RenderSettings = {
     dataset: Dataset;

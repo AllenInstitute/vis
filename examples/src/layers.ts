@@ -1,12 +1,6 @@
 import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { sizeInUnits } from '@alleninstitute/vis-omezarr';
-import {
-    AsyncDataCache,
-    type FrameLifecycle,
-    logger,
-    type NormalStatus,
-    ReglLayer2D,
-} from '@alleninstitute/vis-scatterbrain';
+import { AsyncDataCache, type FrameLifecycle, logger, type NormalStatus, ReglLayer2D } from '@alleninstitute/vis-core';
 import { saveAs } from 'file-saver';
 import { createRoot } from 'react-dom/client';
 import REGL from 'regl';

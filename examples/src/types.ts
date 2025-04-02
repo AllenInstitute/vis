@@ -1,5 +1,5 @@
 import type { box2D } from '@alleninstitute/vis-geometry';
-import type { ReglLayer2D } from '@alleninstitute/vis-scatterbrain';
+import type { ReglLayer2D } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type {
     RenderSettings as AnnotationGridRenderSettings,

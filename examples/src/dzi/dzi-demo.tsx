@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { DziViewer } from './dzi-viewer';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 
 // We know the sizes and formats ahead of time for these examples,
 // if you'd like to see how to get this data from an endpoint with a dzi file check out use-dzi-image.ts

@@ -42,7 +42,7 @@
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
-        "@alleninstitute/vis-scatterbrain": "workspace:*",
+        "@alleninstitute/vis-core": "workspace:*",
         "regl": "2.1.0"
     },
     "packageManager": "pnpm@9.14.2"

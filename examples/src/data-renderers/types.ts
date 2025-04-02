@@ -1,7 +1,7 @@
 // generic rendering of renderable things...
 
 import type { Interval, box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
-import type { NormalStatus } from '@alleninstitute/vis-scatterbrain';
+import type { NormalStatus } from '@alleninstitute/vis-core';
 
 type ChannelSettings = {
     gamut: Interval;

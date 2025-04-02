@@ -14,7 +14,7 @@ import {
     planeSizeInVoxels,
     sizeInUnits,
 } from '@alleninstitute/vis-omezarr';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 import { omit } from 'lodash';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
