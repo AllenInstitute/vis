@@ -11,7 +11,8 @@
         "fmt": "biome format . --write",
         "fmt:check": "biome format .",
         "lint": "biome lint . --write",
-        "lint:check": "biome lint ."
+        "lint:check": "biome lint .",
+        "changelog": "pnpm -r run changelog"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
@@ -19,6 +20,7 @@
         "@parcel/transformer-typescript-types": "2.13.3",
         "@vitest/coverage-istanbul": "3.0.7",
         "buffer": "6.0.0",
+        "git-cliff": "2.8.0",
         "parcel": "2.13.3",
         "process": "0.11.10",
         "typescript": "5.8.2",

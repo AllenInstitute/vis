@@ -36,7 +36,8 @@
         "typecheck": "tsc --noEmit",
         "build": "vite build",
         "preview": "vite preview",
-        "dev": "vite"
+        "dev": "vite",
+        "changelog": "git-cliff -o changelog.md"
     },
     "devDependencies": {
         "@types/file-saver": "2.0.7",
