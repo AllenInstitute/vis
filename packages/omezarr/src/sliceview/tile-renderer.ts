@@ -39,7 +39,7 @@ type GenericProps = {
  * components of an image. Each channel is mapped to the output RGB space via the given Gamut.
  * the rendering is done in the given target buffer (or null for the screen).
  */
-export function buildTileRenderer(regl: REGL.Regl) {
+export function buildRGBTileRenderer(regl: REGL.Regl) {
     const cmd = regl<
         {
             view: vec4;
@@ -128,7 +128,7 @@ export function buildTileRenderer(regl: REGL.Regl) {
  * into a single RGB image. Each channel is mapped to the output RGB space via the given Gamut.
  * The rendering is done in the given target buffer (or null for the screen).
  */
-export function buildGenericTileRenderer(regl: REGL.Regl, numChannels: number) {
+export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
     const reglChannelUniforms = [];
     const fragmentChannelUniformDefs = [];
     const colorMerges = [];
@@ -184,7 +184,6 @@ export function buildGenericTileRenderer(regl: REGL.Regl, numChannels: number) {
             color = clamp(color, 0.0, 1.0);
             gl_FragColor = vec4(color, 1.0);
         }`;
-    console.log(frag);
 
     const cmd = regl<
         {},

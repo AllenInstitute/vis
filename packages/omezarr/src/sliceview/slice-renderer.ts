@@ -8,7 +8,7 @@ import {
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
-import { buildGenericTileRenderer, buildTileRenderer } from './tile-renderer';
+import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
 const keysOf = function(obj: any) {
@@ -88,10 +88,17 @@ const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max];
 
 type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset) => Promise<VoxelTileImage>;
 
+export type OmeZarrSliceRendererOptions = {
+    numChannels?: number; 
+};
+const DEFAULT_NUM_CHANNELS = 3;
+
 export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
     decoder: Decoder,
+    options?: OmeZarrSliceRendererOptions | undefined
 ): Renderer<OmeZarrMetadata, VoxelTile, RenderSettings, ImageChannels> {
+    const numChannels = options?.numChannels ?? DEFAULT_NUM_CHANNELS;
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
         const { data, shape } = slice;
         return {
@@ -105,7 +112,7 @@ export function buildOmeZarrSliceRenderer(
             type: 'texture',
         };
     }
-    const cmd = buildGenericTileRenderer(regl, 3);
+    const cmd = buildTileRenderer(regl, numChannels);
     return {
         cacheKey: (item, requestKey, dataset, settings) => {
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
@@ -146,6 +153,7 @@ export function buildOmeZarrSliceRenderer(
         },
     };
 }
-export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder) {
-    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder));
+
+export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder, options?: OmeZarrSliceRendererOptions) {
+    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder, options));
 }
