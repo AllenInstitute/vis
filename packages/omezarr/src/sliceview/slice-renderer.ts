@@ -6,7 +6,13 @@ import {
     type vec2,
     type vec3,
 } from '@alleninstitute/vis-geometry';
-import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRenderer, logger } from '@alleninstitute/vis-core';
+import {
+    type CachedTexture,
+    type ReglCacheEntry,
+    type Renderer,
+    buildAsyncRenderer,
+    logger,
+} from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
