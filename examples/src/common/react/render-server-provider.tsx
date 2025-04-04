@@ -1,4 +1,4 @@
-import { logger, RenderServer } from '@alleninstitute/vis-scatterbrain';
+import { logger, RenderServer } from '@alleninstitute/vis-core';
 import React, { createContext, useEffect, useRef, type PropsWithChildren } from 'react';
 
 export const renderServerContext = createContext<RenderServer | null>(null);

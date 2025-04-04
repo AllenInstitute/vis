@@ -38,6 +38,9 @@ importers:
 
   examples:
     dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../packages/core
       '@alleninstitute/vis-dzi':
         specifier: workspace:*
         version: link:../packages/dzi
@@ -47,9 +50,6 @@ importers:
       '@alleninstitute/vis-omezarr':
         specifier: workspace:*
         version: link:../packages/omezarr
-      '@alleninstitute/vis-scatterbrain':
-        specifier: workspace:*
-        version: link:../packages/scatterbrain
       '@czi-sds/components':
         specifier: 20.0.1
         version: 20.0.1(qr7xcjlot6b6b6emhyh45tjhxy)
@@ -124,39 +124,7 @@ importers:
         specifier: 5.3.5
         version: 5.3.5(@types/node@22.1.0)(lightningcss@1.28.2)
 
-  packages/dzi:
-    dependencies:
-      '@alleninstitute/vis-geometry':
-        specifier: workspace:*
-        version: link:../geometry
-      '@alleninstitute/vis-scatterbrain':
-        specifier: workspace:*
-        version: link:../scatterbrain
-      regl:
-        specifier: 2.1.0
-        version: 2.1.0
-
-  packages/geometry: {}
-
-  packages/omezarr:
-    dependencies:
-      '@alleninstitute/vis-geometry':
-        specifier: workspace:*
-        version: link:../geometry
-      '@alleninstitute/vis-scatterbrain':
-        specifier: workspace:*
-        version: link:../scatterbrain
-      regl:
-        specifier: 2.1.0
-        version: 2.1.0
-      zarrita:
-        specifier: 0.5.1
-        version: 0.5.1
-      zod:
-        specifier: 3.24.2
-        version: 3.24.2
-
-  packages/scatterbrain:
+  packages/core:
     dependencies:
       '@alleninstitute/vis-geometry':
         specifier: workspace:*
@@ -171,6 +139,38 @@ importers:
       '@types/lodash':
         specifier: 4.14.202
         version: 4.14.202
+
+  packages/dzi:
+    dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../core
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      regl:
+        specifier: 2.1.0
+        version: 2.1.0
+
+  packages/geometry: {}
+
+  packages/omezarr:
+    dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../core
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      regl:
+        specifier: 2.1.0
+        version: 2.1.0
+      zarrita:
+        specifier: 0.5.1
+        version: 0.5.1
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
 
 packages:
 

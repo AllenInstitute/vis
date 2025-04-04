@@ -1,6 +1,6 @@
 import type { CartesianPlane, Interval } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 import type * as zarr from 'zarrita';
 import { z } from 'zod';
 
