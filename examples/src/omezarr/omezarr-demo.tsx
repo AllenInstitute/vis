@@ -4,6 +4,7 @@ import {
     type Interval,
     PLANE_XY,
     Vec2,
+    Vec3,
     type box2D,
     type vec2,
 } from '@alleninstitute/vis-geometry';
@@ -25,14 +26,14 @@ const defaultInterval: Interval = { min: 0, max: 80 };
 function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number): RenderSettings {
     return {
         camera: { screenSize, view },
-        gamut: {
-            R: { gamut: defaultInterval, index: 0 },
-            G: { gamut: defaultInterval, index: 1 },
-            B: { gamut: defaultInterval, index: 2 },
-        },
         plane: PLANE_XY,
         orthoVal,
         tileSize: 256,
+        channels: {
+            R: { color: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
+            G: { color: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
+            B: { color: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
+        }
     };
 }
 

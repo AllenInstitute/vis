@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, PLANE_XY, Vec2, Vec3, type box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
@@ -17,10 +17,22 @@ const settings: RenderSettings = {
     tileSize: 256,
     // in a "real" app, you'd most likely expose sliders to control how the data in the file
     // gets mapped to pixel/color intensity on the screen. for now, we just use hardcoded data
-    gamut: {
-        R: { gamut: { min: 0, max: 80 }, index: 0 },
-        G: { gamut: { min: 0, max: 100 }, index: 1 },
-        B: { gamut: { min: 0, max: 100 }, index: 2 },
+    channels: {
+        'R': {
+            color: [1.0, 0.0, 0.0],
+            index: 0,
+            gamut: { min: 0, max: 80 }
+        },
+        'G': {
+            color: [0.0, 1.0, 0.0],
+            index: 1,
+            gamut: { min: 0, max: 100 }
+        },
+        'B': {
+            color: [0.0, 0.0, 1.0],
+            index: 2,
+            gamut: { min: 0, max: 100 }
+        }
     },
     plane: PLANE_XY,
     orthoVal: 3,
@@ -48,7 +60,11 @@ export function SliceView(props: Props) {
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]));
     useEffect(() => {
         if (server?.regl) {
-            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
+            try {
+                renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
+            } catch (err) {
+                console.error(err);
+            }
         }
         return () => {
             if (cnvs.current) {

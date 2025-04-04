@@ -2,9 +2,10 @@
 // note that the ome-zarr data must have exactly 3 channels
 // the channels may be mapped to color-channels (RGB) with a basic 2-post gamut control
 
-import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import type { vec2, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
+import type { OmeZarrColorChannel } from '../zarr/types';
 
 type Props = {
     target: Framebuffer2D | null;
@@ -17,6 +18,20 @@ type Props = {
     G: REGL.Texture2D;
     B: REGL.Texture2D;
 };
+
+type Channel = {
+    tex: REGL.Texture2D;
+    gamut: vec2;
+    color: vec3;
+};
+
+type GenericProps = {
+    target: Framebuffer2D | null;
+    tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
+    view: vec4; // [minx,miny,maxx,maxy] representing the camera in the same space as the tile's bounding box
+    channels: Channel[];
+};
+
 /**
  *
  * @param regl an active REGL context
@@ -103,4 +118,92 @@ export function buildTileRenderer(regl: REGL.Regl) {
     });
 
     return (p: Props) => cmd(p);
+}
+
+/**
+ *
+ * @param regl an active REGL context
+ * @param numChannels the number of channels this renderer will support
+ * @returns a function (regl command) which renders a set of individual channels (of any colorspace(s))
+ * into a single RGB image. Each channel is mapped to the output RGB space via the given Gamut.
+ * The rendering is done in the given target buffer (or null for the screen).
+ */
+export function buildGenericTileRenderer(regl: REGL.Regl, numChannels: number) {
+    const reglChannelUniforms = [];
+    const fragmentChannelUniformDefs = [];
+    const colorMerges = [];
+    for (let i = 0; i < numChannels; i++) {
+        reglChannelUniforms.push({
+            [`gamut${i}`]: (context: unknown, props: GenericProps) => props.channels[i].gamut,
+            [`color${i}`]: (context: unknown, props: GenericProps) => props.channels[i].color,
+            [`tex${i}`]: (context: unknown, props: GenericProps) => props.channels[i].tex
+        });
+        fragmentChannelUniformDefs.push(`uniform vec2 gamut${i};`);
+        fragmentChannelUniformDefs.push(`uniform vec3 color${i};`);
+        fragmentChannelUniformDefs.push(`uniform sampler2D tex${i};`);
+        colorMerges.push(`
+            float ch${i}Val = texture2D(tex${i}, texCoord).r;
+            ch${i}Val = (ch${i}Val - gamut${i}.x) / (gamut${i}.y - gamut${i}.x);
+            color += (color${i} * ch${i}Val);
+        `);
+    }
+    const staticReglUniforms = {
+        tile: regl.prop<GenericProps, 'tile'>('tile'),
+        view: regl.prop<GenericProps, 'view'>('view'),
+    };
+    const uniforms = reglChannelUniforms.reduce((prev, curr) => ({...prev, ...curr}), staticReglUniforms);
+
+    const vert = `
+        precision highp float;
+        attribute vec2 pos;
+        
+        uniform vec4 view;
+        uniform vec4 tile;
+        varying vec2 texCoord;
+        uniform float rot;
+
+        void main() {
+            vec2 tileSize = tile.zw-tile.xy;
+            texCoord = pos;
+            vec2 obj = (pos.xy*tileSize+tile.xy);
+
+            vec2 p = (obj-view.xy)/(view.zw-view.xy);
+            // now, to clip space
+            p = (p*2.0)-1.0;
+            gl_Position = vec4(p.x,p.y,0.0,1.0);
+        }`;
+
+    const frag = `
+        precision highp float;
+        ${fragmentChannelUniformDefs.join('\n')}
+        varying vec2 texCoord;
+
+        void main() {
+            vec3 color = vec3(0.0, 0.0, 0.0);
+            ${colorMerges.join('\n')}
+            color = clamp(color, 0.0, 1.0);
+            gl_FragColor = vec4(color, 1.0);
+        }`;
+    console.log(frag);
+
+    const cmd = regl<
+        {},
+        { pos: REGL.BufferData },
+        GenericProps
+    >({
+        vert,
+        frag,
+        framebuffer: regl.prop<GenericProps, 'target'>('target'),
+        attributes: {
+            pos: [0, 0, 1, 0, 1, 1, 0, 1],
+        },
+        uniforms,
+        depth: {
+            enable: false,
+        },
+        count: 4,
+        primitive: 'triangle fan',
+    });
+
+    return (p: GenericProps) => cmd(p);
 }
