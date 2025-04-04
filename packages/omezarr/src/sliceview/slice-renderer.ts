@@ -13,7 +13,7 @@ import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
-// biome-ignore lint/complexity/noBanndTypes: Intentionally open-ended function that operates on all valid objects
+// biome-ignore lint/complexity/noBannedTypes: Intentionally open-ended function that operates on all valid objects
 export const keysOf = <T extends Object>(obj: T) => Object.getOwnPropertyNames(obj);
 
 type RenderSettings = {
