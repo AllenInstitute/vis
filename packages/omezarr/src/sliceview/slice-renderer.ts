@@ -10,12 +10,8 @@ import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRende
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
-import { buildTileRenderer } from './tile-renderer';
+import { buildTileRenderer, keysOf } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
-
-const keysOf = function (obj: any) {
-    return Object.getOwnPropertyNames(obj);
-};
 
 type RenderSettings = {
     camera: {
@@ -133,7 +129,12 @@ export function buildOmeZarrSliceRenderer(
                             sliceAsTexture,
                         ),
                 }))
-                .reduce((prev, curr) => ({ ...prev, ...curr }), {});
+                .reduce((acc, curr) => {
+                    for (const key of keysOf(curr)) {
+                        acc[key] = curr[key];
+                    }
+                    return acc;
+                }, {});
             return result;
         },
         isPrepared,

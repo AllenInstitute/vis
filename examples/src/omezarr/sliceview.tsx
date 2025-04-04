@@ -60,11 +60,7 @@ export function SliceView(props: Props) {
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]));
     useEffect(() => {
         if (server?.regl) {
-            try {
-                renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
-            } catch (err) {
-                console.error(err);
-            }
+            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
         }
         return () => {
             if (cnvs.current) {

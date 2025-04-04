@@ -5,7 +5,9 @@
 import type { vec2, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
-import type { OmeZarrColorChannel } from '../zarr/types';
+
+// biome-ignore lint/complexity/noBannedTypes: Intentionally open-ended function that operates on all valid objects
+export const keysOf = <T extends Object>(obj: T) => Object.getOwnPropertyNames(obj);
 
 type Props = {
     target: Framebuffer2D | null;
@@ -120,6 +122,9 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
     return (p: Props) => cmd(p);
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
+type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, GenericProps>;
+
 /**
  *
  * @param regl an active REGL context
@@ -129,7 +134,7 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
  * The rendering is done in the given target buffer (or null for the screen).
  */
 export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
-    const reglChannelUniforms = [];
+    const reglChannelUniforms: ReglUniforms[] = [];
     const fragmentChannelUniformDefs = [];
     const colorMerges = [];
     for (let i = 0; i < numChannels; i++) {
@@ -147,11 +152,16 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
             color += (color${i} * ch${i}Val);
         `);
     }
-    const staticReglUniforms = {
+    const staticReglUniforms: ReglUniforms = {
         tile: regl.prop<GenericProps, 'tile'>('tile'),
         view: regl.prop<GenericProps, 'view'>('view'),
     };
-    const uniforms = reglChannelUniforms.reduce((prev, curr) => ({ ...prev, ...curr }), staticReglUniforms);
+    const uniforms = reglChannelUniforms.reduce((acc: ReglUniforms, curr: ReglUniforms) => {
+        for (const key of keysOf(curr)) {
+            acc[key] = curr[key];
+        }
+        return acc;
+    }, staticReglUniforms);
 
     const vert = `
         precision highp float;
@@ -185,7 +195,8 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
             gl_FragColor = vec4(color, 1.0);
         }`;
 
-    const cmd = regl<{}, { pos: REGL.BufferData }, GenericProps>({
+    // biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
+    const cmd = regl<any, { pos: REGL.BufferData }, GenericProps>({
         vert,
         frag,
         framebuffer: regl.prop<GenericProps, 'target'>('target'),
