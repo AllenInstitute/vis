@@ -39,7 +39,8 @@
         "watch": "parcel watch",
         "test": "vitest --watch",
         "test:ci": "vitest run",
-        "coverage": "vitest run --coverage"
+        "coverage": "vitest run --coverage",
+        "changelog": "git-cliff -o changelog.md"
     },
     "repository": {
         "type": "git",
