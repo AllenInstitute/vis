@@ -10,8 +10,11 @@ import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRende
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
-import { buildTileRenderer, keysOf } from './tile-renderer';
+import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
+
+// biome-ignore lint/complexity/noBanndTypes: Intentionally open-ended function that operates on all valid objects
+export const keysOf = <T extends Object>(obj: T) => Object.getOwnPropertyNames(obj);
 
 type RenderSettings = {
     camera: {
@@ -130,7 +133,7 @@ export function buildOmeZarrSliceRenderer(
                         ),
                 }))
                 .reduce((acc, curr) => {
-                    for (const key of keysOf(curr)) {
+                    for (const key in curr) {
                         acc[key] = curr[key];
                     }
                     return acc;

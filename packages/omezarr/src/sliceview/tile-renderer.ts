@@ -6,9 +6,6 @@ import type { vec2, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 
-// biome-ignore lint/complexity/noBannedTypes: Intentionally open-ended function that operates on all valid objects
-export const keysOf = <T extends Object>(obj: T) => Object.getOwnPropertyNames(obj);
-
 type Props = {
     target: Framebuffer2D | null;
     tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
@@ -157,7 +154,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         view: regl.prop<GenericProps, 'view'>('view'),
     };
     const uniforms = reglChannelUniforms.reduce((acc: ReglUniforms, curr: ReglUniforms) => {
-        for (const key of keysOf(curr)) {
+        for (const key in curr) {
             acc[key] = curr[key];
         }
         return acc;
