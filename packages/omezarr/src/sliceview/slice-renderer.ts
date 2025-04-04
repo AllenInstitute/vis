@@ -6,7 +6,7 @@ import {
     type vec2,
     type vec3,
 } from '@alleninstitute/vis-geometry';
-import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRenderer } from '@alleninstitute/vis-core';
+import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRenderer, logger } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
@@ -116,6 +116,12 @@ export function buildOmeZarrSliceRenderer(
     const cmd = buildTileRenderer(regl, numChannels);
     return {
         cacheKey: (item, requestKey, dataset, settings) => {
+            const channelKeys = Object.keys(settings.channels);
+            if (!channelKeys.includes(requestKey)) {
+                const message = `cannot retrieve cache key: unrecognized requestKey [${requestKey}]`;
+                logger.error(message);
+                throw new Error(message);
+            }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
         destroy: () => {},
@@ -124,21 +130,14 @@ export function buildOmeZarrSliceRenderer(
             return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
         },
         fetchItemContent: (item, dataset, settings, signal) => {
-            const keys = keysOf(settings.channels);
-            const result = keys
-                .map((key) => ({
-                    [key]: () =>
-                        decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level).then(
-                            sliceAsTexture,
-                        ),
-                }))
-                .reduce((acc, curr) => {
-                    for (const key in curr) {
-                        acc[key] = curr[key];
-                    }
-                    return acc;
-                }, {});
-            return result;
+            const contents: Record<string, () => Promise<ReglCacheEntry>> = {};
+            for (const key in settings.channels) {
+                contents[key] = () =>
+                    decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level).then(
+                        sliceAsTexture,
+                    );
+            }
+            return contents;
         },
         isPrepared,
         renderItem: (target, item, _, settings, gpuData) => {

@@ -6,10 +6,13 @@ import type { vec2, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 
-type Props = {
+type CommonRenderProps = {
     target: Framebuffer2D | null;
     tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
     view: vec4; // [minx,miny,maxx,maxy] representing the camera in the same space as the tile's bounding box
+};
+
+type RGBTileRenderProps = CommonRenderProps & {
     Rgamut: vec2; // [min,max] RedOut = RedChannelValue-Rgamut.min/(Rgamut.max-Rgamut.min)
     Ggamut: vec2; // [min,max] GreenOut = GreenChannelValue-Ggamut.min/(Ggamut.max-Ggamut.min)
     Bgamut: vec2; // [min,max] BlueOut = BlueChannelValue-Bgamut.min/(Bgamut.max-Bgamut.min)
@@ -24,10 +27,7 @@ type Channel = {
     color: vec3;
 };
 
-type GenericProps = {
-    target: Framebuffer2D | null;
-    tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
-    view: vec4; // [minx,miny,maxx,maxy] representing the camera in the same space as the tile's bounding box
+type TileRenderProps = CommonRenderProps & {
     channels: Channel[];
 };
 
@@ -51,7 +51,7 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
             Bgamut: vec2;
         },
         { pos: REGL.BufferData },
-        Props
+        RGBTileRenderProps
     >({
         vert: ` precision highp float;
         attribute vec2 pos;
@@ -95,19 +95,19 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
            
             gl_FragColor = vec4(color, 1.0);
         }`,
-        framebuffer: regl.prop<Props, 'target'>('target'),
+        framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
         attributes: {
             pos: [0, 0, 1, 0, 1, 1, 0, 1],
         },
         uniforms: {
-            tile: regl.prop<Props, 'tile'>('tile'),
-            view: regl.prop<Props, 'view'>('view'),
-            R: regl.prop<Props, 'R'>('R'),
-            G: regl.prop<Props, 'G'>('G'),
-            B: regl.prop<Props, 'B'>('B'),
-            Rgamut: regl.prop<Props, 'Rgamut'>('Rgamut'),
-            Ggamut: regl.prop<Props, 'Ggamut'>('Ggamut'),
-            Bgamut: regl.prop<Props, 'Bgamut'>('Bgamut'),
+            tile: regl.prop<RGBTileRenderProps, 'tile'>('tile'),
+            view: regl.prop<RGBTileRenderProps, 'view'>('view'),
+            R: regl.prop<RGBTileRenderProps, 'R'>('R'),
+            G: regl.prop<RGBTileRenderProps, 'G'>('G'),
+            B: regl.prop<RGBTileRenderProps, 'B'>('B'),
+            Rgamut: regl.prop<RGBTileRenderProps, 'Rgamut'>('Rgamut'),
+            Ggamut: regl.prop<RGBTileRenderProps, 'Ggamut'>('Ggamut'),
+            Bgamut: regl.prop<RGBTileRenderProps, 'Bgamut'>('Bgamut'),
         },
         depth: {
             enable: false,
@@ -116,11 +116,11 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
         primitive: 'triangle fan',
     });
 
-    return (p: Props) => cmd(p);
+    return (p: RGBTileRenderProps) => cmd(p);
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
-type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, GenericProps>;
+type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, TileRenderProps>;
 
 /**
  *
@@ -136,9 +136,9 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
     const colorMerges = [];
     for (let i = 0; i < numChannels; i++) {
         reglChannelUniforms.push({
-            [`gamut${i}`]: (context: unknown, props: GenericProps) => props.channels[i].gamut,
-            [`color${i}`]: (context: unknown, props: GenericProps) => props.channels[i].color,
-            [`tex${i}`]: (context: unknown, props: GenericProps) => props.channels[i].tex,
+            [`gamut${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].gamut,
+            [`color${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].color,
+            [`tex${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].tex,
         });
         fragmentChannelUniformDefs.push(`uniform vec2 gamut${i};`);
         fragmentChannelUniformDefs.push(`uniform vec3 color${i};`);
@@ -150,8 +150,8 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         `);
     }
     const staticReglUniforms: ReglUniforms = {
-        tile: regl.prop<GenericProps, 'tile'>('tile'),
-        view: regl.prop<GenericProps, 'view'>('view'),
+        tile: regl.prop<TileRenderProps, 'tile'>('tile'),
+        view: regl.prop<TileRenderProps, 'view'>('view'),
     };
     const uniforms = reglChannelUniforms.reduce((acc: ReglUniforms, curr: ReglUniforms) => {
         for (const key in curr) {
@@ -193,10 +193,10 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         }`;
 
     // biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
-    const cmd = regl<any, { pos: REGL.BufferData }, GenericProps>({
+    const cmd = regl<any, { pos: REGL.BufferData }, TileRenderProps>({
         vert,
         frag,
-        framebuffer: regl.prop<GenericProps, 'target'>('target'),
+        framebuffer: regl.prop<TileRenderProps, 'target'>('target'),
         attributes: {
             pos: [0, 0, 1, 0, 1, 1, 0, 1],
         },
@@ -208,5 +208,5 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         primitive: 'triangle fan',
     });
 
-    return (p: GenericProps) => cmd(p);
+    return (p: TileRenderProps) => cmd(p);
 }
