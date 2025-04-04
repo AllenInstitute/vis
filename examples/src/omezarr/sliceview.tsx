@@ -18,21 +18,21 @@ const settings: RenderSettings = {
     // in a "real" app, you'd most likely expose sliders to control how the data in the file
     // gets mapped to pixel/color intensity on the screen. for now, we just use hardcoded data
     channels: {
-        'R': {
+        R: {
             color: [1.0, 0.0, 0.0],
             index: 0,
-            gamut: { min: 0, max: 80 }
+            gamut: { min: 0, max: 80 },
         },
-        'G': {
+        G: {
             color: [0.0, 1.0, 0.0],
             index: 1,
-            gamut: { min: 0, max: 100 }
+            gamut: { min: 0, max: 100 },
         },
-        'B': {
+        B: {
             color: [0.0, 0.0, 1.0],
             index: 2,
-            gamut: { min: 0, max: 100 }
-        }
+            gamut: { min: 0, max: 100 },
+        },
     },
     plane: PLANE_XY,
     orthoVal: 3,

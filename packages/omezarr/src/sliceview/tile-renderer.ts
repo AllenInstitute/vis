@@ -136,7 +136,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         reglChannelUniforms.push({
             [`gamut${i}`]: (context: unknown, props: GenericProps) => props.channels[i].gamut,
             [`color${i}`]: (context: unknown, props: GenericProps) => props.channels[i].color,
-            [`tex${i}`]: (context: unknown, props: GenericProps) => props.channels[i].tex
+            [`tex${i}`]: (context: unknown, props: GenericProps) => props.channels[i].tex,
         });
         fragmentChannelUniformDefs.push(`uniform vec2 gamut${i};`);
         fragmentChannelUniformDefs.push(`uniform vec3 color${i};`);
@@ -151,7 +151,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         tile: regl.prop<GenericProps, 'tile'>('tile'),
         view: regl.prop<GenericProps, 'view'>('view'),
     };
-    const uniforms = reglChannelUniforms.reduce((prev, curr) => ({...prev, ...curr}), staticReglUniforms);
+    const uniforms = reglChannelUniforms.reduce((prev, curr) => ({ ...prev, ...curr }), staticReglUniforms);
 
     const vert = `
         precision highp float;
@@ -185,11 +185,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
             gl_FragColor = vec4(color, 1.0);
         }`;
 
-    const cmd = regl<
-        {},
-        { pos: REGL.BufferData },
-        GenericProps
-    >({
+    const cmd = regl<{}, { pos: REGL.BufferData }, GenericProps>({
         vert,
         frag,
         framebuffer: regl.prop<GenericProps, 'target'>('target'),

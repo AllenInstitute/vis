@@ -33,7 +33,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number): Rend
             R: { color: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
             G: { color: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
             B: { color: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
-        }
+        },
     };
 }
 

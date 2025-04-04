@@ -1,17 +1,19 @@
-import { Box2D, type CartesianPlane, type Interval, type box2D, type vec2, type vec3 } from '@alleninstitute/vis-geometry';
 import {
-    type CachedTexture,
-    type ReglCacheEntry,
-    type Renderer,
-    buildAsyncRenderer,
-} from '@alleninstitute/vis-core';
+    Box2D,
+    type CartesianPlane,
+    type Interval,
+    type box2D,
+    type vec2,
+    type vec3,
+} from '@alleninstitute/vis-geometry';
+import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRenderer } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
-const keysOf = function(obj: any) {
+const keysOf = function (obj: any) {
     return Object.getOwnPropertyNames(obj);
 };
 
@@ -25,10 +27,10 @@ type RenderSettings = {
     plane: CartesianPlane;
     channels: {
         [key: string]: {
-            index: number,
-            gamut: Interval,
-            color: vec3
-        }
+            index: number;
+            gamut: Interval;
+            color: vec3;
+        };
     };
 };
 
@@ -89,14 +91,14 @@ const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max];
 type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset) => Promise<VoxelTileImage>;
 
 export type OmeZarrSliceRendererOptions = {
-    numChannels?: number; 
+    numChannels?: number;
 };
 const DEFAULT_NUM_CHANNELS = 3;
 
 export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
     decoder: Decoder,
-    options?: OmeZarrSliceRendererOptions | undefined
+    options?: OmeZarrSliceRendererOptions | undefined,
 ): Renderer<OmeZarrMetadata, VoxelTile, RenderSettings, ImageChannels> {
     const numChannels = options?.numChannels ?? DEFAULT_NUM_CHANNELS;
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
@@ -124,26 +126,26 @@ export function buildOmeZarrSliceRenderer(
         },
         fetchItemContent: (item, dataset, settings, signal) => {
             const keys = keysOf(settings.channels);
-            const result = keys.map(
-                (key) => ({ [key]: () => decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level).then(sliceAsTexture) })
-            ).reduce(
-                (prev, curr) => ({ ...prev, ...curr }), 
-                {}
-            );
+            const result = keys
+                .map((key) => ({
+                    [key]: () =>
+                        decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level).then(
+                            sliceAsTexture,
+                        ),
+                }))
+                .reduce((prev, curr) => ({ ...prev, ...curr }), {});
             return result;
         },
         isPrepared,
         renderItem: (target, item, _, settings, gpuData) => {
-            const channels = keysOf(gpuData).map((key) => (
-                { 
-                    tex: gpuData[key].texture, 
-                    gamut: intervalToVec2(settings.channels[key].gamut), 
-                    color: settings.channels[key].color 
-                }
-            ));
-        
+            const channels = keysOf(gpuData).map((key) => ({
+                tex: gpuData[key].texture,
+                gamut: intervalToVec2(settings.channels[key].gamut),
+                color: settings.channels[key].color,
+            }));
+
             const { camera } = settings;
-            
+
             cmd({
                 channels,
                 target,
