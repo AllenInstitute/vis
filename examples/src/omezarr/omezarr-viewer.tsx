@@ -6,7 +6,7 @@ import {
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
-import type { RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
+import type { RenderFrameFn } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 

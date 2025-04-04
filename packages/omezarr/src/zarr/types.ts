@@ -1,6 +1,6 @@
 import type { CartesianPlane, Interval } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 import type * as zarr from 'zarrita';
 import { z } from 'zod';
 
@@ -447,12 +447,12 @@ export class OmeZarrMetadata {
 
     #getChannelByMask(colorMask: string): OmeZarrColorChannel | undefined {
         if (!this.#attrs.omero || !this.#attrs.omero.channels) {
+            logger.debug(`no omero data found for color mask ${colorMask}, returning undefined`);
             return undefined;
         }
-        const omeroChannel = this.#attrs.omero.channels.find((ch) => {
-            ch.color === colorMask;
-        });
+        const omeroChannel = this.#attrs.omero.channels.find((ch) => ch.color === colorMask);
         if (!omeroChannel) {
+            logger.debug(`no matching omero channel found for color mask ${colorMask}, returning undefined`);
             return undefined;
         }
         return convertFromOmeroChannelToColorChannel(omeroChannel);

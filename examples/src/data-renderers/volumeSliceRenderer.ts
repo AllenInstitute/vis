@@ -1,4 +1,4 @@
-import { type AsyncDataCache, beginLongRunningFrame, logger } from '@alleninstitute/vis-scatterbrain';
+import { type AsyncDataCache, beginLongRunningFrame, logger } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { RenderCallback } from './types';
 

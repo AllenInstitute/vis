@@ -1,5 +1,5 @@
 import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
-import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-scatterbrain';
+import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { Camera } from '~/common/camera';
 import { fetchItem, getVisibleItemsInSlide } from '~/common/loaders/scatterplot/data';

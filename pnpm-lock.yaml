@@ -16,7 +16,7 @@ importers:
         version: 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/transformer-typescript-types':
         specifier: 2.13.3
-        version: 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(typescript@5.7.3)
+        version: 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(typescript@5.8.2)
       '@vitest/coverage-istanbul':
         specifier: 3.0.7
         version: 3.0.7(vitest@3.0.7(@types/node@22.10.5)(lightningcss@1.28.2))
@@ -25,19 +25,22 @@ importers:
         version: 6.0.0
       parcel:
         specifier: 2.13.3
-        version: 2.13.3(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.7.3)
+        version: 2.13.3(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.8.2)
       process:
         specifier: 0.11.10
         version: 0.11.10
       typescript:
-        specifier: 5.7.3
-        version: 5.7.3
+        specifier: 5.8.2
+        version: 5.8.2
       vitest:
         specifier: 3.0.7
         version: 3.0.7(@types/node@22.10.5)(lightningcss@1.28.2)
 
   examples:
     dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../packages/core
       '@alleninstitute/vis-dzi':
         specifier: workspace:*
         version: link:../packages/dzi
@@ -47,9 +50,6 @@ importers:
       '@alleninstitute/vis-omezarr':
         specifier: workspace:*
         version: link:../packages/omezarr
-      '@alleninstitute/vis-scatterbrain':
-        specifier: workspace:*
-        version: link:../packages/scatterbrain
       '@czi-sds/components':
         specifier: 20.0.1
         version: 20.0.1(qr7xcjlot6b6b6emhyh45tjhxy)
@@ -102,8 +102,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zarrita:
-        specifier: 0.5.0
-        version: 0.5.0
+        specifier: 0.5.1
+        version: 0.5.1
     devDependencies:
       '@types/file-saver':
         specifier: 2.0.7
@@ -124,39 +124,7 @@ importers:
         specifier: 5.3.5
         version: 5.3.5(@types/node@22.1.0)(lightningcss@1.28.2)
 
-  packages/dzi:
-    dependencies:
-      '@alleninstitute/vis-geometry':
-        specifier: workspace:*
-        version: link:../geometry
-      '@alleninstitute/vis-scatterbrain':
-        specifier: workspace:*
-        version: link:../scatterbrain
-      regl:
-        specifier: 2.1.0
-        version: 2.1.0
-
-  packages/geometry: {}
-
-  packages/omezarr:
-    dependencies:
-      '@alleninstitute/vis-geometry':
-        specifier: workspace:*
-        version: link:../geometry
-      '@alleninstitute/vis-scatterbrain':
-        specifier: workspace:*
-        version: link:../scatterbrain
-      regl:
-        specifier: 2.1.0
-        version: 2.1.0
-      zarrita:
-        specifier: 0.5.0
-        version: 0.5.0
-      zod:
-        specifier: 3.24.2
-        version: 3.24.2
-
-  packages/scatterbrain:
+  packages/core:
     dependencies:
       '@alleninstitute/vis-geometry':
         specifier: workspace:*
@@ -171,6 +139,38 @@ importers:
       '@types/lodash':
         specifier: 4.14.202
         version: 4.14.202
+
+  packages/dzi:
+    dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../core
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      regl:
+        specifier: 2.1.0
+        version: 2.1.0
+
+  packages/geometry: {}
+
+  packages/omezarr:
+    dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../core
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      regl:
+        specifier: 2.1.0
+        version: 2.1.0
+      zarrita:
+        specifier: 0.5.1
+        version: 0.5.1
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
 
 packages:
 
@@ -1359,8 +1359,8 @@ packages:
   '@vitest/utils@3.0.7':
     resolution: {integrity: sha512-xePVpCRfooFX3rANQjwoditoXgWb1MaFbzmGuPP59MK6i13mrnDw/yEIyJudLeW6/38mCNcwCiJIGmpDPibAIg==}
 
-  '@zarrita/storage@0.1.0':
-    resolution: {integrity: sha512-lSGDQik2fLt/UyvWzWd23sJFHckEmk50F9Baz2XlbgFQhvd2EVBcHGweOTBhu3c5SB05TzOnlY1M1i2FMDi6YA==}
+  '@zarrita/storage@0.1.1':
+    resolution: {integrity: sha512-6/NUCvpzsIxfxeMv59jRTl/bOZg3GZfMP6iR8EIqrTaaE0S2jLL/ceX1OxcFBKnuA8/Z2YmgX4SFBHwFGrCcsw==}
 
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
@@ -1894,6 +1894,11 @@ packages:
   msgpackr@1.11.2:
     resolution: {integrity: sha512-F9UngXRlPyWCDEASDpTf6c9uNhGPTqnTeLVt7bN+bU1eajoR/8V9ys2BRaV5C/e5ihE6sJ9uPIKaYt6bFuO32g==}
 
+  nanoid@3.3.11:
+    resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
   nanoid@3.3.8:
     resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -2193,8 +2198,8 @@ packages:
     resolution: {integrity: sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==}
     engines: {node: '>=10'}
 
-  typescript@5.7.3:
-    resolution: {integrity: sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==}
+  typescript@5.8.2:
+    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -2310,8 +2315,8 @@ packages:
     resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
     engines: {node: '>= 6'}
 
-  zarrita@0.5.0:
-    resolution: {integrity: sha512-wyvnnzeXh9rBCZxsn6GEW4oXDv3LD2f4KSJ6LLFjYaMNtmAtaSt3qEO3fHuuq0VZWUGb8cjTYDEtwJTa09wp6g==}
+  zarrita@0.5.1:
+    resolution: {integrity: sha512-cyujP70BOl5DiXuLtM+0j9nq/pAov4SKXRYIQQOVnk2TfBg/jopX+FXLbqkq3ULOxFLB5AwkPbSp5KvZXoJrbQ==}
 
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
@@ -2924,14 +2929,14 @@ snapshots:
     transitivePeerDependencies:
       - '@parcel/core'
 
-  '@parcel/config-default@2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.7.3)':
+  '@parcel/config-default@2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.8.2)':
     dependencies:
       '@parcel/bundler-default': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/compressor-raw': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/core': 2.13.3(@swc/helpers@0.5.15)
       '@parcel/namer-default': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/optimizer-css': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
-      '@parcel/optimizer-htmlnano': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(postcss@8.5.3)(typescript@5.7.3)
+      '@parcel/optimizer-htmlnano': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(postcss@8.5.3)(typescript@5.8.2)
       '@parcel/optimizer-image': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/optimizer-svgo': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/optimizer-swc': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)
@@ -3065,12 +3070,12 @@ snapshots:
     transitivePeerDependencies:
       - '@parcel/core'
 
-  '@parcel/optimizer-htmlnano@2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(postcss@8.5.3)(typescript@5.7.3)':
+  '@parcel/optimizer-htmlnano@2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(postcss@8.5.3)(typescript@5.8.2)':
     dependencies:
       '@parcel/diagnostic': 2.13.3
       '@parcel/plugin': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/utils': 2.13.3
-      htmlnano: 2.1.1(postcss@8.5.3)(typescript@5.7.3)
+      htmlnano: 2.1.1(postcss@8.5.3)(typescript@5.8.2)
       nullthrows: 1.1.1
       posthtml: 0.16.6
     transitivePeerDependencies:
@@ -3396,22 +3401,22 @@ snapshots:
     transitivePeerDependencies:
       - '@parcel/core'
 
-  '@parcel/transformer-typescript-types@2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(typescript@5.7.3)':
+  '@parcel/transformer-typescript-types@2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(typescript@5.8.2)':
     dependencies:
       '@parcel/diagnostic': 2.13.3
       '@parcel/plugin': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))
       '@parcel/source-map': 2.1.1
-      '@parcel/ts-utils': 2.13.3(typescript@5.7.3)
+      '@parcel/ts-utils': 2.13.3(typescript@5.8.2)
       '@parcel/utils': 2.13.3
       nullthrows: 1.1.1
-      typescript: 5.7.3
+      typescript: 5.8.2
     transitivePeerDependencies:
       - '@parcel/core'
 
-  '@parcel/ts-utils@2.13.3(typescript@5.7.3)':
+  '@parcel/ts-utils@2.13.3(typescript@5.8.2)':
     dependencies:
       nullthrows: 1.1.1
-      typescript: 5.7.3
+      typescript: 5.8.2
 
   '@parcel/types-internal@2.13.3':
     dependencies:
@@ -3726,7 +3731,7 @@ snapshots:
       loupe: 3.1.3
       tinyrainbow: 2.0.0
 
-  '@zarrita/storage@0.1.0':
+  '@zarrita/storage@0.1.1':
     dependencies:
       reference-spec-reader: 0.2.0
       unzipit: 1.4.3
@@ -3828,14 +3833,14 @@ snapshots:
       path-type: 4.0.0
       yaml: 1.10.2
 
-  cosmiconfig@9.0.0(typescript@5.7.3):
+  cosmiconfig@9.0.0(typescript@5.8.2):
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.0
       js-yaml: 4.1.0
       parse-json: 5.2.0
     optionalDependencies:
-      typescript: 5.7.3
+      typescript: 5.8.2
 
   cross-spawn@7.0.6:
     dependencies:
@@ -4009,9 +4014,9 @@ snapshots:
 
   html-escaper@2.0.2: {}
 
-  htmlnano@2.1.1(postcss@8.5.3)(typescript@5.7.3):
+  htmlnano@2.1.1(postcss@8.5.3)(typescript@5.8.2):
     dependencies:
-      cosmiconfig: 9.0.0(typescript@5.7.3)
+      cosmiconfig: 9.0.0(typescript@5.8.2)
       posthtml: 0.16.6
       timsort: 0.3.0
     optionalDependencies:
@@ -4230,6 +4235,9 @@ snapshots:
     optionalDependencies:
       msgpackr-extract: 3.0.3
 
+  nanoid@3.3.11:
+    optional: true
+
   nanoid@3.3.8: {}
 
   node-addon-api@6.1.0: {}
@@ -4259,9 +4267,9 @@ snapshots:
 
   package-json-from-dist@1.0.1: {}
 
-  parcel@2.13.3(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.7.3):
+  parcel@2.13.3(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.8.2):
     dependencies:
-      '@parcel/config-default': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.7.3)
+      '@parcel/config-default': 2.13.3(@parcel/core@2.13.3(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(postcss@8.5.3)(typescript@5.8.2)
       '@parcel/core': 2.13.3(@swc/helpers@0.5.15)
       '@parcel/diagnostic': 2.13.3
       '@parcel/events': 2.13.3
@@ -4328,7 +4336,7 @@ snapshots:
 
   postcss@8.5.3:
     dependencies:
-      nanoid: 3.3.8
+      nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
     optional: true
@@ -4526,7 +4534,7 @@ snapshots:
 
   type-fest@0.20.2: {}
 
-  typescript@5.7.3: {}
+  typescript@5.8.2: {}
 
   undici-types@6.13.0: {}
 
@@ -4645,9 +4653,9 @@ snapshots:
 
   yaml@1.10.2: {}
 
-  zarrita@0.5.0:
+  zarrita@0.5.1:
     dependencies:
-      '@zarrita/storage': 0.1.0
+      '@zarrita/storage': 0.1.1
       numcodecs: 0.3.2
 
   zod@3.24.2: {}

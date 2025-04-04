@@ -1,5 +1,5 @@
 import { loadSlice, OmeZarrMetadata } from '@alleninstitute/vis-omezarr';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 import type { Chunk, Float32 } from 'zarrita';
 import { isSliceRequest } from './types';
 

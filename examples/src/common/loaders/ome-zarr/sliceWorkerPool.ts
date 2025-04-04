@@ -1,5 +1,5 @@
 import type { OmeZarrMetadata, ZarrRequest } from '@alleninstitute/vis-omezarr';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { logger } from '@alleninstitute/vis-core';
 import { uniqueId } from 'lodash';
 import type { ZarrSliceRequest } from './types';
 
