@@ -821,7 +821,7 @@ const tissuecyte396: ZarrSliceGridConfig = {
     },
     plane: 'xy',
     slices: 142,
-    url: scottpoc,
+    resource: { type: 'https', url: scottpoc },
 };
 const tissueCyteSlice: ZarrSliceConfig = {
     type: 'zarrSliceConfig',
@@ -832,10 +832,10 @@ const tissueCyteSlice: ZarrSliceConfig = {
     },
     plane: 'xy',
     planeParameter: 0.5,
-    url: scottpoc,
+    resource: { type: 'https', url: scottpoc },
 };
 const versa1: ZarrSliceGridConfig = {
-    url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
+    resource: { type: 'https', url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/' },
     type: 'ZarrSliceGridConfig',
     gamut: {
         R: { index: 0, gamut: { max: 20, min: 0 } },

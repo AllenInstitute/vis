@@ -2,10 +2,11 @@ import { type OmeZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr'
 import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
+import type { WebResource } from '@alleninstitute/vis-core';
 
 export type ZarrSliceGridConfig = {
     type: 'ZarrSliceGridConfig';
-    url: string;
+    resource: WebResource;
     plane: AxisAlignedPlane;
     slices: number; // divide this volume into this many slices, and arrange them in a grid.
     gamut: ColorMapping;
@@ -32,8 +33,8 @@ function assembleZarrSliceGrid(config: ZarrSliceGridConfig, metadata: OmeZarrMet
     };
 }
 export function createZarrSliceGrid(config: ZarrSliceGridConfig): Promise<AxisAlignedZarrSliceGrid> {
-    const { url } = config;
-    return loadMetadata(url).then((metadata) => {
+    const { resource } = config;
+    return loadMetadata(resource).then((metadata) => {
         return assembleZarrSliceGrid(config, metadata);
     });
 }

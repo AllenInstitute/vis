@@ -3,9 +3,10 @@ import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
 import { CartesianPlane } from '@alleninstitute/vis-geometry';
+import type { WebResource } from '@alleninstitute/vis-core';
 export type ZarrSliceConfig = {
     type: 'zarrSliceConfig';
-    url: string;
+    resource: WebResource;
     plane: AxisAlignedPlane;
     planeParameter: number; // [0:1] eg. if if plane is 'xy' and parameter is 0.5, then we want the slice from the middle of the z-axis
     gamut: ColorMapping;
@@ -33,8 +34,8 @@ function assembleZarrSlice(config: ZarrSliceConfig, metadata: OmeZarrMetadata): 
     };
 }
 export function createZarrSlice(config: ZarrSliceConfig): Promise<AxisAlignedZarrSlice> {
-    const { url } = config;
-    return loadMetadata(url).then((metadata) => {
+    const { resource } = config;
+    return loadMetadata(resource).then((metadata) => {
         return assembleZarrSlice(config, metadata);
     });
 }

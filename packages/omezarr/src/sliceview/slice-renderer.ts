@@ -20,9 +20,19 @@ import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
 // biome-ignore lint/complexity/noBannedTypes: Intentionally open-ended function that operates on all valid objects
-export const keysOf = <T extends Object>(obj: T) => Object.getOwnPropertyNames(obj);
+export const keysOf = <T extends Object>(obj: T) => Object.keys(obj);
 
-type RenderSettings = {
+export type RenderSettingsChannel = {
+    index: number;
+    gamut: Interval;
+    color: vec3;
+}
+
+export type RenderSettingsChannels = {
+    [key: string]: RenderSettingsChannel
+}
+
+export type RenderSettings = {
     camera: {
         view: box2D;
         screenSize: vec2;
@@ -30,13 +40,7 @@ type RenderSettings = {
     orthoVal: number; // the value of the orthogonal axis, e.g. Z value relative to an XY plane
     tileSize: number;
     plane: CartesianPlane;
-    channels: {
-        [key: string]: {
-            index: number;
-            gamut: Interval;
-            color: vec3;
-        };
-    };
+    channels: RenderSettingsChannels;
 };
 
 // represent a 2D slice of a volume

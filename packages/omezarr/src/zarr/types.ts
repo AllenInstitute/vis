@@ -176,6 +176,17 @@ export function convertFromOmeroChannelToColorChannel(omeroChannel: OmeZarrOmero
     return { active, label, color, window, range };
 }
 
+export type OmeZarrMetadataFlattened = {
+    url: string;
+    attrs: OmeZarrAttrs;
+    arrays: ReadonlyArray<OmeZarrArrayMetadata>;
+    zarrVersion: number;
+    colorChannels: OmeZarrColorChannel[];
+    redChannel: OmeZarrColorChannel | undefined;
+    blueChannel: OmeZarrColorChannel | undefined;
+    greenChannel: OmeZarrColorChannel | undefined;
+}
+
 export class OmeZarrMetadata {
     #url: string;
     #attrs: OmeZarrAttrs;
@@ -203,6 +214,19 @@ export class OmeZarrMetadata {
 
     get zarrVersion(): number {
         return this.#zarrVersion;
+    }
+
+    toJSON(): OmeZarrMetadataFlattened {
+        return {
+            url: this.url,
+            attrs: this.attrs,
+            arrays: this.arrays,
+            zarrVersion: this.zarrVersion,
+            colorChannels: this.colorChannels,
+            redChannel: this.redChannel,
+            blueChannel: this.blueChannel,
+            greenChannel: this.greenChannel
+        }
     }
 
     #getMultiscaleIndex(multiscale?: number | string): number {

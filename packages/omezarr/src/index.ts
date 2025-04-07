@@ -2,6 +2,9 @@ export {
     buildOmeZarrSliceRenderer,
     buildAsyncOmezarrRenderer,
     type VoxelTileImage,
+    type RenderSettings,
+    type RenderSettingsChannel,
+    type RenderSettingsChannels
 } from './sliceview/slice-renderer';
 export { VisZarrError, VisZarrDataError, VisZarrIndexError } from './errors';
 export {

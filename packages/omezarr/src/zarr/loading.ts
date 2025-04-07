@@ -7,8 +7,8 @@ import {
     limit,
     type vec2,
 } from '@alleninstitute/vis-geometry';
-import { logger } from '@alleninstitute/vis-core';
-import { VisZarrDataError } from '../errors';
+import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
+import { VisZarrDataError, VisZarrError } from '../errors';
 import {
     OmeZarrAttrsSchema,
     OmeZarrMetadata,
@@ -27,7 +27,9 @@ import { ZodError } from 'zod';
 // - array metadata: v2: https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html#arrays
 //                   v3: https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#array-metadata
 
-export async function loadZarrAttrsFile(url: string): Promise<OmeZarrAttrs> {
+
+export async function loadZarrAttrsFile(res: WebResource): Promise<OmeZarrAttrs> {
+    const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
     return loadZarrAttrsFileFromStore(store);
 }
@@ -50,11 +52,12 @@ type OmeZarrArrayMetadataLoad = {
 };
 
 export async function loadZarrArrayFile(
-    url: string,
+    res: WebResource,
     path: string,
     version = 2,
     loadV2Attrs = true,
 ): Promise<OmeZarrArrayMetadata> {
+    const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
     const result = await loadZarrArrayFileFromStore(store, path, version, loadV2Attrs);
     return result.metadata;
@@ -96,7 +99,8 @@ async function loadZarrArrayFileFromStore(
  * The object returned from this function can be passed to most of the other utilities for ome-zarr data
  * manipulation.
  */
-export async function loadMetadata(url: string, version = 2, loadV2ArrayAttrs = true): Promise<OmeZarrMetadata> {
+export async function loadMetadata(res: WebResource, version = 2, loadV2ArrayAttrs = true): Promise<OmeZarrMetadata> {
+    const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
     const attrs: OmeZarrAttrs = await loadZarrAttrsFileFromStore(store);
     const arrays = await Promise.all(
