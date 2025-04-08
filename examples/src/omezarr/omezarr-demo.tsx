@@ -260,7 +260,14 @@ export function OmezarrDemo() {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
-                        <textarea id="omezarr-json-view" readOnly cols={100} rows={36} style={{ resize: 'none' }} value={omezarrJson} />
+                        <textarea
+                            id="omezarr-json-view"
+                            readOnly
+                            cols={100}
+                            rows={36}
+                            style={{ resize: 'none' }}
+                            value={omezarrJson}
+                        />
                     </div>
                 </div>
             </div>

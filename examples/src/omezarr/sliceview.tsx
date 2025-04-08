@@ -19,17 +19,17 @@ const settings: RenderSettings = {
     // gets mapped to pixel/color intensity on the screen. for now, we just use hardcoded data
     channels: {
         R: {
-            color: [1.0, 0.0, 0.0],
+            rgb: [1.0, 0.0, 0.0],
             index: 0,
             gamut: { min: 0, max: 80 },
         },
         G: {
-            color: [0.0, 1.0, 0.0],
+            rgb: [0.0, 1.0, 0.0],
             index: 1,
             gamut: { min: 0, max: 100 },
         },
         B: {
-            color: [0.0, 0.0, 1.0],
+            rgb: [0.0, 0.0, 1.0],
             index: 2,
             gamut: { min: 0, max: 100 },
         },
