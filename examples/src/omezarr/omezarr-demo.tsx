@@ -249,8 +249,12 @@ export function OmezarrDemo() {
                                     </span>
                                 )) || <span>No image loaded</span>}
                                 <div style={{}}>
-                                    <button type="button" onClick={() => handlePlaneIndex(-1)}>&#9664;</button>
-                                    <button type="button" onClick={() => handlePlaneIndex(1)}>&#9654;</button>
+                                    <button type="button" onClick={() => handlePlaneIndex(-1)}>
+                                        &#9664;
+                                    </button>
+                                    <button type="button" onClick={() => handlePlaneIndex(1)}>
+                                        &#9654;
+                                    </button>
                                 </div>
                             </div>
                         </div>
