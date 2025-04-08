@@ -14,6 +14,29 @@ export type S3Resource = {
     region: string;
 };
 
+export function createHttpsResource(url: string) {
+    return {
+        type: RESOURCE_TYPE_HTTPS,
+        url,
+    };
+}
+
+export function createS3Resource(url: string, region: string): S3Resource {
+    return {
+        type: RESOURCE_TYPE_S3,
+        region,
+        url,
+    };
+}
+
+export function isS3Resource(res: WebResource): res is S3Resource {
+    return res && res.type === RESOURCE_TYPE_S3;
+}
+
+export function isHttpsResource(res: WebResource): res is HttpsResource {
+    return res && res.type === RESOURCE_TYPE_HTTPS;
+}
+
 export type WebResource = HttpsResource | S3Resource;
 
 const S3_REGION_BASIC_REGEX = /[a-z]+-[a-z]+-[1-9]/;
