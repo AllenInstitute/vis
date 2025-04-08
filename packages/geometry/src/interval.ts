@@ -1,4 +1,4 @@
-import type { vec2 } from "./vec2";
+import type { vec2 } from './vec2';
 
 export type Interval = {
     min: number;

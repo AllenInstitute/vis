@@ -1,4 +1,4 @@
-import { VisError } from "./errors";
+import { VisError } from './errors';
 
 const RESOURCE_TYPE_S3 = 's3' as const;
 const RESOURCE_TYPE_HTTPS = 'https' as const;
@@ -12,7 +12,7 @@ export type S3Resource = {
     type: typeof RESOURCE_TYPE_S3;
     url: string;
     region: string;
-}
+};
 
 export type WebResource = HttpsResource | S3Resource;
 

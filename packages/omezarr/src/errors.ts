@@ -1,4 +1,4 @@
-import { VisError } from "@alleninstitute/vis-core";
+import { VisError } from '@alleninstitute/vis-core';
 
 export class VisZarrError extends VisError {}
 

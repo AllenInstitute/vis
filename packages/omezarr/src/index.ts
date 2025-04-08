@@ -4,7 +4,7 @@ export {
     type VoxelTileImage,
     type RenderSettings,
     type RenderSettingsChannel,
-    type RenderSettingsChannels
+    type RenderSettingsChannels,
 } from './sliceview/slice-renderer';
 export { VisZarrError, VisZarrDataError, VisZarrIndexError } from './errors';
 export {

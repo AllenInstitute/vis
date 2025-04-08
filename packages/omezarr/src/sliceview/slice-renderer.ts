@@ -5,7 +5,7 @@ import {
     type box2D,
     type vec2,
     type vec3,
-    intervalToVec2
+    intervalToVec2,
 } from '@alleninstitute/vis-geometry';
 import {
     type CachedTexture,
@@ -24,11 +24,11 @@ export type RenderSettingsChannel = {
     index: number;
     gamut: Interval;
     rgb: vec3;
-}
+};
 
 export type RenderSettingsChannels = {
-    [key: string]: RenderSettingsChannel
-}
+    [key: string]: RenderSettingsChannel;
+};
 
 export type RenderSettings = {
     camera: {

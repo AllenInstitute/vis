@@ -27,7 +27,6 @@ import { ZodError } from 'zod';
 // - array metadata: v2: https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html#arrays
 //                   v3: https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#array-metadata
 
-
 export async function loadZarrAttrsFile(res: WebResource): Promise<OmeZarrAttrs> {
     const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);

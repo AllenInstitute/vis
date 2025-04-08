@@ -128,7 +128,7 @@ export type OmeZarrColorChannel = {
     range: Interval;
     active?: boolean | undefined;
     label?: string | undefined;
-}
+};
 
 export const OmeZarrOmeroSchema: z.ZodType<OmeZarrOmero> = z.object({
     channels: OmeZarrOmeroChannelSchema.array().nonempty(),
@@ -175,7 +175,7 @@ export function convertFromOmeroChannelToColorChannel(omeroChannel: OmeZarrOmero
     const { start: ranMin, end: ranMax } = omeroChannel.window;
     const window: Interval = { min: winMin, max: winMax };
     const range: Interval = { min: ranMin, max: ranMax };
-    
+
     return { rgb, rgba, window, range, active, label };
 }
 
@@ -188,7 +188,7 @@ export type OmeZarrMetadataFlattened = {
     redChannel: OmeZarrColorChannel | undefined;
     blueChannel: OmeZarrColorChannel | undefined;
     greenChannel: OmeZarrColorChannel | undefined;
-}
+};
 
 export class OmeZarrMetadata {
     #url: string;
@@ -228,8 +228,8 @@ export class OmeZarrMetadata {
             colorChannels: this.colorChannels,
             redChannel: this.redChannel,
             blueChannel: this.blueChannel,
-            greenChannel: this.greenChannel
-        }
+            greenChannel: this.greenChannel,
+        };
     }
 
     #getMultiscaleIndex(multiscale?: number | string): number {
