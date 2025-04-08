@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-dzi",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -17,6 +17,10 @@
         {
             "name": "Su Li",
             "email": "su.li@alleninstitute.org"
+        },
+        {
+            "name": "Joel Arbuckle",
+            "email": "joel.arbuckle@alleninstitute.org"
         }
     ],
     "license": "BSD-3-Clause",
