@@ -5,6 +5,7 @@ import {
     type box2D,
     type vec2,
     type vec3,
+    intervalToVec2
 } from '@alleninstitute/vis-geometry';
 import {
     type CachedTexture,
@@ -19,13 +20,10 @@ import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
-// biome-ignore lint/complexity/noBannedTypes: Intentionally open-ended function that operates on all valid objects
-export const keysOf = <T extends Object>(obj: T) => Object.keys(obj);
-
 export type RenderSettingsChannel = {
     index: number;
     gamut: Interval;
-    color: vec3;
+    rgb: vec3;
 }
 
 export type RenderSettingsChannels = {
@@ -50,9 +48,11 @@ export type VoxelTileImage = {
     data: Float32Array;
     shape: number[];
 };
+
 type ImageChannels = {
     [channelKey: string]: CachedTexture;
 };
+
 function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     const { plane, orthoVal, bounds } = tile;
     const { minCorner: min, maxCorner: max } = bounds;
@@ -85,23 +85,24 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
             };
     }
 }
+
 function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cacheData is ImageChannels {
     if (!cacheData) {
         return false;
     }
-    const keys = keysOf(cacheData);
+    const keys = Object.keys(cacheData);
     if (keys.length < 1) {
         return false;
     }
     return keys.every((key) => cacheData[key]?.type === 'texture');
 }
-const intervalToVec2 = (i: Interval): vec2 => [i.min, i.max];
 
 type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset) => Promise<VoxelTileImage>;
 
 export type OmeZarrSliceRendererOptions = {
     numChannels?: number;
 };
+
 const DEFAULT_NUM_CHANNELS = 3;
 
 export function buildOmeZarrSliceRenderer(
@@ -151,14 +152,13 @@ export function buildOmeZarrSliceRenderer(
         },
         isPrepared,
         renderItem: (target, item, _, settings, gpuData) => {
-            const channels = keysOf(gpuData).map((key) => ({
+            const channels = Object.keys(gpuData).map((key) => ({
                 tex: gpuData[key].texture,
                 gamut: intervalToVec2(settings.channels[key].gamut),
-                color: settings.channels[key].color,
+                rgb: settings.channels[key].rgb,
             }));
 
             const { camera } = settings;
-
             cmd({
                 channels,
                 target,

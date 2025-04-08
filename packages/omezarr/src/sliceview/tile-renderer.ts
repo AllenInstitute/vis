@@ -24,7 +24,7 @@ type RGBTileRenderProps = CommonRenderProps & {
 type Channel = {
     tex: REGL.Texture2D;
     gamut: vec2;
-    color: vec3;
+    rgb: vec3;
 };
 
 type TileRenderProps = CommonRenderProps & {
@@ -137,7 +137,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
     for (let i = 0; i < numChannels; i++) {
         reglChannelUniforms.push({
             [`gamut${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].gamut,
-            [`color${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].color,
+            [`color${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].rgb,
             [`tex${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].tex,
         });
         fragmentChannelUniformDefs.push(`uniform vec2 gamut${i};`);

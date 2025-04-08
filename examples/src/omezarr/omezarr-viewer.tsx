@@ -45,14 +45,12 @@ export function OmezarrViewer({
     const server = useContext(renderServerContext);
     const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
 
-    console.log('settings', settings);
-
     // setup renderer and delete it when component goes away
     useEffect(() => {
         const c = canvas?.current;
         if (server?.regl && omezarr) {
-            const numChannels = omezarr.colorChannels.length;
-            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder, { numChannels: numChannels > 0 ? numChannels : 3 });
+            const numChannels = omezarr.colorChannels.length || 3;
+            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder, { numChannels });
         }
         return () => {
             if (c) {
@@ -99,20 +97,6 @@ export function OmezarrViewer({
             );
         }
     }, [server, omezarr, settings]);
-
-    // wheel event needs to be active for control + wheel zoom to work
-    // useEffect(() => {
-    //     const c = canvas.current;
-    //     const handleWheel = (e: WheelEvent) => onWheel?.(e);
-    //     if (c) {
-    //         c.addEventListener('wheel', handleWheel, { passive: false });
-    //     }
-    //     return () => {
-    //         if (c) {
-    //             c.removeEventListener('wheel', handleWheel);
-    //         }
-    //     };
-    // });
 
     return (
         <canvas
