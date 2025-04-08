@@ -11,7 +11,8 @@ import { makeRGBColorVector } from '@alleninstitute/vis-core';
 import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
-import React, { useEffect, useMemo, useState } from 'react';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '~/common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
@@ -172,8 +173,8 @@ export function OmezarrDemo() {
                 <h1>OME-Zarr Examples</h1>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label>Select an OME-Zarr to View:</label>
-                        <select name="webresource" onChange={handleOptionSelected}>
+                        <label htmlFor="webresource-select">Select an OME-Zarr to View:</label>
+                        <select id="webresource-select" name="webresource" onChange={handleOptionSelected}>
                             <option value="" key="default">
                                 -- Please select an option --
                             </option>
@@ -258,8 +259,8 @@ export function OmezarrDemo() {
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label>Selected Image Metadata:</label>
-                        <textarea readOnly cols={100} rows={36} style={{ resize: 'none' }} value={omezarrJson} />
+                        <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
+                        <textarea id="omezarr-json-view" readOnly cols={100} rows={36} style={{ resize: 'none' }} value={omezarrJson} />
                     </div>
                 </div>
             </div>
