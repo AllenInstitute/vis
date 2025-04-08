@@ -3,12 +3,12 @@ import { VisError } from "./errors";
 const RESOURCE_TYPE_S3 = 's3' as const;
 const RESOURCE_TYPE_HTTPS = 'https' as const;
 
-export interface HttpsResource {
+export type HttpsResource = {
     type: typeof RESOURCE_TYPE_HTTPS;
     url: string;
 };
 
-export interface S3Resource {
+export type S3Resource = {
     type: typeof RESOURCE_TYPE_S3;
     url: string;
     region: string;
@@ -36,7 +36,6 @@ function isValidS3Region(region: string): boolean {
 }
 
 export function getResourceUrl(res: WebResource): string {
-    console.log(res);
     if (res.type === 's3') {
         if (!isValidS3URL(res.url)) {
             throw new VisError('cannot get WebResource URL: invalid S3 URL');
