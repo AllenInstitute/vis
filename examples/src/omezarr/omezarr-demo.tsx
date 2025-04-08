@@ -170,6 +170,7 @@ export function OmezarrDemo() {
     return (
         <RenderServerProvider>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <a href="/vis/">&#9664; Back</a>
                 <h1>OME-Zarr Examples</h1>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -248,12 +249,8 @@ export function OmezarrDemo() {
                                     </span>
                                 )) || <span>No image loaded</span>}
                                 <div style={{}}>
-                                    <button type="button" onClick={() => handlePlaneIndex(-1)}>
-                                        {'<-'}
-                                    </button>
-                                    <button type="button" onClick={() => handlePlaneIndex(1)}>
-                                        {'->'}
-                                    </button>
+                                    <button type="button" onClick={() => handlePlaneIndex(-1)}>&#9664;</button>
+                                    <button type="button" onClick={() => handlePlaneIndex(1)}>&#9654;</button>
                                 </div>
                             </div>
                         </div>
