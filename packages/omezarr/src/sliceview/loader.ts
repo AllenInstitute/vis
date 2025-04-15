@@ -129,8 +129,9 @@ export const defaultDecoder = (
     metadata: OmeZarrMetadata,
     r: ZarrRequest,
     level: OmeZarrShapedDataset,
+    signal?: AbortSignal,
 ): Promise<VoxelTileImage> => {
-    return loadSlice(metadata, r, level).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
+    return loadSlice(metadata, r, level, signal).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
         const { shape, buffer } = result;
         return { shape, data: new Float32Array(buffer.data) };
     });

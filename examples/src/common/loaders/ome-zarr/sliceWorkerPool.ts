@@ -1,4 +1,4 @@
-import type { OmeZarrMetadata, ZarrRequest } from '@alleninstitute/vis-omezarr';
+import type { Decoder, OmeZarrMetadata, OmeZarrShapedDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-core';
 import { uniqueId } from 'lodash';
 import type { ZarrSliceRequest } from './types';
@@ -48,15 +48,17 @@ export class SliceWorkerPool {
     private roundRobin() {
         this.which = (this.which + 1) % this.workers.length;
     }
-    requestSlice(metadata: OmeZarrMetadata, req: ZarrRequest, layerIndex: number) {
+    requestSlice(metadata: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset, signal?: AbortSignal) {
         const reqId = uniqueId('rq');
-        const cacheKey = JSON.stringify({ url: metadata.url, req, layerIndex });
-        const level = metadata.getShapedDataset(layerIndex, 0);
-        if (!level) {
-            const message = `cannot request slice: invalid layer index: ${layerIndex}`;
-            logger.error(message);
-            throw new Error(message);
-        }
+        const cacheKey = JSON.stringify({ url: metadata.url, req, level });
+        // const level = metadata.getShapedDataset(layerIndex, 0);
+        const myWorker = this.which;
+
+        // if (!level) {
+        //     const message = `cannot request slice: invalid layer index: ${layerIndex}`;
+        //     logger.error(message);
+        //     throw new Error(message);
+        // }
         // TODO caching I guess...
         const eventually = new Promise<Slice>((resolve, reject) => {
             this.promises[reqId] = {
@@ -72,7 +74,13 @@ export class SliceWorkerPool {
                 req,
                 level,
             };
-            this.workers[this.which].postMessage(message);
+            if (signal) {
+                signal.onabort = (ev) => {
+                    this.workers[myWorker].postMessage({ type: 'cancel', id: reqId })
+                    this.promises[reqId]?.reject("cancelled")
+                }
+            }
+            this.workers[myWorker].postMessage(message);
             this.roundRobin();
         });
         this.promises[reqId].promise = eventually;
@@ -88,3 +96,7 @@ export function getSlicePool() {
     }
     return slicePool;
 }
+
+export const multithreadedDecoder: Decoder = (metadata, req, level: OmeZarrShapedDataset, signal?: AbortSignal) => {
+    return getSlicePool().requestSlice(metadata, req, level, signal);
+};

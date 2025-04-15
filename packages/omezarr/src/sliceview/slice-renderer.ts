@@ -97,7 +97,7 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
     return keys.every((key) => cacheData[key]?.type === 'texture');
 }
 
-type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset) => Promise<VoxelTileImage>;
+type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset, signal?: AbortSignal) => Promise<VoxelTileImage>;
 
 export type OmeZarrSliceRendererOptions = {
     numChannels?: number;
@@ -135,7 +135,7 @@ export function buildOmeZarrSliceRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
-        destroy: () => {},
+        destroy: () => { },
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, orthoVal, tileSize } = settings;
             return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
@@ -144,7 +144,7 @@ export function buildOmeZarrSliceRenderer(
             const contents: Record<string, () => Promise<ReglCacheEntry>> = {};
             for (const key in settings.channels) {
                 contents[key] = () =>
-                    decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level).then(
+                    decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level, signal).then(
                         sliceAsTexture,
                     );
             }
