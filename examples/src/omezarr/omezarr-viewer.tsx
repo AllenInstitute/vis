@@ -4,7 +4,6 @@ import {
   type VoxelTile,
   type OmeZarrMetadata,
   buildAsyncOmezarrRenderer,
-  //   defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';

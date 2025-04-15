@@ -2,7 +2,6 @@ import { loadSlice, OmeZarrMetadata } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-core';
 import type { Chunk, Float32 } from 'zarrita';
 import { isCancellationRequest, isSliceRequest } from './types';
-
 // a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
 
 const ctx = self;
