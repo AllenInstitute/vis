@@ -183,6 +183,16 @@ export function beginFrame<
         },
     };
 }
+type QueueOptions = {
+    queueProcessingIntervalMS?: number,
+    maximumInflightAsyncTasks?: number,
+    queueTimeBudgetMS?: number,
+}
+const defaultQueueOptions = {
+    queueProcessingIntervalMS: 33,
+    maximumInflightAsyncTasks: 2,
+    queueTimeBudgetMS: 16
+} as const;
 
 export function buildAsyncRenderer<
     Dataset,
@@ -191,7 +201,7 @@ export function buildAsyncRenderer<
     SemanticKey extends string,
     CacheKeyType extends string,
     GpuData extends Record<SemanticKey, ReglCacheEntry>,
->(renderer: Renderer<Dataset, Item, Settings, GpuData>) {
+>(renderer: Renderer<Dataset, Item, Settings, GpuData>, queueOptions?: QueueOptions) {
     return (
         data: Dataset,
         settings: Settings,
@@ -201,9 +211,8 @@ export function buildAsyncRenderer<
     ) => {
         const { renderItem, isPrepared, cacheKey, fetchItemContent, getVisibleItems } = renderer;
         const config: RenderFrameConfig<Dataset, Item, Settings, string, string, ReglCacheEntry, GpuData> = {
-            queueProcessingIntervalMS: 33,
-            maximumInflightAsyncTasks: 5,
-            queueTimeBudgetMS: 16,
+            ...defaultQueueOptions,
+            ...queueOptions,
             cacheKeyForRequest: cacheKey,
             dataset: data,
             isPrepared: isPrepared,

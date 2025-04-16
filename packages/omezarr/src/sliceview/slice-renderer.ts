@@ -9,6 +9,7 @@ import {
 } from '@alleninstitute/vis-geometry';
 import {
     type CachedTexture,
+    type QueueOptions,
     type ReglCacheEntry,
     type Renderer,
     buildAsyncRenderer,
@@ -101,7 +102,8 @@ type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShaped
 
 export type OmeZarrSliceRendererOptions = {
     numChannels?: number;
-};
+    queueOptions?: QueueOptions
+}
 
 const DEFAULT_NUM_CHANNELS = 3;
 
@@ -170,5 +172,5 @@ export function buildOmeZarrSliceRenderer(
 }
 
 export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder, options?: OmeZarrSliceRendererOptions) {
-    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder, options));
+    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder, options), options?.queueOptions);
 }
