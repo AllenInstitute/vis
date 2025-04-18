@@ -190,7 +190,7 @@ type QueueOptions = {
 }
 const defaultQueueOptions = {
     queueProcessingIntervalMS: 33,
-    maximumInflightAsyncTasks: 2,
+    maximumInflightAsyncTasks: 5,
     queueTimeBudgetMS: 16
 } as const;
 

@@ -6,12 +6,13 @@ type Props = {
     target: Framebuffer2D | null;
     box: vec4;
     view: vec4;
+    depth?: number;
     //   viewport: REGL.BoundingBox;
     img: REGL.Texture2D | REGL.Framebuffer2D;
 };
-export function buildImageRenderer(regl: REGL.Regl) {
+export function buildImageRenderer(regl: REGL.Regl, depthTest: boolean = false) {
     const cmd = regl<
-        { view: vec4; box: vec4; img: REGL.Texture2D | REGL.Framebuffer2D },
+        { depth: Number, view: vec4; box: vec4; img: REGL.Texture2D | REGL.Framebuffer2D },
         { pos: REGL.BufferData },
         Props
     >({
@@ -20,6 +21,7 @@ export function buildImageRenderer(regl: REGL.Regl) {
           
           uniform vec4 view;
           uniform vec4 box;
+          uniform float depth;
           varying vec2 texCoord;
   
           void main(){
@@ -29,7 +31,7 @@ export function buildImageRenderer(regl: REGL.Regl) {
               vec2 p = (obj-view.xy)/(view.zw-view.xy);
               // now, to clip space
               p = (p*2.0)-1.0;
-              gl_Position = vec4(p.x,p.y,0.0,1.0);
+              gl_Position = vec4(p.x,p.y,depth,1.0);
           }`,
         frag: `
       precision highp float;
@@ -46,12 +48,13 @@ export function buildImageRenderer(regl: REGL.Regl) {
             pos: [0, 0, 1, 0, 1, 1, 0, 1],
         },
         depth: {
-            enable: false,
+            enable: depthTest,
         },
         uniforms: {
             box: regl.prop<Props, 'box'>('box'),
             view: regl.prop<Props, 'view'>('view'),
             img: regl.prop<Props, 'img'>('img'),
+            depth: regl.prop<Props, 'depth'>('depth'),
         },
         blend: {
             enable: true,
@@ -64,5 +67,5 @@ export function buildImageRenderer(regl: REGL.Regl) {
         primitive: 'triangle fan',
         // ... more!
     });
-    return cmd;
+    return (p: Props) => cmd({ depth: 0, ...p });
 }

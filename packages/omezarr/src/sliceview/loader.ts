@@ -101,9 +101,12 @@ export function getVisibleTiles(
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
     const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
-    // using [1,1] here is asking for the best LOD to fill a single pixel - aka
-    // the lowest LOD - this is safer than just assuming that layer will be
-    // the first or last in the list.
+    // const baseLayer = pickBestScale(metadata, plane, camera.view, [1, 1])
+    // if (baseLayer !== layer) {
+    //     return [...getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, baseLayer),
+    //     ...getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, layer)
+    //     ]
+    // }
     return getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, layer);
 }
 /**

@@ -1,9 +1,11 @@
-import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
   type RenderSettings,
   type VoxelTile,
   type OmeZarrMetadata,
   buildAsyncOmezarrRenderer,
+  pickBestScale,
+  planeSizeInVoxels,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderCallback, RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
@@ -34,6 +36,7 @@ function compose(ctx: CanvasRenderingContext2D, image: ImageData) {
 type StashedView = {
   camera: RenderSettings['camera'];
   image: REGL.Framebuffer2D;
+  depth: number;
 };
 
 export function OmezarrViewer({
@@ -75,14 +78,19 @@ export function OmezarrViewer({
       const numChannels = omezarr.colorChannels.length || 3;
       renderer.current = buildAsyncOmezarrRenderer(server.regl, multithreadedDecoder, {
         numChannels,
-        queueOptions: { maximumInflightAsyncTasks: 3 },
+        queueOptions: { maximumInflightAsyncTasks: 1 },
       });
       // set up the stash:
+      const lvl = pickBestScale(omezarr, settings.plane, settings.camera.view, settings.camera.screenSize);
+      const planeSize = planeSizeInVoxels(settings.plane, omezarr.attrs.multiscales[0].axes, lvl);
+      const divisor = 10_000_000;
+      const depth = Vec2.scale(planeSize ?? [0, 0], 1 / divisor);
       stash.current = {
+        depth: 1.1 * (1 - Math.max(depth[0], depth[1])),
         camera: settings.camera,
         image: server.regl.framebuffer({ width: settings.camera.screenSize[0], height: settings.camera.screenSize[1] }),
       };
-      imgRenderer.current = buildImageRenderer(server.regl);
+      imgRenderer.current = buildImageRenderer(server.regl, true);
       server.regl.clear({ framebuffer: stash.current.image, color: [0, 0, 0, 0], depth: 1 });
     }
     return () => {
@@ -113,28 +121,24 @@ export function OmezarrViewer({
                 color: [0, 0, 0, 0],
                 depth: 1,
               });
-              if (imgRenderer.current && stash.current) {
-                server.regl?.clear({
-                  framebuffer: e.target,
-                  color: [0, 0, 0, 0],
-                  depth: 1,
-                });
-                imgRenderer.current({
-                  box: Box2D.toFlatArray(stash.current.camera.view),
-                  img: stash.current.image,
-                  target: e.target,
-                  view: Box2D.toFlatArray(settings.camera.view),
-                });
+              // if (imgRenderer.current && stash.current) {
+              //   imgRenderer.current({
+              //     box: Box2D.toFlatArray(stash.current.camera.view),
+              //     img: stash.current.image,
+              //     depth: stash.current.depth,
+              //     target: e.target,
+              //     view: Box2D.toFlatArray(settings.camera.view),
+              //   });
 
-                e.server.copyToClient(compose);
-              }
+              //   e.server.copyToClient(compose);
+              // }
               break;
             case 'progress':
               // wanna see the tiles as they arrive?
               e.server.copyToClient(compose);
-              if (e.target !== null && server) {
-                stashProgress(server, e.target);
-              }
+              // if (e.target !== null && server) {
+              //   stashProgress(server, e.target);
+              // }
               break;
             case 'finished': {
               e.server.copyToClient(compose);
