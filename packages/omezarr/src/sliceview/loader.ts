@@ -101,19 +101,6 @@ export function getVisibleTiles(
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
     const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
-    // using [1,1] here is asking for the best LOD to fill a single pixel - aka
-    // the lowest LOD - this is safer than just assuming that layer will be
-    // the first or last in the list.
-    const baseLayer = pickBestScale(metadata, plane, camera.view, [1, 1]);
-    if (layer.path !== baseLayer.path) {
-        // if the layer we want to draw is not the lowest-level of detail,
-        // then we inject the low-level of detail tiles into the returned result - the idea
-        // is that we draw the low LOD data underneath the desired LOD as a fallback to prevent flickering.
-        return [
-            ...getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, baseLayer),
-            ...getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, layer),
-        ];
-    }
     return getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, layer);
 }
 /**
@@ -129,8 +116,9 @@ export const defaultDecoder = (
     metadata: OmeZarrMetadata,
     r: ZarrRequest,
     level: OmeZarrShapedDataset,
+    signal?: AbortSignal,
 ): Promise<VoxelTileImage> => {
-    return loadSlice(metadata, r, level).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
+    return loadSlice(metadata, r, level, signal).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
         const { shape, buffer } = result;
         return { shape, data: new Float32Array(buffer.data) };
     });

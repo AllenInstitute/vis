@@ -6,8 +6,31 @@ import type { vec2, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 
+
+const vert = /*glsl*/ `
+precision highp float;
+attribute vec2 pos;
+    
+uniform vec4 view;
+uniform vec4 tile;
+uniform float depth;
+varying vec2 texCoord;
+uniform float rot;
+
+void main(){
+    vec2 tileSize = tile.zw-tile.xy;
+    texCoord = pos;
+    vec2 obj = (pos.xy*tileSize+tile.xy);
+
+    vec2 p = (obj-view.xy)/(view.zw-view.xy);
+    // now, to clip space
+    p = (p*2.0)-1.0;
+    gl_Position = vec4(p.x,p.y,depth,1.0);
+}
+`
 type CommonRenderProps = {
     target: Framebuffer2D | null;
+    depth: number; // the Z value at which to render the tile, from 0 (the front) to 1 (the back)
     tile: vec4; // [minx,miny,maxx,maxy] representing the bounding box of the tile we're rendering
     view: vec4; // [minx,miny,maxx,maxy] representing the camera in the same space as the tile's bounding box
 };
@@ -43,6 +66,7 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
         {
             view: vec4;
             tile: vec4;
+            depth: number;
             R: REGL.Texture2D;
             G: REGL.Texture2D;
             B: REGL.Texture2D;
@@ -53,25 +77,7 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
         { pos: REGL.BufferData },
         RGBTileRenderProps
     >({
-        vert: ` precision highp float;
-        attribute vec2 pos;
-            
-            uniform vec4 view;
-            uniform vec4 tile;
-            varying vec2 texCoord;
-            uniform float rot;
-
-            void main(){
-                vec2 tileSize = tile.zw-tile.xy;
-                texCoord = pos;
-                vec2 obj = (pos.xy*tileSize+tile.xy);
-
-                vec2 p = (obj-view.xy)/(view.zw-view.xy);
-                // now, to clip space
-                p = (p*2.0)-1.0;
-                gl_Position = vec4(p.x,p.y,0.0,1.0);
-            }`,
-
+        vert,
         frag: `
     precision highp float;
     uniform sampler2D R;
@@ -102,6 +108,7 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
         uniforms: {
             tile: regl.prop<RGBTileRenderProps, 'tile'>('tile'),
             view: regl.prop<RGBTileRenderProps, 'view'>('view'),
+            depth: regl.prop<RGBTileRenderProps, 'depth'>('depth'),
             R: regl.prop<RGBTileRenderProps, 'R'>('R'),
             G: regl.prop<RGBTileRenderProps, 'G'>('G'),
             B: regl.prop<RGBTileRenderProps, 'B'>('B'),
@@ -110,7 +117,7 @@ export function buildRGBTileRenderer(regl: REGL.Regl) {
             Bgamut: regl.prop<RGBTileRenderProps, 'Bgamut'>('Bgamut'),
         },
         depth: {
-            enable: false,
+            enable: true,
         },
         count: 4,
         primitive: 'triangle fan',
@@ -152,6 +159,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
     const staticReglUniforms: ReglUniforms = {
         tile: regl.prop<TileRenderProps, 'tile'>('tile'),
         view: regl.prop<TileRenderProps, 'view'>('view'),
+        depth: regl.prop<TileRenderProps, 'depth'>('depth'),
     };
     const uniforms = reglChannelUniforms.reduce((acc: ReglUniforms, curr: ReglUniforms) => {
         for (const key in curr) {
@@ -160,25 +168,6 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         return acc;
     }, staticReglUniforms);
 
-    const vert = `
-        precision highp float;
-        attribute vec2 pos;
-        
-        uniform vec4 view;
-        uniform vec4 tile;
-        varying vec2 texCoord;
-        uniform float rot;
-
-        void main() {
-            vec2 tileSize = tile.zw-tile.xy;
-            texCoord = pos;
-            vec2 obj = (pos.xy*tileSize+tile.xy);
-
-            vec2 p = (obj-view.xy)/(view.zw-view.xy);
-            // now, to clip space
-            p = (p*2.0)-1.0;
-            gl_Position = vec4(p.x,p.y,0.0,1.0);
-        }`;
 
     const frag = `
         precision highp float;
@@ -202,7 +191,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         },
         uniforms,
         depth: {
-            enable: false,
+            enable: true,
         },
         count: 4,
         primitive: 'triangle fan',

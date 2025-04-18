@@ -31,6 +31,7 @@ type ClientEntry = {
 };
 type ServerActions = {
     copyToClient: (composite: Compositor) => void;
+
 };
 type Compositor = (ctx: CanvasRenderingContext2D, glImage: ImageData) => void;
 type RenderEvent<D, I> = AsyncFrameEvent<D, I> & {

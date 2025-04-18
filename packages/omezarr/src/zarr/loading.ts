@@ -297,7 +297,7 @@ export function indexOfDimension(axes: readonly OmeZarrAxis[], dim: ZarrDimensio
  * @returns the requested chunk of image data from the given layer of the omezarr LOD pyramid. Note that if the given layerIndex is invalid, it will be treated as though it is the highest index possible.
  * @throws an error if the request results in anything of lower-or-equal dimensionality than a single value
  */
-export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level: OmeZarrShapedDataset) {
+export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level: OmeZarrShapedDataset, signal?: AbortSignal) {
     // put the request in native order
     const store = new zarr.FetchStore(metadata.url);
     const scene = metadata.attrs.multiscales[0];
@@ -314,7 +314,7 @@ export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level
         throw new VisZarrDataError(message);
     }
     const { raw } = await loadZarrArrayFileFromStore(store, arr.path, 2, false);
-    const result = await zarr.get(raw, buildQuery(r, axes, level.shape));
+    const result = await zarr.get(raw, buildQuery(r, axes, level.shape), { opts: { signal: signal ?? null } });
     if (typeof result === 'number') {
         throw new Error('oh noes, slice came back all weird');
     }

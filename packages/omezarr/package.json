@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-omezarr",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -28,7 +28,9 @@
     "main": "dist/main.js",
     "module": "dist/module.js",
     "types": "dist/types.d.ts",
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
