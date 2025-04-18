@@ -113,7 +113,7 @@ export function OmezarrViewer({
         }
         return null;
       };
-      const lowres: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
+      const lowResPreview: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
         if (renderer.current) {
           // if we had a stashed buffer of the previous frame...
           // we could pre-load it into target, right here!
@@ -138,7 +138,7 @@ export function OmezarrViewer({
                 color: [0, 0, 0, 0],
                 depth: 1,
               });
-              lowres(e.target, server.cache, (_e) => {})?.cancelFrame('lowres preview beneath actual frame');
+              lowResPreview(e.target, server.cache, (_e) => {})?.cancelFrame('lowres preview beneath actual frame');
               if (imgRenderer.current && stash.current) {
                 imgRenderer.current({
                   box: Box2D.toFlatArray(stash.current.camera.view),
@@ -164,9 +164,6 @@ export function OmezarrViewer({
               }
               break;
             }
-            case 'error':
-              console.log(e.error);
-              break;
             case 'cancelled':
               break;
             default: {
