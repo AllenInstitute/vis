@@ -7,7 +7,7 @@ import {
   pickBestScale,
   planeSizeInVoxels,
 } from '@alleninstitute/vis-omezarr';
-import type { RenderCallback, RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
+import { type RenderFrameFn, type RenderServer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
 import type REGL from 'regl';
 import { renderServerContext } from '~/common/react/render-server-provider';
@@ -36,7 +36,6 @@ function compose(ctx: CanvasRenderingContext2D, image: ImageData) {
 type StashedView = {
   camera: RenderSettings['camera'];
   image: REGL.Framebuffer2D;
-  depth: number;
 };
 
 export function OmezarrViewer({
@@ -81,20 +80,23 @@ export function OmezarrViewer({
         queueOptions: { maximumInflightAsyncTasks: 1 },
       });
       // set up the stash:
-      const lvl = pickBestScale(omezarr, settings.plane, settings.camera.view, settings.camera.screenSize);
-      const planeSize = planeSizeInVoxels(settings.plane, omezarr.attrs.multiscales[0].axes, lvl);
-      const divisor = 10_000_000;
-      const depth = Vec2.scale(planeSize ?? [0, 0], 1 / divisor);
       stash.current = {
-        depth: 1.1 * (1 - Math.max(depth[0], depth[1])),
         camera: settings.camera,
-        image: server.regl.framebuffer({ width: settings.camera.screenSize[0], height: settings.camera.screenSize[1] }),
+        image: server.regl.framebuffer({
+          color: server.regl.texture({
+            width: settings.camera.screenSize[0],
+            height: settings.camera.screenSize[1],
+            min: 'linear',
+            mag: 'linear',
+          }),
+        }),
       };
-      imgRenderer.current = buildImageRenderer(server.regl, true);
+      imgRenderer.current = buildImageRenderer(server.regl);
       server.regl.clear({ framebuffer: stash.current.image, color: [0, 0, 0, 0], depth: 1 });
     }
     return () => {
       if (c) {
+        stash.current?.image.destroy();
         server?.destroyClient(c);
       }
     };
@@ -111,6 +113,21 @@ export function OmezarrViewer({
         }
         return null;
       };
+      const lowres: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
+        if (renderer.current) {
+          // if we had a stashed buffer of the previous frame...
+          // we could pre-load it into target, right here!
+          return renderer.current(
+            omezarr,
+            { ...settings, camera: { view: settings.camera.view, screenSize: [1, 1] } },
+            callback,
+            target,
+            cache
+          );
+        }
+        return null;
+      };
+
       server.beginRendering(
         renderFrame,
         (e) => {
@@ -121,24 +138,23 @@ export function OmezarrViewer({
                 color: [0, 0, 0, 0],
                 depth: 1,
               });
-              // if (imgRenderer.current && stash.current) {
-              //   imgRenderer.current({
-              //     box: Box2D.toFlatArray(stash.current.camera.view),
-              //     img: stash.current.image,
-              //     depth: stash.current.depth,
-              //     target: e.target,
-              //     view: Box2D.toFlatArray(settings.camera.view),
-              //   });
-
-              //   e.server.copyToClient(compose);
-              // }
+              lowres(e.target, server.cache, (_e) => {})?.cancelFrame('lowres preview beneath actual frame');
+              if (imgRenderer.current && stash.current) {
+                imgRenderer.current({
+                  box: Box2D.toFlatArray(stash.current.camera.view),
+                  img: stash.current.image,
+                  target: e.target,
+                  view: Box2D.toFlatArray(settings.camera.view),
+                });
+                e.server.copyToClient(compose);
+              }
               break;
             case 'progress':
               // wanna see the tiles as they arrive?
               e.server.copyToClient(compose);
-              // if (e.target !== null && server) {
-              //   stashProgress(server, e.target);
-              // }
+              if (e.target !== null && server) {
+                stashProgress(server, e.target);
+              }
               break;
             case 'finished': {
               e.server.copyToClient(compose);
@@ -146,9 +162,11 @@ export function OmezarrViewer({
               if (e.target !== null && server) {
                 stashProgress(server, e.target);
               }
-
               break;
             }
+            case 'error':
+              console.log(e.error);
+              break;
             case 'cancelled':
               break;
             default: {
