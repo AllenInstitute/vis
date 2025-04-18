@@ -52,3 +52,5 @@ export {
     planeSizeInVoxels,
     type ZarrRequest,
 } from './zarr/loading';
+
+export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader'

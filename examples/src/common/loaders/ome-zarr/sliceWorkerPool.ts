@@ -1,5 +1,4 @@
 import type { Decoder, OmeZarrMetadata, OmeZarrShapedDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
-import { logger } from '@alleninstitute/vis-core';
 import { uniqueId } from 'lodash';
 import type { ZarrSliceRequest } from './types';
 
