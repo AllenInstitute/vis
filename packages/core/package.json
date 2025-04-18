@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-core",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -32,7 +32,9 @@
     "main": "dist/main.js",
     "module": "dist/module.js",
     "types": "dist/types.d.ts",
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
