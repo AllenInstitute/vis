@@ -51,14 +51,8 @@ export class SliceWorkerPool {
     requestSlice(metadata: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset, signal?: AbortSignal) {
         const reqId = uniqueId('rq');
         const cacheKey = JSON.stringify({ url: metadata.url, req, level });
-        // const level = metadata.getShapedDataset(layerIndex, 0);
         const myWorker = this.which;
 
-        // if (!level) {
-        //     const message = `cannot request slice: invalid layer index: ${layerIndex}`;
-        //     logger.error(message);
-        //     throw new Error(message);
-        // }
         // TODO caching I guess...
         const eventually = new Promise<Slice>((resolve, reject) => {
             this.promises[reqId] = {
