@@ -29,7 +29,6 @@ export type OmezarrViewerState = {
   planeIndex: number;
   view: box2D;
 };
-const fake = (e: unknown) => {};
 function compose(ctx: CanvasRenderingContext2D, image: ImageData) {
   ctx.putImageData(image, 0, 0);
 }
