@@ -11,10 +11,10 @@ ctx.onmessage = (msg: MessageEvent<unknown>) => {
     try {
         if (isSliceRequest(data)) {
             const { metadata: dehydratedMetadata, req, level, id } = data;
-            const what = new AbortController();
-            cancelers[id] = what;
+            const abort = new AbortController();
+            cancelers[id] = abort;
             OmeZarrMetadata.rehydrate(dehydratedMetadata).then((metadata) => {
-                loadSlice(metadata, req, level, what.signal).then((result: { shape: number[]; buffer: Chunk<Float32> }) => {
+                loadSlice(metadata, req, level, abort.signal).then((result: { shape: number[]; buffer: Chunk<Float32> }) => {
                     const { shape, buffer } = result;
                     const data = new Float32Array(buffer.data);
                     ctx.postMessage({ type: 'slice', id, shape, data }, { transfer: [data.buffer] });
