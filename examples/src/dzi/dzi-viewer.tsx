@@ -3,7 +3,7 @@ import {
     type DziImage,
     type DziRenderSettings,
     type DziTile,
-    buildAsyncDziRenderer
+    buildAsyncDziRenderer,
 } from '@alleninstitute/vis-dzi';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import type { RenderFrameFn, buildAsyncRenderer } from '@alleninstitute/vis-core';
