@@ -8,7 +8,7 @@ import {
     type vec2,
 } from '@alleninstitute/vis-geometry';
 import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
-import { VisZarrDataError, VisZarrError } from '../errors';
+import { VisZarrDataError } from '../errors';
 import {
     OmeZarrAttrsSchema,
     OmeZarrMetadata,

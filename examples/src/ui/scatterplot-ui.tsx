@@ -1,5 +1,4 @@
 import { InputSlider } from '@czi-sds/components';
-import React, { useState } from 'react';
 import type { Demo } from 'src/layers';
 export function ScatterplotUI(props: { demo: Demo }) {
     const { demo } = props;

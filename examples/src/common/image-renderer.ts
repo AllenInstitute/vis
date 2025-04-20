@@ -1,4 +1,4 @@
-import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import type { vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 

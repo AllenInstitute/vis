@@ -3,12 +3,11 @@ import {
     type DziImage,
     type DziRenderSettings,
     type DziTile,
-    buildAsyncDziRenderer,
-    buildDziRenderer,
+    buildAsyncDziRenderer
 } from '@alleninstitute/vis-dzi';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import type { RenderFrameFn, buildAsyncRenderer } from '@alleninstitute/vis-core';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
 
 type Props = {

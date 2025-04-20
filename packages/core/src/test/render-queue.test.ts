@@ -1,5 +1,5 @@
 import delay from 'lodash/delay';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { AsyncDataCache } from '../dataset-cache';
 import { type NormalStatus, beginLongRunningFrame } from '../render-queue';
 import { fakeFetch } from './test-utils';

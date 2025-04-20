@@ -1,5 +1,4 @@
 import { Button } from '@czi-sds/components';
-import React from 'react';
 import type { Demo } from '../layers';
 import { AnnotationGrid } from '../ui/annotation-grid';
 import { ContactSheetUI } from '../ui/contact-sheet';

@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, PLANE_XY, Vec2, Vec3, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
