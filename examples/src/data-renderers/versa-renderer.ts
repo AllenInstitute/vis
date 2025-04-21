@@ -213,13 +213,16 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     }
 }
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-    return `${settings.metadata.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${
-        settings.gamut[col as 'R' | 'G' | 'B'].index
-    }`;
+    return `${settings.metadata.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${settings.gamut[col as 'R' | 'G' | 'B'].index
+        }`;
 }
 
 function reqSlice(dataset: OmeZarrMetadata, req: ZarrRequest, layerIndex: number) {
-    return getSlicePool().requestSlice(dataset, req, dataset.getAllShapedDatasets(0)[layerIndex]);
+    const layer = dataset.getShapedDataset(layerIndex, 0)
+    if (!layer) {
+        return Promise.reject('no such layer')
+    }
+    return getSlicePool().requestSlice(dataset, req, layer)
 }
 const LUMINANCE = 'luminance';
 export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, signal?: AbortSignal) {
