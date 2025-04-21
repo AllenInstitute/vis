@@ -9,7 +9,7 @@ type Props = {
     depth?: number;
     img: REGL.Texture2D | REGL.Framebuffer2D;
 };
-export function buildImageRenderer(regl: REGL.Regl, depthTest: boolean = false) {
+export function buildImageRenderer(regl: REGL.Regl, depthTest = false) {
     const cmd = regl<
         { depth: number; view: vec4; box: vec4; img: REGL.Texture2D | REGL.Framebuffer2D },
         { pos: REGL.BufferData },
