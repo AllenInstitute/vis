@@ -6,7 +6,6 @@ import {
     type vec2,
     type vec3,
     intervalToVec2,
-    Vec2,
 } from '@alleninstitute/vis-geometry';
 import {
     type CachedTexture,
@@ -17,7 +16,7 @@ import {
     logger,
 } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
-import { planeSizeInVoxels, type ZarrRequest } from '../zarr/loading';
+import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
@@ -159,27 +158,18 @@ export function buildOmeZarrSliceRenderer(
             return contents;
         },
         isPrepared,
-        renderItem: (target, item, dataset, settings, gpuData) => {
+        renderItem: (target, item, _dataset, settings, gpuData) => {
             const channels = Object.keys(gpuData).map((key) => ({
                 tex: gpuData[key].texture,
                 gamut: intervalToVec2(settings.channels[key].gamut),
                 rgb: settings.channels[key].rgb,
             }));
-            // determine the depth at which to render - the goal is that lower resolution tiles should be rendered further back
-            const wholeLayerResolution = planeSizeInVoxels(
-                settings.plane,
-                dataset.attrs.multiscales[0].axes,
-                item.level,
-            );
-            // this number can be very very large - the goal is to have a number from [0:1]...
-            // ideally, we'd go figure out the size of the same plane of the largest layer, but that is annoying right now
-            const divisor = 10_000_000;
-            const depth = Vec2.scale(wholeLayerResolution ?? [0, 0], 1 / divisor);
+
             const { camera } = settings;
             cmd({
                 channels,
                 target,
-                depth: 1 - Math.max(depth[0], depth[1]),
+                depth: 0.5,
                 tile: Box2D.toFlatArray(item.realBounds),
                 view: Box2D.toFlatArray(camera.view),
             });

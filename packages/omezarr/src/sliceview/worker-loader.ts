@@ -52,6 +52,8 @@ export function makeOmeZarrSliceLoaderWorker(ctx: typeof self) {
             } else if (isCancellationRequest(data)) {
                 const { id } = data;
                 cancelers[id]?.abort('cancelled');
+            } else {
+                logger.error('web-worker slice-fetcher recieved incomprehensible message: ', msg);
             }
         } catch (err) {
             logger.error('OME-Zarr fetch onmessage error', err);

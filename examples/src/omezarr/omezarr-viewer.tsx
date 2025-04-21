@@ -25,10 +25,6 @@ interface OmezarrViewerProps {
     onMouseLeave?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 }
 
-export type OmezarrViewerState = {
-    planeIndex: number;
-    view: box2D;
-};
 function compose(ctx: CanvasRenderingContext2D, image: ImageData) {
     ctx.putImageData(image, 0, 0);
 }
@@ -60,7 +56,7 @@ export function OmezarrViewer({
             const numChannels = omezarr.colorChannels.length || 3;
             renderer.current = buildAsyncOmezarrRenderer(server.regl, multithreadedDecoder, {
                 numChannels,
-                queueOptions: { maximumInflightAsyncTasks: 1 },
+                queueOptions: { maximumInflightAsyncTasks: 2 },
             });
             imgRenderer.current = buildImageRenderer(server.regl);
         }
@@ -85,10 +81,11 @@ export function OmezarrViewer({
                 }),
             };
             server.regl.clear({ framebuffer: stash.current.image, color: [0, 0, 0, 0], depth: 1 });
-            return () => {
-                stash.current?.image.destroy();
-            };
         }
+
+        return () => {
+            stash.current?.image.destroy();
+        };
     }, [server, settings.camera.screenSize]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies:
