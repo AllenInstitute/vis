@@ -213,8 +213,9 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     }
 }
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-    return `${settings.metadata.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${settings.gamut[col as 'R' | 'G' | 'B'].index
-        }`;
+    return `${settings.metadata.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${
+        settings.gamut[col as 'R' | 'G' | 'B'].index
+    }`;
 }
 
 function reqSlice(dataset: OmeZarrMetadata, req: ZarrRequest, layerIndex: number) {
