@@ -90,6 +90,14 @@ export function OmezarrViewer({
       };
     }
   }, [server, settings.camera.screenSize]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies:
+  useEffect(() => {
+    // when the user changes the slide (orthoVal?), erase our stashed copy of the rendered image
+    if (server && stash.current) {
+      server.regl.clear({ framebuffer: stash.current.image, color: [0, 0, 0, 0], depth: 1 });
+    }
+  }, [server, settings.orthoVal]);
   // render frames
   useEffect(() => {
     const stashProgress = (server: RenderServer, target: REGL.Framebuffer2D) => {
