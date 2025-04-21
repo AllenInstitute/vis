@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router';
 
 export function Home() {
     return (
@@ -7,15 +8,16 @@ export function Home() {
             <br />
             <ul>
                 <li>
-                    <a href="/vis/dzi">Deep Zoom Image</a>
+                    <Link to="dzi">Deep Zoom Image</Link>
                     <br />
                 </li>
                 <li>
-                    <a href="/vis/omezarr">OMEZARR</a>
+                    <Link to="omezarr">OMEZARR</Link>
                     <br />
                 </li>
                 <li>
-                    <a href="/vis/layers">Layers (only works on local demo site)</a>
+                    {/* NOT A REACT ROUTER LINK until we migrate it to a React component */}
+                    <a href="/vis/layers">Layers</a>
                     <br />
                 </li>
             </ul>
