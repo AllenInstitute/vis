@@ -69,9 +69,9 @@ export class SliceWorkerPool {
             };
             if (signal) {
                 signal.onabort = (ev) => {
-                    this.workers[myWorker].postMessage({ type: 'cancel', id: reqId })
-                    this.promises[reqId]?.reject("cancelled")
-                }
+                    this.workers[myWorker].postMessage({ type: 'cancel', id: reqId });
+                    this.promises[reqId]?.reject('cancelled');
+                };
             }
             this.workers[myWorker].postMessage(message);
             this.roundRobin();

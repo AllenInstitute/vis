@@ -9,9 +9,9 @@ export type ZarrSliceRequest = {
 };
 
 export type CancelRequest = {
-    type: 'cancel',
-    id: string
-}
+    type: 'cancel';
+    id: string;
+};
 
 export function isSliceRequest(payload: unknown): payload is ZarrSliceRequest {
     return typeof payload === 'object' && payload !== null && 'type' in payload && payload.type === 'ZarrSliceRequest';

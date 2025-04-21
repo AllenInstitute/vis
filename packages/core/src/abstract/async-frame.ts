@@ -184,14 +184,14 @@ export function beginFrame<
     };
 }
 type QueueOptions = {
-    queueProcessingIntervalMS?: number,
-    maximumInflightAsyncTasks?: number,
-    queueTimeBudgetMS?: number,
-}
+    queueProcessingIntervalMS?: number;
+    maximumInflightAsyncTasks?: number;
+    queueTimeBudgetMS?: number;
+};
 const defaultQueueOptions = {
     queueProcessingIntervalMS: 33,
     maximumInflightAsyncTasks: 5,
-    queueTimeBudgetMS: 16
+    queueTimeBudgetMS: 16,
 } as const;
 
 export function buildAsyncRenderer<

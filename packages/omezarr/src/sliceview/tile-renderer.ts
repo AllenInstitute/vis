@@ -6,7 +6,6 @@ import type { vec2, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 
-
 const vert = /*glsl*/ `
 precision highp float;
 attribute vec2 pos;
@@ -27,7 +26,7 @@ void main(){
     p = (p*2.0)-1.0;
     gl_Position = vec4(p.x,p.y,depth,1.0);
 }
-`
+`;
 type CommonRenderProps = {
     target: Framebuffer2D | null;
     depth: number; // the Z value at which to render the tile, from 0 (the front) to 1 (the back)
@@ -167,7 +166,6 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
         }
         return acc;
     }, staticReglUniforms);
-
 
     const frag = `
         precision highp float;

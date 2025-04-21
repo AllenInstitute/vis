@@ -11,7 +11,7 @@ type Props = {
 };
 export function buildImageRenderer(regl: REGL.Regl, depthTest: boolean = false) {
     const cmd = regl<
-        { depth: number, view: vec4; box: vec4; img: REGL.Texture2D | REGL.Framebuffer2D },
+        { depth: number; view: vec4; box: vec4; img: REGL.Texture2D | REGL.Framebuffer2D },
         { pos: REGL.BufferData },
         Props
     >({

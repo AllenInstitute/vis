@@ -53,4 +53,4 @@ export {
     type ZarrRequest,
 } from './zarr/loading';
 
-export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader'
+export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';

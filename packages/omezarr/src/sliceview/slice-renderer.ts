@@ -99,12 +99,17 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
     return keys.every((key) => cacheData[key]?.type === 'texture');
 }
 
-type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset, signal?: AbortSignal) => Promise<VoxelTileImage>;
+type Decoder = (
+    dataset: OmeZarrMetadata,
+    req: ZarrRequest,
+    level: OmeZarrShapedDataset,
+    signal?: AbortSignal,
+) => Promise<VoxelTileImage>;
 
 export type OmeZarrSliceRendererOptions = {
     numChannels?: number;
-    queueOptions?: QueueOptions
-}
+    queueOptions?: QueueOptions;
+};
 
 const DEFAULT_NUM_CHANNELS = 3;
 
@@ -138,7 +143,7 @@ export function buildOmeZarrSliceRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
-        destroy: () => { },
+        destroy: () => {},
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, orthoVal, tileSize } = settings;
             return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
@@ -161,11 +166,15 @@ export function buildOmeZarrSliceRenderer(
                 rgb: settings.channels[key].rgb,
             }));
             // determine the depth at which to render - the goal is that lower resolution tiles should be rendered further back
-            const wholeLayerResolution = planeSizeInVoxels(settings.plane, dataset.attrs.multiscales[0].axes, item.level)
-            // this number can be very very large - the goal is to have a number from [0:1]... 
+            const wholeLayerResolution = planeSizeInVoxels(
+                settings.plane,
+                dataset.attrs.multiscales[0].axes,
+                item.level,
+            );
+            // this number can be very very large - the goal is to have a number from [0:1]...
             // ideally, we'd go figure out the size of the same plane of the largest layer, but that is annoying right now
-            const divisor = 10_000_000
-            const depth = Vec2.scale(wholeLayerResolution ?? [0, 0], 1 / divisor)
+            const divisor = 10_000_000;
+            const depth = Vec2.scale(wholeLayerResolution ?? [0, 0], 1 / divisor);
             const { camera } = settings;
             cmd({
                 channels,

@@ -297,7 +297,12 @@ export function indexOfDimension(axes: readonly OmeZarrAxis[], dim: ZarrDimensio
  * @returns the requested chunk of image data from the given layer of the omezarr LOD pyramid. Note that if the given layerIndex is invalid, it will be treated as though it is the highest index possible.
  * @throws an error if the request results in anything of lower-or-equal dimensionality than a single value
  */
-export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level: OmeZarrShapedDataset, signal?: AbortSignal) {
+export async function loadSlice(
+    metadata: OmeZarrMetadata,
+    r: ZarrRequest,
+    level: OmeZarrShapedDataset,
+    signal?: AbortSignal,
+) {
     // put the request in native order
     const store = new zarr.FetchStore(metadata.url);
     const scene = metadata.attrs.multiscales[0];
