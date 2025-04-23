@@ -142,7 +142,7 @@ export function buildOmeZarrSliceRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
-        destroy: () => {},
+        destroy: () => { },
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, orthoVal, tileSize } = settings;
             return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
@@ -158,18 +158,21 @@ export function buildOmeZarrSliceRenderer(
             return contents;
         },
         isPrepared,
-        renderItem: (target, item, _dataset, settings, gpuData) => {
+        renderItem: (target, item, dataset, settings, gpuData) => {
             const channels = Object.keys(gpuData).map((key) => ({
                 tex: gpuData[key].texture,
                 gamut: intervalToVec2(settings.channels[key].gamut),
                 rgb: settings.channels[key].rgb,
             }));
-
+            const layers = dataset.getNumLayers();
+            // per the spec, the highest resolution layer should be first
+            // we want that layer most in front, so:
+            const depth = item.level.datasetIndex / layers;
             const { camera } = settings;
             cmd({
                 channels,
                 target,
-                depth: 0.5,
+                depth,
                 tile: Box2D.toFlatArray(item.realBounds),
                 view: Box2D.toFlatArray(camera.view),
             });

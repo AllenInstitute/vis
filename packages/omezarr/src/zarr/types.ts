@@ -68,6 +68,7 @@ export type OmeZarrDataset = {
 export type OmeZarrShapedDataset = OmeZarrDataset & {
     shape: ReadonlyArray<number>;
     multiscaleIndex: number;
+    datasetIndex: number;
 };
 
 export const OmeZarrDatasetSchema: z.ZodType<OmeZarrDataset> = z.object({
@@ -408,6 +409,7 @@ export class OmeZarrMetadata {
             ...dataset,
             shape: array.shape,
             multiscaleIndex,
+            datasetIndex,
         };
     }
 
@@ -456,7 +458,10 @@ export class OmeZarrMetadata {
             throw e;
         }
     }
-
+    getNumLayers(multiscale: number | string = 0) {
+        const multiscaleIndex = this.#getValidMultiscaleIndex(multiscale);
+        return this.#attrs.multiscales[multiscaleIndex].datasets.length;
+    }
     getAllShapedDatasets(multiscale: number | string = 0): OmeZarrShapedDataset[] {
         const multiscaleIndex = this.#getValidMultiscaleIndex(multiscale);
         const datasets = this.#attrs.multiscales[multiscaleIndex].datasets;

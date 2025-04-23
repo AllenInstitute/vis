@@ -155,6 +155,7 @@ export function OmezarrViewer({
                                 imgRenderer.current({
                                     box: Box2D.toFlatArray(stash.current.camera.view),
                                     img: stash.current.image,
+                                    depth: 1,
                                     target: e.target,
                                     view: Box2D.toFlatArray(settings.camera.view),
                                 });
