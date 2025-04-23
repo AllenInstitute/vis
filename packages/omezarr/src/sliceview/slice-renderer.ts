@@ -142,7 +142,7 @@ export function buildOmeZarrSliceRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
-        destroy: () => { },
+        destroy: () => {},
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, orthoVal, tileSize } = settings;
             return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
