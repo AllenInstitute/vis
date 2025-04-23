@@ -19,7 +19,7 @@ export type OmeZarrAxis = {
 };
 
 export const OmeZarrAxisSchema: z.ZodType<OmeZarrAxis> = z.object({
-    name: z.string(),
+    name: z.string().toLowerCase(),
     type: z.string(),
     scale: z.number().optional(),
     unit: z.string().optional(),
