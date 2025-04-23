@@ -9,7 +9,6 @@ const RGBA_COLOR_REGEX = /^#?([0-9a-fA-F]{4}|[0-9a-fA-F]{8})$/;
 // https://d3hik2dwvr9wk1.cloudfront.net/A549/organelle_box_crop_v1.zarr/ACTB/MeOH/003002
 // https://d3hik2dwvr9wk1.cloudfront.net/A549/organelle_box_crop_v1.zarr/ACTB/PFA/003000
 
-
 export function makeRGBColorVector(colorHashStr: string, normalized = true): vec3 {
     if (!colorHashStr || !RGB_COLOR_REGEX.test(colorHashStr)) {
         logger.warn('invalid color hash string; returning black color vector (0, 0, 0)');
