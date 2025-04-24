@@ -1,15 +1,18 @@
-import type { box2D, vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
     type OmeZarrMetadata,
     buildAsyncOmezarrRenderer,
-    defaultDecoder,
+    pickBestScale,
+    planeSizeInVoxels,
 } from '@alleninstitute/vis-omezarr';
-import type { RenderFrameFn } from '@alleninstitute/vis-core';
+import type { RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
+import type REGL from 'regl';
 import { renderServerContext } from '~/common/react/render-server-provider';
-
+import { multithreadedDecoder } from '~/common/loaders/ome-zarr/sliceWorkerPool';
+import { buildImageRenderer } from '~/common/image-renderer';
 interface OmezarrViewerProps {
     omezarr: OmeZarrMetadata;
     id: string;
@@ -22,14 +25,13 @@ interface OmezarrViewerProps {
     onMouseLeave?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 }
 
-export type OmezarrViewerState = {
-    planeIndex: number;
-    view: box2D;
-};
-
 function compose(ctx: CanvasRenderingContext2D, image: ImageData) {
     ctx.putImageData(image, 0, 0);
 }
+type StashedView = {
+    camera: RenderSettings['camera'];
+    image: REGL.Framebuffer2D;
+};
 
 export function OmezarrViewer({
     omezarr,
@@ -44,13 +46,19 @@ export function OmezarrViewer({
     const canvas = useRef<HTMLCanvasElement>(null);
     const server = useContext(renderServerContext);
     const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
+    const imgRenderer = useRef<ReturnType<typeof buildImageRenderer>>();
+    const stash = useRef<StashedView>();
 
     // setup renderer and delete it when component goes away
     useEffect(() => {
         const c = canvas?.current;
         if (server?.regl && omezarr) {
             const numChannels = omezarr.colorChannels.length || 3;
-            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder, { numChannels });
+            renderer.current = buildAsyncOmezarrRenderer(server.regl, multithreadedDecoder, {
+                numChannels,
+                queueOptions: { maximumInflightAsyncTasks: 2 },
+            });
+            imgRenderer.current = buildImageRenderer(server.regl);
         }
         return () => {
             if (c) {
@@ -58,13 +66,74 @@ export function OmezarrViewer({
             }
         };
     }, [server, omezarr]);
+    useEffect(() => {
+        // set up the stash:
+        if (server?.regl) {
+            stash.current = {
+                camera: { view: { minCorner: [0, 0], maxCorner: [1, 1] }, screenSize: settings.camera.screenSize },
+                image: server.regl.framebuffer({
+                    color: server.regl.texture({
+                        width: settings.camera.screenSize[0],
+                        height: settings.camera.screenSize[1],
+                        min: 'linear',
+                        mag: 'linear',
+                    }),
+                }),
+            };
+            server.regl.clear({ framebuffer: stash.current.image, color: [0, 0, 0, 0], depth: 1 });
+        }
 
+        return () => {
+            stash.current?.image.destroy();
+        };
+    }, [server, settings.camera.screenSize]);
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies:
+    useEffect(() => {
+        // when the user changes the slide (orthoVal?), erase our stashed copy of the rendered image
+        if (server && stash.current) {
+            server.regl.clear({ framebuffer: stash.current.image, color: [0, 0, 0, 0], depth: 1 });
+        }
+    }, [server, settings.orthoVal]);
     // render frames
     useEffect(() => {
+        const stashProgress = (server: RenderServer, target: REGL.Framebuffer2D) => {
+            if (imgRenderer.current && stash.current) {
+                server.regl?.clear({
+                    framebuffer: stash.current.image,
+                    color: [0, 0, 0, 0],
+                    depth: 1,
+                });
+                // can I start a sneaky frame here....
+                imgRenderer.current({
+                    box: Box2D.toFlatArray(settings.camera.view),
+                    img: target,
+                    target: stash.current.image,
+                    view: Box2D.toFlatArray(settings.camera.view),
+                });
+                stash.current.camera = { ...settings.camera };
+            }
+        };
         if (server && renderer.current && canvas.current && omezarr) {
             const renderFrame: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
+                    // if we had a stashed buffer of the previous frame...
+                    // we could pre-load it into target, right here!
                     return renderer.current(omezarr, settings, callback, target, cache);
+                }
+                return null;
+            };
+            const lowResPreview: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
+                if (renderer.current) {
+                    // if we had a stashed buffer of the previous frame...
+                    // we could pre-load it into target, right here!
+                    return renderer.current(
+                        omezarr,
+                        { ...settings, camera: { view: settings.camera.view, screenSize: [1, 1] } },
+                        callback,
+                        target,
+                        cache,
+                    );
                 }
                 return null;
             };
@@ -79,15 +148,37 @@ export function OmezarrViewer({
                                 color: [0, 0, 0, 0],
                                 depth: 1,
                             });
+                            lowResPreview(e.target, server.cache, (_e) => {})?.cancelFrame(
+                                'lowres preview beneath actual frame',
+                            );
+                            if (imgRenderer.current && stash.current) {
+                                imgRenderer.current({
+                                    box: Box2D.toFlatArray(stash.current.camera.view),
+                                    img: stash.current.image,
+                                    depth: 1,
+                                    target: e.target,
+                                    view: Box2D.toFlatArray(settings.camera.view),
+                                });
+                                e.server.copyToClient(compose);
+                            }
                             break;
                         case 'progress':
                             // wanna see the tiles as they arrive?
                             e.server.copyToClient(compose);
+                            if (e.target !== null && server) {
+                                stashProgress(server, e.target);
+                            }
                             break;
                         case 'finished': {
                             e.server.copyToClient(compose);
+                            // stash our nice image... do this all the time?
+                            if (e.target !== null && server) {
+                                stashProgress(server, e.target);
+                            }
                             break;
                         }
+                        case 'cancelled':
+                            break;
                         default: {
                             break;
                         }

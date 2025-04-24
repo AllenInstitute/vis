@@ -9,6 +9,7 @@ import {
 } from '@alleninstitute/vis-geometry';
 import {
     type CachedTexture,
+    type QueueOptions,
     type ReglCacheEntry,
     type Renderer,
     buildAsyncRenderer,
@@ -97,10 +98,16 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
     return keys.every((key) => cacheData[key]?.type === 'texture');
 }
 
-type Decoder = (dataset: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset) => Promise<VoxelTileImage>;
+type Decoder = (
+    dataset: OmeZarrMetadata,
+    req: ZarrRequest,
+    level: OmeZarrShapedDataset,
+    signal?: AbortSignal,
+) => Promise<VoxelTileImage>;
 
 export type OmeZarrSliceRendererOptions = {
     numChannels?: number;
+    queueOptions?: QueueOptions;
 };
 
 const DEFAULT_NUM_CHANNELS = 3;
@@ -144,24 +151,28 @@ export function buildOmeZarrSliceRenderer(
             const contents: Record<string, () => Promise<ReglCacheEntry>> = {};
             for (const key in settings.channels) {
                 contents[key] = () =>
-                    decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level).then(
+                    decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level, signal).then(
                         sliceAsTexture,
                     );
             }
             return contents;
         },
         isPrepared,
-        renderItem: (target, item, _, settings, gpuData) => {
+        renderItem: (target, item, dataset, settings, gpuData) => {
             const channels = Object.keys(gpuData).map((key) => ({
                 tex: gpuData[key].texture,
                 gamut: intervalToVec2(settings.channels[key].gamut),
                 rgb: settings.channels[key].rgb,
             }));
-
+            const layers = dataset.getNumLayers();
+            // per the spec, the highest resolution layer should be first
+            // we want that layer most in front, so:
+            const depth = item.level.datasetIndex / layers;
             const { camera } = settings;
             cmd({
                 channels,
                 target,
+                depth,
                 tile: Box2D.toFlatArray(item.realBounds),
                 view: Box2D.toFlatArray(camera.view),
             });
@@ -170,5 +181,5 @@ export function buildOmeZarrSliceRenderer(
 }
 
 export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder, options?: OmeZarrSliceRendererOptions) {
-    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder, options));
+    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder, options), options?.queueOptions);
 }
