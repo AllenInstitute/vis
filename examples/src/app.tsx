@@ -10,7 +10,7 @@ export function App() {
                 <Route index element={<Home />} />
                 <Route path="dzi" element={<DziDemo />} />
                 <Route path="omezarr" element={<OmezarrDemo />} />
-                <Route path="layers" />
+                {/* LAYERS intentionally missing, needs to be migrated to a React component */}
             </Routes>
         </BrowserRouter>
     );
