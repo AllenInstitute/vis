@@ -1,6 +1,6 @@
 import { Box2D } from '@alleninstitute/vis-geometry';
 import { logger } from '@alleninstitute/vis-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { type DziImage, firstSuitableLayer, imageSizeAtLayer, tileWithOverlap, tilesInLayer } from './loader';
 
 describe('tiling math', () => {

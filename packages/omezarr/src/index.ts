@@ -2,6 +2,9 @@ export {
     buildOmeZarrSliceRenderer,
     buildAsyncOmezarrRenderer,
     type VoxelTileImage,
+    type RenderSettings,
+    type RenderSettingsChannel,
+    type RenderSettingsChannels,
 } from './sliceview/slice-renderer';
 export { VisZarrError, VisZarrDataError, VisZarrIndexError } from './errors';
 export {
@@ -9,7 +12,7 @@ export {
     defaultDecoder,
     getVisibleTiles,
 } from './sliceview/loader';
-export { buildTileRenderer } from './sliceview/tile-renderer';
+export { buildTileRenderer, buildRGBTileRenderer } from './sliceview/tile-renderer';
 export {
     type ZarrDimension,
     type OmeZarrAxis,
@@ -49,3 +52,5 @@ export {
     planeSizeInVoxels,
     type ZarrRequest,
 } from './zarr/loading';
+
+export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';

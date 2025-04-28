@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
@@ -17,10 +17,22 @@ const settings: RenderSettings = {
     tileSize: 256,
     // in a "real" app, you'd most likely expose sliders to control how the data in the file
     // gets mapped to pixel/color intensity on the screen. for now, we just use hardcoded data
-    gamut: {
-        R: { gamut: { min: 0, max: 80 }, index: 0 },
-        G: { gamut: { min: 0, max: 100 }, index: 1 },
-        B: { gamut: { min: 0, max: 100 }, index: 2 },
+    channels: {
+        R: {
+            rgb: [1.0, 0.0, 0.0],
+            index: 0,
+            gamut: { min: 0, max: 80 },
+        },
+        G: {
+            rgb: [0.0, 1.0, 0.0],
+            index: 1,
+            gamut: { min: 0, max: 100 },
+        },
+        B: {
+            rgb: [0.0, 0.0, 1.0],
+            index: 2,
+            gamut: { min: 0, max: 100 },
+        },
     },
     plane: PLANE_XY,
     orthoVal: 3,

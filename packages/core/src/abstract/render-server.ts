@@ -172,7 +172,7 @@ export class RenderServer {
                 this.regl.clear({
                     framebuffer: clientFrame.image,
                     color: [0, 0, 0, 0],
-                    depth: 0,
+                    depth: 1,
                 });
                 clientFrame.updateRequested = null;
             }

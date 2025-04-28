@@ -18,6 +18,7 @@ export {
     fixOrder,
     intersection,
     limit,
+    intervalToVec2,
 } from './interval';
 export type { box } from './BoundingBox';
 export {

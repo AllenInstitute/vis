@@ -24,6 +24,10 @@
             "recommended": true,
             "suspicious": {
                 "noConsole": "error"
+            },
+            "correctness": {
+                "noUnusedImports": "error",
+                "useHookAtTopLevel": "error"
             }
         }
     },
