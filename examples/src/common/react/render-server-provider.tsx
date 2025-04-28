@@ -1,5 +1,5 @@
 import { logger, RenderServer } from '@alleninstitute/vis-core';
-import React, { createContext, useEffect, useRef, type PropsWithChildren } from 'react';
+import { createContext, useEffect, useRef, type PropsWithChildren } from 'react';
 
 export const renderServerContext = createContext<RenderServer | null>(null);
 

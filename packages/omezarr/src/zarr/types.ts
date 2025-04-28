@@ -1,7 +1,6 @@
-import { Vec4, type CartesianPlane, type Interval, type vec3, type vec4 } from '@alleninstitute/vis-geometry';
+import type { CartesianPlane, Interval, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
-import { logger, makeRGBAColorVector, makeRGBColorVector } from '@alleninstitute/vis-core';
-import type * as zarr from 'zarrita';
+import { logger, makeRGBAColorVector } from '@alleninstitute/vis-core';
 import { z } from 'zod';
 
 export type ZarrDimension = 't' | 'c' | 'z' | 'y' | 'x';

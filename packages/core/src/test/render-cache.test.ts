@@ -1,7 +1,6 @@
-import { delay, partial, partialRight, uniqueId } from 'lodash';
+import { partial, uniqueId } from 'lodash';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AsyncDataCache } from '../dataset-cache';
-import { fakeFetch } from './test-utils';
 type Columns = 'color' | 'position';
 type vec3 = readonly [number, number, number];
 type Data = { pretend: vec3 };

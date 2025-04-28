@@ -1,4 +1,4 @@
-import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 import type { RenderSettings } from '~/common/loaders/scatterplot/data';

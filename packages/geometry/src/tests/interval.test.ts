@@ -1,4 +1,4 @@
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { type Interval, fixOrder, intersection, isValid, limit, size, within } from '../interval';
 function I(a: number, b: number): Interval {
     return { min: a, max: b };

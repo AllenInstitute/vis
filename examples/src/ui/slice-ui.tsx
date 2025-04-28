@@ -1,5 +1,4 @@
 import { Button, InputSlider } from '@czi-sds/components';
-import React from 'react';
 import type { Demo } from 'src/layers';
 export function SliceViewLayer(props: { demo: Demo }) {
     const { demo } = props;

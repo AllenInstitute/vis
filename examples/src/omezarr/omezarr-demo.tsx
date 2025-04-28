@@ -1,13 +1,4 @@
-import {
-    Box2D,
-    CartesianPlane,
-    type Interval,
-    PLANE_XY,
-    type box2D,
-    type vec2,
-    type vec3,
-} from '@alleninstitute/vis-geometry';
-import { makeRGBColorVector } from '@alleninstitute/vis-core';
+import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';

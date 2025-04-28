@@ -1,11 +1,9 @@
-import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
     type OmeZarrMetadata,
     buildAsyncOmezarrRenderer,
-    pickBestScale,
-    planeSizeInVoxels,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';

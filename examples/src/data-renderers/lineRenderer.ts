@@ -1,6 +1,5 @@
 import type { box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
-import type { AttributeConfig } from 'regl';
 import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 type Attrs = { pos: REGL.AttributeConfig };
