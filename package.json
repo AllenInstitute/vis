@@ -16,7 +16,7 @@
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
         "@parcel/packager-ts": "2.13.3",
-        "@parcel/transformer-typescript-types": "2.13.3",
+        "@parcel/transformer-typescript-types": "2.14.4",
         "@vitest/coverage-istanbul": "3.0.7",
         "buffer": "6.0.0",
         "parcel": "2.13.3",
