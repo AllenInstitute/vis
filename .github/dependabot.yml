@@ -1,63 +1,7 @@
 version: 2
 updates:
-    # We need to point to each package.json, so this file will be a bit verbose
-
-    # Root package.json
     - package-ecosystem: 'npm'
       directory: '/'
-      open-pull-requests-limit: 2
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-
-    # Packages
-    - package-ecosystem: 'npm'
-      directory: '/packages/dzi'
-      open-pull-requests-limit: 2
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-
-    - package-ecosystem: 'npm'
-      directory: '/packages/geometry'
-      open-pull-requests-limit: 2
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-    
-    - package-ecosystem: 'npm'
-      directory: '/packages/omezarr'
-      open-pull-requests-limit: 2
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-    
-    - package-ecosystem: 'npm'
-      directory: '/packages/core'
-      open-pull-requests-limit: 2
-      schedule:
-          interval: 'monthly'
-      reviewers:
-          - 'AllenInstitute/app-dev'
-      commit-message:
-          prefix: 'chore(deps):'
-
-    # Examples
-    - package-ecosystem: 'npm'
-      directory: '/examples'
-      open-pull-requests-limit: 2
       schedule:
           interval: 'monthly'
       reviewers:
