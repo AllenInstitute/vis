@@ -17,9 +17,10 @@ export const darkTheme = createTheme({
 export const lightTheme = createTheme({
     palette: {
         mode: 'light',
+        text: {
+            primary: colors.light.text,
+            secondary: colors.light.textSelected,
+        },
     },
-    text: {
-        primary: colors.light.text,
-        secondary: colors.light.textSelected,
-    },
+    
 });
