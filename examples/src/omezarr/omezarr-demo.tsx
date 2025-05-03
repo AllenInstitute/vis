@@ -1,65 +1,52 @@
-import {
-    Box2D,
-    type Interval,
-    PLANE_XY,
-    type box2D,
-    type vec2,
-} from "@alleninstitute/vis-geometry";
-import {
-    type OmeZarrMetadata,
-    loadMetadata,
-    sizeInUnits,
-} from "@alleninstitute/vis-omezarr";
-import type {
-    RenderSettings,
-    RenderSettingsChannels,
-} from "@alleninstitute/vis-omezarr";
-import { logger, type WebResource } from "@alleninstitute/vis-core";
-import type React from "react";
-import { useEffect, useMemo, useState } from "react";
-import { pan, zoom } from "~/common/camera";
-import { RenderServerProvider } from "~/common/react/render-server-provider";
-import { OmezarrViewer } from "./omezarr-viewer";
-import { SliceView } from "./sliceview";
-import { spacing } from "~/constants";
-import { Typography } from "@mui/material";
+import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
+import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
+import { logger, type WebResource } from '@alleninstitute/vis-core';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { pan, zoom } from '~/common/camera';
+import { RenderServerProvider } from '~/common/react/render-server-provider';
+import { OmezarrViewer } from './omezarr-viewer';
+import { SliceView } from './sliceview';
+import { spacing } from '~/constants';
+import { Typography } from '@mui/material';
 
 type DemoOption = { value: string; label: string; res: WebResource };
 
 const demoOptions: DemoOption[] = [
     {
-        value: "opt1",
-        label: "VERSA OME-Zarr Example (HTTPS) (color channels: [R, G, B])",
+        value: 'opt1',
+        label: 'VERSA OME-Zarr Example (HTTPS) (color channels: [R, G, B])',
         res: {
-            type: "https",
-            url: "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/",
+            type: 'https',
+            url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
         },
     },
     {
-        value: "opt2",
-        label: "VS200 Example Image (S3) (color channels: [CFP, YFP])",
+        value: 'opt2',
+        label: 'VS200 Example Image (S3) (color channels: [CFP, YFP])',
         res: {
-            type: "s3",
-            region: "us-west-2",
-            url: "s3://allen-genetic-tools/epifluorescence/1401210938/ome_zarr_conversion/1401210938.zarr/",
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://allen-genetic-tools/epifluorescence/1401210938/ome_zarr_conversion/1401210938.zarr/',
         },
     },
     {
-        value: "opt3",
-        label: "EPI Example Image (S3) (color channels: [R, G, B])",
+        value: 'opt3',
+        label: 'EPI Example Image (S3) (color channels: [R, G, B])',
         res: {
-            type: "s3",
-            region: "us-west-2",
-            url: "s3://allen-genetic-tools/epifluorescence/1383646325/ome_zarr_conversion/1383646325.zarr/",
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://allen-genetic-tools/epifluorescence/1383646325/ome_zarr_conversion/1383646325.zarr/',
         },
     },
     {
-        value: "opt4",
-        label: "STPT Example Image (S3) (color channels: [R, G, B])",
+        value: 'opt4',
+        label: 'STPT Example Image (S3) (color channels: [R, G, B])',
         res: {
-            type: "s3",
-            region: "us-west-2",
-            url: "s3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/",
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
         },
     },
 ];
@@ -68,12 +55,7 @@ const screenSize: vec2 = [500, 500];
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
-function makeZarrSettings(
-    screenSize: vec2,
-    view: box2D,
-    orthoVal: number,
-    omezarr: OmeZarrMetadata
-): RenderSettings {
+function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omezarr: OmeZarrMetadata): RenderSettings {
     const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
         acc[val.label ?? `${index}`] = {
             rgb: val.rgb,
@@ -94,29 +76,22 @@ function makeZarrSettings(
         orthoVal,
         plane: PLANE_XY,
         tileSize: 256,
-        channels:
-            Object.keys(omezarrChannels).length > 0
-                ? omezarrChannels
-                : fallbackChannels,
+        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
     };
 }
 
 export function OmezarrDemo() {
-    const [customUrl, setCustomUrl] = useState<string>("");
-    const [selectedDemoOptionValue, setSelectedDemoOptionValue] =
-        useState<string>("");
+    const [customUrl, setCustomUrl] = useState<string>('');
+    const [selectedDemoOptionValue, setSelectedDemoOptionValue] = useState<string>('');
     const [omezarr, setOmezarr] = useState<OmeZarrMetadata | null>(null);
-    const [omezarrJson, setOmezarrJson] = useState<string>("");
+    const [omezarrJson, setOmezarrJson] = useState<string>('');
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeIndex, setPlaneIndex] = useState(0);
     const [dragging, setDragging] = useState(false);
 
     const settings: RenderSettings | undefined = useMemo(
-        () =>
-            omezarr
-                ? makeZarrSettings(screenSize, view, planeIndex, omezarr)
-                : undefined,
-        [omezarr, view, planeIndex]
+        () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex, omezarr) : undefined),
+        [omezarr, view, planeIndex],
     );
 
     const load = (res: WebResource) => {
@@ -126,15 +101,11 @@ export function OmezarrDemo() {
             setPlaneIndex(Math.floor(v.maxOrthogonal(PLANE_XY) / 2));
             const dataset = v.getFirstShapedDataset(0);
             if (!dataset) {
-                throw new Error("dataset 0 does not exist!");
+                throw new Error('dataset 0 does not exist!');
             }
-            const size = sizeInUnits(
-                PLANE_XY,
-                v.attrs.multiscales[0].axes,
-                dataset
-            );
+            const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
             if (size) {
-                logger.info("size", size);
+                logger.info('size', size);
                 setView(Box2D.create([0, 0], size));
             }
         });
@@ -144,7 +115,7 @@ export function OmezarrDemo() {
         const selectedValue = e.target.value;
         setOmezarr(null);
         setSelectedDemoOptionValue(selectedValue);
-        if (selectedValue && selectedValue !== "custom") {
+        if (selectedValue && selectedValue !== 'custom') {
             const option = demoOptions.find((v) => v.value === selectedValue);
             if (option) {
                 load(option.res);
@@ -155,36 +126,25 @@ export function OmezarrDemo() {
     const handleCustomUrlLoad = () => {
         const urlRegex = /^(s3|https):\/\/.*/;
         if (!urlRegex.test(customUrl)) {
-            logger.error("cannot load resource: invalid URL");
+            logger.error('cannot load resource: invalid URL');
             return;
         }
-        const isS3 = customUrl.slice(0, 5) === "s3://";
+        const isS3 = customUrl.slice(0, 5) === 's3://';
         const resource: WebResource = isS3
-            ? { type: "s3", url: customUrl, region: "us-west-2" }
-            : { type: "https", url: customUrl };
+            ? { type: 's3', url: customUrl, region: 'us-west-2' }
+            : { type: 'https', url: customUrl };
         load(resource);
     };
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handlePlaneIndex = (next: 1 | -1) => {
-        setPlaneIndex((prev) =>
-            Math.max(
-                0,
-                Math.min(
-                    prev + next,
-                    (omezarr?.maxOrthogonal(PLANE_XY) ?? 1) - 1
-                )
-            )
-        );
+        setPlaneIndex((prev) => Math.max(0, Math.min(prev + next, (omezarr?.maxOrthogonal(PLANE_XY) ?? 1) - 1)));
     };
 
     const handleZoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
         // e.preventDefault();
         const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-        const v = zoom(view, screenSize, zoomScale, [
-            e.nativeEvent.offsetX,
-            e.nativeEvent.offsetY,
-        ]);
+        const v = zoom(view, screenSize, zoomScale, [e.nativeEvent.offsetX, e.nativeEvent.offsetY]);
         setView(v);
     };
 
@@ -207,34 +167,28 @@ export function OmezarrDemo() {
         <RenderServerProvider>
             <div
                 style={{
-                    display: "flex",
-                    flexDirection: "column",
+                    display: 'flex',
+                    flexDirection: 'column',
                     padding: spacing.m,
                 }}
             >
                 <Typography variant="h4">OME-Zarr Viewer</Typography>
                 <div
                     style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        gap: "16px",
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: '16px',
                     }}
                 >
                     <div
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px",
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
                         }}
                     >
-                        <label htmlFor="webresource-select">
-                            Select an OME-Zarr to View:
-                        </label>
-                        <select
-                            id="webresource-select"
-                            name="webresource"
-                            onChange={handleOptionSelected}
-                        >
+                        <label htmlFor="webresource-select">Select an OME-Zarr to View:</label>
+                        <select id="webresource-select" name="webresource" onChange={handleOptionSelected}>
                             <option value="" key="default">
                                 -- Please select an option --
                             </option>
@@ -247,48 +201,43 @@ export function OmezarrDemo() {
                                 * Enter a custom URL... *
                             </option>
                         </select>
-                        {selectedDemoOptionValue === "custom" && (
+                        {selectedDemoOptionValue === 'custom' && (
                             <div
                                 style={{
-                                    display: "flex",
-                                    flexDirection: "row",
-                                    gap: "8px",
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    gap: '8px',
                                 }}
                             >
                                 <input
                                     type="text"
                                     value={customUrl}
-                                    onChange={(e) =>
-                                        setCustomUrl(e.target.value)
-                                    }
+                                    onChange={(e) => setCustomUrl(e.target.value)}
                                     style={{ flexGrow: 1 }}
                                 />
-                                <button
-                                    type="button"
-                                    onClick={handleCustomUrlLoad}
-                                >
+                                <button type="button" onClick={handleCustomUrlLoad}>
                                     Load
                                 </button>
                             </div>
                         )}
                         <div
                             style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "4px",
-                                borderStyle: "solid",
-                                borderColor: "black",
-                                borderWidth: "1px",
-                                padding: "1px",
-                                marginTop: "8px",
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                                borderStyle: 'solid',
+                                borderColor: 'black',
+                                borderWidth: '1px',
+                                padding: '1px',
+                                marginTop: '8px',
                             }}
                         >
                             <div
                                 style={{
-                                    display: "block",
+                                    display: 'block',
                                     width: screenSize[0],
                                     height: screenSize[1],
-                                    backgroundColor: "#777",
+                                    backgroundColor: '#777',
                                 }}
                             >
                                 {omezarr && settings && (
@@ -307,29 +256,22 @@ export function OmezarrDemo() {
                             </div>
                             <div
                                 style={{
-                                    display: "flex",
-                                    flexDirection: "row",
-                                    gap: "8px",
-                                    justifyContent: "space-between",
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    gap: '8px',
+                                    justifyContent: 'space-between',
                                 }}
                             >
                                 {(omezarr && (
                                     <span>
-                                        Slide {planeIndex + 1} of{" "}
-                                        {omezarr?.maxOrthogonal(PLANE_XY) ?? 0}
+                                        Slide {planeIndex + 1} of {omezarr?.maxOrthogonal(PLANE_XY) ?? 0}
                                     </span>
                                 )) || <span>No image loaded</span>}
                                 <div style={{}}>
-                                    <button
-                                        type="button"
-                                        onClick={() => handlePlaneIndex(-1)}
-                                    >
+                                    <button type="button" onClick={() => handlePlaneIndex(-1)}>
                                         &#9664;
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handlePlaneIndex(1)}
-                                    >
+                                    <button type="button" onClick={() => handlePlaneIndex(1)}>
                                         &#9654;
                                     </button>
                                 </div>
@@ -338,20 +280,18 @@ export function OmezarrDemo() {
                     </div>
                     <div
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px",
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
                         }}
                     >
-                        <label htmlFor="omezarr-json-view">
-                            Selected Image Metadata:
-                        </label>
+                        <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
                         <textarea
                             id="omezarr-json-view"
                             readOnly
                             cols={100}
                             rows={36}
-                            style={{ resize: "none" }}
+                            style={{ resize: 'none' }}
                             value={omezarrJson}
                         />
                     </div>
@@ -375,7 +315,7 @@ function DataPlease() {
     useEffect(() => {
         loadMetadata(demoOptions[0].res).then((dataset) => {
             setfile(dataset);
-            logger.info("loaded!");
+            logger.info('loaded!');
         });
     }, []);
     return (

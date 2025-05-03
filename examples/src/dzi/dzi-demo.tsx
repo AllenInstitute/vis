@@ -1,20 +1,20 @@
-import type { DziImage, DziRenderSettings } from "@alleninstitute/vis-dzi";
-import { Box2D, type box2D, type vec2 } from "@alleninstitute/vis-geometry";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { pan, zoom } from "~/common/camera";
-import { RenderServerProvider } from "../common/react/render-server-provider";
-import { DziViewer } from "./dzi-viewer";
-import { logger } from "@alleninstitute/vis-core";
-import Stack from "@mui/material/Stack";
-import { spacing } from "~/constants";
-import { Typography } from "@mui/material";
+import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { pan, zoom } from '~/common/camera';
+import { RenderServerProvider } from '../common/react/render-server-provider';
+import { DziViewer } from './dzi-viewer';
+import { logger } from '@alleninstitute/vis-core';
+import Stack from '@mui/material/Stack';
+import { spacing } from '~/constants';
+import { Typography } from '@mui/material';
 
 // We know the sizes and formats ahead of time for these examples,
 // if you'd like to see how to get this data from an endpoint with a dzi file check out use-dzi-image.ts
 const exampleA: DziImage = {
-    format: "jpeg",
+    format: 'jpeg',
     imagesUrl:
-        "https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/",
+        'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/',
     overlap: 1,
     size: {
         width: 13446,
@@ -24,9 +24,8 @@ const exampleA: DziImage = {
 };
 
 const exampleB: DziImage = {
-    imagesUrl:
-        "https://openseadragon.github.io/example-images/highsmith/highsmith_files/",
-    format: "jpg",
+    imagesUrl: 'https://openseadragon.github.io/example-images/highsmith/highsmith_files/',
+    format: 'jpg',
     overlap: 2,
     size: {
         width: 7026,
@@ -79,17 +78,14 @@ export function DziDemo() {
 
     const overlay = useRef<HTMLImageElement>(new Image());
 
-    const camera: DziRenderSettings["camera"] = useMemo(
-        () => ({ screenSize, view }),
-        [view]
-    );
+    const camera: DziRenderSettings['camera'] = useMemo(() => ({ screenSize, view }), [view]);
 
     useEffect(() => {
         overlay.current.onload = () => {
-            logger.info("loaded svg!");
+            logger.info('loaded svg!');
         };
         overlay.current.src =
-            "https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-22-07-pathology-image-move/pat_images_JGCXWER774NLNWX2NNR/7179-A6-I6-MTG-classified/annotation.svg";
+            'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-22-07-pathology-image-move/pat_images_JGCXWER774NLNWX2NNR/7179-A6-I6-MTG-classified/annotation.svg';
     }, []);
 
     return (
@@ -97,7 +93,7 @@ export function DziDemo() {
             <Stack direction="column" style={{ padding: spacing.s }}>
                 <Typography variant="h4">Deep Zoom Image Viewer</Typography>
                 <p>Scroll below to view image</p>
-                <div style={{ display: "flex", flexDirection: "row" }}>
+                <div style={{ display: 'flex', flexDirection: 'row' }}>
                     {images.map((v) => (
                         <div
                             key={v.imagesUrl}
