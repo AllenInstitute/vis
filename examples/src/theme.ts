@@ -22,5 +22,4 @@ export const lightTheme = createTheme({
             secondary: colors.light.textSelected,
         },
     },
-    
 });
