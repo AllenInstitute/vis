@@ -3,13 +3,12 @@ export const colors = {
         background: "rgb(18, 18, 18)",
         text: "rgb(255, 255, 255)",
         textSelected: "rgb(93, 167, 229)",
-        border: "rgb(64, 64, 64)",
     },
     light: {
         text: "rgb(0, 0, 0)",
         textSelected: "rgb(93, 167, 229)",
-        border: "rgb(64, 64, 64)",
     },
+    border: "rgb(64, 64, 64)",
 };
 
 export const spacing = {

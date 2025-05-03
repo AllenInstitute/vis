@@ -20,7 +20,7 @@ export function Sidebar() {
                 paddingLeft: spacing.m,
                 paddingRight: spacing.m,
                 borderRight: "1px solid",
-                borderColor: colors.dark.border,
+                borderColor: colors.border,
                 minWidth: 130,
             }}
             spacing={spacing.xs}
