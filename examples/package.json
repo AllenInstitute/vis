@@ -47,10 +47,10 @@
         "vite": "5.3.5"
     },
     "dependencies": {
+        "@alleninstitute/vis-core": "workspace:*",
         "@alleninstitute/vis-dzi": "workspace:*",
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-omezarr": "workspace:*",
-        "@alleninstitute/vis-core": "workspace:*",
         "@czi-sds/components": "20.0.1",
         "@emotion/css": "11.11.2",
         "@emotion/react": "11.11.4",
@@ -59,6 +59,7 @@
         "@mui/icons-material": "5.15.15",
         "@mui/lab": "5.0.0-alpha.175",
         "@mui/material": "5.15.15",
+        "@mui/types": "7.4.1",
         "@types/lodash": "4.17.16",
         "file-saver": "2.0.5",
         "json5": "2.2.3",
