@@ -5,6 +5,9 @@ import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { DziViewer } from './dzi-viewer';
 import { logger } from '@alleninstitute/vis-core';
+import Stack from '@mui/material/Stack';
+import { spacing } from '~/constants';
+import { Typography } from '@mui/material';
 
 // We know the sizes and formats ahead of time for these examples,
 // if you'd like to see how to get this data from an endpoint with a dzi file check out use-dzi-image.ts
@@ -87,24 +90,33 @@ export function DziDemo() {
 
     return (
         <RenderServerProvider>
-            <p>Scroll below to view image</p>
-            <div style={{ display: 'flex', flexDirection: 'row' }}>
-                {images.map((v) => (
-                    <div key={v.imagesUrl} style={{ width: screenSize[0], height: screenSize[1] }}>
-                        <DziViewer
-                            id={v.imagesUrl}
-                            dzi={v}
-                            camera={camera}
-                            svgOverlay={overlay.current}
-                            onMouseDown={handleMouseDown}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseUp}
-                            onMouseMove={handlePan}
-                            onWheel={handleZoom}
-                        />
-                    </div>
-                ))}
-            </div>
+            <Stack direction="column" style={{ padding: spacing.s }}>
+                <Typography variant="h4">Deep Zoom Image Viewer</Typography>
+                <p>Scroll below to view image</p>
+                <div style={{ display: 'flex', flexDirection: 'row' }}>
+                    {images.map((v) => (
+                        <div
+                            key={v.imagesUrl}
+                            style={{
+                                width: screenSize[0],
+                                height: screenSize[1],
+                            }}
+                        >
+                            <DziViewer
+                                id={v.imagesUrl}
+                                dzi={v}
+                                camera={camera}
+                                svgOverlay={overlay.current}
+                                onMouseDown={handleMouseDown}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseUp}
+                                onMouseMove={handlePan}
+                                onWheel={handleZoom}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </Stack>
         </RenderServerProvider>
     );
 }

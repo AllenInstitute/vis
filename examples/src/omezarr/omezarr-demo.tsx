@@ -8,6 +8,8 @@ import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '~/common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
 import { SliceView } from './sliceview';
+import { spacing } from '~/constants';
+import { Typography } from '@mui/material';
 
 type DemoOption = { value: string; label: string; res: WebResource };
 
@@ -15,7 +17,10 @@ const demoOptions: DemoOption[] = [
     {
         value: 'opt1',
         label: 'VERSA OME-Zarr Example (HTTPS) (color channels: [R, G, B])',
-        res: { type: 'https', url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/' },
+        res: {
+            type: 'https',
+            url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
+        },
     },
     {
         value: 'opt2',
@@ -160,11 +165,28 @@ export function OmezarrDemo() {
 
     return (
         <RenderServerProvider>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <a href="/vis/">&#9664; Back</a>
-                <h1>OME-Zarr Examples</h1>
-                <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: spacing.m,
+                }}
+            >
+                <Typography variant="h4">OME-Zarr Viewer</Typography>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: '16px',
+                    }}
+                >
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                        }}
+                    >
                         <label htmlFor="webresource-select">Select an OME-Zarr to View:</label>
                         <select id="webresource-select" name="webresource" onChange={handleOptionSelected}>
                             <option value="" key="default">
@@ -180,7 +202,13 @@ export function OmezarrDemo() {
                             </option>
                         </select>
                         {selectedDemoOptionValue === 'custom' && (
-                            <div style={{ display: 'flex', flexDirection: 'row', gap: '8px' }}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    gap: '8px',
+                                }}
+                            >
                                 <input
                                     type="text"
                                     value={customUrl}
@@ -250,7 +278,13 @@ export function OmezarrDemo() {
                             </div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                        }}
+                    >
                         <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
                         <textarea
                             id="omezarr-json-view"
