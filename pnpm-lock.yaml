@@ -16,7 +16,7 @@ importers:
         version: 2.14.4(@parcel/core@2.14.4)
       '@parcel/transformer-typescript-types':
         specifier: 2.14.4
-        version: 2.14.4(@parcel/core@2.14.4)(typescript@5.8.2)
+        version: 2.14.4(@parcel/core@2.14.4)(typescript@5.8.3)
       '@vitest/coverage-istanbul':
         specifier: 3.0.7
         version: 3.0.7(vitest@3.0.7(@types/node@22.1.0)(lightningcss@1.24.0))
@@ -25,13 +25,13 @@ importers:
         version: 6.0.0
       parcel:
         specifier: 2.14.4
-        version: 2.14.4(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2)
+        version: 2.14.4(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3)
       process:
         specifier: 0.11.10
         version: 0.11.10
       typescript:
-        specifier: 5.8.2
-        version: 5.8.2
+        specifier: 5.8.3
+        version: 5.8.3
       vitest:
         specifier: 3.0.7
         version: 3.0.7(@types/node@22.1.0)(lightningcss@1.24.0)
@@ -670,6 +670,7 @@ packages:
   '@mui/base@5.0.0-beta.40':
     resolution: {integrity: sha512-I/lGHztkCzvwlXpjD2+SNmvNQvB4227xBXhISPjEaJUXGImOQ9f3D2Yj/T3KasSI/h0MLWy74X0J6clhPmsRbQ==}
     engines: {node: '>=12.0.0'}
+    deprecated: This package has been replaced by @base-ui-components/react
     peerDependencies:
       '@types/react': ^17.0.0 || ^18.0.0
       react: ^17.0.0 || ^18.0.0
@@ -2283,8 +2284,8 @@ packages:
     resolution: {integrity: sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==}
     engines: {node: '>=10'}
 
-  typescript@5.8.2:
-    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
+  typescript@5.8.3:
+    resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -3076,14 +3077,14 @@ snapshots:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/config-default@2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2)':
+  '@parcel/config-default@2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3)':
     dependencies:
       '@parcel/bundler-default': 2.14.4(@parcel/core@2.14.4)
       '@parcel/compressor-raw': 2.14.4(@parcel/core@2.14.4)
       '@parcel/core': 2.14.4
       '@parcel/namer-default': 2.14.4(@parcel/core@2.14.4)
       '@parcel/optimizer-css': 2.14.4(@parcel/core@2.14.4)
-      '@parcel/optimizer-htmlnano': 2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2)
+      '@parcel/optimizer-htmlnano': 2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3)
       '@parcel/optimizer-image': 2.14.4(@parcel/core@2.14.4)
       '@parcel/optimizer-svgo': 2.14.4(@parcel/core@2.14.4)
       '@parcel/optimizer-swc': 2.14.4(@parcel/core@2.14.4)
@@ -3227,12 +3228,12 @@ snapshots:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/optimizer-htmlnano@2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2)':
+  '@parcel/optimizer-htmlnano@2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3)':
     dependencies:
       '@parcel/diagnostic': 2.14.4
       '@parcel/plugin': 2.14.4(@parcel/core@2.14.4)
       '@parcel/utils': 2.14.4
-      htmlnano: 2.1.0(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2)
+      htmlnano: 2.1.0(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3)
       nullthrows: 1.1.1
       posthtml: 0.16.6
     transitivePeerDependencies:
@@ -3603,23 +3604,23 @@ snapshots:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/transformer-typescript-types@2.14.4(@parcel/core@2.14.4)(typescript@5.8.2)':
+  '@parcel/transformer-typescript-types@2.14.4(@parcel/core@2.14.4)(typescript@5.8.3)':
     dependencies:
       '@parcel/diagnostic': 2.14.4
       '@parcel/plugin': 2.14.4(@parcel/core@2.14.4)
       '@parcel/source-map': 2.1.1
-      '@parcel/ts-utils': 2.14.4(typescript@5.8.2)
+      '@parcel/ts-utils': 2.14.4(typescript@5.8.3)
       '@parcel/utils': 2.14.4
       nullthrows: 1.1.1
-      typescript: 5.8.2
+      typescript: 5.8.3
     transitivePeerDependencies:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/ts-utils@2.14.4(typescript@5.8.2)':
+  '@parcel/ts-utils@2.14.4(typescript@5.8.3)':
     dependencies:
       nullthrows: 1.1.1
-      typescript: 5.8.2
+      typescript: 5.8.3
 
   '@parcel/types-internal@2.14.4':
     dependencies:
@@ -4039,14 +4040,14 @@ snapshots:
       path-type: 4.0.0
       yaml: 1.10.2
 
-  cosmiconfig@8.3.6(typescript@5.8.2):
+  cosmiconfig@8.3.6(typescript@5.8.3):
     dependencies:
       import-fresh: 3.3.0
       js-yaml: 4.1.0
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
-      typescript: 5.8.2
+      typescript: 5.8.3
 
   cross-spawn@7.0.6:
     dependencies:
@@ -4222,9 +4223,9 @@ snapshots:
 
   html-escaper@2.0.2: {}
 
-  htmlnano@2.1.0(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2):
+  htmlnano@2.1.0(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3):
     dependencies:
-      cosmiconfig: 8.3.6(typescript@5.8.2)
+      cosmiconfig: 8.3.6(typescript@5.8.3)
       posthtml: 0.16.6
       timsort: 0.3.0
     optionalDependencies:
@@ -4471,9 +4472,9 @@ snapshots:
 
   package-json-from-dist@1.0.1: {}
 
-  parcel@2.14.4(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2):
+  parcel@2.14.4(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3):
     dependencies:
-      '@parcel/config-default': 2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.2)
+      '@parcel/config-default': 2.14.4(@parcel/core@2.14.4)(postcss@8.4.41)(srcset@4.0.0)(typescript@5.8.3)
       '@parcel/core': 2.14.4
       '@parcel/diagnostic': 2.14.4
       '@parcel/events': 2.14.4
@@ -4736,7 +4737,7 @@ snapshots:
 
   type-fest@0.20.2: {}
 
-  typescript@5.8.2: {}
+  typescript@5.8.3: {}
 
   undici-types@6.13.0: {}
 
