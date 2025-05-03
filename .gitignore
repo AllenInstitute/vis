@@ -5,3 +5,4 @@ dst
 .DS_Store
 .parcel-cache
 coverage
+.prettierrc
