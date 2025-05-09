@@ -1,4 +1,4 @@
-import { partial } from 'lodash';
+import partial from 'lodash/partial';
 import type { AsyncDataCache } from './dataset-cache';
 
 /**

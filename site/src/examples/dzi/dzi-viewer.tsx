@@ -8,7 +8,7 @@ import {
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import type { RenderFrameFn, buildAsyncRenderer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
-import { renderServerContext } from '~/common/react/render-server-provider';
+import { renderServerContext } from '../common/react/render-server-provider';
 
 type Props = {
     id: string;
