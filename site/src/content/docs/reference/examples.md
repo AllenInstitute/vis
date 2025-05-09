@@ -1,6 +1,6 @@
 ---
 title: Example
-description: A reference page in my new Starlight docs site.
+description: A page pointing to the examples in the `vis` project.
 ---
 
 Examples are located in the `examples` directory. There is a single command that runs all the examples on one website: `npm run dev`

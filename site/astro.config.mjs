@@ -10,10 +10,12 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/AllenInstitute/vis' }],
 			sidebar: [
 				{
-					label: 'Guides',
+					label: 'Examples',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
+						{ label: 'DZI', slug: 'examples/diz' },
+						{ label: 'OME-Zarr', slug: 'examples/ome-zarr' },
+						{ label: 'Layers Demo', slug: 'guides/layers' },
 					],
 				},
 				{

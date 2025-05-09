@@ -1,7 +1,9 @@
 ---
 title: Authenticating with GitHub Packages
-description: TODO
+description: A page describing how to authenticate with GitHub Packages.
 ---
+
+TODO: Needs review, hasn't been updated since we open-sourced the repository.
 
 ## Setting Up Your Personal Access Token (PAT)
 

@@ -1,6 +1,6 @@
 ---
 title: Packages
-description: A reference page in my new Starlight docs site.
+description: A list of the packages in the vis monorepo.
 ---
 
 This repository holds multiple published packages. The current list of packages is below:

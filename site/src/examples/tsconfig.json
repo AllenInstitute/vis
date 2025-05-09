@@ -1,0 +1,15 @@
+{
+    "extends": "../../../tsconfig.base.json",
+    "include": ["./src/**/*", "data-renderers", "data-sources", "dzi", "layers", "omezarr", "ui", "app.tsx", "home.tsx", "common", "index.tsx", "layers.ts", "types.ts"],
+
+    "compilerOptions": {
+        "verbatimModuleSyntax": true,
+        "module": "es2022",
+        "moduleResolution": "Bundler",
+        "jsx": "react-jsx",
+        "baseUrl": "./",
+        "paths": {
+            "~/*": ["./src/*"]
+        }
+    }
+}

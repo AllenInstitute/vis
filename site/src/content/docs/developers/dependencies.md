@@ -1,6 +1,6 @@
 ---
 title: Dependencies
-description: A reference page in my new Starlight docs site.
+description: A reference page describing how dependencies are managed in the vis project.
 ---
 
 ## Locked Dependencies

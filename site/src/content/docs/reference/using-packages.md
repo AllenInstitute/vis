@@ -1,6 +1,6 @@
 ---
 title: Using Packages
-description: A reference page in my new Starlight docs site.
+description: A reference page to install and use the vis packages.
 ---
 
 The `vis` project contains multiple packages, each of which is published to the Allen Institute internal GitHub NPM package registry.
