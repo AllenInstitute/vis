@@ -4,8 +4,8 @@ import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { pan, zoom } from '~/common/camera';
-import { RenderServerProvider } from '~/common/react/render-server-provider';
+import { pan, zoom } from '../common/camera';
+import { RenderServerProvider } from '../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
 import { SliceView } from './sliceview';
 
@@ -161,8 +161,6 @@ export function OmezarrDemo() {
     return (
         <RenderServerProvider>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <a href="/vis/">&#9664; Back</a>
-                <h1>OME-Zarr Examples</h1>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label htmlFor="webresource-select">Select an OME-Zarr to View:</label>
@@ -250,17 +248,17 @@ export function OmezarrDemo() {
                             </div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
-                        <textarea
-                            id="omezarr-json-view"
-                            readOnly
-                            cols={100}
-                            rows={36}
-                            style={{ resize: 'none' }}
-                            value={omezarrJson}
-                        />
-                    </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
+                    <textarea
+                        id="omezarr-json-view"
+                        readOnly
+                        cols={100}
+                        rows={36}
+                        style={{ resize: 'none' }}
+                        value={omezarrJson}
+                    />
                 </div>
             </div>
         </RenderServerProvider>

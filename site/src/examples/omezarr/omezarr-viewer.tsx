@@ -8,9 +8,10 @@ import {
 import type { RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
 import type REGL from 'regl';
-import { renderServerContext } from '~/common/react/render-server-provider';
-import { multithreadedDecoder } from '~/common/loaders/ome-zarr/sliceWorkerPool';
-import { buildImageRenderer } from '~/common/image-renderer';
+
+import { renderServerContext } from '../common/react/render-server-provider';
+import { multithreadedDecoder } from '../common/loaders/ome-zarr/sliceWorkerPool';
+import { buildImageRenderer } from '../common/image-renderer';
 interface OmezarrViewerProps {
     omezarr: OmeZarrMetadata;
     id: string;

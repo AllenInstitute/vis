@@ -9,7 +9,8 @@ import {
 import type { RenderFrameFn } from '@alleninstitute/vis-core';
 import { useCallback, useState } from 'react';
 import { useContext, useEffect, useRef } from 'react';
-import { renderServerContext } from '~/common/react/render-server-provider';
+
+import { renderServerContext } from '../common/react/render-server-provider';
 type Props = {
     omezarr: OmeZarrMetadata | undefined;
 };
