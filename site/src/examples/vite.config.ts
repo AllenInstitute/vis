@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import react from '@vitejs/plugin-react-swc';
 import { defineConfig } from 'vite';
 
+// TODO: Delete, but need to do basename
+
 // To support the layers demo we need to include the layers.html file in the build,
 // which we do by configuring Rollup to use any HTML files in the /examples directory
 function getHtmlEntries() {
@@ -18,6 +20,7 @@ function getHtmlEntries() {
     // Create entries for each HTML file
     for (const file of htmlFiles) {
         const name = path.basename(file, '.html');
+        //@ts-ignore This is fine
         entries[name] = path.resolve(pagesDir, file);
     }
 

@@ -1,9 +1,9 @@
 import { Button } from '@czi-sds/components';
-import type { Demo } from '.';
 import { AnnotationGrid } from '../ui/annotation-grid';
 import { ContactSheetUI } from '../ui/contact-sheet';
 import { ScatterplotUI } from '../ui/scatterplot-ui';
 import { SliceViewLayer } from '../ui/slice-ui';
+import type { Demo } from '../layers';
 
 export function AppUi(props: { demo: Demo }) {
     const { demo } = props;

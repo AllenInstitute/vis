@@ -34,4 +34,10 @@ export default defineConfig({
         mdx(),
         react(),
     ],
+    vite: {
+        // Needed for the Rollup build changes to work
+        worker: {
+            format: 'es', // Explicitly set worker format to ES modules
+        },
+    }
 });

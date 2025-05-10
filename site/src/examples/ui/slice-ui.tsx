@@ -1,5 +1,5 @@
 import { Button, InputSlider } from '@czi-sds/components';
-import type { Demo } from 'src/layers';
+import type { Demo } from '../layers';
 export function SliceViewLayer(props: { demo: Demo }) {
     const { demo } = props;
     // control the gamut with some sliders
