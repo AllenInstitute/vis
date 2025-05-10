@@ -91,7 +91,7 @@ export function DziDemo() {
             <p>Scroll below to view image</p>
             <div style={{ display: 'flex', flexDirection: 'row' }}>
                 {images.map((v) => (
-                    <div key={v.imagesUrl} style={{ width: screenSize[0], height: screenSize[1] }}>
+                    <div key={v.imagesUrl} style={{ width: screenSize[0], height: screenSize[1], marginTop: 0 }}>
                         <DziViewer
                             id={v.imagesUrl}
                             dzi={v}

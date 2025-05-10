@@ -9,24 +9,19 @@ import react from '@astrojs/react';
 export default defineConfig({
     integrations: [
         starlight({
-            title: 'Allen Institute Vis Tools',
+            title: 'Vis',
             social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/AllenInstitute/vis' }],
             sidebar: [
                 {
                     label: 'Examples',
-                    items: [
-                        // Each item here is one entry in the navigation menu.
-                        { label: 'DZI', slug: 'examples/dzi' },
-                        { label: 'OME-Zarr', slug: 'examples/ome-zarr' },
-                        { label: 'Layers Demo', slug: 'examples/layers' },
-                    ],
+                    autogenerate: { directory: 'examples' },
                 },
                 {
                     label: 'Reference',
                     autogenerate: { directory: 'reference' },
                 },
                 {
-                    label: 'For Vis Developers',
+                    label: 'Developers',
                     autogenerate: { directory: 'developers' },
                 },
             ],
@@ -39,5 +34,5 @@ export default defineConfig({
         worker: {
             format: 'es', // Explicitly set worker format to ES modules
         },
-    }
+    },
 });
