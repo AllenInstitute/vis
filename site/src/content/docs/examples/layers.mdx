@@ -2,6 +2,8 @@
 title: Layers
 ---
 
+import { ClientLayersScript } from '../../../examples/layers/layers-loader.tsx';
+
 <div
     id="sidebar"
     style="top: 0; left: 0; width: 15%; height: 100%; position: relative"
@@ -11,6 +13,4 @@ title: Layers
     style="top: 0; left: 15%; width: 85%; height: 100%; position: relative"
 />
 
-<script>
-import "../../../examples/layers.ts";
-</script>
+<ClientLayersScript client:only="react" />
