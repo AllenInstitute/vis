@@ -4,7 +4,7 @@ import type { RenderCallback } from './types';
 
 import { Box2D, CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import { pickBestScale, sizeInUnits, sizeInVoxels } from '@alleninstitute/vis-omezarr';
-import type { Camera } from '~/common/camera';
+import type { Camera } from '../common/camera';
 import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
 import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
 import { applyOptionalTrn } from './utils';

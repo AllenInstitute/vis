@@ -15,11 +15,11 @@ import {
     sizeInUnits,
 } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-core';
-import { omit } from 'lodash';
+import omit from 'lodash/omit';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
-import type { Camera } from '~/common/camera';
-import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
+import type { Camera } from '../common/camera';
+import { getSlicePool } from '../common/loaders/ome-zarr/sliceWorkerPool';
 
 const TILE_SIZE = 256;
 

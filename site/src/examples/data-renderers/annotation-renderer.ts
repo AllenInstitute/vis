@@ -1,12 +1,12 @@
 import { Box2D, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import { type AsyncDataCache, type FrameLifecycle, beginLongRunningFrame } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
-import type { Camera } from '~/common/camera';
-import type { AnnotationGrid } from '~/data-sources/annotation/annotation-grid';
-import { MeshFromAnnotation } from '~/data-sources/annotation/annotation-to-mesh';
-import { fetchAnnotation } from '~/data-sources/annotation/fetch-annotation';
-import type { AnnotationMesh, GPUAnnotationMesh } from '~/data-sources/annotation/types';
-import type { OptionalTransform } from '~/data-sources/types';
+import type { Camera } from '../common/camera';
+import type { AnnotationGrid } from '../data-sources/annotation/annotation-grid';
+import { MeshFromAnnotation } from '../data-sources/annotation/annotation-to-mesh';
+import { fetchAnnotation } from '../data-sources/annotation/fetch-annotation';
+import type { AnnotationMesh, GPUAnnotationMesh } from '../data-sources/annotation/types';
+import type { OptionalTransform } from '../data-sources/types';
 import type { buildLoopRenderer, buildMeshRenderer } from './mesh-renderer';
 import type { RenderCallback } from './types';
 

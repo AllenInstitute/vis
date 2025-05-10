@@ -4,7 +4,7 @@ import {
     isSlideViewData,
     loadDataset,
     loadScatterbrainJson,
-} from '~/common/loaders/scatterplot/scatterbrain-loader';
+} from '../../common/loaders/scatterplot/scatterbrain-loader';
 import type { OptionalTransform, Simple2DTransform } from '../types';
 
 export type ScatterplotGridConfig = {

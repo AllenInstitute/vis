@@ -1,5 +1,5 @@
 import { type OmeZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
-import type { AxisAlignedPlane } from '~/data-renderers/versa-renderer';
+import type { AxisAlignedPlane } from '../../data-renderers/versa-renderer';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
 import type { WebResource } from '@alleninstitute/vis-core';
