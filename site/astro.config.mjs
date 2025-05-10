@@ -7,6 +7,9 @@ import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
+    // `site` and `base` enables GitHub Pages deployment to function
+    site: 'https://alleninstitute.github.io',
+    base: 'vis',
     integrations: [
         starlight({
             title: 'Vis',
