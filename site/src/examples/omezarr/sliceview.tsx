@@ -57,7 +57,7 @@ export function SliceView(props: Props) {
     const { omezarr } = props;
     const server = useContext(renderServerContext);
     const cnvs = useRef<HTMLCanvasElement>(null);
-    const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
+    const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>(undefined);
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]));
     useEffect(() => {
         if (server?.regl) {

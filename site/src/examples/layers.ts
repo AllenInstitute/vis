@@ -201,6 +201,7 @@ export class Demo {
             if (data) {
                 const [w, h] = this.camera.screen;
                 const layer = new ReglLayer2D<DynamicGrid & OptionalTransform, SlideRenderSettings<CacheEntry>>(
+                    // @ts-expect-error we'll deal with this later
                     this.regl,
                     this.imgRenderer,
                     renderDynamicGrid<CacheEntry>,
@@ -257,6 +258,7 @@ export class Demo {
             type: 'annotationLayer',
             data,
             render: new ReglLayer2D<SimpleAnnotation, AnnotationRenderSettings>(
+                // @ts-expect-error we'll deal with this later
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
@@ -273,6 +275,7 @@ export class Demo {
                 paths: [],
             },
             render: new ReglLayer2D<SimpleAnnotation, AnnotationRenderSettings>(
+                // @ts-expect-error we'll deal with this later
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
@@ -285,7 +288,8 @@ export class Demo {
         return createSlideDataset(config).then((data) => {
             if (data) {
                 const [w, h] = this.camera.screen;
-                const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>(
+                const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>( 
+                    // @ts-expect-error we'll deal with this later
                     this.regl,
                     this.imgRenderer,
                     renderSlide<CacheEntry>,
@@ -307,7 +311,12 @@ export class Demo {
             const layer = new ReglLayer2D<
                 AxisAlignedZarrSlice & OptionalTransform,
                 Omit<SliceRenderSettings<CacheEntry>, 'target'>
-            >(this.regl, this.imgRenderer, renderSlice<CacheEntry>, [w, h]);
+            >(
+                // @ts-expect-error we'll deal with this later
+                this.regl,
+                this.imgRenderer,
+                renderSlice<CacheEntry>, [w, h]
+            );
             this.layers.push({
                 type: 'volumeSlice',
                 data,
@@ -351,6 +360,7 @@ export class Demo {
                     type: 'annotationGrid',
                     data: grid,
                     render: new ReglLayer2D<AnnotationGrid, Omit<AnnotationGridRenderSettings<CacheEntry>, 'target'>>(
+                        // @ts-expect-error we'll deal with this later
                         this.regl,
                         this.imgRenderer,
                         renderAnnotationGrid,
@@ -367,6 +377,7 @@ export class Demo {
         const [w, h] = this.camera.screen;
         return createZarrSliceGrid(config).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
+                // @ts-expect-error we'll deal with this later
                 this.regl,
                 this.imgRenderer,
                 renderGrid<CacheEntry>,

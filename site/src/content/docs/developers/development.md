@@ -1,6 +1,8 @@
 ---
 title: Development
 description: A page for developers to learn about the tools and processes used in the `vis` repository.
+sidebar:
+    order: 0
 ---
 
 This document covers the tools, processes, and standards that we follow went developing within the `vis` repository.
@@ -49,3 +51,11 @@ pnpm run coverage
 ```
 
 This will output coverage information to the CLI and also generate an HTML report in the `coverage` directory.
+
+### Documentation and Example Site
+We use [Starlight](https://starlight.astro.build/) for documentation and example site generation.
+
+To run the documentation site, use the following command from the `site` directory:
+```sh
+pnpm run dev
+```

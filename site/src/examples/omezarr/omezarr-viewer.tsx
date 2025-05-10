@@ -44,9 +44,9 @@ export function OmezarrViewer({
 }: OmezarrViewerProps) {
     const canvas = useRef<HTMLCanvasElement>(null);
     const server = useContext(renderServerContext);
-    const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
-    const imgRenderer = useRef<ReturnType<typeof buildImageRenderer>>();
-    const stash = useRef<StashedView>();
+    const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>(undefined);
+    const imgRenderer = useRef<ReturnType<typeof buildImageRenderer>>(undefined);
+    const stash = useRef<StashedView>(undefined);
 
     // setup renderer and delete it when component goes away
     useEffect(() => {
@@ -57,6 +57,7 @@ export function OmezarrViewer({
                 numChannels,
                 queueOptions: { maximumInflightAsyncTasks: 2 },
             });
+            // @ts-expect-error we'll deal with this later
             imgRenderer.current = buildImageRenderer(server.regl);
         }
         return () => {

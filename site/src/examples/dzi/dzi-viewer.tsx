@@ -31,7 +31,7 @@ export function DziViewer(props: Props) {
     const renderer =
         useRef<
             ReturnType<typeof buildAsyncRenderer<DziImage, DziTile, DziRenderSettings, string, string, CachedPixels>>
-        >();
+        >(undefined);
 
     useEffect(() => {
         if (server?.regl) {
