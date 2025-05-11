@@ -1,11 +1,13 @@
 ---
 title: Using Packages
 description: A reference page to install and use the vis packages.
+sidebar:
+    order: 2
 ---
 
 The `vis` project contains multiple packages, each of which is published to the Allen Institute internal GitHub NPM package registry.
 
-1. Authenticate with GitHub Packages by following the instructions in the [Authenticating with GitHub Packages](authenticating.md) documentation.
+1. Authenticate with GitHub Packages by following the instructions in the [GitHub Packages Authentication](../authenticating) documentation.
 
 2. Create an `.npmrc` file in the root of your project and add the following so that `npm` or `pnpm` knows to use the Allen Institute's GitHub NPM package registry:
 

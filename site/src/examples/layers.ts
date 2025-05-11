@@ -288,7 +288,7 @@ export class Demo {
         return createSlideDataset(config).then((data) => {
             if (data) {
                 const [w, h] = this.camera.screen;
-                const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>( 
+                const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>(
                     // @ts-expect-error we'll deal with this later
                     this.regl,
                     this.imgRenderer,
@@ -315,7 +315,8 @@ export class Demo {
                 // @ts-expect-error we'll deal with this later
                 this.regl,
                 this.imgRenderer,
-                renderSlice<CacheEntry>, [w, h]
+                renderSlice<CacheEntry>,
+                [w, h],
             );
             this.layers.push({
                 type: 'volumeSlice',

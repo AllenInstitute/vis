@@ -1,15 +1,17 @@
 ---
-title: Authenticating with GitHub Packages
+title: GitHub Packages Authentication
 description: A page describing how to authenticate with GitHub Packages.
+sidebar:
+    order: 1
 ---
 
-TODO: Needs review, hasn't been updated since we open-sourced the repository.
+All our packages are hosted on the Allen Institute's GitHub Packages registry. To use them, you will need to authenticate with GitHub Packages, which requires a GitHub account.
 
 ## Setting Up Your Personal Access Token (PAT)
 
-Before you can publish a package, you'll need to get your Personal Access Token (PAT) configured to have access.
+Before you can install a package you'll need to get your Personal Access Token (PAT) configured to have access.
 
-1. Create a new personal access token (PAT) with the proper scope (`read:packages` if you're consuming `vis` libraries and `write:packages` if you're working on the repository code itself). You can create a new PAT by going to your GitHub settings, selecting "Developer settings" and then "Personal access tokens".
+1. Create a new personal access token (PAT) with the `read:packages` proper scope (`read:packages` if you're consuming `vis` libraries and `write:packages` if you're working on the repository code itself). You can create a new PAT by going to your GitHub settings, selecting "Developer settings" and then "Personal access tokens".
 
 2. Make sure to copy the token to a safe place, as you won't be able to see it again.
 

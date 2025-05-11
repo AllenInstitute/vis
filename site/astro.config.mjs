@@ -16,12 +16,12 @@ export default defineConfig({
             social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/AllenInstitute/vis' }],
             sidebar: [
                 {
-                    label: 'Examples',
-                    autogenerate: { directory: 'examples' },
+                    label: 'Getting Started',
+                    autogenerate: { directory: 'getting-started' },
                 },
                 {
-                    label: 'Reference',
-                    autogenerate: { directory: 'reference' },
+                    label: 'Examples',
+                    autogenerate: { directory: 'examples' },
                 },
                 {
                     label: 'Developers',

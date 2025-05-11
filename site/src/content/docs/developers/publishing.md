@@ -9,7 +9,7 @@ The `vis` project contains multiple packages, each of which is published to the 
 
 When you have a new package to publish, follow these steps to publish it:
 
-1. Authenticate with GitHub Packages by following the instructions in the [Authenticating with GitHub Packages](authenticating.md) documentation.
+1. Authenticate with GitHub Packages by following the instructions in the [GitHub Packages Authentication](../../getting-started/authenticating) documentation, but using the `write:packages` scope on the PAT.
 
 2. Add the necessary information about the repository and the registry to the `package.json` file:
 
@@ -31,7 +31,7 @@ When you have a new package to publish, follow these steps to publish it:
 
 When you have changes to an existing package that you want to publish, follow these steps to publish the changes:
 
-1. Authenticate with GitHub Packages by following the instructions in the [Authenticating with GitHub Packages](authenticating.md) documentation.
+1. Authenticate with GitHub Packages by following the instructions in the [GitHub Packages Authentication](../../getting-started/authenticating) documentation, but using the `write:packages` scope on the PAT.
 
 2. Update the version number in the `package.json` file, following the [Semantic Versioning standard](https://semver.org/).
 
