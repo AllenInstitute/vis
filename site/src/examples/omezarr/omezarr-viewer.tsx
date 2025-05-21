@@ -17,7 +17,7 @@ interface OmezarrViewerProps {
     id: string;
     screenSize: vec2;
     settings: RenderSettings;
-    onWheel?: (e: React.WheelEvent<HTMLCanvasElement>) => void;
+    onWheel?: (e: WheelEvent) => void;
     onMouseDown?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseUp?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseMove?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -51,6 +51,7 @@ export function OmezarrViewer({
     // setup renderer and delete it when component goes away
     useEffect(() => {
         const c = canvas?.current;
+
         if (server?.regl && omezarr) {
             const numChannels = omezarr.colorChannels.length || 3;
             renderer.current = buildAsyncOmezarrRenderer(server.regl, multithreadedDecoder, {
@@ -66,6 +67,19 @@ export function OmezarrViewer({
             }
         };
     }, [server, omezarr]);
+
+    useEffect(() => {
+        const handleWheel = (e: WheelEvent) => onWheel?.(e);
+        if (canvas?.current) {
+            canvas.current.addEventListener('wheel', handleWheel, { passive: false });
+        }
+        return () => {
+            if (canvas?.current) {
+                canvas.current.removeEventListener('wheel', handleWheel);
+            }
+        };
+    }, [onWheel]);
+
     useEffect(() => {
         // set up the stash:
         if (server?.regl) {
@@ -199,7 +213,6 @@ export function OmezarrViewer({
             onMouseUp={onMouseUp}
             onMouseMove={onMouseMove}
             onMouseLeave={onMouseLeave}
-            onWheel={onWheel}
         />
     );
 }

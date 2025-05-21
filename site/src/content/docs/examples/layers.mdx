@@ -7,17 +7,11 @@ import { ClientLayersScript } from '../../../examples/layers/layers-loader.tsx';
 
 See instructions below the demo app UI for how to run this example.
 
-<div style="height: 600px; width 100%;">
-    <div style="display: flex;">
-        <div
-            id="sidebar"
-            style="width: 15%; height: 100%;"
-        ></div>
-        <canvas
-            id="glCanvas"
-            style="width: 85%; height: 100%;"
-        />
-    </div>
+<div style="height: 1000px; width 1000px;">
+  <div style="display: flex;">
+    <div id="sidebar" style="width: 200px; height: 1000px;"></div>
+    <canvas id="glCanvas" style="width: 800px; height: 1000px;" />
+  </div>
 </div>
 
 <ClientLayersScript client:only="react" />

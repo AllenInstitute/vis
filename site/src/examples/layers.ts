@@ -1,4 +1,4 @@
-import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, CartesianPlane, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { sizeInUnits } from '@alleninstitute/vis-omezarr';
 import { AsyncDataCache, type FrameLifecycle, logger, type NormalStatus, ReglLayer2D } from '@alleninstitute/vis-core';
 import pkg from 'file-saver';
@@ -178,7 +178,8 @@ export class Demo {
     setPlane(param: AxisAlignedPlane) {
         const layer = this.layers[this.selectedLayer];
         if (layer && (layer.type === 'volumeSlice' || layer.type === 'volumeGrid')) {
-            layer.data.plane = param;
+            const cart: CartesianPlane = new CartesianPlane(param);
+            layer.data.plane = cart;
             this.uiChange();
         }
     }
@@ -701,9 +702,16 @@ export class Demo {
             // account for gl-origin vs. screen origin:
             this.mouseMove([-e.movementX, -e.movementY], [e.offsetX, canvas.clientHeight - e.offsetY]);
         };
-        canvas.onwheel = (e: WheelEvent) => {
-            this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
-        };
+        // canvas.onwheel =
+        canvas.addEventListener(
+            'wheel',
+            (e: WheelEvent) => {
+                this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
+                e.preventDefault();
+            },
+            { passive: false },
+        );
+
         window.onkeyup = (e: KeyboardEvent) => {
             const layer = this.layers[this.selectedLayer];
             if (e.key === ' ') {
@@ -722,6 +730,7 @@ export class Demo {
                     this.uiChange();
                 }
             }
+            e.preventDefault();
         };
     }
 

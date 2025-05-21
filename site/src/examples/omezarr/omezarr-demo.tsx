@@ -8,7 +8,6 @@ import { pan, zoom } from '../common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
 import { SliceView } from './sliceview';
-
 type DemoOption = { value: string; label: string; res: WebResource };
 
 const demoOptions: DemoOption[] = [
@@ -46,7 +45,7 @@ const demoOptions: DemoOption[] = [
     },
 ];
 
-const screenSize: vec2 = [500, 500];
+const screenSize: vec2 = [900, 900];
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
@@ -136,10 +135,10 @@ export function OmezarrDemo() {
         setPlaneIndex((prev) => Math.max(0, Math.min(prev + next, (omezarr?.maxOrthogonal(PLANE_XY) ?? 1) - 1)));
     };
 
-    const handleZoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
-        // e.preventDefault();
+    const handleZoom = (e: WheelEvent) => {
+        e.preventDefault();
         const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-        const v = zoom(view, screenSize, zoomScale, [e.nativeEvent.offsetX, e.nativeEvent.offsetY]);
+        const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
         setView(v);
     };
 
