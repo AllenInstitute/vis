@@ -178,8 +178,7 @@ export class Demo {
     setPlane(param: AxisAlignedPlane) {
         const layer = this.layers[this.selectedLayer];
         if (layer && (layer.type === 'volumeSlice' || layer.type === 'volumeGrid')) {
-            const cart: CartesianPlane = new CartesianPlane(param);
-            layer.data.plane = cart;
+            layer.data.plane = new CartesianPlane(param);;
             this.uiChange();
         }
     }
@@ -702,7 +701,6 @@ export class Demo {
             // account for gl-origin vs. screen origin:
             this.mouseMove([-e.movementX, -e.movementY], [e.offsetX, canvas.clientHeight - e.offsetY]);
         };
-        // canvas.onwheel =
         canvas.addEventListener(
             'wheel',
             (e: WheelEvent) => {
