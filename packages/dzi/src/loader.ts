@@ -1,6 +1,10 @@
+import { logger } from '@alleninstitute/vis-core';
 import { Box2D, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
 type DziTilesRoot = `${string}_files/`;
+type DziFormat = 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG';
+const isDziFormat = (format: string): format is DziFormat => ['jpeg', 'png', 'jpg', 'JPG', 'PNG'].includes(format);
+
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN
 // TODO find a less ancient spec...
 export type DziImage = {
@@ -8,7 +12,7 @@ export type DziImage = {
     // imagesUrl would be the path which contains all the files for the actual image tiles:
     // in this example:
     // http://blah.com/deepzoom_files/
-    format: 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG';
+    format: DziFormat;
     overlap: number; // in pixels, ADDED every side of any given tile (for example, with overlap=1 and tilesize=256, you could see a jpeg of size 258x258).
     // note that tiles on the edge wont have padding (on a per edge basis!)
     tileSize: number;
@@ -27,6 +31,67 @@ export type DziTile = {
     relativeLocation: box2D;
     layer: number;
 };
+
+/**
+ * Fetches the metadata for a Deep Zoom Image (DZI) from a given URL.
+ *
+ * @param url The URL to a DZI metadata file, which should be an XML file containing the metadata for a Deep Zoom Image
+ * @returns A DZI image object containing the metadata for the Deep Zoom Image
+ */
+export async function fetchDziMetadata(url: string): Promise<DziImage | undefined> {
+    return fetch(url)
+        .then((response) => response.text())
+        .then((xmlString) => decodeDzi(xmlString, url));
+}
+
+function decodeDzi(xmlString: string, url: string): DziImage | undefined {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlString, 'text/xml');
+    const err = doc.querySelector('parsererror');
+    if (err) {
+        logger.error(`Failed to parse DZI XML from ${url} with content:`, xmlString);
+        return undefined;
+    }
+
+    const img = doc.getElementsByTagName('Image')[0];
+    const size = doc.getElementsByTagName('Size')?.[0];
+    const [format, overlap, tileSize] = [
+        img.getAttribute('Format'),
+        img.getAttribute('Overlap'),
+        img.getAttribute('TileSize'),
+    ];
+
+    if (!size || !format || !overlap || !tileSize) {
+        logger.error(`Failed to parse DZI XML from ${url}: Missing required attributes`);
+        return undefined;
+    }
+
+    const width = size.getAttribute('Width');
+    const height = size.getAttribute('Height');
+    const splits = url.split('.dzi');
+
+    if (!width || !height || !splits || splits.length < 1) {
+        logger.error(`Failed to parse DZI XML from ${url}: Missing size or URL splits`);
+        return undefined;
+    }
+
+    if (!isDziFormat(format)) {
+        logger.error(`Failed to parse DZI XML from ${url}: Invalid format "${format}"`);
+        return undefined;
+    }
+
+    return {
+        imagesUrl: `${splits[0]}_files/`,
+        format: format,
+        overlap: Number.parseInt(overlap, 10),
+        tileSize: Number.parseInt(tileSize, 10),
+        size: {
+            width: Number.parseInt(width, 10),
+            height: Number.parseInt(height, 10),
+        },
+    };
+}
+
 function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
     return `${dzi.imagesUrl}${level.toFixed(0)}/${tile.col.toFixed(0)}_${tile.row.toFixed(0)}.${dzi.format}`;
 }
