@@ -178,7 +178,7 @@ export class Demo {
     setPlane(param: AxisAlignedPlane) {
         const layer = this.layers[this.selectedLayer];
         if (layer && (layer.type === 'volumeSlice' || layer.type === 'volumeGrid')) {
-            layer.data.plane = new CartesianPlane(param);;
+            layer.data.plane = new CartesianPlane(param);
             this.uiChange();
         }
     }
