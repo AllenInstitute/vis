@@ -32,7 +32,7 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
-        "watch": "parcel watch",
+        "dev": "parcel watch --port 1236",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage"

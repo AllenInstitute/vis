@@ -25,6 +25,10 @@ export default defineConfig({
                     autogenerate: { directory: 'examples' },
                 },
                 {
+                    label: 'Packages',
+                    autogenerate: { directory: 'packages' },
+                },
+                {
                     label: 'Developers',
                     autogenerate: { directory: 'developers' },
                 },
