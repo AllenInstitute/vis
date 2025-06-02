@@ -38,12 +38,12 @@ type NGAnnotationProperty = Readonly<{
 // line up with the order of the dimensions,
 // and the ordering in the properties array is used when extracting a property value from the
 // binary encoded payload: https://github.com/google/neuroglancer/blob/master/src/datasource/precomputed/annotations.md#single-annotation-encoding
-export type AnnotationInfo = {
+export type AnnotationInfo<K extends AnnotationType> = {
     type: 'neuroglancer_annotations_v1',
     dimensions: readonly Dimension[],
     lower_bound: readonly number[],
     upper_bound: readonly number[],
-    annotation_type: AnnotationType,
+    annotation_type: K,
     properties: readonly NGAnnotationProperty[], // coarse to fine (notably the opposite of ome-zarr convention)
     relationships: readonly Relation[],
     by_id: {
@@ -52,6 +52,7 @@ export type AnnotationInfo = {
     },
     spatial: readonly SpatialIndexLevel[]
 }
+type UnknownAnnotationInfo = AnnotationInfo<AnnotationType>
 // return the size, in bytes, of each annotation in the encoded file
 // for example, a point annotation, in 3 dimensions, with a single rgb property, would be
 // 4*3 + 3 (4bytes per float, 3 floats per point) + (one byte (uint8) each for red,blue and gree) = 15, plus one byte for padding out to 4-byte alignment = 16
@@ -72,7 +73,7 @@ const bytesPerProp: Record<PropertyTypes, number> = {
     uint32: 4,
     uint8: 1
 }
-export function computeStride(info: AnnotationInfo) {
+export function computeStride(info: UnknownAnnotationInfo) {
     const rank = info.dimensions.length;
     const shapeDataFloats = rank * vertexPerAnnotation[info.annotation_type];
     const shapeDataBytes = 4 * shapeDataFloats;
@@ -82,7 +83,7 @@ export function computeStride(info: AnnotationInfo) {
     const aligned = unAligned % 4 === 0 ? unAligned : unAligned + (4 - (unAligned % 4));
     return aligned;
 }
-function computePropertyStride(info: AnnotationInfo) {
+function computePropertyStride(info: UnknownAnnotationInfo) {
     return info.properties.reduce((bytes, prop) => {
         return bytes + bytesPerProp[prop.type]
     }, 0)
@@ -99,28 +100,14 @@ type Ellipse = { center: GenericVector, radius: GenericVector } & withProps
 type Box = { min: GenericVector, max: GenericVector } & withProps
 type Line = { start: GenericVector, end: GenericVector } & withProps
 
-type Annotation = (Line | Box | Ellipse | Point)
+// not very elegant, but there are only 4 kinds so this is fine I think.
+type ExtractorResult<K extends AnnotationType> = K extends 'LINE' ? Line :
+    (K extends 'POINT' ? Point :
+        (K extends 'AXIS_ALIGNED_BOUNDING_BOX' ? Box : Ellipse)
+    )
 
-async function selectShapeFromAnnotations<T extends AnnotationType>(
-    baseurl: string, // the url at which the info.json file was found
-    info: AnnotationInfo,
-    expectedType: T,
-    spatial: {
-        level: number, cell: readonly number[]
-    },
-) {
-    const { level, cell } = spatial
-    const lvl = info.spatial[level];
-    // go fetch the file to start...
-    const raw = await (await fetch(`${baseurl}/spatial${level.toFixed(0)}/${cell.join('_')}`)).arrayBuffer();
-    // first, get the count. its a 64bit value, and its first
-    const first = new DataView(raw)
-    const numAnnotations = first.getBigUint64(0, true);
-    const view = new DataView(raw, 8)
-    // what is the stride, in bytes, of an annotation in this file?
-    const stride = computeStride(info);
-}
-function extractVec(view: DataView, info: AnnotationInfo, offset: number): { offset: number, vec: GenericVector } {
+
+function extractVec(view: DataView, info: UnknownAnnotationInfo, offset: number): { offset: number, vec: GenericVector } {
     const vec: GenericVector = {}
     let off = offset;
     for (const dim of info.dimensions) {
@@ -129,7 +116,7 @@ function extractVec(view: DataView, info: AnnotationInfo, offset: number): { off
     }
     return { offset: off, vec }
 }
-function extractOnePropSet(view: DataView, info: AnnotationInfo, offset: number): { offset: number } & withProps {
+function extractOnePropSet(view: DataView, info: UnknownAnnotationInfo, offset: number): { offset: number } & withProps {
     const props: Record<string, rgbProp | rgbaProp | scalarProp> = {}
     let off = offset;
     for (const prop of info.properties) {
@@ -149,18 +136,7 @@ function extractOnePropSet(view: DataView, info: AnnotationInfo, offset: number)
     }
     return { properties: props, offset: off };
 }
-export function extractPoint(view: DataView, info: AnnotationInfo, offset: number): { annotation: Point, offset: number } {
-    const pnt = extractVec(view, info, offset)
-    const props = extractOnePropSet(view, info, pnt.offset)
-    return {
-        annotation: {
-            point: pnt.vec,
-            properties: props.properties,
-        },
-        offset: props.offset
-    }
-}
-function extractTwo(view: DataView, info: AnnotationInfo, offset: number): { A: GenericVector, B: GenericVector, offset: number } & withProps {
+function extractTwo(view: DataView, info: UnknownAnnotationInfo, offset: number): { A: GenericVector, B: GenericVector, offset: number } & withProps {
     const A = extractVec(view, info, offset)
     const B = extractVec(view, info, A.offset)
     const props = extractOnePropSet(view, info, B.offset)
@@ -171,7 +147,19 @@ function extractTwo(view: DataView, info: AnnotationInfo, offset: number): { A: 
         offset: props.offset
     }
 }
-export function extractBox(view: DataView, info: AnnotationInfo, offset: number): { annotation: Box, offset: number } {
+
+export function extractPoint(view: DataView, info: AnnotationInfo<'POINT'>, offset: number): { annotation: Point, offset: number } {
+    const pnt = extractVec(view, info, offset)
+    const props = extractOnePropSet(view, info, pnt.offset)
+    return {
+        annotation: {
+            point: pnt.vec,
+            properties: props.properties,
+        },
+        offset: props.offset
+    }
+}
+export function extractBox(view: DataView, info: AnnotationInfo<'AXIS_ALIGNED_BOUNDING_BOX'>, offset: number): { annotation: Box, offset: number } {
     const { A, B, offset: off, properties } = extractTwo(view, info, offset)
     return {
         annotation: {
@@ -182,7 +170,7 @@ export function extractBox(view: DataView, info: AnnotationInfo, offset: number)
         offset: off
     }
 }
-export function extractEllipse(view: DataView, info: AnnotationInfo, offset: number): { annotation: Ellipse, offset: number } {
+export function extractEllipse(view: DataView, info: AnnotationInfo<'ELLIPSOID'>, offset: number): { annotation: Ellipse, offset: number } {
     const { A, B, offset: off, properties } = extractTwo(view, info, offset)
     return {
         annotation: {
@@ -193,7 +181,7 @@ export function extractEllipse(view: DataView, info: AnnotationInfo, offset: num
         offset: off
     }
 }
-export function extractLine(view: DataView, info: AnnotationInfo, offset: number): { annotation: Line, offset: number } {
+export function extractLine(view: DataView, info: AnnotationInfo<'LINE'>, offset: number): { annotation: Line, offset: number } {
     const { A, B, offset: off, properties } = extractTwo(view, info, offset)
     return {
         annotation: {
@@ -204,9 +192,9 @@ export function extractLine(view: DataView, info: AnnotationInfo, offset: number
         offset: off
     }
 }
-export function* AnnoStream<T extends Annotation>(
-    info: AnnotationInfo,
-    extractor: (view: DataView, info: AnnotationInfo, offset: number) => { annotation: T, offset: number },
+export function* AnnoStream<K extends AnnotationType>(
+    info: AnnotationInfo<K>,
+    extractor: (view: DataView, info: AnnotationInfo<K>, offset: number) => { annotation: ExtractorResult<K>, offset: number },
     view: DataView,
     count: bigint,
 ) {
@@ -216,16 +204,16 @@ export function* AnnoStream<T extends Annotation>(
     const idStart = lilCount * stride
     let offset = 0;
     for (let i = 0n; i < count; i++) {
-        const what = extractor(view, info, offset)
+        const result = extractor(view, info, offset)
         const bigID = view.getBigUint64(idStart + (Number(i) * 8), true)
         offset += stride;
-        yield { ...what.annotation, id: bigID };
+        yield { ...result.annotation, id: bigID };
     }
     return null;
 }
 export async function getAnnotationBuffer(
     baseurl: string, // the url at which the info.json file was found
-    info: AnnotationInfo,
+    info: UnknownAnnotationInfo,
     spatial: {
         level: number, cell: readonly number[]
     }) {
@@ -240,12 +228,12 @@ export async function getAnnotationBuffer(
     const view = new DataView(raw, 8)
     return { view, numAnnotations }
 }
-export async function getAnnotations<T extends Annotation>(baseurl: string, // the url at which the info.json file was found
-    info: AnnotationInfo,
+export async function getAnnotations<K extends AnnotationType>(baseurl: string, // the url at which the info.json file was found
+    info: AnnotationInfo<K>,
     spatial: {
         level: number, cell: readonly number[]
     },
-    extractor: (view: DataView, info: AnnotationInfo, offset: number) => { annotation: T, offset: number }) {
+    extractor: (view: DataView, info: AnnotationInfo<K>, offset: number) => { annotation: ExtractorResult<K>, offset: number }) {
     const { level, cell } = spatial
     const lvl = info.spatial[level];
     // go fetch the file to start...
@@ -259,9 +247,7 @@ export async function getAnnotations<T extends Annotation>(baseurl: string, // t
     // TODO: consider if we want the ids (probably yes?)
     return AnnoStream(info, extractor, view, numAnnotations)
 }
-// NG annotation files support arbitrary dimensionality in any order
-// during extraction, we want to pull out the whole shape,
-// and potentially 
+
 const propSchema = z.object({
     id: z.string(),
     type: z.string(),
@@ -281,7 +267,7 @@ const spatialSchema = z.object({
     chunk_size: z.array(z.number()),
     limit: z.number()
 })
-const wtf = z.object({
+const ng_annotations_v1_schema = z.object({
     "@type": z.literal('neuroglancer_annotations_v1'),
     dimensions: z.record(z.tuple([z.number().positive(), z.string()])),
     lower_bound: z.array(z.number()),
@@ -292,8 +278,8 @@ const wtf = z.object({
     by_id: z.object({ key: z.string(), sharding: z.optional(z.boolean()) }),
     spatial: z.array(spatialSchema)
 })
-export function parseInfoFromJson(json: any): AnnotationInfo | undefined {
-    const { data } = wtf.safeParse(json)
+export function parseInfoFromJson(json: any): UnknownAnnotationInfo | undefined {
+    const { data } = ng_annotations_v1_schema.safeParse(json)
     if (data) {
         // the idea here is that 🤞 object.keys respects the order in which the properties were listed in the json body itself...
         const dims = Object.keys(data.dimensions).map((key, i) => ({ name: key, unit: data.dimensions[key][1] as NGUnit, scale: data.dimensions[key][0] }))
@@ -311,4 +297,16 @@ export function parseInfoFromJson(json: any): AnnotationInfo | undefined {
 
         }
     }
+}
+export function isPointAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'POINT'> {
+    return a.annotation_type === 'POINT'
+}
+export function isBoxAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'AXIS_ALIGNED_BOUNDING_BOX'> {
+    return a.annotation_type === 'AXIS_ALIGNED_BOUNDING_BOX'
+}
+export function isEllipsoidAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'ELLIPSOID'> {
+    return a.annotation_type === 'ELLIPSOID'
+}
+export function isLineAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'LINE'> {
+    return a.annotation_type === 'LINE'
 }
