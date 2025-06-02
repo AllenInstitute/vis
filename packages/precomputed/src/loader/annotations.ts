@@ -1,4 +1,5 @@
-import { match, P } from 'ts-pattern'
+import { Box3D, type box3D, Vec2, type vec2, Vec3 } from '@alleninstitute/vis-geometry'
+import { match } from 'ts-pattern'
 import { z } from 'zod'
 // a simple reader for NG precomputed annotation data-sources
 // see https://github.com/google/neuroglancer/blob/master/src/datasource/precomputed/annotations.md
@@ -245,7 +246,7 @@ export async function getAnnotations<K extends AnnotationType>(baseurl: string, 
     const view = new DataView(raw, 8)
 
     // TODO: consider if we want the ids (probably yes?)
-    return AnnoStream(info, extractor, view, numAnnotations)
+    return { stream: AnnoStream(info, extractor, view, numAnnotations), numAnnotations }
 }
 
 const propSchema = z.object({
@@ -309,4 +310,108 @@ export function isEllipsoidAnnotation(a: UnknownAnnotationInfo): a is Annotation
 }
 export function isLineAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'LINE'> {
     return a.annotation_type === 'LINE'
+}
+
+function projectXYZ<T>(info: UnknownAnnotationInfo, orderedAsInfo: readonly T[], xyz: readonly [string, string, string]): undefined | readonly [T, T, T] {
+    const [x, y, z] = xyz;
+    const X = info.dimensions.findIndex((d) => d.name === x)
+    const Y = info.dimensions.findIndex((d) => d.name === y)
+    const Z = info.dimensions.findIndex((d) => d.name === z)
+    if (X === -1 || Y === -1 || Z === -1) {
+        return undefined
+    }
+    return [orderedAsInfo[X], orderedAsInfo[Y], orderedAsInfo[Z]]
+}
+function projectXY<T>(info: UnknownAnnotationInfo, orderedAsInfo: readonly T[], xy: readonly [string, string]): undefined | readonly [T, T] {
+    const [x, y,] = xy;
+    const X = info.dimensions.findIndex((d) => d.name === x)
+    const Y = info.dimensions.findIndex((d) => d.name === y)
+    if (X === -1 || Y === -1) {
+        return undefined
+    }
+    return [orderedAsInfo[X], orderedAsInfo[Y]]
+}
+// our grids are of arbitrary high dimensionality -
+// we want to traverse an N dimensional grid - 
+// normally, when you know the dimension up front (e.g 3D grid) you can use nested loops,
+// here we have to use a more abstract approach:
+
+// precondition: cell and shape are the same length, cell is an index within the N-dim grid
+// described by shape, indexing starting at 0
+function nextGridCell(cell: readonly number[], shape: readonly number[]): null | (readonly number[]) {
+    // add 1 to the right-most value in cell[] - if it would overflow, set it to zero instead,
+    // and recursively bubble the one forward
+    const { leftover, v } = bubbleAdd(0, cell, shape)
+    if (leftover) {
+        return null;
+    }
+    return v;
+}
+function bubbleAdd(dim: number, cell: readonly number[], shape: readonly number[]): { v: readonly number[], leftover: boolean } {
+    const rank = cell.length;
+    if (dim === rank - 1) {
+        if (cell[dim] + 1 >= shape[dim]) {
+            // we have to bubble-up!
+            return { v: [0], leftover: true }
+        } else {
+            return { v: [cell[dim] + 1], leftover: false }
+        }
+    } else {
+        const { v, leftover } = bubbleAdd(dim + 1, cell, shape)
+        if (leftover) {
+            if (cell[dim] + 1 >= shape[dim]) {
+                // keep bubbling!
+                return { leftover: true, v: [0, ...v] }
+            } else {
+                return { v: [cell[dim] + 1, ...v], leftover: false }
+            }
+        }
+        return { v: [cell[dim], ...v], leftover: false }
+    }
+}
+// // TODO lodash me
+// function isValidIndex(cell: readonly number[], shape: readonly number[]):boolean {
+//     for(let dim = 0;dim<cell.length;dim++){
+//         if(cell[dim] <0 && cell[dim]>=shape[dim]){
+//             return false;
+//         }
+//     }
+//     return true;
+// }
+export function visitChunksInLayer(data: UnknownAnnotationInfo, layer: number, queryXYZ: box3D, xyz: readonly [string, string, string], visitor: (dataset: UnknownAnnotationInfo, cell: readonly number[], layer: number) => void) {
+    const L = data.spatial[layer]
+    let cell: null | (readonly number[]) = data.dimensions.map((d) => 0)
+    if (L) {
+        const cellSize = projectXYZ(data, L.chunk_size, xyz)
+        if (!cellSize) {
+            return; // invalid dimensions!
+        }
+        while (cell !== null) {
+            // is cell within the bounds of our query?
+            const gridIndexXYZ = projectXYZ(data, cell, xyz)!
+            const cellBoundsXYZ = Box3D.create(Vec3.mul(gridIndexXYZ, cellSize), Vec3.mul(Vec3.add(gridIndexXYZ, [1, 1, 1]), cellSize));
+            if (Box3D.intersection(queryXYZ, cellBoundsXYZ)) {
+                visitor(data, cell, layer)
+            }
+            cell = nextGridCell(cell, L.grid_shape)
+        }
+    }
+}
+export function layerSizeInXY(data: UnknownAnnotationInfo, layer: number, xy: readonly [string, string]): vec2 {
+    const L = data.spatial[layer]
+    if (L) {
+        const shape = projectXY(data, L.grid_shape, xy)
+        const size = projectXY(data, L.chunk_size, xy)
+        if (shape && size) {
+            return Vec2.mul(shape, size)
+        }
+    }
+    return [0, 0]
+}
+export function chunkSizeInXY(data: UnknownAnnotationInfo, layer: number, xy: readonly [string, string]): vec2 {
+    const L = data.spatial[layer]
+    if (L) {
+        return projectXY(data, L.chunk_size, xy) ?? [0, 0]
+    }
+    return [0, 0]
 }
