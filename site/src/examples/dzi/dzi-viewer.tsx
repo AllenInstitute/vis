@@ -64,7 +64,6 @@ export function DziViewer(props: Props) {
         if (server && renderer.current && cnvs.current) {
             const renderMyData: RenderFrameFn<DziImage, DziTile> = (target, cache, callback) => {
                 if (renderer.current) {
-                    // erase the frame before we start drawing on it
                     return renderer.current(dzi, { camera }, callback, target, cache);
                 }
                 return null;

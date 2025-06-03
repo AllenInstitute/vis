@@ -93,8 +93,8 @@ importers:
         specifier: workspace:*
         version: link:../geometry
       regl:
-        specifier: 2.1.1
-        version: 2.1.1
+        specifier: 2.1.0
+        version: 2.1.0
       ts-pattern:
         specifier: 5.7.1
         version: 5.7.1
@@ -116,6 +116,9 @@ importers:
       '@alleninstitute/vis-omezarr':
         specifier: workspace:*
         version: link:../packages/omezarr
+      '@alleninstitute/vis-precomputed':
+        specifier: workspace:*
+        version: link:../packages/precomputed
       '@astrojs/check':
         specifier: 0.9.4
         version: 0.9.4(typescript@5.8.3)

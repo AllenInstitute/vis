@@ -52,11 +52,13 @@ export class RenderServer {
     cache: AsyncDataCache<string, string, ReglCacheEntry>;
     private clients: Map<Client, ClientEntry>;
     private maxSize: vec2;
+    private cancelled: boolean
     constructor(maxSize: vec2, extensions: string[], cacheByteLimit: number = 2000 * oneMB) {
         this.canvas = new OffscreenCanvas(10, 10); // we always render to private buffers, so we dont need a real resolution here...
         this.clients = new Map();
         this.maxSize = maxSize;
         this.refreshRequested = false;
+        this.cancelled = false;
         const gl = this.canvas.getContext('webgl', {
             alpha: true,
             preserveDrawingBuffer: false,
@@ -119,6 +121,9 @@ export class RenderServer {
         }
     }
     private requestComposition(client: Client, composite: Compositor) {
+        if (this.cancelled) {
+            return
+        }
         const c = this.clients.get(client);
         if (c) {
             if (!c.updateRequested) {
@@ -144,6 +149,16 @@ export class RenderServer {
             C.frame?.cancelFrame();
         }
         this.clients.delete(client);
+    }
+    destroyServer() {
+        this.cancelled = true; // we need this flag,
+        // because when we inform clients that they are cancelled,
+        // they could respond by requesting a new frame!
+        for (const c of this.clients.values()) {
+            c.frame?.cancelFrame()
+        }
+        this.clients.clear()
+        this.regl.destroy()
     }
     private prepareToRenderToClient(client: Client) {
         const previousEntry = this.clients.get(client);

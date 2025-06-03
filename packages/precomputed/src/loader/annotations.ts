@@ -1,4 +1,4 @@
-import { Box3D, type box3D, Vec2, type vec2, Vec3 } from '@alleninstitute/vis-geometry'
+import { Box3D, type box3D, Vec2, type vec2, type vec3, Vec3 } from '@alleninstitute/vis-geometry'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 // a simple reader for NG precomputed annotation data-sources
@@ -396,6 +396,9 @@ export function visitChunksInLayer(data: UnknownAnnotationInfo, layer: number, q
             cell = nextGridCell(cell, L.grid_shape)
         }
     }
+}
+export function dimensionScaleXYZ(data: UnknownAnnotationInfo, xyz: readonly [string, string, string]) {
+    return (projectXYZ(data, data.dimensions, xyz)?.map(d => d.scale) as unknown ?? [1, 1, 1]) as vec3
 }
 export function layerSizeInXY(data: UnknownAnnotationInfo, layer: number, xy: readonly [string, string]): vec2 {
     const L = data.spatial[layer]

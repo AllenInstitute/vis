@@ -1,13 +1,15 @@
 import {
+    buildAsyncRenderer,
     type CachedVertexBuffer,
+    type QueueOptions,
     type Renderer,
 } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
-import { type AnnotationInfo, chunkSizeInXY, extractPoint, getAnnotations, visitChunksInLayer } from '../loader/annotations';
+import { type AnnotationInfo, chunkSizeInXY, dimensionScaleXYZ, extractPoint, getAnnotations, visitChunksInLayer } from '../loader/annotations';
 import { Box3D, type box3D, type vec2, Vec2, type vec3, Vec3 } from '@alleninstitute/vis-geometry';
 import { buildPointRenderer } from './pointAnnotationRenderer';
 
-type Item = {
+export type AnnotationChunk = {
     layerIndex: number;
     layerKey: string;
     chunk_file: string;
@@ -34,7 +36,7 @@ function getVisibleItems(data: PointAnnotationInfo, settings: Settings) {
     // find all chunks that intersect our given view
     // so long as each chunk's xy-projected width and height is greater than 
     // lodThreshold
-    const items: Item[] = []
+    const items: AnnotationChunk[] = []
     const { camera, xyz, lodThreshold } = settings;
     const vSize = Vec3.xy(Box3D.size(camera.view));
     const pxPerUnit = Vec2.div(camera.screenSize, vSize)
@@ -61,7 +63,7 @@ function getVisibleItems(data: PointAnnotationInfo, settings: Settings) {
 
 export function buildNGPointAnnotationRenderer(
     regl: REGL.Regl,
-): Renderer<PointAnnotationInfo, Item, Settings, PointAnnotationData> {
+): Renderer<PointAnnotationInfo, AnnotationChunk, Settings, PointAnnotationData> {
     const cmd = buildPointRenderer(regl)
     return {
         destroy: () => {
@@ -77,17 +79,22 @@ export function buildNGPointAnnotationRenderer(
         fetchItemContent(item, dataset, settings, signal) {
             return {
                 positions: async () => {
+                    // const scale = dimensionScaleXYZ(dataset, settings.xyz);
+                    const scale = [1, 1, 1]
                     const { stream, numAnnotations } = await getAnnotations(dataset.url, dataset, { level: item.layerIndex, cell: item.cell }, extractPoint)
+
                     // TODO: we could... upload the whole buffer to GPU
                     // and use vertex binding strides to get at the data...
                     // however the buffer is way bigger than we need (ids...)
                     // and there are annoying byte alignment issues to consider - lets try this for now, maybe it will be fast enough
                     const xyzs = new Float32Array(Number(numAnnotations) * 3)
                     let i = 0;
+
                     for (const v of stream) {
-                        xyzs[(i * 3)] = v.point[settings.xyz[0]] ?? 0
-                        xyzs[(i * 3) + 1] = v.point[settings.xyz[1]] ?? 0
-                        xyzs[(i * 3) + 2] = v.point[settings.xyz[2]] ?? 0
+                        xyzs[(i * 3)] = scale[0] * (v.point[settings.xyz[0]] ?? 0)
+                        xyzs[(i * 3) + 1] = scale[1] * (v.point[settings.xyz[1]] ?? 0)
+                        xyzs[(i * 3) + 2] = scale[2] * (v.point[settings.xyz[2]] ?? 0)
+                        i += 1;
                     }
                     return {
                         buffer: regl.buffer(xyzs),
@@ -107,7 +114,12 @@ export function buildNGPointAnnotationRenderer(
                 pointSize: 8,
                 target,
                 view,
+                count: item.numAnnotations
             })
         }
     }
+}
+
+export function buildAsyncNGPointRenderer(regl: REGL.Regl, options?: QueueOptions) {
+    return buildAsyncRenderer(buildNGPointAnnotationRenderer(regl), options);
 }

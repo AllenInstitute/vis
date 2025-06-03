@@ -26,7 +26,7 @@ precision highp float;
 
         vec3 pos = (position-vec3(view.xy,0.0))/viewSize;
         opacity=1.0;
-        vec2 clip = (pos*2.0)-1.0;
+        vec3 clip = (pos*2.0)-1.0;
         gl_Position = vec4(clip,1);
     }
 `
@@ -43,7 +43,7 @@ void main(){
     if(dot(circleCoord,circleCoord)>1.0){
         discard; 
     }
-    vec3 clr = mix(color,outlineColor, smoothStep(0.7,0.8, length(circleCoord)));
+    vec3 clr = mix(color,outlineColor, smoothstep(0.7,0.8, length(circleCoord)));
     gl_FragColor = vec4(clr, opacity);
 }
 `
@@ -63,6 +63,7 @@ type InnerProps = {
     zNearFar: vec2;
     color: vec3;
     pointSize: number;
+    count: number;
     outlineColor: vec3;
     positions: REGL.Buffer
     view: vec4
@@ -74,6 +75,7 @@ type RenderProps = {
     pointSize: number;
     positions: REGL.Buffer
     view: box3D
+    count: number;
 }
 type Unis = {
     view: vec4,
@@ -104,6 +106,7 @@ export function buildPointRenderer(regl: REGL.Regl) {
         depth: {
             enable: true,
         },
+        count: regl.prop<InnerProps, 'count'>('count'),
         framebuffer: regl.prop<InnerProps, 'target'>('target'),
         primitive: 'points'
     })
@@ -117,3 +120,4 @@ export function buildPointRenderer(regl: REGL.Regl) {
         })
     }
 }
+

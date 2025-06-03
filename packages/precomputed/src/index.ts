@@ -3,4 +3,4 @@ export {
     parseInfoFromJson as ParseNGPrecomputedInfo,
     getAnnotations,
 } from './loader/annotations'
-export { buildNGPointAnnotationRenderer } from './render/annotationRenderer'
+export { buildNGPointAnnotationRenderer, buildAsyncNGPointRenderer, type AnnotationChunk } from './render/annotationRenderer'
