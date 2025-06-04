@@ -183,16 +183,21 @@ function indexFor(dim: ZarrDimension, axes: readonly OmeZarrAxis[]) {
     return axes.findIndex((axis) => axis.name === dim);
 }
 /**
- * 
+ *
  * @param layer a shaped layer from within the omezarr dataset
  * @param axes the axes describing this omezarr dataset
  * @param parameter a value from [0:1] indicating a parameter of the volume, along the given dimension @param dim,
  * @param dim the dimension (axis) along which @param parameter refers
- * @returns a valid index (between [0,layer.shape[axis] ]) from the volume, suitable for 
+ * @returns a valid index (between [0,layer.shape[axis] ]) from the volume, suitable for
  */
-export function indexOfRelativeSlice(layer: OmeZarrShapedDataset, axes: readonly OmeZarrAxis[], parameter: number, dim: ZarrDimension): number {
-    const dimIndex = indexFor(dim, axes)
-    return Math.floor(layer.shape[dimIndex] * Math.max(0, Math.min(1, parameter)))
+export function indexOfRelativeSlice(
+    layer: OmeZarrShapedDataset,
+    axes: readonly OmeZarrAxis[],
+    parameter: number,
+    dim: ZarrDimension,
+): number {
+    const dimIndex = indexFor(dim, axes);
+    return Math.floor(layer.shape[dimIndex] * Math.max(0, Math.min(1, parameter)));
 }
 
 /**

@@ -35,13 +35,15 @@ export type RenderSettings = {
         view: box2D;
         screenSize: vec2;
     };
-    planeLocation: {
-        parameter?: never;
-        index: number;
-    } | {
-        index?: never;
-        parameter: number;
-    }
+    planeLocation:
+        | {
+              parameter?: never;
+              index: number;
+          }
+        | {
+              index?: never;
+              parameter: number;
+          };
     tileSize: number;
     plane: CartesianPlane;
     channels: RenderSettingsChannels;
@@ -147,7 +149,7 @@ export function buildOmeZarrSliceRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
-        destroy: () => { },
+        destroy: () => {},
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, planeLocation, tileSize } = settings;
             return getVisibleTiles(camera, plane, planeLocation, dataset, tileSize);

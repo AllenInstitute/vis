@@ -52,7 +52,7 @@ export class RenderServer {
     cache: AsyncDataCache<string, string, ReglCacheEntry>;
     private clients: Map<Client, ClientEntry>;
     private maxSize: vec2;
-    private cancelled: boolean
+    private cancelled: boolean;
     constructor(maxSize: vec2, extensions: string[], cacheByteLimit: number = 2000 * oneMB) {
         this.canvas = new OffscreenCanvas(10, 10); // we always render to private buffers, so we dont need a real resolution here...
         this.clients = new Map();
@@ -122,7 +122,7 @@ export class RenderServer {
     }
     private requestComposition(client: Client, composite: Compositor) {
         if (this.cancelled) {
-            return
+            return;
         }
         const c = this.clients.get(client);
         if (c) {
@@ -155,10 +155,10 @@ export class RenderServer {
         // because when we inform clients that they are cancelled,
         // they could respond by requesting a new frame!
         for (const c of this.clients.values()) {
-            c.frame?.cancelFrame()
+            c.frame?.cancelFrame();
         }
-        this.clients.clear()
-        this.regl.destroy()
+        this.clients.clear();
+        this.regl.destroy();
     }
     private prepareToRenderToClient(client: Client) {
         const previousEntry = this.clients.get(client);
