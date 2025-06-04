@@ -4,7 +4,7 @@ export class Logger {
     private level: LogLevel;
     private name: string;
 
-    constructor(name: string, level: LogLevel = 'info') {
+    constructor(name: string, level: LogLevel = 'warn') {
         this.name = name;
         this.level = level;
     }
