@@ -128,4 +128,13 @@ describe('Vec3', () => {
         expect(Vec3.isVec3([1, 2, 2, 3])).toBeFalsy();
         expect(Vec3.isVec3([1, 2])).toBeFalsy();
     });
+    test('cross, follows right-hand rule for easy-to-follow cases', () => {
+        expect(Vec3.cross([1, 0, 0], [0, 1, 0])).toEqual([0, 0, 1]);
+        expect(Vec3.cross([1, 0, 0], [0, 0, 1])).toEqual([0, -1, 0]);
+        expect(Vec3.cross([0, 1, 0], [0, 0, 1])).toEqual([1, 0, 0]);
+    });
+    test('cross for degenerate cases', () => {
+        expect(Vec3.cross([1, 0, 0], [1, 0, 0])).toEqual([0, 0, 0]);
+        expect(Vec3.cross([1, 0, 0], [-1, 0, 0])).toEqual([0, -0, 0]);
+    });
 });
