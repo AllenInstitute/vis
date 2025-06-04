@@ -79,8 +79,7 @@ export function buildNGPointAnnotationRenderer(
         fetchItemContent(item, dataset, settings, signal) {
             return {
                 positions: async () => {
-                    // const scale = dimensionScaleXYZ(dataset, settings.xyz);
-                    const scale = [1, 1, 1]
+                    const scale = dimensionScaleXYZ(dataset, settings.xyz);
                     const { stream, numAnnotations } = await getAnnotations(dataset.url, dataset, { level: item.layerIndex, cell: item.cell }, extractPoint)
 
                     // TODO: we could... upload the whole buffer to GPU

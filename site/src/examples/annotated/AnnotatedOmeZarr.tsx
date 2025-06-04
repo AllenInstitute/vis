@@ -45,10 +45,21 @@ class AnnotatedVolumeRenderer implements ServerRenderer<RenderProps & { cnvs: HT
     };
     const renderPoints: RenderFrameFn<unknown, unknown> = (target, cache, callback) => {
       this.s.regl.clear({ framebuffer: target, color: [0.3, 0, 0, 1], depth: 1 });
+      // so = our points are in meters,
+      // and our volume is in micrometers - thats 6 orders of magnitude
+      //
+      const middle = 1000 * 1e-6;
       const rp = this.annoRenderer(
         points,
         {
-          camera: { ...camera, view: Box3D.create([...view.minCorner, -1000], [...view.maxCorner, 1000]) },
+          // note: this camera scaling is fine for THIS DATA, specifically - a real app would want to read the files and behave in a data-dependant way!
+          camera: {
+            ...camera,
+            view: Box3D.create(
+              [...Vec2.scale(view.minCorner, 1e-6), middle - 300e-6],
+              [...Vec2.scale(view.maxCorner, 1e-6), middle + 300e-6]
+            ),
+          },
           color: [1, 1, 0],
           outlineColor: [0, 0, 0],
           lodThreshold: 10,
@@ -63,7 +74,9 @@ class AnnotatedVolumeRenderer implements ServerRenderer<RenderProps & { cnvs: HT
         {
           camera,
           channels: Object.keys(channels).length > 0 ? channels : fallbackChannels,
-          orthoVal: 200,
+          planeLocation: {
+            parameter: 0.5,
+          },
           plane: new CartesianPlane('xy'),
           tileSize: 256,
         },

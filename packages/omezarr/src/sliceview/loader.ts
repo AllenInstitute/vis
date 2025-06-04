@@ -93,20 +93,24 @@ export function getVisibleTiles(
         view: box2D;
         screenSize: vec2;
     },
-    plane: CartesianPlane,
-    planeLocation: {
-        index: number;
-        parameter?: never;
-    } | { parameter: number; index?: never },
+    plane: CartesianPlane, // the plane along which we extract a slice
+    planeLocation:         // where that slice sits in the volume along the axis that is orthagonal to the plane of the slice - eg. Z for XY slices
+        {           // EITHER
+            index: number;      // the specific index (caution - not all volumes have the same number of slices at each level of detail)
+            parameter?: never;
+        }
+        |           // OR
+        {
+            parameter: number; // a parameter [0:1] along the axis, 0 would be the first slice, 1 would be the last
+            index?: never
+        },
     metadata: OmeZarrMetadata,
     tileSize: number,
 ): VoxelTile[] {
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
-
     const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
-    // figure out the index of the slice
-
     const sliceIndex = planeLocation.index ?? indexOfRelativeSlice(layer, metadata.attrs.multiscales[0].axes, planeLocation.parameter, plane.ortho)
+
     return getVisibleTilesInLayer(camera, plane, sliceIndex, metadata, tileSize, layer);
 }
 
