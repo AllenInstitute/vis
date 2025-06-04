@@ -32,11 +32,12 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
 
     const fill = <T>(t: T): _Vec<Dim, T> => {
         const arr = new Array<T>(N);
-        return arr.fill(t) as any;
+        return arr.fill(t) as _Vec<Dim, T>;
         // yup, typescript is lost here - thats ok, this function is very short and you can see its
         // making an array of a specific length, just as we expect
     };
     const map = <T>(vec: Vec<Dim, T>, fn: (t: T, i: number) => T): Vec<Dim, T> => {
+        // biome-ignore lint/suspicious/noExplicitAny: <map doesnt change the length...>
         return vec.map(fn) as any; // sorry TS - you tried. we can see this is fine though
     };
     const zeros: () => mColumn = () => fill(0);
@@ -46,7 +47,7 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         for (let c = 0; c < N; c++) {
             arr[c] = [...z];
         }
-        return arr as any;
+        return arr as mMatrix;
     };
     const _identity = (): mMatrix => {
         const mat: mMatrix = blank();
@@ -81,6 +82,7 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         return map(v, (_, i) => lib.dot(v, T[i]));
     };
 
+    // biome-ignore lint/correctness/noFlatMapIdentity: <this rule is a waste of time, and certainly has nothing to do with "correctness">
     const toColumnMajorArray = (m: mat4): number[] => m.flatMap((x) => x);
     return {
         identity,
