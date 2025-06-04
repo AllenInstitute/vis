@@ -30,13 +30,18 @@ export type RenderSettingsChannel = {
 export type RenderSettingsChannels = {
     [key: string]: RenderSettingsChannel;
 };
-
 export type RenderSettings = {
     camera: {
         view: box2D;
         screenSize: vec2;
     };
-    orthoVal: number; // the value of the orthogonal axis, e.g. Z value relative to an XY plane
+    planeLocation: {
+        parameter?: never;
+        index: number;
+    } | {
+        index?: never;
+        parameter: number;
+    }
     tileSize: number;
     plane: CartesianPlane;
     channels: RenderSettingsChannels;
@@ -142,10 +147,10 @@ export function buildOmeZarrSliceRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
-        destroy: () => {},
+        destroy: () => { },
         getVisibleItems: (dataset, settings) => {
-            const { camera, plane, orthoVal, tileSize } = settings;
-            return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
+            const { camera, plane, planeLocation, tileSize } = settings;
+            return getVisibleTiles(camera, plane, planeLocation, dataset, tileSize);
         },
         fetchItemContent: (item, dataset, settings, signal) => {
             const contents: Record<string, () => Promise<ReglCacheEntry>> = {};
