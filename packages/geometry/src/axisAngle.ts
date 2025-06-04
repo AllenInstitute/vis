@@ -1,15 +1,14 @@
-import { Vec3, vec3 } from "./vec3";
-
+import { Vec3, vec3 } from './vec3';
 
 export type AxisAngle = {
     readonly axis: vec3;
     readonly radians: number;
-}
+};
 
 const identity: AxisAngle = {
     radians: 0,
-    axis: [1, 0, 0]
-}
+    axis: [1, 0, 0],
+};
 /**
  * Note the ordering of arguments here - we follow the math convention of having the outer rotation left of the inner rotation "b (x) a"
  * when we say b (x) a, we mean that b happens "after" a, this is important because b (x) a =/= a (x) b
@@ -19,28 +18,27 @@ const identity: AxisAngle = {
  * @returns a single rotation which is equivalent to the sequence of rotations "a then b"
  */
 export function composeRotation(b: AxisAngle, a: AxisAngle): AxisAngle {
-    const a2 = a.radians / 2
-    const b2 = b.radians / 2
-    const sinA = Math.sin(a2)
-    const cosA = Math.cos(a2)
-    const sinB = Math.sin(b2)
-    const cosB = Math.cos(b2)
-    const A = a.axis
-    const B = b.axis
-    const gamma = 2 * Math.acos(cosB * cosA - (Vec3.dot(B, A) * sinB * sinA))
+    const a2 = a.radians / 2;
+    const b2 = b.radians / 2;
+    const sinA = Math.sin(a2);
+    const cosA = Math.cos(a2);
+    const sinB = Math.sin(b2);
+    const cosB = Math.cos(b2);
+    const A = a.axis;
+    const B = b.axis;
+    const gamma = 2 * Math.acos(cosB * cosA - Vec3.dot(B, A) * sinB * sinA);
 
     const D = Vec3.add(
-        Vec3.add(Vec3.scale(B, sinB * cosA),
-            Vec3.scale(A, sinA * cosB)),
-        Vec3.scale(Vec3.cross(B, A), sinB * sinA));
+        Vec3.add(Vec3.scale(B, sinB * cosA), Vec3.scale(A, sinA * cosB)),
+        Vec3.scale(Vec3.cross(B, A), sinB * sinA),
+    );
 
-    const dir = Vec3.normalize(D)
+    const dir = Vec3.normalize(D);
     if (!Vec3.finite(dir)) {
-        return Vec3.finite(a.axis) ? a : identity
+        return Vec3.finite(a.axis) ? a : identity;
     }
-    return { radians: gamma, axis: dir }
+    return { radians: gamma, axis: dir };
 }
-
 
 /**
  * rotate a vector about a given axis (through the origin) by the given angle
@@ -51,10 +49,12 @@ export function composeRotation(b: AxisAngle, a: AxisAngle): AxisAngle {
 export function rotateVector(rotation: AxisAngle, v: vec3): vec3 {
     // via rodrigues formula from the ancient past
     // var names from https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
-    const s = Math.sin(rotation.radians)
-    const c = Math.cos(rotation.radians)
-    const k = Vec3.normalize(rotation.axis)
+    const s = Math.sin(rotation.radians);
+    const c = Math.cos(rotation.radians);
+    const k = Vec3.normalize(rotation.axis);
 
-    return Vec3.add(Vec3.add(Vec3.scale(v, c), Vec3.scale(Vec3.cross(k, v), s)),
-        Vec3.scale(k, Vec3.dot(k, v) * (1 - c)))
+    return Vec3.add(
+        Vec3.add(Vec3.scale(v, c), Vec3.scale(Vec3.cross(k, v), s)),
+        Vec3.scale(k, Vec3.dot(k, v) * (1 - c)),
+    );
 }
