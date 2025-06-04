@@ -1,19 +1,24 @@
-# How To use generic rendering tools for your cool data
+---
+title: Core
+description: Documentation for the `@alleninstiute/vis-core` package
+---
 
-## Use case
+## How To use generic rendering tools for your cool data
+
+### Use case
 
 Lets say you have a big dataset, and you'd like to view it and also interact with that view. The dataset is big enough that having your users download the whole thing is prohibitive. Often, datasets like this are partitioned in some way -- for example, [OME-ZARR](https://ngff.openmicroscopy.org/latest/) uses a pyramid of chunks, where each successive "layer" of the pyramid is a higher resolution view of the data, divided into chunks or tiles.
 
 Whichever way your data is subdivided, we should be able to start with a renderer for the smallest, simplest unit (a single tile or chunk) and build up from there. The tools in this folder provide patterns for dealing with two common issues: caching chunks, and coordinating render scheduling when the data lives elsewhere.
 
-## Walkthrough
+### Walkthrough
 
-### Prerequisites
+#### Prerequisites
 
 1. Your application will render the dataset with [REGL](https://github.com/regl-project/regl/tree/master) and you have some familiarity with its basic concepts and verbiage (framebuffer, command, etc.)
 2. You have data that is partitioned in some way, preferably spatially.
 
-### Part 1: The Async Renderer
+#### Part 1: The Async Renderer
 
 Lets start with scheduling first. Our goal is to be able to call the function `buildAsyncRenderer` from `async-frame.ts`. Its signature is:
 
@@ -33,7 +38,7 @@ It takes only a single argument, `Renderer`, but that argument is highly generic
 
 Don't worry too much about planning these parameters out in advance -- they'll arise naturally as we write the functions that form the interface of the Renderer that we pass to `buildAsyncRenderer`.
 
-### Part 2: Defining the Renderer Interface
+#### Part 2: Defining the Renderer Interface
 
 Lets take a look at the Renderer interface items, one at a time. Each describes something the framework needs in order to be able to manage rendering properly:
 
@@ -48,11 +53,11 @@ Think of the flow of rendering like this:
 
 > `getVisibleItems(dataset).map(item => Promise.all(fetchItemContent(item).map(fetcher => fetcher())).then((gpuData) => renderItem(dataset, item, gpuData))`
 
-### Part 3: Now make it easy
+#### Part 3: Now make it easy
 
 That was fun! Now we can finally call `buildAsyncRenderer` on an object containing the functions we just wrote. Typescript will likely infer the generic types for you. The result of `buildAsyncRenderer` is a function that, when called, returns a handle to a running frame, which represents the progress of rendering to the given framebuffer. Because the data my not be in the cache yet, this frame may take a very long time to complete. Options are provided for cancelling a frame, as well as for listening to different events from the frame, such as progress events, finished events, etc.
 
-## Using it on a Page
+### Using it on a Page
 
 Now that we have a function that can render, how do we deploy it? There are a few options.
 
@@ -60,7 +65,7 @@ The first is the most direct: create a `Canvas`, initialize WebGL and REGL on th
 
 If you need multiple views of potentially shared data, you can use the `render-server`, which lets you draw to many `Canvas` instances as though they shared a single WebGL context and cache. This will incur a small performance penalty when copying rendered results from the server to the client. However, in practice, for a handful of views, this cost will be dwarfed by other bottlenecks.
 
-### Walkthrough
+#### Walkthrough
 
 1. Create a `RenderServer` instance. It will create its own REGL context, cache, and offscreen canvas.
 2. Create your `AsyncRenderer` as described earlier in this document. You must use `server.regl` to construct your renderer.

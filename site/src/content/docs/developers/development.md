@@ -7,11 +7,29 @@ sidebar:
 
 This document covers the tools, processes, and standards that we follow went developing within the `vis` repository.
 
-# Tooling
+## Development Servers
+To get started developing in the `vis` repsitory, you can use the following command to watch for changes in all packages and the documentation site:
+
+```sh
+pnpm run dev
+```
+
+This will use the Parcel [`watch`](https://parceljs.org/features/cli/#parcel-watch-%3Centries%3E) command to detect changes in each `package` and the Starlight [development server](https://starlight.astro.build/getting-started/#start-the-development-server) in parallel in one console.
+
+If you'd rather run individual commands in multiple terminals, you can always use `pnpm run dev` in each individual `package` folder or the `site` folder for the docs website.
+
+## Tooling
 
 These tools will mostly be found in the `packages` directory. Each `example` will have its own needs and may not necessarily use all of these tools.
 
-## Linter/Formatting
+### Bundling
+We use [Parcel](https://parceljs.org/) to bundle our libraries. You can produce a builds of all our packages suitable for upload to a JavaScript package repository by running the following command from the root directory or inside each `packages` folder:
+
+```sh
+pnpm run build
+```
+
+### Linter/Formatting
 We use [Biome](https://biomejs.dev) for linting and formatting.
 
 To run the linter, use the following command:
@@ -34,7 +52,7 @@ And you can auto-apply simple fixes to both lints and formatting with the follow
 pnpm run checks:fix
 ```
 
-## Testing
+### Testing
 We use [Vitest](https://vitest.dev/) for testing.
 
 To run the tests, use the following command:
@@ -42,7 +60,7 @@ To run the tests, use the following command:
 pnpm run test
 ```
 
-### Test Coverage
+#### Test Coverage
 We use [Istanbul](https://istanbul.js.org/) for test coverage.
 
 To check coverage, use the following command:
