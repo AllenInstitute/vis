@@ -11,10 +11,10 @@ type _Vec<N extends number, E> = N extends 2 ? [E, E] : N extends 3 ? [E, E, E] 
 type Vec<N extends number, E> = N extends 2
     ? readonly [E, E]
     : N extends 3
-      ? readonly [E, E, E]
-      : N extends 4
-        ? readonly [E, E, E, E]
-        : never;
+    ? readonly [E, E, E]
+    : N extends 4
+    ? readonly [E, E, E, E]
+    : never;
 
 // a template for generating utils for square matricies
 // note that you'll see a few 'as any' in the implementation here -
@@ -81,7 +81,7 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         return map(v, (_, i) => lib.dot(v, T[i]));
     };
 
-    const toColumnMajorArray = (m: mat4): number[] => m.flat();
+    const toColumnMajorArray = (m: mat4): number[] => m.flatMap((x) => x);
     return {
         identity,
         mul,
