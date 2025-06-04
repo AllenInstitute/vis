@@ -1,4 +1,4 @@
-import { Vec3, vec3 } from './vec3';
+import { Vec3, type vec3 } from './vec3';
 
 export type AxisAngle = {
     readonly axis: vec3;

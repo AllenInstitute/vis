@@ -1,14 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import { Mat4 } from '../matrix';
-import { Vec3, vec3 } from '../vec3';
+import { Vec3, type vec3 } from '../vec3';
 import { Vec4, type vec4 } from '../vec4';
-import { AxisAngle, composeRotation, rotateVector } from '../axisAngle';
+import { type AxisAngle, composeRotation, rotateVector } from '../axisAngle';
 
 function nearly(actual: vec3, expected: vec3) {
     const dst = Vec3.length(Vec3.sub(actual, expected));
-    if (dst > 0.0001) {
-        console.log('expected', expected, 'recieved: ', actual);
-    }
+
     for (let i = 0; i < 3; i++) {
         expect(actual[i]).toBeCloseTo(expected[i]);
     }
@@ -123,9 +121,9 @@ describe('rotation in various ways', () => {
     });
     describe('rotation about a point which is not the origin', () => {
         test('an easy to understand example', () => {
-            let v: vec4 = [1, 0, 0, 1];
-            let yAxis: vec3 = [0, 1, 0];
-            let origin: vec3 = [2, 0, 0];
+            const v: vec4 = [1, 0, 0, 1];
+            const yAxis: vec3 = [0, 1, 0];
+            const origin: vec3 = [2, 0, 0];
 
             // o----v---|---x
             // 0----1---2---3---4---

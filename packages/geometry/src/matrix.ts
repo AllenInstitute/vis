@@ -1,6 +1,6 @@
 import { VectorLibFactory } from './vector';
 import { Vec3, type vec3 } from './vec3';
-import { type vec4 } from './vec4';
+import type { vec4 } from './vec4';
 
 export type mat4 = readonly [vec4, vec4, vec4, vec4];
 
@@ -81,7 +81,7 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         return map(v, (_, i) => lib.dot(v, T[i]));
     };
 
-    const toColumnMajorArray = (m: mat4): number[] => m.flatMap((x) => x);
+    const toColumnMajorArray = (m: mat4): number[] => m.flat();
     return {
         identity,
         mul,
