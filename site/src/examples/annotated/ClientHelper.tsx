@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef } from 'react';
 import type { HandlerProps } from './CameraHelper';
-import { RenderServer } from '@alleninstitute/vis-core';
+import type { RenderServer } from '@alleninstitute/vis-core';
 import { renderServerContext } from '../common/react/render-server-provider';
 
 export interface ServerRenderer<T> {

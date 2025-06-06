@@ -1,5 +1,5 @@
 import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { useContext, useEffect, useRef, useState, type ComponentType } from 'react';
+import { useState, type ComponentType } from 'react';
 import { pan, zoom } from '../common/camera';
 
 type Camera = {

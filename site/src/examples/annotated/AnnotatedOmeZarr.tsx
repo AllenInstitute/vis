@@ -1,11 +1,10 @@
 import { Box3D, CartesianPlane, Vec2, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
-import type { RenderFrameFn, RenderServer, buildAsyncRenderer } from '@alleninstitute/vis-core';
+import type { RenderFrameFn, RenderServer, } from '@alleninstitute/vis-core';
 import {
     buildAsyncNGPointRenderer,
-    type AnnotationChunk,
     type PointAnnotationInfo,
 } from '@alleninstitute/vis-precomputed';
-import { buildAsyncOmezarrRenderer, OmeZarrMetadata, type RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
+import { buildAsyncOmezarrRenderer, type OmeZarrMetadata, type RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import { multithreadedDecoder } from '../common/loaders/ome-zarr/sliceWorkerPool';
 import { CameraHelper, type HandlerProps } from './CameraHelper';
 import { RenderClientHelper, type ServerRenderer } from './ClientHelper';

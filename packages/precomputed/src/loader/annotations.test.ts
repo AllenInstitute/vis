@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     AnnoStream,
-    AnnotationInfo,
+    type AnnotationInfo,
     computeStride,
     extractPoint,
     getAnnotationBuffer,
-    getAnnotations,
     isPointAnnotation,
     parseInfoFromJson,
 } from './annotations';
