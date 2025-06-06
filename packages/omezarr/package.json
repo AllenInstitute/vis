@@ -32,7 +32,7 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
-        "dev": "vite",
+        "dev": "parcel watch --port 1238",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage"
@@ -49,7 +49,7 @@
         "@alleninstitute/vis-core": "workspace:*",
         "regl": "2.1.0",
         "zarrita": "0.5.1",
-        "zod": "3.24.3"
+        "zod": "3.25.50"
     },
     "packageManager": "pnpm@9.14.2"
 }
