@@ -142,15 +142,15 @@ export function buildOmeZarrSliceRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
-        destroy: () => {},
+        destroy: () => { },
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, orthoVal, tileSize } = settings;
             return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
         },
-        fetchItemContent: (item, dataset, settings, signal) => {
-            const contents: Record<string, () => Promise<ReglCacheEntry>> = {};
+        fetchItemContent: (item, dataset, settings): Record<string, (sig: AbortSignal) => Promise<CachedTexture>> => {
+            const contents: Record<string, (signal: AbortSignal) => Promise<CachedTexture>> = {};
             for (const key in settings.channels) {
-                contents[key] = () =>
+                contents[key] = (signal) =>
                     decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level, signal).then(
                         sliceAsTexture,
                     );

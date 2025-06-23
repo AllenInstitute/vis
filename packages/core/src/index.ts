@@ -20,4 +20,4 @@ export type {
 export { RenderServer } from './abstract/render-server';
 
 export { Logger, logger } from './logger';
-export { FancyCache, type Store, type CacheClient as CacheMeta } from './visualization/priority-cache'
+export { FancySharedCache } from './visualization/shared-cache'

@@ -57,7 +57,7 @@ export type RenderFrameConfig<
         dataset: Dataset,
         settings: Settings,
         signal?: AbortSignal,
-    ) => Record<RqKey, () => Promise<CacheEntryType>>;
+    ) => Record<RqKey, (signal: AbortSignal) => Promise<CacheEntryType>>;
     lifecycleCallback: RenderCallback<Dataset, Item>;
     cacheKeyForRequest: (item: Item, requestKey: RqKey, dataset: Dataset, settings: Settings) => CacheKey;
     isPrepared: (cacheData: Record<RqKey, CacheEntryType | undefined>) => cacheData is GpuData;

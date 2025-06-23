@@ -22,14 +22,16 @@ export class MinHeap<T extends {}> {
         this.entries[i] = this.entries[j];
         this.entries[j] = tmp;
     }
-    addItem(t: T) {
+    addItem(t: T, score?: number) {
         this.entries[this.curSize] = t;
         this.curSize += 1;
-        let i = this.curSize - 1;
+        const myIndex = this.curSize - 1
+        let i = myIndex
+        const myScore = score ?? this.score(t)
         while (
             i !== 0 &&
             this.score(this.entries[this.parent(i)]) >
-            this.score(this.entries[i])
+            (i === myIndex ? myScore : this.score(this.entries[i]))
         ) {
             this.swap(i, this.parent(i));
             i = this.parent(i);
@@ -58,7 +60,8 @@ export class MinHeap<T extends {}> {
             this.heapify(smallest);
         }
     }
-    rebuild() {
+    rebuild(score?: (t: T) => number) {
+        this.score = score ?? this.score
         for (let i = this.curSize - 1; i >= 0; i -= 1) {
             this.heapify(i);
         }
@@ -87,5 +90,9 @@ export class MinHeap<T extends {}> {
             this.heapify(0);
         }
         return item;
+    }
+    popMinItemWithScore(): { item: T, score: number } | null {
+        const t = this.popMinItem()
+        return t === null ? null : { item: t, score: this.score(t) }
     }
 }

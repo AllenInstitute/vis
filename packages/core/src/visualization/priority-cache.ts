@@ -21,35 +21,52 @@ export interface Store<K extends {}, V extends {}> {
     values(): Iterable<V>
 }
 type ObjectValue<T extends {}> = T extends Record<string, infer Value> ? Value : never;
-
-export type CacheClient<Item, V extends {}> = {
-    size: (v: ObjectValue<V>) => number;
+type PromisesFor<T extends {}> = { [k in keyof T]: () => Promise<T[k]> }
+export type CacheClient<Item, V extends Record<string, Resource>> = {
+    isKey(item: unknown)=> item is Item;
     cacheKeys: (item: Item) => { [k in keyof V]: string }
     estimatedSize: (k: Item) => number;
-    destroy: (v: ObjectValue<V>) => void;
-    fetch: (k: Item, signal?: AbortSignal) => { [k in keyof V]: ObjectValue<V> }
+    fetch: (k: Item, signal?: AbortSignal) => PromisesFor<V>
     isValid: (v: unknown) => v is V
     onItemArrived: (k: Item, v: V) => void
 }
+interface Resource {
+    destroy?: () => void;
+    sizeInBytes: () => number
+}
+// just check:
+type Fake = {
+    color: Float32Array
+    pos: Uint16Array
+}
+type proms = PromisesFor<Fake>
+type what = ObjectValue<Fake>
 /**
  * important: this is a cache, the priorities of which will lead to a poor experience,
  * IF you need a working set of data larger than the cache limit, regardless of the number of clients.
  * the idea is this cache is a tool for several clients, each of which needs only a small portion of an
  * out-of-core (READ: too big to have it all) dataset at a time - just enough to fulfill a view per client.
+ * 
+ * note also - clients of the cache are concerned with "Items" or chunks of data - however this cache
+ * is concerned with resources - a chunk may be comprised of many resources!
  */
-export class FancyCache<K extends {}, V extends {}> {
-    private store: Store<K, V>
-    // private meta: CacheClient<K, V>
+
+// just some type aliases for clarity:
+type ClientId = string
+type CacheKey = string
+type OpaqueChunk = {} // its an object, its not null, thats all we know
+export class FancyCache<V extends Record<string, Resource>> {
+    private store: Store<CacheKey, Resource>
     private limit: number;
     private used: number;
     private estimatedWorkingSetSize: number
-    private clients: Record<string, { client: CacheClient<any, any, string>, priorities: Set<K> }>
-    private reqCounts: Map<K, number>
-    private evictPriority: MinHeap<K>
-    private fetchPriority: MinHeap<K>
-    private pendingFetches: Map<K, AbortController>;
+    private clients: Record<string, { client: CacheClient<OpaqueChunk, V>, priorities: Set<OpaqueChunk> }>
+    private reqCounts: Map<CacheKey, number>
+    private evictPriority: MinHeap<CacheKey>
+    private fetchPriority: MinHeap<CacheKey>
+    private pendingFetches: Map<CacheKey, AbortController>;
     private MAX_INFLIGHT_FETCHES: number
-    constructor(store: Store<K, V>, cacheLimit: number) {
+    constructor(store: Store<CacheKey, Resource>, cacheLimit: number) {
         this.store = store;
         // this.meta = management;
         this.limit = cacheLimit
@@ -57,25 +74,25 @@ export class FancyCache<K extends {}, V extends {}> {
         this.estimatedWorkingSetSize = 0
         this.used = 0;
         this.clients = {}
-        this.reqCounts = new Map<K, number>();
+        this.reqCounts = new Map<CacheKey, number>();
         // TODO: consider replacing two min-heaps with a single Min-Max heap: https://en.wikipedia.org/wiki/Min-max_heap#Build
-        this.evictPriority = new MinHeap<K>(5000, (k: K) => this.evictScore(k))
-        this.fetchPriority = new MinHeap<K>(5000, (k: K) => this.fetchScore(k))
-        this.pendingFetches = new Map<K, AbortController>();
+        this.evictPriority = new MinHeap<CacheKey>(5000, (k: CacheKey) => this.evictScore(k))
+        this.fetchPriority = new MinHeap<CacheKey>(5000, (k: CacheKey) => this.fetchScore(k))
+        this.pendingFetches = new Map<CacheKey, AbortController>();
     }
-    registerClient<Item extends K, Value extends V, CK extends string>(client: CacheClient<Item, Value, CK>): string {
+    registerClient<CC extends CacheClient<OpaqueChunk, V>>(client: CC): string {
         const id = uniqueId('client_')
-        this.clients[id] = { client: client, priorities: new Set<K>() };
+        this.clients[id] = { client: client, priorities: new Set<OpaqueChunk>() };
         return id
     }
-    cancelClient(id: string) {
-        this.setPriorities(id, new Set<K>()) // mark the client as requiring nothing
+    cancelClient(id: ClientId) {
+        this.setPriorities(id, new Set<OpaqueChunk>()) // mark the client as requiring nothing
         delete this.clients[id] // now its safe to delete
     }
-    private evictScore(k: K) {
+    private evictScore(k: CacheKey) {
         return this.reqCounts.get(k) ?? 0
     }
-    private fetchScore(k: K) {
+    private fetchScore(k: CacheKey) {
         return -(this.reqCounts.get(k) ?? 0)
     }
     // let the priority system know what keys this client will try to use
@@ -83,12 +100,13 @@ export class FancyCache<K extends {}, V extends {}> {
     // return 'backoff' if the estimated size of all priorities for all clients
     // would be above the cache size limit, indicating that clients should consider
     // rendering at lower quality if possible
-    setPriorities(client: string, priorities: Set<K>) {
-        this.onPriorityChange(client, priorities)
+    setPriorities<K>(client: ClientId, priorities: Set<K>) {
+        this.onPriorityChange<K>(client, priorities)
         this.fetchNext()
         return this.estimatedWorkingSetSize > this.limit ? 'backoff' : 'ok'
     }
-    private prioritizeItem(item: K, itemValue: number, oldPriorities: Set<K>, newPriorities: Set<K>) {
+    // todo: rework to support chunk=>cacheKeys[]
+    private prioritizeItem(item: OpaqueChunk, itemValue: number, oldPriorities: Set<K>, newPriorities: Set<K>) {
         const prevCount = this.reqCounts.get(item) ?? 0
         if (!oldPriorities.has(item)) {
             // item is "new"
@@ -110,11 +128,12 @@ export class FancyCache<K extends {}, V extends {}> {
             }
         }
     }
-    private onPriorityChange(client: string, priorities: Set<K>) {
-        if (!this.clients[client]) {
+    private onPriorityChange<K>(clientId: ClientId, priorities: Set<K>) {
+        if (!this.clients[clientId]) {
             return;
         }
-        const old = this.clients[client].priorities
+        const client = this.clients[clientId]
+        const old = client.priorities
         // orphans are in old but not in priorities
         // newItems are in priorities but not in old
         const U = new Set<K>(old)

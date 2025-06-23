@@ -1,14 +1,111 @@
 import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
-import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
-import { logger, type WebResource } from '@alleninstitute/vis-core';
-import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  type OmeZarrMetadata,
+  type VoxelTile,
+  buildOmeZarrSliceRenderer,
+  loadMetadata,
+  sizeInUnits,
+} from '@alleninstitute/vis-omezarr';
+import type { Decoder, RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
+import {
+  FancySharedCache,
+  logger,
+  type Resource,
+  type CachedTexture,
+  type WebResource,
+} from '@alleninstitute/vis-core';
+import { useEffect, useRef, useState } from 'react';
 import { pan, zoom } from '../common/camera';
-import { RenderServerProvider } from '../common/react/render-server-provider';
-import { OmezarrViewer } from './omezarr-viewer';
-import { SliceView } from './sliceview';
+import REGL from 'regl';
+import { multithreadedDecoder } from '../common/loaders/ome-zarr/sliceWorkerPool';
 type DemoOption = { value: string; label: string; res: WebResource };
+
+class Tex implements Resource {
+  texture: CachedTexture;
+  constructor(tx: CachedTexture) {
+    this.texture = tx;
+  }
+  destroy() {
+    this.texture.texture.destroy();
+  }
+  sizeInBytes() {
+    return this.texture.bytes;
+  }
+}
+type Thing = {
+  tile: VoxelTile;
+  dataset: OmeZarrMetadata;
+  settings: RenderSettings;
+};
+function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): { [k in keyof T]: R } {
+  return Object.keys(obj).reduce((acc, k) => {
+    return { ...acc, [k]: fn(obj[k]) };
+  }, {} as { [k in keyof T]: R });
+}
+
+function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decoder: Decoder) {
+  //@ts-expect-error
+  const renderer = buildOmeZarrSliceRenderer(regl, decoder);
+  const client = cache.registerClient<Thing, Record<string, Tex>>({
+    cacheKeys: (item) => {
+      const channelKeys = Object.keys(item.settings.channels);
+      return channelKeys.reduce((chans, key) => {
+        return { ...chans, [key]: renderer.cacheKey(item.tile, key, item.dataset, item.settings) };
+      }, {});
+    },
+    fetch: (item) => {
+      // the Renderer<...> type obscures the fact that these are always cached textures... TODO  fix that?
+      // for now, this typecast is legit
+      const channels = renderer.fetchItemContent(item.tile, item.dataset, item.settings) as Record<
+        string,
+        (sig: AbortSignal) => Promise<CachedTexture>
+      >;
+      return mapValues(channels, (v: (sig: AbortSignal) => Promise<CachedTexture>) => {
+        return (sig: AbortSignal) => v(sig).then((tex) => new Tex(tex));
+      });
+    },
+    isValue: (v): v is Record<string, Tex> =>
+      renderer.isPrepared(
+        mapValues(v, (tx: Resource | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined))
+      ),
+  });
+  return {
+    render: (target: REGL.Framebuffer2D | null, dataset: OmeZarrMetadata, settings: RenderSettings) => {
+      const items = renderer.getVisibleItems(dataset, settings);
+      const baselayer = renderer.getVisibleItems(dataset, {
+        ...settings,
+        camera: { ...settings.camera, screenSize: [1, 1] },
+      });
+      client.setPriorities(
+        new Set(items.map((tile) => ({ tile, dataset, settings }))),
+        new Set(baselayer.map((tile) => ({ tile, dataset, settings })))
+      );
+      for (const tile of [...baselayer, ...items]) {
+        const drawme = client.get({ tile, dataset, settings });
+        if (drawme !== undefined) {
+          renderer.renderItem(
+            target,
+            tile,
+            dataset,
+            settings,
+            mapValues(drawme, (d: Tex) => d.texture)
+          );
+        }
+      }
+    },
+    destroy: () => {
+      client.unsubscribeFromCache();
+    },
+  };
+}
+class Demo {
+  cache: FancySharedCache;
+  regl: REGL.Regl;
+  constructor(regl: REGL.Regl, cache: FancySharedCache) {
+    this.cache = cache;
+    this.regl = regl;
+  }
+}
 
 const demoOptions: DemoOption[] = [
   {
@@ -75,23 +172,16 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omeza
 }
 
 export function OmezarrDemo() {
-  const [customUrl, setCustomUrl] = useState<string>('');
-  const [selectedDemoOptionValue, setSelectedDemoOptionValue] = useState<string>('');
   const [omezarr, setOmezarr] = useState<OmeZarrMetadata | null>(null);
-  const [omezarrJson, setOmezarrJson] = useState<string>('');
   const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
   const [planeIndex, setPlaneIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
-
-  const settings: RenderSettings | undefined = useMemo(
-    () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex, omezarr) : undefined),
-    [omezarr, view, planeIndex]
-  );
+  const [renderer, setRenderer] = useState<ReturnType<typeof buildConnectedRenderer>>();
+  const cnvs = useRef<HTMLCanvasElement>(null);
 
   const load = (res: WebResource) => {
     loadMetadata(res).then((v) => {
       setOmezarr(v);
-      setOmezarrJson(JSON.stringify(v, undefined, 4));
       setPlaneIndex(Math.floor(v.maxOrthogonal(PLANE_XY) / 2));
       const dataset = v.getFirstShapedDataset(0);
       if (!dataset) {
@@ -103,31 +193,6 @@ export function OmezarrDemo() {
         setView(Box2D.create([0, 0], size));
       }
     });
-  };
-
-  const handleOptionSelected = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValue = e.target.value;
-    setOmezarr(null);
-    setSelectedDemoOptionValue(selectedValue);
-    if (selectedValue && selectedValue !== 'custom') {
-      const option = demoOptions.find((v) => v.value === selectedValue);
-      if (option) {
-        load(option.res);
-      }
-    }
-  };
-
-  const handleCustomUrlLoad = () => {
-    const urlRegex = /^(s3|https):\/\/.*/;
-    if (!urlRegex.test(customUrl)) {
-      logger.error('cannot load resource: invalid URL');
-      return;
-    }
-    const isS3 = customUrl.slice(0, 5) === 's3://';
-    const resource: WebResource = isS3
-      ? { type: 's3', url: customUrl, region: 'us-west-2' }
-      : { type: 'https', url: customUrl };
-    load(resource);
   };
 
   // you could put this on the mouse wheel, but for this demo we'll have buttons
@@ -142,7 +207,7 @@ export function OmezarrDemo() {
     setView(v);
   };
 
-  const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePan = (e: MouseEvent) => {
     if (dragging) {
       const v = pan(view, screenSize, [e.movementX, e.movementY]);
       setView(v);
@@ -156,99 +221,31 @@ export function OmezarrDemo() {
   const handleMouseUp = () => {
     setDragging(false);
   };
-
-  return (
-    <RenderServerProvider>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label htmlFor="webresource-select">Select an OME-Zarr to View:</label>
-            <select id="webresource-select" name="webresource" onChange={handleOptionSelected}>
-              <option value="" key="default">
-                -- Please select an option --
-              </option>
-              {demoOptions.map((opt) => (
-                <option value={opt.value} key={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-              <option value="custom" key="custom">
-                * Enter a custom URL... *
-              </option>
-            </select>
-            {selectedDemoOptionValue === 'custom' && (
-              <div style={{ display: 'flex', flexDirection: 'row', gap: '8px' }}>
-                <input
-                  type="text"
-                  value={customUrl}
-                  onChange={(e) => setCustomUrl(e.target.value)}
-                  style={{ flexGrow: 1 }}
-                />
-                <button type="button" onClick={handleCustomUrlLoad}>
-                  Load
-                </button>
-              </div>
-            )}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
-                borderStyle: 'solid',
-                borderColor: 'black',
-                borderWidth: '1px',
-                padding: '1px',
-                marginTop: '8px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'block',
-                  width: screenSize[0],
-                  height: screenSize[1],
-                  backgroundColor: '#777',
-                }}
-              >
-                {omezarr && settings && (
-                  <OmezarrViewer
-                    omezarr={omezarr}
-                    id="omezarr-viewer"
-                    screenSize={screenSize}
-                    settings={settings}
-                    onWheel={handleZoom}
-                    onMouseMove={handlePan}
-                    onMouseDown={handleMouseDown}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                  />
-                )}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  gap: '8px',
-                  justifyContent: 'space-between',
-                }}
-              >
-                {(omezarr && (
-                  <span>
-                    Slide {planeIndex + 1} of {omezarr?.maxOrthogonal(PLANE_XY) ?? 0}
-                  </span>
-                )) || <span>No image loaded</span>}
-                <div style={{}}>
-                  <button type="button" onClick={() => handlePlaneIndex(-1)}>
-                    &#9664;
-                  </button>
-                  <button type="button" onClick={() => handlePlaneIndex(1)}>
-                    &#9654;
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </RenderServerProvider>
-  );
+  useEffect(() => {
+    if (cnvs.current) {
+      // do all setup as soon as we have a canvas reference
+      cnvs.current.addEventListener('mousedown', handleMouseDown);
+      cnvs.current.addEventListener('mouseup', handleMouseUp);
+      cnvs.current.addEventListener('mousemove', handlePan);
+      cnvs.current.addEventListener('wheel', handleZoom);
+      const regl = REGL(cnvs.current);
+      const cache = new FancySharedCache(new Map(), 1024 * 1024 * 2000, 10);
+      const renderer = buildConnectedRenderer(regl, cache, multithreadedDecoder);
+      setRenderer(renderer);
+      load(demoOptions[3].res);
+    }
+  }, [cnvs]);
+  useEffect(() => {
+    if (omezarr && cnvs.current) {
+      const settings = makeZarrSettings(
+        [cnvs.current?.clientWidth, cnvs.current?.clientHeight],
+        view,
+        planeIndex,
+        omezarr
+      );
+      console.log('draw with settings: ', settings);
+      renderer?.render(null, omezarr, settings);
+    }
+  }, [omezarr, planeIndex, view]);
+  return <canvas ref={cnvs} />;
 }
