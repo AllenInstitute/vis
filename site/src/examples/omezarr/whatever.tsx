@@ -14,7 +14,7 @@ import {
   type CachedTexture,
   type WebResource,
 } from '@alleninstitute/vis-core';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { pan, zoom } from '../common/camera';
 import REGL from 'regl';
 import { multithreadedDecoder } from '../common/loaders/ome-zarr/sliceWorkerPool';
@@ -43,7 +43,7 @@ function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): 
   }, {} as { [k in keyof T]: R });
 }
 
-function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decoder: Decoder) {
+function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decoder: Decoder, onData: () => void) {
   //@ts-expect-error
   const renderer = buildOmeZarrSliceRenderer(regl, decoder);
   const client = cache.registerClient<Thing, Record<string, Tex>>({
@@ -68,6 +68,9 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
       renderer.isPrepared(
         mapValues(v, (tx: Resource | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined))
       ),
+    onDataArrived: () => {
+      onData();
+    },
   });
   return {
     render: (target: REGL.Framebuffer2D | null, dataset: OmeZarrMetadata, settings: RenderSettings) => {
@@ -76,6 +79,7 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
         ...settings,
         camera: { ...settings.camera, screenSize: [1, 1] },
       });
+      regl.clear({ framebuffer: target, color: [1, 0, 0, 1], depth: 1 });
       client.setPriorities(
         new Set(items.map((tile) => ({ tile, dataset, settings }))),
         new Set(baselayer.map((tile) => ({ tile, dataset, settings })))
@@ -83,6 +87,7 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
       for (const tile of [...baselayer, ...items]) {
         const drawme = client.get({ tile, dataset, settings });
         if (drawme !== undefined) {
+          console.log('draw thing: ', tile.bounds);
           renderer.renderItem(
             target,
             tile,
@@ -90,6 +95,8 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
             settings,
             mapValues(drawme, (d: Tex) => d.texture)
           );
+        } else {
+          console.log('cache miss: ', tile.bounds);
         }
       }
     },
@@ -177,6 +184,7 @@ export function OmezarrDemo() {
   const [planeIndex, setPlaneIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [renderer, setRenderer] = useState<ReturnType<typeof buildConnectedRenderer>>();
+  const [tick, setTick] = useState<number>(0);
   const cnvs = useRef<HTMLCanvasElement>(null);
 
   const load = (res: WebResource) => {
@@ -207,9 +215,9 @@ export function OmezarrDemo() {
     setView(v);
   };
 
-  const handlePan = (e: MouseEvent) => {
+  const handlePan = (e: any) => {
     if (dragging) {
-      const v = pan(view, screenSize, [e.movementX, e.movementY]);
+      const v = pan(view, screenSize, [e.movementX, -e.movementY]);
       setView(v);
     }
   };
@@ -224,28 +232,59 @@ export function OmezarrDemo() {
   useEffect(() => {
     if (cnvs.current) {
       // do all setup as soon as we have a canvas reference
-      cnvs.current.addEventListener('mousedown', handleMouseDown);
-      cnvs.current.addEventListener('mouseup', handleMouseUp);
-      cnvs.current.addEventListener('mousemove', handlePan);
+      // cnvs.current.addEventListener('mousedown', handleMouseDown);
+      // cnvs.current.addEventListener('mouseup', handleMouseUp);
+      // cnvs.current.addEventListener('mousemove', handlePan);
       cnvs.current.addEventListener('wheel', handleZoom);
-      const regl = REGL(cnvs.current);
+      const regl = REGL({ canvas: cnvs.current, extensions: ['oes_texture_float'] });
       const cache = new FancySharedCache(new Map(), 1024 * 1024 * 2000, 10);
-      const renderer = buildConnectedRenderer(regl, cache, multithreadedDecoder);
+      const renderer = buildConnectedRenderer(regl, cache, multithreadedDecoder, () => {
+        console.log('tick???!');
+        requestAnimationFrame(() => {
+          console.log('tick!');
+          setTick(performance.now());
+        });
+      });
       setRenderer(renderer);
       load(demoOptions[3].res);
     }
   }, [cnvs]);
   useEffect(() => {
     if (omezarr && cnvs.current) {
-      const settings = makeZarrSettings(
-        [cnvs.current?.clientWidth, cnvs.current?.clientHeight],
-        view,
-        planeIndex,
-        omezarr
-      );
+      const settings = makeZarrSettings(screenSize, view, planeIndex, omezarr);
       console.log('draw with settings: ', settings);
+
       renderer?.render(null, omezarr, settings);
     }
-  }, [omezarr, planeIndex, view]);
-  return <canvas ref={cnvs} />;
+  }, [omezarr, planeIndex, view, tick]);
+  useEffect(() => {
+    // const handleWheel = (e: WheelEvent) => onWheel?.(e);
+    if (cnvs?.current) {
+      cnvs.current.addEventListener('wheel', handleZoom, { passive: false });
+    }
+    return () => {
+      if (cnvs?.current) {
+        cnvs.current.removeEventListener('wheel', handleZoom);
+      }
+    };
+  }, [handleZoom]);
+  return (
+    <div
+      style={{
+        display: 'block',
+        width: screenSize[0],
+        height: screenSize[1],
+        backgroundColor: '#777',
+      }}
+    >
+      <canvas
+        ref={cnvs}
+        width={screenSize[0]}
+        height={screenSize[1]}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handlePan}
+      />
+    </div>
+  );
 }
