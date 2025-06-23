@@ -100,7 +100,7 @@ describe('async cache', () => {
     };
 
     let cache = new AsyncDataCache<Columns, string, Data>(
-        (item: Data) => {},
+        (item: Data) => { },
         () => 1,
         10,
     );
