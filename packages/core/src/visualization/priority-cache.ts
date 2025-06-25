@@ -31,8 +31,9 @@ export class PriorityCache {
     private limit: number;
     private used: number;
     private MAX_INFLIGHT_FETCHES: number
+    private notify: undefined | ((k: CacheKey) => void)
     // items with lower scores will be evicted before items with high scores
-    constructor(store: Store<CacheKey, Resource>, score: (k: CacheKey) => number, limitInBytes: number, maxFetches: number = 10) {
+    constructor(store: Store<CacheKey, Resource>, score: (k: CacheKey) => number, limitInBytes: number, maxFetches: number, onDataArrived?: (key: CacheKey) => void) {
         this.store = store;
         this.evictPriority = new MinHeap<CacheKey>(5000, score)
         this.fetchPriority = new KeyedMinHeap<PendingResource, CacheKey>(5000, negate(score), (pr) => pr.key)
@@ -40,6 +41,7 @@ export class PriorityCache {
         this.pendingFetches = new Map();
         this.used = 0;
         this.MAX_INFLIGHT_FETCHES = maxFetches
+        this.notify = onDataArrived
     }
     // add {key:item} to the cache - return false (and fail) if the key is already present
     // may evict items to make room
@@ -71,18 +73,26 @@ export class PriorityCache {
         this.pendingFetches.set(key, abort)
         return fetch(abort.signal).then((resource) => {
             this.put(key, resource)
+        }).catch((_reason) => {
+            //ignore
         })
             .finally(() => {
                 this.pendingFetches.delete(key)
                 this.fetchToLimit();
             })
+            .then(() => this.notify?.(key))
     }
     private fetchToLimit() {
-        const toFetch = Math.max(0, this.MAX_INFLIGHT_FETCHES - this.pendingFetches.size)
+        let toFetch = Math.max(0, this.MAX_INFLIGHT_FETCHES - this.pendingFetches.size)
         for (let i = 0; i < toFetch; i++) {
-            const fetchMe = this.fetchPriority.popMinItem()
+            const fetchMe = this.fetchPriority.popMinItemWithScore()
             if (fetchMe !== null) {
-                this.beginFetch(fetchMe)
+                if (fetchMe.score !== 0) {
+                    this.beginFetch(fetchMe.item)
+                } else {
+                    console.log('skip fetching: ', fetchMe.item.key)
+                    toFetch += 1 // increasing the loop limit inside the loop... a bit sketchy
+                }
             } else {
                 // if we hit a null, we can stop early - the fetch queue is empty
                 break;
@@ -99,6 +109,7 @@ export class PriorityCache {
         this.fetchPriority.rebuild(negate(score))
         for (const [key, abort] of this.pendingFetches) {
             if (score(key) === 0) {
+                console.log('abort: ', key)
                 abort.abort()
                 this.pendingFetches.delete(key)
             }
@@ -110,6 +121,9 @@ export class PriorityCache {
 
     has(key: CacheKey): boolean {
         return this.store.has(key)
+    }
+    cachedOrPending(key: CacheKey): boolean {
+        return this.store.has(key) || this.fetchPriority.hasItemWithKey(key) || this.pendingFetches.has(key)
     }
     isFull(): boolean {
         return this.used >= this.limit

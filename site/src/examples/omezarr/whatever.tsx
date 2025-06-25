@@ -77,7 +77,7 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
         ...settings,
         camera: { ...settings.camera, screenSize: [1, 1] },
       });
-      regl.clear({ framebuffer: target, color: [1, 0, 0, 1], depth: 1 });
+      regl.clear({ framebuffer: target, color: [0, 0, 0, 1], depth: 1 });
       client.setPriorities(
         new Set(items.map((tile) => ({ tile, dataset, settings }))),
         new Set(baselayer.map((tile) => ({ tile, dataset, settings })))
@@ -85,7 +85,6 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
       for (const tile of [...baselayer, ...items]) {
         const drawme = client.get({ tile, dataset, settings });
         if (drawme !== undefined) {
-          console.log('draw thing: ', tile.bounds);
           renderer.renderItem(
             target,
             tile,
@@ -93,8 +92,6 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
             settings,
             mapValues(drawme, (d: Tex) => d.texture)
           );
-        } else {
-          console.log('cache miss: ', tile.bounds);
         }
       }
     },
@@ -250,7 +247,7 @@ export function OmezarrDemo() {
   useEffect(() => {
     if (omezarr && cnvs.current) {
       const settings = makeZarrSettings(screenSize, view, planeIndex, omezarr);
-      console.log('draw with settings: ', settings);
+      // console.log('draw with settings: ', settings);
 
       renderer?.render(null, omezarr, settings);
     }

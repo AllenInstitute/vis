@@ -1,9 +1,6 @@
-import { type Chunk, PriorityCacheWarmer } from "./cache-warmer";
-import type { Resource, Store } from "./pcache";
-
 import * as lo from 'lodash' // vite/astro went bonkers - not sure why this helps, core has always had lodash in it...
+import { PriorityCache, type Store, type Resource } from "./priority-cache";
 const { uniqueId } = lo
-
 // goal: we want clients of the cache to experience a type-safe interface -
 // they expect that the things coming out of the cache are the type they expect (what they put in it)
 // this is not strictly true, as the cache is shared, and other clients may use different types
@@ -14,6 +11,7 @@ type CacheInterface<Key, Value extends Record<string, Resource>> = {
     unsubscribeFromCache: () => void;
     setPriorities: (low: Set<Key>, high: Set<Key>) => void;
 }
+type Fetcher = (sig: AbortSignal) => Promise<Resource>
 
 type ClientSpec<Key, Value extends Record<string, Resource>> = {
     isValue: (v: Record<string, Resource | undefined>) => v is Value
@@ -32,21 +30,19 @@ function mapFields<R extends Record<string, any>, Result>(r: R, fn: (v: ObjectVa
     return entries(r).reduce((acc, [k, v]) => ({ ...acc, [k]: fn(v) }), {} as { [k in keyof R]: Result })
 }
 
-type ish<V extends {}> = { [k in keyof V]: V[k] | undefined }
 type Client = {
     low: Set<string>
     high: Set<string>
     notify: undefined | ((cacheKey: string) => void)
 }
-type loHiChunk = Chunk & { priority: 'low' | 'high' }
 export class FancySharedCache {
-    private cache: PriorityCacheWarmer;
+    private cache: PriorityCache;
     private clients: Record<string, Client>
     private importance: Record<string, number>
     constructor(store: Store<string, Resource>, limitInBytes: number, max_concurrent_fetches: number = 10) {
         this.importance = {}
         this.clients = {}
-        this.cache = new PriorityCacheWarmer(store, limitInBytes, max_concurrent_fetches, (ck) => this.onCacheEntryArrived(ck))
+        this.cache = new PriorityCache(store, (ck) => this.importance[ck] ?? 0, limitInBytes, max_concurrent_fetches, (ck) => this.onCacheEntryArrived(ck))
     }
     registerClient<Key, Value extends Record<string, Resource>>(spec: ClientSpec<Key, Value>): CacheInterface<Key, Value> {
         const id = uniqueId('client')
@@ -55,57 +51,54 @@ export class FancySharedCache {
         const makeCacheEntries = (item: Key) => {
             const keys = spec.cacheKeys(item) as Record<string, string>
             const fetchers = spec.fetch(item)
-            return Object.keys(fetchers).reduce((acc, sk) => ({ ...acc, [sk]: { cacheKey: keys[sk], fetch: fetchers[sk] } }), {} as Record<string, Chunk>)
+            return Object.keys(keys).map((sk) => ({ cacheKey: keys[sk], fetcher: fetchers[sk] }))
+        }
+
+        const priorityDelta = (key: string, pri: 0 | 1 | 2, low: Set<string>, high: Set<string>) => {
+            return pri - (high.has(key) ? 2 : (low.has(key) ? 1 : 0))
         }
         const setPriorities = (low: Set<Key>, high: Set<Key>) => {
-            const client = this.clients[id]
-            const wasLow = (k: string) => client.low.has(k)
-            const wasHigh = (k: string) => client.high.has(k)
-            const newToMe = (k: string) => !wasLow(k) && !wasHigh(k)
             const newLow = new Set<string>()
             const newHigh = new Set<string>()
-            //TODO: 2 pairs of duplicate(ish) loops - DRY me up!
-            for (const lo of low) {
-                const entries = makeCacheEntries(lo)
-                for (const sk in entries) {
-                    const entry = entries[sk]!
-                    newLow.add(entry.cacheKey)
-                    if (newToMe(entry.cacheKey)) {
-                        this.cache.addPriority(entry);
-                        this.updateImportance(entry.cacheKey, 1)
-                    } else if (wasHigh(entry.cacheKey)) {
-                        this.updateImportance(entry.cacheKey, -1)
+            const toEnqueue = new Map<string, Fetcher>()
+            const client = this.clients[id]
+            const handlePriorityCategory = (pri: 1 | 2, cat: Set<string>, low: Set<string>, high: Set<string>) => {
+                return (item: Key) => {
+                    makeCacheEntries(item).forEach(({ cacheKey, fetcher }) => {
+                        const delta = priorityDelta(cacheKey, pri, low, high)
+                        cat.add(cacheKey)
+                        this.updateImportance(cacheKey, delta)
+                        if (!this.cache.cachedOrPending(cacheKey)) {
+                            toEnqueue.set(cacheKey, fetcher)
+                        }
+                    })
+                }
+            }
+            const handleOldPriority = (pri: 1 | 2) => {
+                return (ck: string) => {
+                    const isOrphan = !newHigh.has(ck) && !newLow.has(ck)
+                    // if its not an orphan, our delta-math has already been done, and we'd be double counting
+                    if (isOrphan) {
+                        this.updateImportance(ck, -pri)
                     }
                 }
             }
-
-            for (const hi of high) {
-                const entries = makeCacheEntries(hi)
-                for (const sk in entries) {
-                    const entry = entries[sk]!
-                    newHigh.add(entry.cacheKey)
-                    if (newToMe(entry.cacheKey)) {
-                        this.cache.addPriority(entry);
-                        this.updateImportance(entry.cacheKey, 2)
-                    } else if (wasLow(entry.cacheKey)) {
-                        this.updateImportance(entry.cacheKey, 1)
-                    }
-                }
-            }
-            for (const old of client.low) {
-                if (!newLow.has(old) && !newHigh.has(old)) {
-                    this.updateImportance(old, -1)
-                }
-            }
-            for (const old of client.high) {
-                if (!newLow.has(old) && !newHigh.has(old)) {
-                    this.updateImportance(old, -2)
-                }
-            }
+            high.forEach(handlePriorityCategory(2, newHigh, client.low, client.high))
+            low.forEach(handlePriorityCategory(1, newLow, client.low, client.high))
+            client.low.forEach(handleOldPriority(1))
+            client.high.forEach(handleOldPriority(2))
             client.low = newLow
             client.high = newHigh
             this.cache.reprioritize((ck) => this.importance[ck] ?? 0)
+            // this is why this function is convoluted - its desirable to recompute
+            // the complete set of scores (importance values) before calling enqueue
+            // otherwise, we could easily start fetching a lot of things that were important but now are not!
+            toEnqueue.forEach((f, k) => {
+                // note: enqueue is harmless for items that are already cached or enqueued
+                this.cache.enqueue(k, f);
+            })
         }
+
         return {
             get: (k: Key) => {
                 const keys = spec.cacheKeys(k)

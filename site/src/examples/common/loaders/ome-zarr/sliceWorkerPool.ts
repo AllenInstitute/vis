@@ -69,6 +69,7 @@ export class SliceWorkerPool {
             };
             if (signal) {
                 signal.onabort = (ev) => {
+                    console.log('slice reqeust aborted - passing request to webworker')
                     this.workers[myWorker].postMessage({ type: 'cancel', id: reqId });
                     this.promises[reqId]?.reject('cancelled');
                 };
@@ -91,5 +92,5 @@ export function getSlicePool() {
 }
 
 export const multithreadedDecoder: Decoder = (metadata, req, level: OmeZarrShapedDataset, signal?: AbortSignal) => {
-    return getSlicePool().requestSlice(metadata, req, level);
+    return getSlicePool().requestSlice(metadata, req, level, signal);
 };
