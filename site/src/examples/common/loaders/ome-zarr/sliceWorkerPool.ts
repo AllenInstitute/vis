@@ -69,7 +69,6 @@ export class SliceWorkerPool {
             };
             if (signal) {
                 signal.onabort = (ev) => {
-                    console.log('slice reqeust aborted - passing request to webworker')
                     this.workers[myWorker].postMessage({ type: 'cancel', id: reqId });
                     this.promises[reqId]?.reject('cancelled');
                 };

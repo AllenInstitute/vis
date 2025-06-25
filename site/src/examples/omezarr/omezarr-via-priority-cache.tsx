@@ -206,7 +206,7 @@ export function OmezarrDemo() {
   const handleZoom = (e: WheelEvent) => {
     e.preventDefault();
     const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-    const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
+    const v = zoom(view, screenSize, zoomScale, [e.offsetX, screenSize[1] - e.offsetY]);
     setView(v);
   };
 
@@ -278,6 +278,14 @@ export function OmezarrDemo() {
         onMouseUp={handleMouseUp}
         onMouseMove={handlePan}
       />
+      <div style={{}}>
+        <button type="button" onClick={() => handlePlaneIndex(-1)}>
+          &#9664;
+        </button>
+        <button type="button" onClick={() => handlePlaneIndex(1)}>
+          &#9654;
+        </button>
+      </div>
     </div>
   );
 }
