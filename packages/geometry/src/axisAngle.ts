@@ -34,7 +34,7 @@ export function composeRotation(b: AxisAngle, a: AxisAngle): AxisAngle {
     );
 
     const dir = Vec3.normalize(D);
-    if (!Vec3.finite(dir)) {
+    if (!Vec3.finite(dir) || !Number.isFinite(gamma)) {
         return Vec3.finite(a.axis) ? a : identity;
     }
     return { radians: gamma, axis: dir };

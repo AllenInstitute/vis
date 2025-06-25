@@ -74,7 +74,8 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         return mat;
     };
     const mul = (a: Matrix, b: Matrix): Matrix => {
-        const B = transpose(b);
+        // multiplying a matrix: each resulting element [i,j] is the dot of A[i,_] with B[_,j]
+        const B = transpose(b); // we transpose b to make it easy to get the rows
         return map(a, (col: Column) => map(col, (_, r) => lib.dot(col, B[r])));
     };
     const transform = (a: Matrix, v: Column): Column => {
@@ -96,9 +97,9 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
 type Mat4Lib = ReturnType<typeof MatrixLib<4>>;
 
 /**
- * @param axis
- * @param radians
- * @returns a 4x4 matrix, expressing a rotation about the @param axis through the origin
+ * @param axis the axis of rotation
+ * @param radians the amplitude of the rotation
+ * @returns a 4x4 matrix, expressing a rotation of @param radians about the @param axis through the origin
  */
 function rotateAboutAxis(axis: vec3, radians: number): mat4 {
     const sin = Math.sin(radians);
@@ -112,10 +113,7 @@ function rotateAboutAxis(axis: vec3, radians: number): mat4 {
     const yy = y * y;
     const zz = z * z;
 
-    // todo: there is a pattern here - perhaps someone clever could
-    // express it in a more concise way
     const X: vec4 = [xx * icos + cos, xy * icos + z * sin, xz * icos - y * sin, 0];
-
     const Y: vec4 = [xy * icos - z * sin, yy * icos + cos, yz * icos + x * sin, 0];
     const Z: vec4 = [xz * icos + y * sin, yz * icos - x * sin, zz * icos + cos, 0];
     const W: vec4 = [0, 0, 0, 1];
