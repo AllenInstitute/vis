@@ -68,9 +68,7 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
       renderer.isPrepared(
         mapValues(v, (tx: Resource | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined))
       ),
-    onDataArrived: () => {
-      onData();
-    },
+    onDataArrived: onData,
   });
   return {
     render: (target: REGL.Framebuffer2D | null, dataset: OmeZarrMetadata, settings: RenderSettings) => {

@@ -29,25 +29,7 @@ export class PriorityCacheWarmer {
         this._score = () => 0
         this.notifyOwner = onDataArrived
     }
-    // this would be fine, but it forces us to re-prioritize globally, over all priorities
-    // it would be better if we could prioritize just a little at a time... sort of
-    // reprioritize(priorities: ReadonlySet<Chunk>, score: (ck: CacheKey) => number) {
-    //     const keys = this.pendingFetches.keys()
-    //     const fetchScore = (cnk: Chunk) => -score(cnk.cacheKey)
-    //     for (const key of keys) {
-    //         if (score(key) === 0) {
-    //             this.cancelPending(key)
-    //         }
-    //     }
-    //     for (const pri of priorities) {
-    //         if (!this.priorities.has(pri)) {
-    //             this.fetchQueue.addItem(pri, fetchScore(pri))
-    //         }
-    //     }
-    //     this.priorities = priorities
-    //     this.fetchQueue.rebuild(fetchScore)
-    //     this.cache.reprioritize(score)
-    // }
+
     addPriority(chunk: Chunk) {
         if (!this.priorities.has(chunk.cacheKey) && !this.cache.has(chunk.cacheKey)) {
             this.fetchQueue.addItem(chunk)
@@ -69,53 +51,6 @@ export class PriorityCacheWarmer {
         }
         this.saturateFetchQuota();
     }
-    //     const newPriorities = new Map<CacheKey, number>();
-    //     for (const item of priorities) {
-    //         const { cacheKey, priority } = item
-    //         if (!this.priorityItems.has(cacheKey)) {
-    //             this.fetchQueue.addItem(item)
-    //         }
-    //         newPriorities.set(cacheKey, priority)
-    //     }
-    //     for (const old of this.priorityItems.keys()) {
-    //         if (!(old in priorities)) {
-    //             // we dont care about this anymore - cancel it if its in progress!
-    //             // no need to remove it from the fetch queue - its score=0 will take care of the issue
-    //             if (this.pendingFetches.has(old)) {
-    //                 this.cancelPending(old);
-    //             }
-    //         }
-    //     }
-    //     // update all the scores...
-    //     this.priorityItems = newPriorities;
-    //     this.cache.reprioritize();
-    // }
-    // add(chunk: Chunk, score: number) {
-    //     const { cacheKey } = chunk
-    //     const isNew = !this.priorityItems.has(cacheKey)
-    //     this.priorityItems.set(cacheKey, score)
-    //     if (isNew) {
-    //         this.fetchQueue.addItem(chunk)
-    //     }
-    // }
-    // drop(cacheKey: CacheKey, score: number) {
-    //     this.priorityItems.set(cacheKey, score)
-    // }
-    // rebuild() {
-    //     // check pending things, cancel them if they have a score of zero
-    //     const keys = this.pendingFetches.keys()
-    //     for (const key of keys) {
-    //         if (this.score(key) === 0) {
-    //             this.cancelPending(key)
-    //         }
-    //     }
-    //     this.cache.reprioritize();
-    // }
-
-    // higher number = more important
-    // private score(k: CacheKey): number {
-    //     return this.priorityItems.get(k) ?? 0
-    // }
 
     private popNextItem() {
         const fetchme = this.fetchQueue.popMinItemWithScore()

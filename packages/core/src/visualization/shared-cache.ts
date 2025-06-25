@@ -22,12 +22,7 @@ type ClientSpec<Key, Value extends Record<string, Resource>> = {
     fetch: (item: Key) => { [k in keyof Value]: (abort: AbortSignal) => Promise<Resource> }
 }
 type ObjectValue<T extends Record<string, any>> = T extends Record<string, infer Value> ? Value : never;
-type wtf = {
-    fish: number;
-    cats: string
-}
-type hey = ObjectValue<wtf>
-type wat = KV<wtf>
+
 type KV<T extends Record<string, any>> = readonly [keyof T, ObjectValue<T>]
 
 function entries<T extends Record<string, any>>(t: T): ReadonlyArray<KV<T>> {
@@ -56,11 +51,7 @@ export class FancySharedCache {
     registerClient<Key, Value extends Record<string, Resource>>(spec: ClientSpec<Key, Value>): CacheInterface<Key, Value> {
         const id = uniqueId('client')
         this.clients[id] = { low: new Set(), high: new Set(), notify: spec.onDataArrived }
-        // const makeCacheEntries = (item: Key) => {
-        //     const keys = spec.cacheKeys(item)
-        //     const fetchers = spec.fetch(item)
-        //     return entries(keys).map(([sk, ck]) => ({ cacheKey: ck as string, fetch: fetchers[sk] }))
-        // }
+
         const makeCacheEntries = (item: Key) => {
             const keys = spec.cacheKeys(item) as Record<string, string>
             const fetchers = spec.fetch(item)
@@ -148,43 +139,7 @@ export class FancySharedCache {
         this.importance[key] = Math.max(0, (this.importance[key] ?? 0) + delta);
 
     }
-    // private updatePriorityMap(id: string, priorities: Record<string, loHiChunk>) {
-    //     // update the global counts given new priorities
-    //     const client = this.clients[id]
-    //     if (!client) return
-    //     const other = (pri: 'low' | 'high') => pri === 'low' ? 'high' : 'low'
-    //     const priPoints = (pri: 'low' | 'high') => pri === 'low' ? 1 : 2
-    //     client.items.clear()
-    //     for (const entry of Object.values(priorities)) {
-    //         const { cacheKey, priority } = entry
-    //         client.items.add(entry)
-    //         const points = priPoints(priority)
-    //         if (client[other(priority)].has(cacheKey)) {
-    //             // it changed categories
-    //             this.updateImportance(cacheKey, -priPoints(other(priority)))
-    //         }
-    //         if (!client[priority].has(cacheKey)) {
-    //             // its new to this category
-    //             client[priority].add(cacheKey)
-    //             this.updateImportance(cacheKey, points)
-    //         }
-    //     }
-    //     // now, find things for this client that are no longer important
-    //     for (const cacheKey of client.low) {
-    //         if (!(cacheKey in priorities)) {
-    //             this.updateImportance(cacheKey, -priPoints('low'))
-    //             // the internet says this is fine and will work!
-    //             client.low.delete(cacheKey)
-    //         }
-    //     }
-    //     for (const cacheKey of client.high) {
-    //         if (!(cacheKey in priorities)) {
-    //             this.updateImportance(cacheKey, -priPoints('high'))
-    //             client.high.delete(cacheKey)
-    //         }
-    //     }
-    //     this.reprioritizeEverything()
-    // }
+
 
 }
 

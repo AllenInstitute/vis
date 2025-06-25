@@ -1,11 +1,46 @@
 import delay from 'lodash/delay';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { FancyCache, Meta, type Store } from './priority-cache'
+import { PriorityCache, Resource, type Store } from './priority-cache'
 import { uniqueId } from 'lodash';
 
 type Item = string;
-type Payload = {
-    buffer: { length: number } // its fake!
+
+// so we can spy on our resource cleanup stuff
+class PayloadFactory {
+    resources: Record<string, 'created' | 'destroyed'>
+    constructor() {
+        this.resources = {}
+    }
+    create(id: string, v: number) {
+        this.resources[id] = 'created'
+        console.log('download complete: ', id)
+        return new Payload(id, v)
+    }
+    release(id: string) {
+        if (!(id in this.resources)) {
+            throw new Error('no such id fail test')
+        } else if (this.resources[id] === 'destroyed') {
+            throw new Error('double-delete resource fail test')
+        }
+        this.resources[id] = 'destroyed'
+    }
+}
+let factory = new PayloadFactory();
+
+class Payload implements Resource {
+    data: number
+    id: string
+    constructor(id: string, value: number) {
+        this.id = id
+        this.data = value
+    }
+    destroy() {
+        factory.release(this.id)
+    }
+    sizeInBytes() {
+        return 1
+    }
+
 }
 
 
@@ -21,11 +56,11 @@ class PromiseFarm {
         this.entries = new Map();
         this.staging = {};
     }
-    promiseMe<T>(t: T) {
+    promiseMe<T>(tfn: () => T) {
         const reqId = uniqueId('rq');
         const prom = new Promise<T>((resolve, reject) => {
             this.staging[reqId] = {
-                resolveMe: () => resolve(t),
+                resolveMe: () => resolve(tfn()),
                 rejectMe: (reason: unknown) => reject(reason),
             };
         });
@@ -50,12 +85,15 @@ class PromiseFarm {
         return false;
     }
     resolveAll() {
+
         const awaited: Promise<unknown>[] = []
         for (const e of this.entries) {
             const [prom, entry] = e
             awaited.push(prom)
             entry.resolveMe()
         }
+        console.log('resolved ', awaited.length)
+        this.entries.clear()
         return Promise.all(awaited)
     }
 }
@@ -68,10 +106,8 @@ class FakeStore implements Store<Item, Payload> {
     constructor() {
         this.stuff = new Map();
     }
-    put(k: Item, v: Payload): void {
-        console.log('put:', k)
+    set(k: Item, v: Payload): void {
         this.stuff.set(k, v)
-        console.log(this.stuff)
     }
     get(k: Item): Payload | undefined {
         return this.stuff.get(k)
@@ -79,7 +115,7 @@ class FakeStore implements Store<Item, Payload> {
     has(k: Item): boolean {
         return this.stuff.has(k)
     }
-    evict(k: Item): void {
+    delete(k: Item): void {
         this.stuff.delete(k)
     }
     keys(): Iterable<Item> {
@@ -89,128 +125,71 @@ class FakeStore implements Store<Item, Payload> {
         return this.stuff.values()
     }
 }
-function setupTestEnv() {
+function setupTestEnv(limit: number, fetchLimit: number) {
     let promises = new PromiseFarm();
     let fetchSpies: Set<Promise<unknown>> = new Set()
-    const resolveFetches = () => { fetchSpies.forEach((p) => promises.mockResolve(p)); fetchSpies.clear() }
-    const fakeFetchItem = () => promises.promiseMe({ buffer: { length: 1 } })
-    const R: Meta<Item, Payload> = {
-        fetch(k, signal) {
-            console.log('fake-fetch: ', k)
-            const f = fakeFetchItem()
-            if (signal) {
-                signal.onabort = () => promises.mockReject(f, 'cancelled')
-            }
-            delay(() => {
-                console.log('download: ', k)
-                if (signal?.aborted) {
-                    promises.mockReject(f, 'cancelled')
-                } else {
-                    promises.mockResolve(f)
-                }
-            }, 0)
-            fetchSpies.add(f)
-
-            return f;
-        },
-        estimatedSize(k) {
-            return 1
-        },
-        destroy(v) {
-            // pretend to destroy v!
-            // do that by mutating v I guess?
-            // this type error is intentional - we want to catch attempted use of v.buffer.length
-            // @ts-expect-error
-            v.buffer = null;
-        },
-        size(v) {
-            return v.buffer.length
-        },
+    // const resolveFetches = () => { fetchSpies.forEach((p) => promises.mockResolve(p)); fetchSpies.clear(); return Promise.resolve(3) }
+    const resolveFetches = () => promises.resolveAll()
+    const fakeFetchItem = (id: string) => (_sig: AbortSignal) => {
+        console.log('request: ', id)
+        return promises.promiseMe(
+            () => factory.create(id, 33))
     }
+    factory = new PayloadFactory()
     const fakeStore: FakeStore = new FakeStore()
-    const cache: FancyCache<Item, Payload> = new FancyCache(fakeStore, R, 10)
+    const cache: PriorityCache = new PriorityCache(fakeStore, () => 0, limit, fetchLimit)
     return { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises }
 }
-describe('single tenant caching', () => {
-    let env = setupTestEnv()
+describe('basics', () => {
+    let env = setupTestEnv(5, 10)
     beforeEach(() => {
-        env = setupTestEnv()
-
+        env = setupTestEnv(5, 10)
     })
-    // it('request 2 things, get notified when the fetches happen', () => new Promise<void>(done => {
-    //     let fetches = 0
-    //     const myid = cache.registerClient((k, v) => {
-    //         console.log('pretend to render ', k)
-    //         fetches += 1
-    //         if (fetches > 1) {
-    //             console.log('expect???')
-    //             expect(fakeStore.has('thing1')).toBeTruthy()
-    //             expect(fakeStore.has('thing2')).toBeTruthy()
-    //             console.log('we are done!')
-    //             done()
-    //         }
-    //     })
-    //     cache.setPriorities(myid, new Set(['thing1', 'thing2']))
-    // }))
-    it.skip('request 2 things, get notified when the fetches happen', async () => {
+    it('put 5 things in, see them in the store', async () => {
         const { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises } = env;
-        let fetches = 0
-        const finishTest = promises.promiseMe(5)
-        expect.hasAssertions()
-        const myid = cache.registerClient((k, v) => {
-            fetches += 1
-            if (fetches > 1) {
-                promises.mockResolve(finishTest)
-            }
-        })
-        cache.setPriorities(myid, new Set(['thing1', 'thing2']))
-        resolveFetches()
-        await finishTest
-        expect(fakeStore.has('thing1')).toBeTruthy()
-        expect(fakeStore.has('thing2')).toBeTruthy()
+        const enq = (id: string) => cache.enqueue(id, fakeFetchItem(id))
+        // enqueue 5 things, get them all back
+        const things = ['a', 'b', 'c', 'd', 'e']
+        things.forEach(enq)
+        await resolveFetches();
+        things.forEach(id => expect(cache.has(id)))
     })
-    // note: these tests are not easy to write - things are asynchronous, and many tasks
-    // sit in a self-limiting queue.
-    // so far, the only way I have found to write reliable tests for this is
-    // to do the test inside the client listener function
-    it('responds (with eviction) in response to changing priorities and cache pressure', async () => {
+    it('when evicting and fetching, priority is respected', async () => {
+        const score = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 }
+        env = setupTestEnv(5, 1)
         const { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises } = env;
-        let fetches = 0
-        const finishTest = promises.promiseMe(5)
-        expect.hasAssertions()
-        const myid = cache.registerClient((k, v) => {
-            fetches += 1
-            console.log(fetches)
-            if (fetches == 5) {
-                ['a', 'b', 'c', 'd', 'e'].forEach((requested) => expect(fakeStore.has(requested)))
-            } else if (fetches == 10) {
-                ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'].forEach((requested) => expect(fakeStore.has(requested)))
-                promises.mockResolve(finishTest) // end the test
-
-            }
-            // if (fetches > 14) {
-            //     promises.mockResolve(finishTest)
-            // }
+        const enq = (id: string) => cache.enqueue(id, fakeFetchItem(id))
+        cache.reprioritize(x => score[x] ?? 0)
+        const things = ['a', 'b', 'c', 'd', 'e']
+        // this cache can only resolve one fetch at a time
+        // so we can see that the fetching happens in priority order, regardless of the enq order
+        things.forEach(enq)
+        expect(factory.resources).toEqual({})
+        await resolveFetches() // resolves all pending fetches - there should be only one
+        expect(factory.resources).toEqual({ a: 'created' })
+        // at the time a was enqueued, one fetch-slot was available, and a was the highest priority item
+        // before it could resolve, we enqueued b,c,d,e in that order
+        await resolveFetches() // resolves all pending fetches - there should be only one
+        expect(factory.resources).toEqual({ a: 'created', e: 'created' })
+        await resolveFetches() // resolves all pending fetches - there should be only one
+        expect(factory.resources).toEqual({ a: 'created', e: 'created', d: 'created' })
+        await resolveFetches() // resolves all pending fetches - there should be only one
+        expect(factory.resources).toEqual({ a: 'created', e: 'created', d: 'created', c: 'created' })
+        await resolveFetches() // resolves all pending fetches - there should be only one
+        expect(factory.resources).toEqual({ a: 'created', e: 'created', d: 'created', c: 'created', b: 'created' })
+        // the cache is full - we'd expect to evict a and b, as the lowest priority items
+        enq('f')
+        enq('g')
+        await resolveFetches()
+        await resolveFetches()
+        expect(factory.resources).toEqual({
+            a: 'destroyed',
+            e: 'created',
+            d: 'created',
+            c: 'created',
+            b: 'destroyed',
+            f: 'created',
+            g: 'created'
         })
-
-        cache.setPriorities(myid, new Set(['a', 'b', 'c', 'd', 'e']))
-        cache.setPriorities(myid, new Set(['f', 'g', 'h', 'i', 'j']))
-
-        // resolveFetches()
-        // await Promise.resolve(3)
-        // // resolveFetches()
-        // // the limit is 10 - so all 10 things should be in the store
-        // console.log('wtf', fakeStore, cache.store)
-        // for (const item of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']) {
-        //     expect(fakeStore.has(item)).toBeTruthy()
-        // }
-        // cache.setPriorities(myid, new Set(['a', 'b', 'c', 'p', 'q', 'r', 's', 't', 'u', 'v']))
-        // resolveFetches()
-        // // thats 10 things, 3 of which were already there - expect abc to be present, but everything else
-        // // gone - it is a soft limit though...
-        // for (const item of ['a', 'b', 'c', 'p', 'q', 'r', 's', 't', 'u', 'v']) {
-        //     expect(fakeStore.has(item)).toBeTruthy()
-        // }
-        await finishTest
     })
 })
