@@ -35,7 +35,7 @@ And we return a "Frame" that conceptually, is this process:
 
 If we start with just the first part - the cache - it seems reasonable to have a structure that manages the long-running process of fetching all the things we think we need:
 
-`Prioritize(getVisibleItems(dataset))=>CacheWarmerThingy`
+`Cache.Prioritize(getVisibleItems(dataset))`
 
 lets say we have a thing now, that represents fetching what we want to draw. I think its ok to acknowledge that its a stateful thing, that might change over time, as the fetches resolve into data:
 

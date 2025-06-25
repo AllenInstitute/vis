@@ -90,7 +90,6 @@ export class PriorityCache {
                 if (fetchMe.score !== 0) {
                     this.beginFetch(fetchMe.item)
                 } else {
-                    console.log('skip fetching: ', fetchMe.item.key)
                     toFetch += 1 // increasing the loop limit inside the loop... a bit sketchy
                 }
             } else {
@@ -109,7 +108,6 @@ export class PriorityCache {
         this.fetchPriority.rebuild(negate(score))
         for (const [key, abort] of this.pendingFetches) {
             if (score(key) === 0) {
-                console.log('abort: ', key)
                 abort.abort()
                 this.pendingFetches.delete(key)
             }

@@ -234,9 +234,7 @@ export function OmezarrDemo() {
       const regl = REGL({ canvas: cnvs.current, extensions: ['oes_texture_float'] });
       const cache = new FancySharedCache(new Map(), 1024 * 1024 * 2000, 10);
       const renderer = buildConnectedRenderer(regl, cache, multithreadedDecoder, () => {
-        console.log('tick???!');
         requestAnimationFrame(() => {
-          console.log('tick!');
           setTick(performance.now());
         });
       });

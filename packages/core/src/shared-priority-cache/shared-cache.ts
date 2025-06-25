@@ -62,6 +62,9 @@ export class FancySharedCache {
             const newHigh = new Set<string>()
             const toEnqueue = new Map<string, Fetcher>()
             const client = this.clients[id]
+
+            if (!client) return // the client can hold onto a reference to this interface, even after they call unregister - this prevents a crash in that scenario
+
             const handlePriorityCategory = (pri: 1 | 2, cat: Set<string>, low: Set<string>, high: Set<string>) => {
                 return (item: Key) => {
                     makeCacheEntries(item).forEach(({ cacheKey, fetcher }) => {
