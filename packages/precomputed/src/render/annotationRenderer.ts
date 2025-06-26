@@ -79,7 +79,7 @@ export function buildNGPointAnnotationRenderer(
 ): Renderer<PointAnnotationInfo, AnnotationChunk, Settings, PointAnnotationData> {
     const cmd = buildPointRenderer(regl);
     return {
-        destroy: () => { },
+        destroy: () => {},
         getVisibleItems,
         isPrepared: (cacheData): cacheData is PointAnnotationData => {
             return 'positions' in cacheData && cacheData.positions?.type === 'buffer';

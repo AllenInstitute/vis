@@ -14,7 +14,7 @@ type Dimension = { name: string; scale: number; unit: NGUnit };
 type AnnotationType = 'point' | 'line' | 'axis_aligned_bounding_box' | 'ellipsoid';
 type SpatialIndexLevel = {
     key: string;
-    sharding?: boolean | undefined,
+    sharding?: boolean | undefined;
     grid_shape: readonly number[];
     chunk_size: readonly number[];
     limit: number;
@@ -104,10 +104,10 @@ type Line = { start: GenericVector; end: GenericVector } & withProps;
 type ExtractorResult<K extends AnnotationType> = K extends 'line'
     ? Line
     : K extends 'point'
-    ? Point
-    : K extends 'axis_aligned_bounding_box'
-    ? Box
-    : Ellipse;
+      ? Point
+      : K extends 'axis_aligned_bounding_box'
+        ? Box
+        : Ellipse;
 
 function extractVec(
     view: DataView,
@@ -309,13 +309,19 @@ export async function getAnnotations<K extends AnnotationType>(
     // TODO: consider if we want the ids (probably yes?)
     return { stream: AnnoStream(info, extractor, view, numAnnotations), numAnnotations };
 }
-type wtf = PropertyTypes
+type wtf = PropertyTypes;
 const propSchema = z.object({
     id: z.string(),
-    type: z.union([z.literal('rgb'), z.literal('rgba'),
-    z.literal('uint8'), z.literal('uint16'), z.literal('uint32'),
-    z.literal('int8'), z.literal('int16'), z.literal('int32'),
-    z.literal('float32')
+    type: z.union([
+        z.literal('rgb'),
+        z.literal('rgba'),
+        z.literal('uint8'),
+        z.literal('uint16'),
+        z.literal('uint32'),
+        z.literal('int8'),
+        z.literal('int16'),
+        z.literal('int32'),
+        z.literal('float32'),
     ]),
     description: z.string(),
     enum_values: z.optional(z.array(z.number())),
