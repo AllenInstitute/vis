@@ -37,6 +37,7 @@ export function RenderClientHelper<T>(props: Props<T>) {
     }, [onWheel]);
 
     // our once chance to initialize our renderer system
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     useEffect(() => {
         if (server) {
             renderer.current = newRenderer(server);
@@ -48,6 +49,7 @@ export function RenderClientHelper<T>(props: Props<T>) {
         };
     }, [server]);
     // something changed, render with GL
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     useEffect(() => {
         if (server && renderer.current && cnvs.current) {
             renderer.current.renderWithServer({ ...props, cnvs: cnvs.current });
