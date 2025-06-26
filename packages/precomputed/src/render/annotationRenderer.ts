@@ -37,7 +37,7 @@ type Settings = {
 type PointAnnotationData = {
     positions: CachedVertexBuffer;
 };
-type PointAnnotationInfo = AnnotationInfo<'POINT'> & { url: string };
+type PointAnnotationInfo = AnnotationInfo<'point'> & { url: string };
 
 function getVisibleItems(data: PointAnnotationInfo, settings: Settings) {
     // find all chunks that intersect our given view
@@ -79,10 +79,10 @@ export function buildNGPointAnnotationRenderer(
 ): Renderer<PointAnnotationInfo, AnnotationChunk, Settings, PointAnnotationData> {
     const cmd = buildPointRenderer(regl);
     return {
-        destroy: () => {},
+        destroy: () => { },
         getVisibleItems,
         isPrepared: (cacheData): cacheData is PointAnnotationData => {
-            return 'positions' in cacheData && cacheData['positions']?.type === 'buffer';
+            return 'positions' in cacheData && cacheData.positions?.type === 'buffer';
         },
         cacheKey(item, requestKey, data, settings) {
             const { xyz } = settings;

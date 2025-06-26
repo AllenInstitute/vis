@@ -11,10 +11,10 @@ type ScalarProperties = `${Ints}${Bits}` | Floats;
 type PropertyTypes = ScalarProperties | 'rgb' | 'rgba';
 type NGUnit = 'm' | 's' | ''; // TODO go find the complete set
 type Dimension = { name: string; scale: number; unit: NGUnit };
-type AnnotationType = 'POINT' | 'LINE' | 'AXIS_ALIGNED_BOUNDING_BOX' | 'ELLIPSOID';
+type AnnotationType = 'point' | 'line' | 'axis_aligned_bounding_box' | 'ellipsoid';
 type SpatialIndexLevel = {
     key: string;
-    sharding?: boolean;
+    sharding?: boolean | undefined,
     grid_shape: readonly number[];
     chunk_size: readonly number[];
     limit: number;
@@ -22,14 +22,14 @@ type SpatialIndexLevel = {
 type Relation = {
     id: string;
     key: string;
-    sharding?: boolean; // todo the spec has a broken link on what this is...
+    sharding?: boolean | undefined; // todo the spec has a broken link on what this is...
 };
 type NGAnnotationProperty = Readonly<{
     id: string;
     type: PropertyTypes;
     description: string;
-    enum_values?: readonly number[];
-    enum_labels?: readonly string[];
+    enum_values?: undefined | readonly number[];
+    enum_labels?: undefined | readonly string[];
 }>;
 // this is a type corresponding to the contents of the annotation info file:
 // see https://github.com/google/neuroglancer/blob/master/src/datasource/precomputed/annotations.md
@@ -48,7 +48,7 @@ export type AnnotationInfo<K extends AnnotationType> = {
     relationships: readonly Relation[];
     by_id: {
         key: string;
-        sharding?: boolean; // at the time of writing, this is a 404: https://github.com/google/neuroglancer/blob/master/src/datasource/precomputed/sharding.md#sharding-specification
+        sharding?: boolean | undefined; // at the time of writing, this is a 404: https://github.com/google/neuroglancer/blob/master/src/datasource/precomputed/sharding.md#sharding-specification
     };
     spatial: readonly SpatialIndexLevel[];
 };
@@ -57,10 +57,10 @@ type UnknownAnnotationInfo = AnnotationInfo<AnnotationType>;
 // for example, a point annotation, in 3 dimensions, with a single rgb property, would be
 // 4*3 + 3 (4bytes per float, 3 floats per point) + (one byte (uint8) each for red,blue and gree) = 15, plus one byte for padding out to 4-byte alignment = 16
 const vertexPerAnnotation: Record<AnnotationType, number> = {
-    AXIS_ALIGNED_BOUNDING_BOX: 2, // min/max corners
-    ELLIPSOID: 2, // center/size
-    LINE: 2, // start/end
-    POINT: 1, // itself
+    axis_aligned_bounding_box: 2, // min/max corners
+    ellipsoid: 2, // center/size
+    line: 2, // start/end
+    point: 1, // itself
 };
 const bytesPerProp: Record<PropertyTypes, number> = {
     float32: 4,
@@ -101,13 +101,13 @@ type Box = { min: GenericVector; max: GenericVector } & withProps;
 type Line = { start: GenericVector; end: GenericVector } & withProps;
 
 // not very elegant, but there are only 4 kinds so this is fine I think.
-type ExtractorResult<K extends AnnotationType> = K extends 'LINE'
+type ExtractorResult<K extends AnnotationType> = K extends 'line'
     ? Line
-    : K extends 'POINT'
-      ? Point
-      : K extends 'AXIS_ALIGNED_BOUNDING_BOX'
-        ? Box
-        : Ellipse;
+    : K extends 'point'
+    ? Point
+    : K extends 'axis_aligned_bounding_box'
+    ? Box
+    : Ellipse;
 
 function extractVec(
     view: DataView,
@@ -183,7 +183,7 @@ function extractTwo(
 
 export function extractPoint(
     view: DataView,
-    info: AnnotationInfo<'POINT'>,
+    info: AnnotationInfo<'point'>,
     offset: number,
 ): { annotation: Point; offset: number } {
     const pnt = extractVec(view, info, offset);
@@ -198,7 +198,7 @@ export function extractPoint(
 }
 export function extractBox(
     view: DataView,
-    info: AnnotationInfo<'AXIS_ALIGNED_BOUNDING_BOX'>,
+    info: AnnotationInfo<'axis_aligned_bounding_box'>,
     offset: number,
 ): { annotation: Box; offset: number } {
     const { A, B, offset: off, properties } = extractTwo(view, info, offset);
@@ -213,7 +213,7 @@ export function extractBox(
 }
 export function extractEllipse(
     view: DataView,
-    info: AnnotationInfo<'ELLIPSOID'>,
+    info: AnnotationInfo<'ellipsoid'>,
     offset: number,
 ): { annotation: Ellipse; offset: number } {
     const { A, B, offset: off, properties } = extractTwo(view, info, offset);
@@ -228,7 +228,7 @@ export function extractEllipse(
 }
 export function extractLine(
     view: DataView,
-    info: AnnotationInfo<'LINE'>,
+    info: AnnotationInfo<'line'>,
     offset: number,
 ): { annotation: Line; offset: number } {
     const { A, B, offset: off, properties } = extractTwo(view, info, offset);
@@ -309,10 +309,14 @@ export async function getAnnotations<K extends AnnotationType>(
     // TODO: consider if we want the ids (probably yes?)
     return { stream: AnnoStream(info, extractor, view, numAnnotations), numAnnotations };
 }
-
+type wtf = PropertyTypes
 const propSchema = z.object({
     id: z.string(),
-    type: z.string(),
+    type: z.union([z.literal('rgb'), z.literal('rgba'),
+    z.literal('uint8'), z.literal('uint16'), z.literal('uint32'),
+    z.literal('int8'), z.literal('int16'), z.literal('int32'),
+    z.literal('float32')
+    ]),
     description: z.string(),
     enum_values: z.optional(z.array(z.number())),
     enum_labels: z.optional(z.array(z.string())),
@@ -345,7 +349,7 @@ const ng_annotations_v1_schema = z.object({
     by_id: z.object({ key: z.string(), sharding: z.optional(z.boolean()) }),
     spatial: z.array(spatialSchema),
 });
-export function parseInfoFromJson(json: any): UnknownAnnotationInfo | undefined {
+export function parseInfoFromJson(json: unknown): UnknownAnnotationInfo | undefined {
     const { data } = ng_annotations_v1_schema.safeParse(json);
     if (data) {
         // the idea here is that 🤞 object.keys respects the order in which the properties were listed in the json body itself...
@@ -356,29 +360,29 @@ export function parseInfoFromJson(json: any): UnknownAnnotationInfo | undefined 
         }));
         // TODO this is gross - but not quite as gross as it looks - make the schema nicer!
         return {
-            annotation_type: data.annotation_type.toUpperCase() as any,
+            annotation_type: data.annotation_type,
             type: data['@type'],
-            by_id: data.by_id as any,
+            by_id: data.by_id,
             dimensions: dims,
             lower_bound: data.lower_bound,
             upper_bound: data.upper_bound,
-            properties: data.properties as any,
-            relationships: data.relationships as any,
-            spatial: data.spatial as any,
+            properties: data.properties,
+            relationships: data.relationships,
+            spatial: data.spatial,
         };
     }
 }
-export function isPointAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'POINT'> {
-    return a.annotation_type === 'POINT';
+export function isPointAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'point'> {
+    return a.annotation_type === 'point';
 }
-export function isBoxAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'AXIS_ALIGNED_BOUNDING_BOX'> {
-    return a.annotation_type === 'AXIS_ALIGNED_BOUNDING_BOX';
+export function isBoxAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'axis_aligned_bounding_box'> {
+    return a.annotation_type === 'axis_aligned_bounding_box';
 }
-export function isEllipsoidAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'ELLIPSOID'> {
-    return a.annotation_type === 'ELLIPSOID';
+export function isEllipsoidAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'ellipsoid'> {
+    return a.annotation_type === 'ellipsoid';
 }
-export function isLineAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'LINE'> {
-    return a.annotation_type === 'LINE';
+export function isLineAnnotation(a: UnknownAnnotationInfo): a is AnnotationInfo<'line'> {
+    return a.annotation_type === 'line';
 }
 
 function projectXYZ<T>(
@@ -434,31 +438,20 @@ function bubbleAdd(
         if (cell[dim] + 1 >= shape[dim]) {
             // we have to bubble-up!
             return { v: [0], leftover: true };
-        } else {
-            return { v: [cell[dim] + 1], leftover: false };
         }
-    } else {
-        const { v, leftover } = bubbleAdd(dim + 1, cell, shape);
-        if (leftover) {
-            if (cell[dim] + 1 >= shape[dim]) {
-                // keep bubbling!
-                return { leftover: true, v: [0, ...v] };
-            } else {
-                return { v: [cell[dim] + 1, ...v], leftover: false };
-            }
-        }
-        return { v: [cell[dim], ...v], leftover: false };
+        return { v: [cell[dim] + 1], leftover: false };
     }
+    const { v, leftover } = bubbleAdd(dim + 1, cell, shape);
+    if (leftover) {
+        if (cell[dim] + 1 >= shape[dim]) {
+            // keep bubbling!
+            return { leftover: true, v: [0, ...v] };
+        }
+        return { v: [cell[dim] + 1, ...v], leftover: false };
+    }
+    return { v: [cell[dim], ...v], leftover: false };
 }
-// // TODO lodash me
-// function isValidIndex(cell: readonly number[], shape: readonly number[]):boolean {
-//     for(let dim = 0;dim<cell.length;dim++){
-//         if(cell[dim] <0 && cell[dim]>=shape[dim]){
-//             return false;
-//         }
-//     }
-//     return true;
-// }
+
 export function visitChunksInLayer(
     data: UnknownAnnotationInfo,
     layer: number,
@@ -475,7 +468,9 @@ export function visitChunksInLayer(
         }
         while (cell !== null) {
             // is cell within the bounds of our query?
-            const gridIndexXYZ = projectXYZ(data, cell, xyz)!;
+            const gridIndexXYZ = projectXYZ(data, cell, xyz);
+            if (!gridIndexXYZ) return;
+
             const cellBoundsXYZ = Box3D.create(
                 Vec3.mul(gridIndexXYZ, cellSize),
                 Vec3.mul(Vec3.add(gridIndexXYZ, [1, 1, 1]), cellSize),

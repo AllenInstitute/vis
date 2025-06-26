@@ -11,9 +11,9 @@ import {
 
 describe('quick check', () => {
     it('can parse a real (although simple) file, at least a little bit', async () => {
-        const base = `https://aind-open-data.s3.amazonaws.com/SmartSPIM_787715_2025-04-08_18-33-36_stitched_2025-04-09_22-42-59/image_cell_segmentation/Ex_445_Em_469/visualization/detected_precomputed/`;
-        const expectedMetadata: AnnotationInfo<'POINT'> = {
-            annotation_type: 'POINT', // TODO: the real json files here use lowercase, wtf
+        const base = 'https://aind-open-data.s3.amazonaws.com/SmartSPIM_787715_2025-04-08_18-33-36_stitched_2025-04-09_22-42-59/image_cell_segmentation/Ex_445_Em_469/visualization/detected_precomputed/';
+        const expectedMetadata: AnnotationInfo<'point'> = {
+            annotation_type: 'point', // TODO: the real json files here use lowercase, wtf
             type: 'neuroglancer_annotations_v1',
             dimensions: [
                 { name: 'z', scale: 2e-6, unit: 'm' },
@@ -35,6 +35,7 @@ describe('quick check', () => {
             ],
         };
         const infoFileJSON = await (await fetch(`${base}info`)).json();
+        // biome-ignore lint/style/noNonNullAssertion: this is a test
         const sanitized = parseInfoFromJson(infoFileJSON)!;
         const stride = computeStride(expectedMetadata);
         expect(stride).toBe(12);
@@ -62,7 +63,7 @@ describe('quick check', () => {
             }
             expect(count).toBe(150378);
         } else {
-            expect(sanitized?.annotation_type).toBe('POINT');
+            expect(sanitized?.annotation_type).toBe('point');
         }
     });
 });
