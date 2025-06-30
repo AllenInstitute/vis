@@ -41,7 +41,7 @@ function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends Re
 type MutableCacheEntry<D> = {
     data: MaybePromise<D>;
     lastRequestedTimestamp: number;
-    abort: AbortController
+    abort: AbortController;
 };
 
 /**
@@ -58,7 +58,8 @@ type MutableCacheEntry<D> = {
  
  */
 export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>
-    implements AsyncCache<SemanticKey, CacheKey, D> {
+    implements AsyncCache<SemanticKey, CacheKey, D>
+{
     private limit: number;
     private size: (d: D) => number;
     private destroyer: (d: D) => void;
@@ -225,12 +226,12 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
                 return resolvedCacheData;
             }
         } else {
-            const abort = new AbortController()
+            const abort = new AbortController();
             promise = getter(abort.signal);
             this.entries.set(cacheKey, {
                 data: promise,
                 lastRequestedTimestamp: performance.now(),
-                abort
+                abort,
             });
         }
         return promise.then((data) => {
