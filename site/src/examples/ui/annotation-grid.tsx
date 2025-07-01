@@ -11,7 +11,7 @@ export function AnnotationGrid(props: { demo: Demo }) {
                 max={1}
                 step={0.001}
                 value={l.data.fill.opacity}
-                onChange={(e, value) => {
+                onChange={(_e, value) => {
                     demo.setOpacity('fill', value as number);
                 }}
             />

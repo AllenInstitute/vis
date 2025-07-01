@@ -15,7 +15,7 @@ export function ScatterplotUI(props: { demo: Demo }) {
                     max={20}
                     step={0.001}
                     value={l.data.pointSize}
-                    onChange={(e, value) => {
+                    onChange={(_e, value) => {
                         demo.setPointSize(value as number);
                     }}
                 />
@@ -26,7 +26,7 @@ export function ScatterplotUI(props: { demo: Demo }) {
                     max={400}
                     step={1}
                     value={Number(l.data.colorBy.name)}
-                    onChange={(e, value) => {
+                    onChange={(_e, value) => {
                         demo.setColorByIndex(value as number);
                     }}
                 />

@@ -28,7 +28,9 @@
     "main": "dist/main.js",
     "module": "dist/module.js",
     "types": "dist/types.d.ts",
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",

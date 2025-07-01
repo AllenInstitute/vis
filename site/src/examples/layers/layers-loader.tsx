@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 export function ClientLayersScript() {
     useEffect(() => {
         // Dynamic import ensures the script only runs in the browser
+        // biome-ignore lint/suspicious/noConsole: This is a demo
         import('../layers.ts').catch((err) => console.error('Error loading layers script:', err));
     }, []);
 
