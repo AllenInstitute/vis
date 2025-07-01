@@ -36,7 +36,9 @@ const settings: RenderSettings = {
         },
     },
     plane: PLANE_XY,
-    orthoVal: 3,
+    planeLocation: {
+        index: 3,
+    },
     camera: {
         // the omezarr renderer expects a box in whatever space is given by the omezarr file itself in its
         // axes metadata = for example, millimeters. if you load a volume that says its 30mm X 30mm X 10mm,
