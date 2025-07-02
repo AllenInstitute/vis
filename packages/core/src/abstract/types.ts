@@ -35,8 +35,7 @@ export type Renderer<Dataset, Item, Settings, GpuData extends Record<string, Reg
         item: Item,
         dataset: Dataset,
         settings: Settings,
-        signal?: AbortSignal,
-    ) => Record<string, () => Promise<ReglCacheEntry>>;
+    ) => Record<string, (signal: AbortSignal) => Promise<ReglCacheEntry>>;
     /**
      *
      * @param cacheData the results of fetching all the content for an Item
