@@ -28,7 +28,9 @@
     "main": "dist/main.js",
     "module": "dist/module.js",
     "types": "dist/types.d.ts",
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
@@ -48,7 +50,7 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-core": "workspace:*",
         "regl": "2.1.0",
-        "zarrita": "0.5.1",
+        "zarrita": "0.5.2",
         "zod": "3.25.50"
     },
     "packageManager": "pnpm@9.14.2"
