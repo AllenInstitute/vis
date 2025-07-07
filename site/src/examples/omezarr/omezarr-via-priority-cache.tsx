@@ -8,7 +8,7 @@ import {
 } from '@alleninstitute/vis-omezarr';
 import type { Decoder, RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import {
-    FancySharedCache,
+    SharedPriorityCache,
     logger,
     type Resource,
     type CachedTexture,
@@ -46,7 +46,7 @@ function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): 
     );
 }
 
-function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decoder: Decoder, onData: () => void) {
+function buildConnectedRenderer(regl: REGL.Regl, cache: SharedPriorityCache, decoder: Decoder, onData: () => void) {
     //@ts-expect-error
     const renderer = buildOmeZarrSliceRenderer(regl, decoder);
     const client = cache.registerClient<Thing, Record<string, Tex>>({
@@ -104,9 +104,9 @@ function buildConnectedRenderer(regl: REGL.Regl, cache: FancySharedCache, decode
     };
 }
 class Demo {
-    cache: FancySharedCache;
+    cache: SharedPriorityCache;
     regl: REGL.Regl;
-    constructor(regl: REGL.Regl, cache: FancySharedCache) {
+    constructor(regl: REGL.Regl, cache: SharedPriorityCache) {
         this.cache = cache;
         this.regl = regl;
     }
@@ -235,7 +235,7 @@ export function OmezarrDemo() {
             // cnvs.current.addEventListener('mousemove', handlePan);
             cnvs.current.addEventListener('wheel', handleZoom);
             const regl = REGL({ canvas: cnvs.current, extensions: ['oes_texture_float'] });
-            const cache = new FancySharedCache(new Map(), 1024 * 1024 * 2000, 10);
+            const cache = new SharedPriorityCache(new Map(), 1024 * 1024 * 2000, 10);
             const renderer = buildConnectedRenderer(regl, cache, multithreadedDecoder, () => {
                 requestAnimationFrame(() => {
                     setTick(performance.now());

@@ -67,7 +67,7 @@ export class PriorityCache {
     }
     private sanitizedSize(item: Resource) {
         const givenSize = item.sizeInBytes?.() ?? 0;
-        const size = Number.isFinite(givenSize) ? Math.max(0, givenSize) : 0
+        const size = Number.isFinite(givenSize) ? Math.max(0, givenSize) : 0;
         return size;
     }
     enqueue(key: CacheKey, fetcher: (abort: AbortSignal) => Promise<Resource>) {
@@ -148,7 +148,7 @@ export class PriorityCache {
             data.destroy?.();
             this.store.delete(evictMe);
             const size = this.sanitizedSize(data);
-            this.used -= size
+            this.used -= size;
         }
         return true;
     }

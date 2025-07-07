@@ -1,23 +1,29 @@
 import * as lo from 'lodash'; // vite/astro went bonkers - not sure why this helps, core has always had lodash in it...
 import { PriorityCache, type Store, type Resource } from './priority-cache';
+import { mergeAndAdd, prioritizeCacheKeys, priorityDelta } from './utils';
 const { uniqueId } = lo;
 // goal: we want clients of the cache to experience a type-safe interface -
 // they expect that the things coming out of the cache are the type they expect (what they put in it)
 // this is not strictly true, as the cache is shared, and other clients may use different types
 // also also - there will not be a 1:1 relation between items and
-type CacheInterface<Key, Value extends Record<string, Resource>> = {
-    get: (k: Key) => Value | undefined;
-    has: (k: Key) => boolean;
+// explaination of terms:
+// Item = a placeholder for something in the cache, used as a key in the cache. good examples:
+//  metadata {url, bounds} for a tile in a larger dataset.
+// ItemContent = the actual heavy data that Item is a placeholder for - for example one or more arrays of
+//  raw data used by the client of the cache - the value we are caching.
+type CacheInterface<Item, ItemContent extends Record<string, Resource>> = {
+    get: (k: Item) => ItemContent | undefined;
+    has: (k: Item) => boolean;
     unsubscribeFromCache: () => void;
-    setPriorities: (low: Set<Key>, high: Set<Key>) => void;
+    setPriorities: (low: Set<Item>, high: Set<Item>) => void;
 };
 type Fetcher = (sig: AbortSignal) => Promise<Resource>;
 
-type ClientSpec<Key, Value extends Record<string, Resource>> = {
-    isValue: (v: Record<string, Resource | undefined>) => v is Value;
-    cacheKeys: (item: Key) => { [k in keyof Value]: string };
+export type ClientSpec<Item, ItemContent extends Record<string, Resource>> = {
+    isValue: (v: Record<string, Resource | undefined>) => v is ItemContent;
+    cacheKeys: (item: Item) => { [k in keyof ItemContent]: string };
     onDataArrived?: (cacheKey: string) => void; // todo very not helpful
-    fetch: (item: Key) => { [k in keyof Value]: (abort: AbortSignal) => Promise<Resource> };
+    fetch: (item: Item) => { [k in keyof ItemContent]: (abort: AbortSignal) => Promise<Resource> };
 };
 type ObjectValue<T extends Record<string, any>> = T extends Record<string, infer Value> ? Value : never;
 
@@ -34,11 +40,10 @@ function mapFields<R extends Record<string, any>, Result>(
 }
 
 type Client = {
-    low: Set<string>;
-    high: Set<string>;
+    priorities: Record<string, number>;
     notify: undefined | ((cacheKey: string) => void);
 };
-export class FancySharedCache {
+export class SharedPriorityCache {
     private cache: PriorityCache;
     private clients: Record<string, Client>;
     private importance: Record<string, number>;
@@ -53,73 +58,54 @@ export class FancySharedCache {
             (ck) => this.onCacheEntryArrived(ck),
         );
     }
-    registerClient<Key, Value extends Record<string, Resource>>(
-        spec: ClientSpec<Key, Value>,
-    ): CacheInterface<Key, Value> {
+    registerClient<Item, ItemContent extends Record<string, Resource>>(
+        spec: ClientSpec<Item, ItemContent>,
+    ): CacheInterface<Item, ItemContent> {
         const id = uniqueId('client');
-        this.clients[id] = { low: new Set(), high: new Set(), notify: spec.onDataArrived };
+        this.clients[id] = { priorities: {}, notify: spec.onDataArrived };
 
-        const makeCacheEntries = (item: Key) => {
-            const keys = spec.cacheKeys(item) as Record<string, string>;
-            const fetchers = spec.fetch(item);
-            return Object.keys(keys).map((sk) => ({ cacheKey: keys[sk], fetcher: fetchers[sk] }));
+        const enqueuePriorities = (spec: ClientSpec<Item, ItemContent>, items: Iterable<Item>) => {
+            for (const item of items) {
+                const keys = spec.cacheKeys(item);
+                Object.entries(spec.fetch(item)).forEach(([sk, fetcher]) => {
+                    const ck = keys[sk];
+                    if (ck !== undefined) {
+                        this.cache.enqueue(ck, fetcher);
+                    }
+                });
+            }
         };
-
-        const priorityDelta = (key: string, pri: 0 | 1 | 2, low: Set<string>, high: Set<string>) => {
-            return pri - (high.has(key) ? 2 : low.has(key) ? 1 : 0);
-        };
-        const setPriorities = (low: Set<Key>, high: Set<Key>) => {
-            const newLow = new Set<string>();
-            const newHigh = new Set<string>();
-            const toEnqueue = new Map<string, Fetcher>();
+        const setPriorities = (low: Iterable<Item>, high: Iterable<Item>) => {
             const client = this.clients[id];
 
             if (!client) return; // the client can hold onto a reference to this interface, even after they call unregister - this prevents a crash in that scenario
 
-            const handlePriorityCategory = (pri: 1 | 2, cat: Set<string>, low: Set<string>, high: Set<string>) => {
-                return (item: Key) => {
-                    makeCacheEntries(item).forEach(({ cacheKey, fetcher }) => {
-                        const delta = priorityDelta(cacheKey, pri, low, high);
-                        cat.add(cacheKey);
-                        this.updateImportance(cacheKey, delta);
-                        if (!this.cache.cachedOrPending(cacheKey)) {
-                            toEnqueue.set(cacheKey, fetcher);
-                        }
-                    });
-                };
-            };
-            const handleOldPriority = (pri: 1 | 2) => {
-                return (ck: string) => {
-                    const isOrphan = !newHigh.has(ck) && !newLow.has(ck);
-                    // if its not an orphan, our delta-math has already been done, and we'd be double counting
-                    if (isOrphan) {
-                        this.updateImportance(ck, -pri);
-                    }
-                };
-            };
-            high.forEach(handlePriorityCategory(2, newHigh, client.low, client.high));
-            low.forEach(handlePriorityCategory(1, newLow, client.low, client.high));
-            client.low.forEach(handleOldPriority(1));
-            client.high.forEach(handleOldPriority(2));
-            client.low = newLow;
-            client.high = newHigh;
-            this.cache.reprioritize((ck) => this.importance[ck] ?? 0);
-            // this is why this function is convoluted - its desirable to recompute
-            // the complete set of scores (importance values) before calling enqueue
-            // otherwise, we could easily start fetching a lot of things that were important but now are not!
-            toEnqueue.forEach((f, k) => {
-                // note: enqueue is harmless for items that are already cached or enqueued
-                this.cache.enqueue(k, f);
+            const updated = mergeAndAdd(prioritizeCacheKeys(spec, low, 1), prioritizeCacheKeys(spec, high, 2));
+            let changed = 0;
+            priorityDelta(client.priorities, updated, (cacheKey, delta) => {
+                changed += delta !== 0 ? 1 : 0;
+                this.updateImportance(cacheKey, delta);
             });
+            if (changed === 0) {
+                // nothing changed at all - no need to reprioritize, nor enqueue requests
+                return;
+            }
+            this.cache.reprioritize((ck) => this.importance[ck] ?? 0);
+            client.priorities = updated;
+
+            // note: many keys may already be cached, or requested - its harmless to re-request them.
+            // there is obviously some overhead, but in testing it seems fine
+            enqueuePriorities(spec, high);
+            enqueuePriorities(spec, low);
         };
 
         return {
-            get: (k: Key) => {
+            get: (k: Item) => {
                 const keys = spec.cacheKeys(k);
                 const v = mapFields<Record<string, string>, Resource | undefined>(keys, (k) => this.cache.get(k));
                 return spec.isValue(v) ? v : undefined;
             },
-            has: (k: Key) => {
+            has: (k: Item) => {
                 const atLeastOneMissing = Object.values(spec.cacheKeys(k)).some((ck) => !this.cache.has(ck));
                 return !atLeastOneMissing;
             },
@@ -137,7 +123,7 @@ export class FancySharedCache {
         // and notify them
         for (const cid of Object.keys(this.clients)) {
             const client = this.clients[cid];
-            if (client.high.has(key) || client.low.has(key)) {
+            if ((client.priorities[key] ?? 0) > 0) {
                 client.notify?.(key);
             }
         }
