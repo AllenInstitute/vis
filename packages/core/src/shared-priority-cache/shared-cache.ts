@@ -15,7 +15,7 @@ type CacheInterface<Item, ItemContent extends Record<string, Resource>> = {
     get: (k: Item) => ItemContent | undefined;
     has: (k: Item) => boolean;
     unsubscribeFromCache: () => void;
-    setPriorities: (low: Set<Item>, high: Set<Item>) => void;
+    setPriorities: (low: Iterable<Item>, high: Iterable<Item>) => void;
 };
 type Fetcher = (sig: AbortSignal) => Promise<Resource>;
 
@@ -111,7 +111,7 @@ export class SharedPriorityCache {
             },
 
             unsubscribeFromCache: () => {
-                setPriorities(new Set(), new Set()); // mark that this client has no priorities, which will decrement the counts for all
+                setPriorities([], []); // mark that this client has no priorities, which will decrement the counts for all
                 // priorities it used to have
                 delete this.clients[id];
             },
