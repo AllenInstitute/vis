@@ -1,5 +1,5 @@
 import delay from 'lodash/delay';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { PriorityCache, Resource, type Store } from './priority-cache';
 import { uniqueId } from 'lodash';
 
@@ -13,7 +13,7 @@ class PayloadFactory {
     }
     create(id: string, v: number) {
         this.resources[id] = 'created';
-        console.log('download complete: ', id);
+        // console.log('download complete: ', id);
         return new Payload(id, v);
     }
     release(id: string) {
@@ -89,7 +89,7 @@ class PromiseFarm {
             awaited.push(prom);
             entry.resolveMe();
         }
-        console.log('resolved ', awaited.length);
+        // console.log('resolved ', awaited.length);
         this.entries.clear();
         return Promise.all(awaited);
     }
@@ -141,7 +141,7 @@ describe('basics', () => {
     beforeEach(() => {
         env = setupTestEnv(5, 10);
     });
-    it('put 5 things in, see them in the store', async () => {
+    test('put 5 things in, see them in the store', async () => {
         const { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises } = env;
         const enq = (id: string) => cache.enqueue(id, fakeFetchItem(id));
         // enqueue 5 things, get them all back
@@ -150,10 +150,14 @@ describe('basics', () => {
         await resolveFetches();
         things.forEach((id) => expect(cache.has(id)));
     });
-    it('when evicting and fetching, priority is respected', async () => {
+    test('when evicting and fetching, priority is respected', async () => {
         const score = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 };
         env = setupTestEnv(5, 1);
         const { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises } = env;
+        const resolveAndRequestNext = async () => {
+            await resolveFetches();
+            await resolveFetches();
+        }
         const enq = (id: string) => cache.enqueue(id, fakeFetchItem(id));
         cache.reprioritize((x) => score[x] ?? 0);
         const things = ['a', 'b', 'c', 'd', 'e'];
@@ -165,19 +169,19 @@ describe('basics', () => {
         expect(factory.resources).toEqual({ a: 'created' });
         // at the time a was enqueued, one fetch-slot was available, and a was the highest priority item
         // before it could resolve, we enqueued b,c,d,e in that order
-        await resolveFetches(); // resolves all pending fetches - there should be only one
+        await resolveAndRequestNext();
         expect(factory.resources).toEqual({ a: 'created', e: 'created' });
-        await resolveFetches(); // resolves all pending fetches - there should be only one
+        await resolveAndRequestNext();
         expect(factory.resources).toEqual({ a: 'created', e: 'created', d: 'created' });
-        await resolveFetches(); // resolves all pending fetches - there should be only one
+        await resolveAndRequestNext();
         expect(factory.resources).toEqual({ a: 'created', e: 'created', d: 'created', c: 'created' });
-        await resolveFetches(); // resolves all pending fetches - there should be only one
+        await resolveAndRequestNext();
         expect(factory.resources).toEqual({ a: 'created', e: 'created', d: 'created', c: 'created', b: 'created' });
         // the cache is full - we'd expect to evict a and b, as the lowest priority items
         enq('f');
         enq('g');
-        await resolveFetches();
-        await resolveFetches();
+        await resolveAndRequestNext();
+        await resolveAndRequestNext();
         expect(factory.resources).toEqual({
             a: 'destroyed',
             e: 'created',
@@ -189,3 +193,120 @@ describe('basics', () => {
         });
     });
 });
+
+describe('througput', () => {
+
+    test('performs well under non-stop puts with random prioritization values', () => {
+        // because puts get called as the result of a promise resolution, its hard to isolate the cost
+        // using a "realistic" example - lets just call put in a loop?
+        const fakeStore: FakeStore = new FakeStore();
+        const priorities: Record<string, number> = {}
+        let numEvicted = 0;
+        const cache: PriorityCache = new PriorityCache(fakeStore, (item) => {
+            return priorities[item] ?? 0
+        }, 1000, 20);
+        const newItem = (ID: string): Resource => {
+            priorities[ID] = Math.random() * 100;
+            return {
+                sizeInBytes: () => 1,
+                destroy: () => { delete priorities[ID]; numEvicted += 1 }
+            }
+        }
+        let putOverheadMS = 0;
+        const onemil = 1_000_000
+        for (let i = 0; i < onemil; i++) {
+            const ID = `item_${i}`
+            const item = newItem(ID)
+            const begin = performance.now()
+            cache.put(ID, item)
+            putOverheadMS += (performance.now() - begin)
+        }
+        console.log('1 million puts,', numEvicted, 'evictions,', putOverheadMS, 'ms total')
+        console.log('each put (avg ms): ', putOverheadMS / onemil);
+        expect(putOverheadMS / onemil).toBeLessThan(0.001) // yup, we are expecting this call to take less than one microsecond on average.
+        // a photon travels about 1000 feet in that time
+        expect(numEvicted).toBe(999000)
+    })
+    test('performs well under non-stop puts with random prioritization values, and intermittant re-prioritizations', () => {
+        // because puts get called as the result of a promise resolution, its hard to isolate the cost
+        // using a "realistic" example - lets just call put in a loop?
+        const fakeStore: FakeStore = new FakeStore();
+        const priorities: Record<string, number> = {}
+        let numEvicted = 0;
+        const score = (k: string) => priorities[k] ?? 0
+        const cache: PriorityCache = new PriorityCache(fakeStore, score, 1000, 20);
+        const newItem = (ID: string): Resource => {
+            priorities[ID] = Math.random() * 100;
+            return {
+                sizeInBytes: () => 1,
+                destroy: () => { delete priorities[ID]; numEvicted += 1 }
+            }
+        }
+        let putOverheadMS = 0;
+        let rePrioritizeOverheadMS = 0;
+        let rePrioritizeEvents = 0;
+        const onemil = 1_000_000
+        for (let i = 0; i < onemil; i++) {
+            const ID = `item_${i}`
+            const item = newItem(ID)
+            const begin = performance.now()
+            cache.put(ID, item)
+            putOverheadMS += (performance.now() - begin)
+            if (i % 100 === 0) {
+                // this is the same score function, but we changed all the numbers... that is exactly what we want
+                for (let k in priorities) {
+                    priorities[k] = Math.random() * 100
+                }
+                rePrioritizeEvents += 1;
+                const begin = performance.now();
+                cache.reprioritize(score)
+                rePrioritizeOverheadMS += (performance.now() - begin);
+            }
+        }
+        console.log('1 million puts,', numEvicted, 'evictions,', putOverheadMS, 'ms total')
+        console.log('each put (avg ms): ', putOverheadMS / onemil);
+        console.log('avg ms to reprioritize 1000 items: ', rePrioritizeOverheadMS / rePrioritizeEvents)
+        expect(putOverheadMS / onemil).toBeLessThan(0.01) // yup, we are expecting this call to take less than 10 microseconds on average.
+        // a photon travels about 10,000 feet in that time
+        expect(numEvicted).toBe(999000)
+        expect(rePrioritizeEvents).toBe(onemil / 100)
+        expect(rePrioritizeOverheadMS / rePrioritizeEvents).toBeLessThan(0.1)
+    }, { timeout: 10000 })
+    test('enqueue with instant fetching - overall speed', async () => {
+        let promises = new PromiseFarm();
+        const fakeStore: FakeStore = new FakeStore();
+        const fakeFetchItem = (id: string) => (_sig: AbortSignal) => {
+            return promises.promiseMe(() => factory.create(id, 33));
+        };
+        factory = new PayloadFactory();
+        const priorities: Record<string, number> = {}
+        const score = (k: string) => priorities[k] ?? 0
+        const cache: PriorityCache = new PriorityCache(fakeStore, score, 1000, 20);
+
+        const onemil = 100_000
+        const begin = performance.now()
+        for (let i = 0; i < onemil; i++) {
+            const ID = `item_${i}`
+            priorities[ID] = Math.random() * 100;
+            const fetchme = fakeFetchItem(ID)
+            cache.enqueue(ID, fetchme);
+            // allow the queue promises to resolve:
+            if (i % 100 === 0) {
+                // this is the same score function, but we changed all the numbers... that is exactly what we want
+                for (let k in priorities) {
+                    priorities[k] = Math.random() * 100
+                }
+                cache.reprioritize(score)
+            }
+            await promises.resolveAll()
+        }
+        const totalTime = performance.now() - begin;
+        // adding a million things with reprioritization took about 3.4 seconds.
+        // with promises and the event loop... adding 100k is taking 3X longer than previous tests (which did 10x more)
+        // so the whole (more realistic) overhead of promises and the event loop adding a factor of 30
+        // what this goes to show is that the overhead of these little parts is nothing compared to the actual bottlenecks.
+        // to say nothing of waiting entire seconds for fetches on a real network.
+        expect(Object.values(factory.resources).filter(v => v === 'destroyed').length).toBe(onemil - 1000)
+        expect(totalTime).toBeLessThan(9000)
+    }, { timeout: 10000 })
+})

@@ -56,7 +56,7 @@ export class PriorityCache {
         if (this.store.has(key)) {
             return false;
         }
-        const size = item.sizeInBytes?.() ?? 1;
+        const size = this.sanitizedSize(item);
         if (this.used + size > this.limit) {
             this.evictUntil(Math.max(0, this.limit - size));
         }
@@ -64,6 +64,11 @@ export class PriorityCache {
         this.store.set(key, item);
         this.used += size;
         return true;
+    }
+    private sanitizedSize(item: Resource) {
+        const givenSize = item.sizeInBytes?.() ?? 0;
+        const size = Number.isFinite(givenSize) ? Math.max(0, givenSize) : 0
+        return size;
     }
     enqueue(key: CacheKey, fetcher: (abort: AbortSignal) => Promise<Resource>) {
         // enqueue the item, if we dont already have it, or are not already asking
@@ -142,7 +147,8 @@ export class PriorityCache {
         if (data) {
             data.destroy?.();
             this.store.delete(evictMe);
-            this.used -= data.sizeInBytes?.() ?? 1;
+            const size = this.sanitizedSize(data);
+            this.used -= size
         }
         return true;
     }
