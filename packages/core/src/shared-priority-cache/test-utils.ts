@@ -1,4 +1,4 @@
-import { Resource, Store } from "./priority-cache";
+import { Resource, Store } from './priority-cache';
 import { uniqueId } from 'lodash';
 
 export class PayloadFactory {
@@ -24,11 +24,11 @@ export class PayloadFactory {
 export class Payload implements Resource {
     data: number;
     id: string;
-    private factory: PayloadFactory
+    private factory: PayloadFactory;
     constructor(id: string, value: number, factory: PayloadFactory) {
         this.id = id;
         this.data = value;
-        this.factory = factory
+        this.factory = factory;
     }
     destroy() {
         this.factory.release(this.id);

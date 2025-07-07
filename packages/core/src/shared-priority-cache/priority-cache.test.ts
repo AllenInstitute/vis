@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { PriorityCache, Resource } from './priority-cache';
-import { FakeStore, PayloadFactory, PromiseFarm } from './test-utils'
+import { FakeStore, PayloadFactory, PromiseFarm } from './test-utils';
 
 let factory = new PayloadFactory();
 

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, test } from "vitest";
-import { FakeStore, Payload, PayloadFactory, PromiseFarm } from "./test-utils";
-import { SharedPriorityCache } from './shared-cache'
+import { beforeEach, describe, expect, test } from 'vitest';
+import { FakeStore, Payload, PayloadFactory, PromiseFarm } from './test-utils';
+import { SharedPriorityCache } from './shared-cache';
 function setupTestEnv(limit: number, fetchLimit: number) {
     let factory = new PayloadFactory();
 
@@ -12,20 +12,20 @@ function setupTestEnv(limit: number, fetchLimit: number) {
     };
     factory = new PayloadFactory();
     const fakeStore: FakeStore = new FakeStore();
-    const cache = new SharedPriorityCache(fakeStore, limit, fetchLimit)
+    const cache = new SharedPriorityCache(fakeStore, limit, fetchLimit);
     return { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises, factory };
 }
 describe('shared cache priorities are the sum of all client priorities', () => {
-    let env = setupTestEnv(10, 10)
+    let env = setupTestEnv(10, 10);
     beforeEach(() => {
-        env = setupTestEnv(10, 10)
-    })
+        env = setupTestEnv(10, 10);
+    });
     type Item = {
         id: string;
-    }
-    type ItemData = { data: Payload }
-    const Items = (...ids: string[]) => ids.map(id => ({ id }))
-    const ePri = (id: string, pri: number) => ({ [`fake.com/${id}`]: pri })
+    };
+    type ItemData = { data: Payload };
+    const Items = (...ids: string[]) => ids.map((id) => ({ id }));
+    const ePri = (id: string, pri: number) => ({ [`fake.com/${id}`]: pri });
     test('one client with simple priorities', async () => {
         const { cache, fakeFetchItem } = env;
 
@@ -35,10 +35,10 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             isValue: (v): v is ItemData => 'data' in v,
         });
 
-        C.setPriorities(Items('a', 'b', 'c'), Items('p', 'q'))
+        C.setPriorities(Items('a', 'b', 'c'), Items('p', 'q'));
         // this should immediately enqueue p,q,a,b,c
         // it would be great to be able to peek at the priorities!
-        const spyCache = (cache as any as { importance: Record<string, number> })
+        const spyCache = cache as any as { importance: Record<string, number> };
         expect(spyCache.importance).toEqual({
             ...ePri('a', 1),
             ...ePri('b', 1),
@@ -46,7 +46,7 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             ...ePri('p', 2),
             ...ePri('q', 2),
         });
-    })
+    });
     test('repeat items have priorities summed', () => {
         const { cache, fakeFetchItem } = env;
         const C = cache.registerClient({
@@ -55,17 +55,17 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             isValue: (v): v is ItemData => 'data' in v,
         });
 
-        C.setPriorities(Items('a', 'b', 'b', 'c'), Items('a', 'q'))
+        C.setPriorities(Items('a', 'b', 'b', 'c'), Items('a', 'q'));
         // this should immediately enqueue p,q,a,b,c
         // it would be great to be able to peek at the priorities!
-        const spyCache = (cache as any as { importance: Record<string, number> })
+        const spyCache = cache as any as { importance: Record<string, number> };
         expect(spyCache.importance).toEqual({
             ...ePri('a', 3), // low+high = 3
             ...ePri('b', 2), // low+low = high aka 2
             ...ePri('c', 1),
             ...ePri('q', 2),
         });
-    })
+    });
     test('changing priorities works as expected', () => {
         const { cache, fakeFetchItem } = env;
         const C = cache.registerClient({
@@ -74,18 +74,18 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             isValue: (v): v is ItemData => 'data' in v,
         });
 
-        C.setPriorities(Items('a', 'b', 'b', 'c'), Items('a', 'q'))
-        C.setPriorities(Items('a'), Items('a', 'c'))
+        C.setPriorities(Items('a', 'b', 'b', 'c'), Items('a', 'q'));
+        C.setPriorities(Items('a'), Items('a', 'c'));
         // this should immediately enqueue p,q,a,b,c
         // it would be great to be able to peek at the priorities!
-        const spyCache = (cache as any as { importance: Record<string, number> })
+        const spyCache = cache as any as { importance: Record<string, number> };
         expect(spyCache.importance).toEqual({
             ...ePri('a', 3),
             ...ePri('b', 0),
             ...ePri('c', 2),
             ...ePri('q', 0),
         });
-    })
+    });
     test('changing priorities over multiple clients', () => {
         const { cache, fakeFetchItem } = env;
         const A = cache.registerClient({
@@ -98,11 +98,11 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             fetch: (item: Item) => ({ data: fakeFetchItem(item.id) }),
             isValue: (v): v is ItemData => 'data' in v,
         });
-        A.setPriorities(Items('a', 'b', 'c'), [])
-        B.setPriorities(Items('p', 'q', 'c'), [])
+        A.setPriorities(Items('a', 'b', 'c'), []);
+        B.setPriorities(Items('p', 'q', 'c'), []);
         // this should immediately enqueue p,q,a,b,c
         // it would be great to be able to peek at the priorities!
-        const spyCache = (cache as any as { importance: Record<string, number> })
+        const spyCache = cache as any as { importance: Record<string, number> };
         expect(spyCache.importance).toEqual({
             ...ePri('a', 1),
             ...ePri('b', 1),
@@ -111,7 +111,7 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             ...ePri('q', 1),
         });
         // now, change just one client:
-        B.setPriorities(Items('p'), Items('b'))
+        B.setPriorities(Items('p'), Items('b'));
         expect(spyCache.importance).toEqual({
             ...ePri('a', 1),
             ...ePri('b', 3), // Added by B
@@ -119,5 +119,5 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             ...ePri('p', 1),
             ...ePri('q', 0), // dropped
         });
-    })
-})
+    });
+});
