@@ -102,7 +102,7 @@ export function OmezarrViewer({
         };
     }, [server, settings.camera.screenSize]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies:
+    // biome-ignore lint/correctness/useExhaustiveDependencies: We want to refresh when the orthoVal changes
     useEffect(() => {
         // when the user changes the slide (orthoVal?), erase our stashed copy of the rendered image
         if (server && stash.current) {

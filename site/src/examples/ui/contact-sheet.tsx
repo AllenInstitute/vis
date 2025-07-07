@@ -13,7 +13,7 @@ export function ContactSheetUI(props: { demo: Demo }) {
                     min={0}
                     max={1000}
                     value={[l.data.gamut.R.gamut.min, l.data.gamut.R.gamut.max]}
-                    onChange={(e, value) => {
+                    onChange={(_e, value) => {
                         demo.setGamutChannel('R', value as number[]);
                     }}
                 />
@@ -21,7 +21,7 @@ export function ContactSheetUI(props: { demo: Demo }) {
                     min={0}
                     max={1000}
                     value={[l.data.gamut.G.gamut.min, l.data.gamut.G.gamut.max]}
-                    onChange={(e, value) => {
+                    onChange={(_e, value) => {
                         demo.setGamutChannel('G', value as number[]);
                     }}
                 />
@@ -29,7 +29,7 @@ export function ContactSheetUI(props: { demo: Demo }) {
                     min={0}
                     max={1000}
                     value={[l.data.gamut.B.gamut.min, l.data.gamut.B.gamut.max]}
-                    onChange={(e, value) => {
+                    onChange={(_e, value) => {
                         demo.setGamutChannel('B', value as number[]);
                     }}
                 />
