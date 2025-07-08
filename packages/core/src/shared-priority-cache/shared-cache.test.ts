@@ -152,5 +152,5 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             ...ePri('p', 1),
             ...ePri('q', 1),
         });
-    })
+    });
 });
