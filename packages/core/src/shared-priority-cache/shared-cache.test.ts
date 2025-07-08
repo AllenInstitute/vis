@@ -120,4 +120,37 @@ describe('shared cache priorities are the sum of all client priorities', () => {
             ...ePri('q', 0), // dropped
         });
     });
+    test('delete a client: priorities do not leak (they get cleaned up)', () => {
+        const { cache, fakeFetchItem } = env;
+        const A = cache.registerClient({
+            cacheKeys: (item: Item) => ({ data: `fake.com/${item.id}` }),
+            fetch: (item: Item) => ({ data: fakeFetchItem(item.id) }),
+            isValue: (v): v is ItemData => 'data' in v,
+        });
+        const B = cache.registerClient({
+            cacheKeys: (item: Item) => ({ data: `fake.com/${item.id}` }),
+            fetch: (item: Item) => ({ data: fakeFetchItem(item.id) }),
+            isValue: (v): v is ItemData => 'data' in v,
+        });
+        A.setPriorities(Items('a', 'b', 'c'), []);
+        B.setPriorities(Items('p', 'q', 'c'), []);
+        // this should immediately enqueue p,q,a,b,c
+        // it would be great to be able to peek at the priorities!
+        const spyCache = cache as any as { importance: Record<string, number> };
+        expect(spyCache.importance).toEqual({
+            ...ePri('a', 1),
+            ...ePri('b', 1),
+            ...ePri('c', 2),
+            ...ePri('p', 1),
+            ...ePri('q', 1),
+        });
+        A.unsubscribeFromCache();
+        expect(spyCache.importance).toEqual({
+            ...ePri('a', 0),
+            ...ePri('b', 0),
+            ...ePri('c', 1),
+            ...ePri('p', 1),
+            ...ePri('q', 1),
+        });
+    })
 });
