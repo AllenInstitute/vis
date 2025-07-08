@@ -14,7 +14,8 @@ export class PayloadFactory {
     release(id: string) {
         if (!(id in this.resources)) {
             throw new Error('no such id fail test');
-        }if (this.resources[id] === 'destroyed') {
+        }
+        if (this.resources[id] === 'destroyed') {
             throw new Error('double-delete resource fail test');
         }
         this.resources[id] = 'destroyed';
