@@ -1,12 +1,13 @@
+/** biome-ignore-all lint/suspicious/noConsole: <its tests> */
 import { beforeEach, describe, expect, test } from 'vitest';
-import { PriorityCache, Resource } from './priority-cache';
+import { PriorityCache, type Resource } from './priority-cache';
 import { FakeStore, PayloadFactory, PromiseFarm } from './test-utils';
 
 let factory = new PayloadFactory();
 
 function setupTestEnv(limit: number, fetchLimit: number) {
-    let promises = new PromiseFarm();
-    let fetchSpies: Set<Promise<unknown>> = new Set();
+    const promises = new PromiseFarm();
+    const fetchSpies: Set<Promise<unknown>> = new Set();
     const resolveFetches = () => promises.resolveAll();
     const fakeFetchItem = (id: string) => (_sig: AbortSignal) => {
         console.log('request: ', id);
@@ -148,7 +149,7 @@ describe.skip('througput', () => {
                 putOverheadMS += performance.now() - begin;
                 if (i % 100 === 0) {
                     // this is the same score function, but we changed all the numbers... that is exactly what we want
-                    for (let k in priorities) {
+                    for (const k in priorities) {
                         priorities[k] = Math.random() * 100;
                     }
                     rePrioritizeEvents += 1;
@@ -171,7 +172,7 @@ describe.skip('througput', () => {
     test(
         'enqueue with instant fetching - overall speed',
         async () => {
-            let promises = new PromiseFarm();
+            const promises = new PromiseFarm();
             const fakeStore: FakeStore = new FakeStore();
             const fakeFetchItem = (id: string) => (_sig: AbortSignal) => {
                 return promises.promiseMe(() => factory.create(id, 33));
@@ -191,7 +192,7 @@ describe.skip('througput', () => {
                 // allow the queue promises to resolve:
                 if (i % 100 === 0) {
                     // this is the same score function, but we changed all the numbers... that is exactly what we want
-                    for (let k in priorities) {
+                    for (const k in priorities) {
                         priorities[k] = Math.random() * 100;
                     }
                     cache.reprioritize(score);

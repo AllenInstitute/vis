@@ -1,4 +1,4 @@
-import { Resource, Store } from './priority-cache';
+import type { Resource, Store } from './priority-cache';
 import { uniqueId } from 'lodash';
 
 export class PayloadFactory {
@@ -14,7 +14,7 @@ export class PayloadFactory {
     release(id: string) {
         if (!(id in this.resources)) {
             throw new Error('no such id fail test');
-        } else if (this.resources[id] === 'destroyed') {
+        }if (this.resources[id] === 'destroyed') {
             throw new Error('double-delete resource fail test');
         }
         this.resources[id] = 'destroyed';

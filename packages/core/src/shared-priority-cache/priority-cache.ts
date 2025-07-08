@@ -1,4 +1,3 @@
-import { uniqueId } from 'lodash';
 import { MinHeap } from './min-heap';
 import { KeyedMinHeap } from './keyed-heap';
 
@@ -140,7 +139,7 @@ export class PriorityCache {
         return this.used >= this.limit;
     }
     private evictLowestPriority() {
-        let evictMe = this.evictPriority.popMinItem();
+        const evictMe = this.evictPriority.popMinItem();
         if (evictMe === null) return false;
 
         const data = this.store.get(evictMe);

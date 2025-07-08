@@ -1,16 +1,16 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <tests> */
 import { beforeEach, describe, expect, test } from 'vitest';
-import { FakeStore, Payload, PayloadFactory, PromiseFarm } from './test-utils';
+import { FakeStore, type Payload, PayloadFactory, PromiseFarm } from './test-utils';
 import { SharedPriorityCache } from './shared-cache';
 function setupTestEnv(limit: number, fetchLimit: number) {
-    let factory = new PayloadFactory();
+    const factory = new PayloadFactory();
 
-    let promises = new PromiseFarm();
-    let fetchSpies: Set<Promise<unknown>> = new Set();
+    const promises = new PromiseFarm();
+    const fetchSpies: Set<Promise<unknown>> = new Set();
     const resolveFetches = () => promises.resolveAll();
     const fakeFetchItem = (id: string) => (_sig: AbortSignal) => {
         return promises.promiseMe(() => factory.create(id, 33));
     };
-    factory = new PayloadFactory();
     const fakeStore: FakeStore = new FakeStore();
     const cache = new SharedPriorityCache(fakeStore, limit, fetchLimit);
     return { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises, factory };

@@ -1,5 +1,5 @@
-import { type Resource } from './priority-cache';
-import { type ClientSpec } from './shared-cache';
+import type { Resource } from './priority-cache';
+import type { ClientSpec } from './shared-cache';
 
 // some utils for tracking changing priorities in our priority cache
 
@@ -8,7 +8,7 @@ export function prioritizeCacheKeys<Item, ItemContent extends Record<string, Res
     items: Iterable<Item>,
     priority: 1 | 2,
 ) {
-    let pri: Record<string, number> = {};
+    const pri: Record<string, number> = {};
     for (const item of items) {
         const keys = spec.cacheKeys(item);
         for (const cacheKey of Object.values(keys)) {

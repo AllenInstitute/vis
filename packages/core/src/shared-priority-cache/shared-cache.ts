@@ -47,7 +47,7 @@ export class SharedPriorityCache {
     private cache: PriorityCache;
     private clients: Record<string, Client>;
     private importance: Record<string, number>;
-    constructor(store: Store<string, Resource>, limitInBytes: number, max_concurrent_fetches: number = 10) {
+    constructor(store: Store<string, Resource>, limitInBytes: number, max_concurrent_fetches = 10) {
         this.importance = {};
         this.clients = {};
         this.cache = new PriorityCache(
