@@ -75,7 +75,8 @@ describe('basics', () => {
     });
 });
 
-describe('througput', () => {
+// these tests are nice to think about, but not suitable to run on CI
+describe.skip('througput', () => {
     test('performs well under non-stop puts with random prioritization values', () => {
         // because puts get called as the result of a promise resolution, its hard to isolate the cost
         // using a "realistic" example - lets just call put in a loop?
