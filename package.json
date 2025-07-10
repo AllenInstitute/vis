@@ -1,5 +1,6 @@
 {
     "name": "@alleninstitute/vis",
+    "type": "module",
     "scripts": {
         "build": "pnpm -r run --no-bail build",
         "dev": "pnpm -r --parallel run dev",
