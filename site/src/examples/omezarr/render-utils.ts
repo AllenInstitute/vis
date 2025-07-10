@@ -1,8 +1,13 @@
-import type { SharedPriorityCache, CachedTexture, Resource } from "@alleninstitute/vis-core";
-import type { vec2 } from "@alleninstitute/vis-geometry";
-import { buildOmeZarrSliceRenderer, type Decoder, type OmeZarrMetadata, type RenderSettings, type VoxelTile } from "@alleninstitute/vis-omezarr";
-import type REGL from "regl";
-
+import type { SharedPriorityCache, CachedTexture, Resource } from '@alleninstitute/vis-core';
+import type { vec2 } from '@alleninstitute/vis-geometry';
+import {
+    buildOmeZarrSliceRenderer,
+    type Decoder,
+    type OmeZarrMetadata,
+    type RenderSettings,
+    type VoxelTile,
+} from '@alleninstitute/vis-omezarr';
+import type REGL from 'regl';
 
 class Tex implements Resource {
     texture: CachedTexture;
@@ -23,12 +28,21 @@ type Thing = {
     settings: RenderSettings;
 };
 function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): { [k in keyof T]: R } {
-    return Object.keys(obj).reduce((acc, k) => {
-        return { ...acc, [k]: fn(obj[k]) };
-    }, {} as { [k in keyof T]: R });
+    return Object.keys(obj).reduce(
+        (acc, k) => {
+            return { ...acc, [k]: fn(obj[k]) };
+        },
+        {} as { [k in keyof T]: R },
+    );
 }
 
-export function buildConnectedRenderer(regl: REGL.Regl, screenSize: vec2, cache: SharedPriorityCache, decoder: Decoder, onData: () => void) {
+export function buildConnectedRenderer(
+    regl: REGL.Regl,
+    screenSize: vec2,
+    cache: SharedPriorityCache,
+    decoder: Decoder,
+    onData: () => void,
+) {
     //@ts-expect-error
     const renderer = buildOmeZarrSliceRenderer(regl, decoder);
     const client = cache.registerClient<Thing, Record<string, Tex>>({
@@ -51,7 +65,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, screenSize: vec2, cache:
         },
         isValue: (v): v is Record<string, Tex> =>
             renderer.isPrepared(
-                mapValues(v, (tx: Resource | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined))
+                mapValues(v, (tx: Resource | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined)),
             ),
         onDataArrived: onData,
     });
@@ -60,7 +74,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, screenSize: vec2, cache:
     //     readFrom: regl.framebuffer({ width: screenSize[0], height: screenSize[1] }),
     // };
     const [width, height] = screenSize;
-    const target: REGL.Framebuffer2D = regl.framebuffer({ width, height })
+    const target: REGL.Framebuffer2D = regl.framebuffer({ width, height });
     return {
         copyPixels: (canvas: CanvasRenderingContext2D) => {
             const copyBuffer = regl.read({
@@ -83,9 +97,8 @@ export function buildConnectedRenderer(regl: REGL.Regl, screenSize: vec2, cache:
             });
             client.setPriorities(
                 new Set(items.map((tile) => ({ tile, dataset, settings }))),
-                new Set(baselayer.map((tile) => ({ tile, dataset, settings })))
+                new Set(baselayer.map((tile) => ({ tile, dataset, settings }))),
             );
-
 
             regl.clear({ framebuffer: target, color: [0, 0, 0, 1], depth: 1 });
             for (const tile of [...baselayer, ...items]) {
@@ -98,7 +111,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, screenSize: vec2, cache:
                         dataset,
                         settings,
                         // { ...settings, camera: { ...settings.camera, view: upsideDown } },
-                        mapValues(drawme, (d: Tex) => d.texture)
+                        mapValues(drawme, (d: Tex) => d.texture),
                     );
                 }
             }
