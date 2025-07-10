@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
 /** biome-ignore-all lint/performance/noAccumulatingSpread: <explanation> */
-import { type vec2 } from '@alleninstitute/vis-geometry';
-import { type WebResource } from '@alleninstitute/vis-core';
+import type { vec2 } from '@alleninstitute/vis-geometry';
+import type { WebResource } from '@alleninstitute/vis-core';
 import { SharedCacheProvider } from '../common/react/priority-cache-provider';
 import { OmeZarrView } from './omezarr-client';
 type DemoOption = { value: string; label: string; res: WebResource };
