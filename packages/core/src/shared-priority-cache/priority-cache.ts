@@ -22,6 +22,7 @@ type PendingResource = {
 function negate(fn: (k: CacheKey) => number) {
     return (k: CacheKey) => -fn(k);
 }
+export type FetchResult = { status: 'success' } | { status: 'failure'; reason: unknown };
 export class PriorityCache {
     private store: Store<CacheKey, Resource>;
     private evictPriority: MinHeap<CacheKey>;
@@ -30,14 +31,14 @@ export class PriorityCache {
     private limit: number;
     private used: number;
     private MAX_INFLIGHT_FETCHES: number;
-    private notify: undefined | ((k: CacheKey) => void);
+    private notify: undefined | ((k: CacheKey, result: FetchResult) => void);
     // items with lower scores will be evicted before items with high scores
     constructor(
         store: Store<CacheKey, Resource>,
         score: (k: CacheKey) => number,
         limitInBytes: number,
         maxFetches: number,
-        onDataArrived?: (key: CacheKey) => void,
+        onDataArrived?: (key: CacheKey, result: FetchResult) => void,
     ) {
         this.store = store;
         this.evictPriority = new MinHeap<CacheKey>(5000, score);
@@ -84,15 +85,15 @@ export class PriorityCache {
         return fetch(abort.signal)
             .then((resource) => {
                 this.put(key, resource);
+                this.notify?.(key, { status: 'success' });
             })
-            .catch((_reason) => {
-                //ignore
+            .catch((reason) => {
+                this.notify?.(key, { status: 'failure', reason });
             })
             .finally(() => {
                 this.pendingFetches.delete(key);
                 this.fetchToLimit();
-            })
-            .then(() => this.notify?.(key));
+            });
     }
     private fetchToLimit() {
         let toFetch = Math.max(0, this.MAX_INFLIGHT_FETCHES - this.pendingFetches.size);

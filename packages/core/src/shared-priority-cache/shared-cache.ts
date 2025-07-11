@@ -1,7 +1,6 @@
-import * as lo from 'lodash'; // vite/astro went bonkers - not sure why this helps, core has always had lodash in it...
-import { PriorityCache, type Store, type Resource } from './priority-cache';
+import { PriorityCache, type Store, type Resource, type FetchResult } from './priority-cache';
 import { mergeAndAdd, prioritizeCacheKeys, priorityDelta } from './utils';
-const { uniqueId } = lo;
+import uniqueId from 'lodash/uniqueId';
 // goal: we want clients of the cache to experience a type-safe interface -
 // they expect that the things coming out of the cache are the type they expect (what they put in it)
 // this is not strictly true, as the cache is shared, and other clients may use different types
@@ -17,31 +16,31 @@ type CacheInterface<Item, ItemContent extends Record<string, Resource>> = {
     unsubscribeFromCache: () => void;
     setPriorities: (low: Iterable<Item>, high: Iterable<Item>) => void;
 };
-type Fetcher = (sig: AbortSignal) => Promise<Resource>;
 
 export type ClientSpec<Item, ItemContent extends Record<string, Resource>> = {
     isValue: (v: Record<string, Resource | undefined>) => v is ItemContent;
     cacheKeys: (item: Item) => { [k in keyof ItemContent]: string };
-    onDataArrived?: (cacheKey: string) => void; // todo very not helpful
+    onDataArrived?: (cacheKey: string, result: FetchResult) => void;
     fetch: (item: Item) => { [k in keyof ItemContent]: (abort: AbortSignal) => Promise<Resource> };
 };
-type ObjectValue<T extends Record<string, any>> = T extends Record<string, infer Value> ? Value : never;
 
-type KV<T extends Record<string, any>> = readonly [keyof T, ObjectValue<T>];
+type KV<T extends Record<string, unknown>> = readonly [keyof T, T[keyof T]];
 
-function entries<T extends Record<string, any>>(t: T): ReadonlyArray<KV<T>> {
+function entries<T extends Record<string, unknown>>(t: T): ReadonlyArray<KV<T>> {
     return Object.entries(t) as ReadonlyArray<KV<T>>;
 }
-function mapFields<R extends Record<string, any>, Result>(
+function mapFields<R extends Record<string, unknown>, Result>(
     r: R,
-    fn: (v: ObjectValue<R>) => Result,
+    fn: (v: R[keyof R]) => Result,
 ): { [k in keyof R]: Result } {
     return entries(r).reduce((acc, [k, v]) => ({ ...acc, [k]: fn(v) }), {} as { [k in keyof R]: Result });
 }
 
 type Client = {
     priorities: Record<string, number>;
-    notify: undefined | ((cacheKey: string) => void);
+    notify:
+        | undefined
+        | ((cacheKey: string, result: { status: 'success' } | { status: 'failure'; reason: unknown }) => void);
 };
 export class SharedPriorityCache {
     private cache: PriorityCache;
@@ -55,7 +54,7 @@ export class SharedPriorityCache {
             (ck) => this.importance[ck] ?? 0,
             limitInBytes,
             max_concurrent_fetches,
-            (ck) => this.onCacheEntryArrived(ck),
+            (ck, result) => this.onCacheEntryArrived(ck, result),
         );
     }
     registerClient<Item, ItemContent extends Record<string, Resource>>(
@@ -118,13 +117,13 @@ export class SharedPriorityCache {
             setPriorities,
         };
     }
-    private onCacheEntryArrived(key: string) {
+    private onCacheEntryArrived(key: string, result: FetchResult) {
         // find any clients that want this...
         // and notify them
         for (const cid of Object.keys(this.clients)) {
             const client = this.clients[cid];
             if ((client.priorities[key] ?? 0) > 0) {
-                client.notify?.(key);
+                client.notify?.(key, result);
             }
         }
     }

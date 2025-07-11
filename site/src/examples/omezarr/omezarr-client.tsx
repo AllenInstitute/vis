@@ -104,9 +104,7 @@ export function OmeZarrView(props: Props) {
         setDragging(false);
     };
     useEffect(() => {
-        if (cnvs.current && server) {
-            // do all setup as soon as we have a canvas reference
-            cnvs.current.addEventListener('wheel', handleZoom);
+        if (cnvs.current && server && !renderer) {
             const { regl, cache } = server;
             const renderer = buildConnectedRenderer(regl, screenSize, cache, multithreadedDecoder, () => {
                 requestAnimationFrame(() => {
@@ -116,10 +114,10 @@ export function OmeZarrView(props: Props) {
             setRenderer(renderer);
             load(props.res);
         }
-    }, [cnvs.current, server, handleZoom]);
+    }, [cnvs.current]);
 
     useEffect(() => {
-        if (omezarr && cnvs.current) {
+        if (omezarr && cnvs.current && renderer) {
             const settings = makeZarrSettings(screenSize, view, planeIndex, omezarr);
             const ctx = cnvs.current.getContext('2d');
             if (ctx) {
@@ -130,6 +128,7 @@ export function OmeZarrView(props: Props) {
             }
         }
     }, [omezarr, planeIndex, view, tick]);
+
     useEffect(() => {
         if (cnvs?.current) {
             cnvs.current.addEventListener('wheel', handleZoom, { passive: false });
@@ -140,6 +139,7 @@ export function OmeZarrView(props: Props) {
             }
         };
     }, [handleZoom]);
+
     return (
         <div
             style={{

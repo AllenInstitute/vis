@@ -10,21 +10,18 @@ export const SharedCacheContext = createContext<{
 export function SharedCacheProvider(props: PropsWithChildren) {
     const state = useRef<StateHelper>(undefined);
     const { children } = props;
-    useEffect(() => {
-        state.current = new StateHelper(2000 * 1024 * 1024, 50, ['oes_texture_float']);
+    if (!state.current) {
         logger.info('server started...');
+        state.current = new StateHelper(2000 * 1024 * 1024, 50, ['oes_texture_float']);
+    }
+    useEffect(() => {
         return () => {
             logger.info('shared cache disposed');
             state.current?.destroy();
+            state.current = undefined;
         };
     }, []);
-    return (
-        <SharedCacheContext.Provider
-            value={state.current ? { regl: state.current.regl, cache: state.current.cache } : null}
-        >
-            {children}
-        </SharedCacheContext.Provider>
-    );
+    return <SharedCacheContext.Provider value={state.current ?? null}>{children}</SharedCacheContext.Provider>;
 }
 
 class StateHelper {

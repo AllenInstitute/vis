@@ -119,6 +119,7 @@ describe.skip('througput', () => {
     });
     test(
         'performs well under non-stop puts with random prioritization values, and intermittant re-prioritizations',
+        { timeout: 10000 },
         () => {
             // because puts get called as the result of a promise resolution, its hard to isolate the cost
             // using a "realistic" example - lets just call put in a loop?
@@ -167,47 +168,42 @@ describe.skip('througput', () => {
             expect(rePrioritizeEvents).toBe(onemil / 100);
             expect(rePrioritizeOverheadMS / rePrioritizeEvents).toBeLessThan(0.1);
         },
-        { timeout: 10000 },
     );
-    test(
-        'enqueue with instant fetching - overall speed',
-        async () => {
-            const promises = new PromiseFarm();
-            const fakeStore: FakeStore = new FakeStore();
-            const fakeFetchItem = (id: string) => (_sig: AbortSignal) => {
-                return promises.promiseMe(() => factory.create(id, 33));
-            };
-            factory = new PayloadFactory();
-            const priorities: Record<string, number> = {};
-            const score = (k: string) => priorities[k] ?? 0;
-            const cache: PriorityCache = new PriorityCache(fakeStore, score, 1000, 20);
+    test('enqueue with instant fetching - overall speed', { timeout: 10000 }, async () => {
+        const promises = new PromiseFarm();
+        const fakeStore: FakeStore = new FakeStore();
+        const fakeFetchItem = (id: string) => (_sig: AbortSignal) => {
+            return promises.promiseMe(() => factory.create(id, 33));
+        };
+        factory = new PayloadFactory();
+        const priorities: Record<string, number> = {};
+        const score = (k: string) => priorities[k] ?? 0;
+        const cache: PriorityCache = new PriorityCache(fakeStore, score, 1000, 20);
 
-            const onemil = 100_000;
-            const begin = performance.now();
-            for (let i = 0; i < onemil; i++) {
-                const ID = `item_${i}`;
-                priorities[ID] = Math.random() * 100;
-                const fetchme = fakeFetchItem(ID);
-                cache.enqueue(ID, fetchme);
-                // allow the queue promises to resolve:
-                if (i % 100 === 0) {
-                    // this is the same score function, but we changed all the numbers... that is exactly what we want
-                    for (const k in priorities) {
-                        priorities[k] = Math.random() * 100;
-                    }
-                    cache.reprioritize(score);
+        const onemil = 100_000;
+        const begin = performance.now();
+        for (let i = 0; i < onemil; i++) {
+            const ID = `item_${i}`;
+            priorities[ID] = Math.random() * 100;
+            const fetchme = fakeFetchItem(ID);
+            cache.enqueue(ID, fetchme);
+            // allow the queue promises to resolve:
+            if (i % 100 === 0) {
+                // this is the same score function, but we changed all the numbers... that is exactly what we want
+                for (const k in priorities) {
+                    priorities[k] = Math.random() * 100;
                 }
-                await promises.resolveAll();
+                cache.reprioritize(score);
             }
-            const totalTime = performance.now() - begin;
-            // adding a million things with reprioritization took about 3.4 seconds.
-            // with promises and the event loop... adding 100k is taking 3X longer than previous tests (which did 10x more)
-            // so the whole (more realistic) overhead of promises and the event loop adding a factor of 30
-            // what this goes to show is that the overhead of these little parts is nothing compared to the actual bottlenecks.
-            // to say nothing of waiting entire seconds for fetches on a real network.
-            expect(Object.values(factory.resources).filter((v) => v === 'destroyed').length).toBe(onemil - 1000);
-            expect(totalTime).toBeLessThan(9000);
-        },
-        { timeout: 10000 },
-    );
+            await promises.resolveAll();
+        }
+        const totalTime = performance.now() - begin;
+        // adding a million things with reprioritization took about 3.4 seconds.
+        // with promises and the event loop... adding 100k is taking 3X longer than previous tests (which did 10x more)
+        // so the whole (more realistic) overhead of promises and the event loop adding a factor of 30
+        // what this goes to show is that the overhead of these little parts is nothing compared to the actual bottlenecks.
+        // to say nothing of waiting entire seconds for fetches on a real network.
+        expect(Object.values(factory.resources).filter((v) => v === 'destroyed').length).toBe(onemil - 1000);
+        expect(totalTime).toBeLessThan(9000);
+    });
 });
