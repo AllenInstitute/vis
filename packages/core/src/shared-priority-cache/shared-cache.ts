@@ -6,7 +6,7 @@ const { uniqueId } = lo;
 // they expect that the things coming out of the cache are the type they expect (what they put in it)
 // this is not strictly true, as the cache is shared, and other clients may use different types
 // also also - there will not be a 1:1 relation between items and
-// explaination of terms:
+// explanation of terms:
 // Item = a placeholder for something in the cache, used as a key in the cache. good examples:
 //  metadata {url, bounds} for a tile in a larger dataset.
 // ItemContent = the actual heavy data that Item is a placeholder for - for example one or more arrays of
