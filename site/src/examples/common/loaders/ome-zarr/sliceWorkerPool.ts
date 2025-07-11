@@ -91,5 +91,5 @@ export function getSlicePool() {
 }
 
 export const multithreadedDecoder: Decoder = (metadata, req, level: OmeZarrShapedDataset, signal?: AbortSignal) => {
-    return getSlicePool().requestSlice(metadata, req, level);
+    return getSlicePool().requestSlice(metadata, req, level, signal);
 };

@@ -41,6 +41,7 @@ function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends Re
 type MutableCacheEntry<D> = {
     data: MaybePromise<D>;
     lastRequestedTimestamp: number;
+    abort: AbortController;
 };
 
 /**
@@ -207,7 +208,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
             this.pendingRequests.delete(finished);
         }
     }
-    private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
+    private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: (signal: AbortSignal) => Promise<D>) {
         let promise: Promise<D>;
         const entry = this.entries.get(cacheKey);
         const data = entry?.data;
@@ -225,10 +226,12 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
                 return resolvedCacheData;
             }
         } else {
-            promise = getter();
+            const abort = new AbortController();
+            promise = getter(abort.signal);
             this.entries.set(cacheKey, {
                 data: promise,
                 lastRequestedTimestamp: performance.now(),
+                abort,
             });
         }
         return promise.then((data) => {
@@ -236,7 +239,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         });
     }
     cacheAndUse(
-        workingSet: Record<SemanticKey, () => Promise<D>>,
+        workingSet: Record<SemanticKey, (signal: AbortSignal) => Promise<D>>,
         use: (items: Record<SemanticKey, D>) => void,
         toCacheKey: (semanticKey: SemanticKey) => CacheKey,
         // TODO: consider removing taskFinished - it would be more simple to let the caller handle this in their use() function
