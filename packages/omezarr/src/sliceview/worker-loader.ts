@@ -47,7 +47,12 @@ export function makeOmeZarrSliceLoaderWorker(ctx: typeof self) {
                             const data = new Float32Array(buffer.data);
                             ctx.postMessage({ type: 'slice', id, shape, data }, { transfer: [data.buffer] });
                         },
-                    );
+                    ).catch(err => {
+                        if (!(err === 'cancelled' ||
+                            (typeof err === 'object' && (('name' in err && err.name === 'AbortError') || ('code' in err && err.code === 20))))) {
+                            logger.error('error in slice fetch worker: ', err);
+                        } // else ignore it
+                    })
                 });
             } else if (isCancellationRequest(data)) {
                 const { id } = data;
