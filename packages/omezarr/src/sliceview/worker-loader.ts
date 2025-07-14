@@ -41,18 +41,24 @@ export function makeOmeZarrSliceLoaderWorker(ctx: typeof self) {
                 const abort = new AbortController();
                 cancelers[id] = abort;
                 OmeZarrMetadata.rehydrate(dehydratedMetadata).then((metadata) => {
-                    loadSlice(metadata, req, level, abort.signal).then(
-                        (result: { shape: number[]; buffer: Chunk<Float32> }) => {
+                    loadSlice(metadata, req, level, abort.signal)
+                        .then((result: { shape: number[]; buffer: Chunk<Float32> }) => {
                             const { shape, buffer } = result;
                             const data = new Float32Array(buffer.data);
                             ctx.postMessage({ type: 'slice', id, shape, data }, { transfer: [data.buffer] });
-                        },
-                    ).catch(err => {
-                        if (!(err === 'cancelled' ||
-                            (typeof err === 'object' && (('name' in err && err.name === 'AbortError') || ('code' in err && err.code === 20))))) {
-                            logger.error('error in slice fetch worker: ', err);
-                        } // else ignore it
-                    })
+                        })
+                        .catch((err) => {
+                            if (
+                                !(
+                                    err === 'cancelled' ||
+                                    (typeof err === 'object' &&
+                                        (('name' in err && err.name === 'AbortError') ||
+                                            ('code' in err && err.code === 20)))
+                                )
+                            ) {
+                                logger.error('error in slice fetch worker: ', err);
+                            } // else ignore it
+                        });
                 });
             } else if (isCancellationRequest(data)) {
                 const { id } = data;
