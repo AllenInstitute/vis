@@ -180,9 +180,9 @@ describe.skip('throughput', () => {
         const score = (k: string) => priorities[k] ?? 0;
         const cache: PriorityCache = new PriorityCache(fakeStore, score, 1000, 20);
 
-        const onemil = 100_000;
+        const onehundo_k = 100_000;
         const begin = performance.now();
-        for (let i = 0; i < onemil; i++) {
+        for (let i = 0; i < onehundo_k; i++) {
             const ID = `item_${i}`;
             priorities[ID] = Math.random() * 100;
             const fetchme = fakeFetchItem(ID);
@@ -203,7 +203,7 @@ describe.skip('throughput', () => {
         // so the whole (more realistic) overhead of promises and the event loop adding a factor of 30
         // what this goes to show is that the overhead of these little parts is nothing compared to the actual bottlenecks.
         // to say nothing of waiting entire seconds for fetches on a real network.
-        expect(Object.values(factory.resources).filter((v) => v === 'destroyed').length).toBe(onemil - 1000);
+        expect(Object.values(factory.resources).filter((v) => v === 'destroyed').length).toBe(onehundo_k - 1000);
         expect(totalTime).toBeLessThan(9000);
     });
 });
