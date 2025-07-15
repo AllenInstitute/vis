@@ -7,7 +7,7 @@ import {
     limit,
     type vec2,
 } from '@alleninstitute/vis-geometry';
-import { logger } from '@alleninstitute/vis-scatterbrain';
+import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
 import { VisZarrDataError } from '../errors';
 import {
     OmeZarrAttrsSchema,
@@ -27,7 +27,8 @@ import { ZodError } from 'zod';
 // - array metadata: v2: https://zarr-specs.readthedocs.io/en/latest/v2/v2.0.html#arrays
 //                   v3: https://zarr-specs.readthedocs.io/en/latest/v3/core/v3.0.html#array-metadata
 
-export async function loadZarrAttrsFile(url: string): Promise<OmeZarrAttrs> {
+export async function loadZarrAttrsFile(res: WebResource): Promise<OmeZarrAttrs> {
+    const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
     return loadZarrAttrsFileFromStore(store);
 }
@@ -50,11 +51,12 @@ type OmeZarrArrayMetadataLoad = {
 };
 
 export async function loadZarrArrayFile(
-    url: string,
+    res: WebResource,
     path: string,
     version = 2,
     loadV2Attrs = true,
 ): Promise<OmeZarrArrayMetadata> {
+    const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
     const result = await loadZarrArrayFileFromStore(store, path, version, loadV2Attrs);
     return result.metadata;
@@ -96,7 +98,8 @@ async function loadZarrArrayFileFromStore(
  * The object returned from this function can be passed to most of the other utilities for ome-zarr data
  * manipulation.
  */
-export async function loadMetadata(url: string, version = 2, loadV2ArrayAttrs = true): Promise<OmeZarrMetadata> {
+export async function loadMetadata(res: WebResource, version = 2, loadV2ArrayAttrs = true): Promise<OmeZarrMetadata> {
+    const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
     const attrs: OmeZarrAttrs = await loadZarrAttrsFileFromStore(store);
     const arrays = await Promise.all(
@@ -294,7 +297,12 @@ export function indexOfDimension(axes: readonly OmeZarrAxis[], dim: ZarrDimensio
  * @returns the requested chunk of image data from the given layer of the omezarr LOD pyramid. Note that if the given layerIndex is invalid, it will be treated as though it is the highest index possible.
  * @throws an error if the request results in anything of lower-or-equal dimensionality than a single value
  */
-export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level: OmeZarrShapedDataset) {
+export async function loadSlice(
+    metadata: OmeZarrMetadata,
+    r: ZarrRequest,
+    level: OmeZarrShapedDataset,
+    signal?: AbortSignal,
+) {
     // put the request in native order
     const store = new zarr.FetchStore(metadata.url);
     const scene = metadata.attrs.multiscales[0];
@@ -311,7 +319,7 @@ export async function loadSlice(metadata: OmeZarrMetadata, r: ZarrRequest, level
         throw new VisZarrDataError(message);
     }
     const { raw } = await loadZarrArrayFileFromStore(store, arr.path, 2, false);
-    const result = await zarr.get(raw, buildQuery(r, axes, level.shape));
+    const result = await zarr.get(raw, buildQuery(r, axes, level.shape), { opts: { signal: signal ?? null } });
     if (typeof result === 'number') {
         throw new Error('oh noes, slice came back all weird');
     }

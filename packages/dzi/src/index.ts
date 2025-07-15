@@ -1,4 +1,4 @@
-export { getVisibleTiles, type DziImage, type DziTile } from './loader';
+export { fetchDziMetadata, getVisibleTiles, type DziImage, type DziTile } from './loader';
 export {
     buildDziRenderer,
     buildAsyncDziRenderer,

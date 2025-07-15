@@ -1,4 +1,6 @@
-export class VisZarrError extends Error {}
+import { VisError } from '@alleninstitute/vis-core';
+
+export class VisZarrError extends VisError {}
 
 export class VisZarrDataError extends VisZarrError {}
 

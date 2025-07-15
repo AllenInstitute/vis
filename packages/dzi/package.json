@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-dzi",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -17,6 +17,10 @@
         {
             "name": "Su Li",
             "email": "su.li@alleninstitute.org"
+        },
+        {
+            "name": "Joel Arbuckle",
+            "email": "joel.arbuckle@alleninstitute.org"
         }
     ],
     "license": "BSD-3-Clause",
@@ -24,11 +28,13 @@
     "main": "dist/main.js",
     "module": "dist/module.js",
     "types": "dist/types.d.ts",
-    "files": ["dist"],
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
-        "watch": "parcel watch",
+        "dev": "parcel watch --port 1236",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
@@ -43,7 +49,7 @@
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
-        "@alleninstitute/vis-scatterbrain": "workspace:*",
+        "@alleninstitute/vis-core": "workspace:*",
         "regl": "2.1.0"
     },
     "packageManager": "pnpm@9.14.2"

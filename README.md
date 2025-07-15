@@ -11,7 +11,7 @@ The following is the list of packages and their descriptions:
 -   `vis-dzi`: A renderer for [Deep Zoom Images](https://en.wikipedia.org/wiki/Deep_Zoom)
 -   `vis-geometry`: A collection of vector functions for 2D and 3D geometry
 -   `vis-omezarr`: A renderer for [OME-Zarr](https://ngff.openmicroscopy.org/latest/) datasets
--   `vis-scatterbrain`: A collection of useful utilities used to build our big-data, scalable, scatterplot tool "Scatterbrain" in the Brain Knowledge Platform (will be renamed to `vis-core` in the future)
+-   `vis-core`: A collection of useful utilities used to build our big-data, scalable, data visualization tools, including the DZI viewer, OME-Zarr viewer, and our scatterplot tool "Scatterbrain" for the [ABC Atlas](https://knowledge.brain-map.org/abcatlas) in the Brain Knowledge Platform web application
 
 We use [Semantic Versioning](https://semver.org/) for our packages. As of November 2024, all of them are in the `0.0.x` range, indicating that they are in early development.
 

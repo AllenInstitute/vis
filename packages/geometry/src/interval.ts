@@ -1,3 +1,5 @@
+import type { vec2 } from './vec2';
+
 export type Interval = {
     min: number;
     max: number;
@@ -65,4 +67,12 @@ export function intersection(a: Interval, b: Interval): Interval | undefined {
  */
 export function limit(interval: Interval, x: number) {
     return isValid(interval, 0) ? Math.min(Math.max(x, interval.min), interval.max) : x;
+}
+/**
+ *
+ * @param interval a given interval
+ * @returns a vec2 representatioin of the interval: [min, max]
+ */
+export function intervalToVec2(interval: Interval): vec2 {
+    return [interval.min, interval.max];
 }
