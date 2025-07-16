@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### ⚙️ Miscellaneous Tasks
+
+- Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
+
+## [alleninstitute/core@0.0.4] - 2025-07-14
+
 ### 🚀 Features
 
 - Starlight Docs and Example Site ([#157](https://github.com/AllenInstitute/vis/pull/157))

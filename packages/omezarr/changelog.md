@@ -4,42 +4,86 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
-### 🚀 Features
-
-- Support for arbitrary color channels in OME-Zarr images [DC-530] ([#123](https://github.com/AllenInstitute/vis/pull/123))
-
 ### 🐛 Bug Fixes
 
-- CI tests weren't running [DT-7060] ([#87](https://github.com/AllenInstitute/vis/pull/87))
-- Remove non-null assertions ([#101](https://github.com/AllenInstitute/vis/pull/101))
-- Fix issue with handling RGB channels in new OME-Zarr metadata code [DT-7615] ([#110](https://github.com/AllenInstitute/vis/pull/110))
 - Parse axis name to match our internal casing [134] ([#140](https://github.com/AllenInstitute/vis/pull/140))
-
-### 💼 Other
-
-- March 2025 ([#99](https://github.com/AllenInstitute/vis/pull/99))
 
 ### ⚙️ Miscellaneous Tasks
 
-- Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
-- Version bumps for only-allow removal release ([#51](https://github.com/AllenInstitute/vis/pull/51))
-- Install Biome, fix formatting [DT-7060] ([#52](https://github.com/AllenInstitute/vis/pull/52))
-- Biome linting with auto-fixes [DT-7060] ([#53](https://github.com/AllenInstitute/vis/pull/53))
-- Dependency health configurations ([#17](https://github.com/AllenInstitute/vis/pull/17))
-- Clean up dependencies [DT-7060] ([#55](https://github.com/AllenInstitute/vis/pull/55))
-- Fix all but non-null assertion lints ([#96](https://github.com/AllenInstitute/vis/pull/96))
-- Update vis-omezarr 0.0.7 - upgrade zarrita to 0.5.0 ([#100](https://github.com/AllenInstitute/vis/pull/100))
-- Logger with log levels ([#97](https://github.com/AllenInstitute/vis/pull/97))
-- Update Vis OME-Zarr package to load the full set of metadata available in Zarr files [DT-7615] ([#103](https://github.com/AllenInstitute/vis/pull/103))
-- Test coverage tooling ([#95](https://github.com/AllenInstitute/vis/pull/95))
-- Updating vis-dzi and vis-omezarr to enable use of vis-scatterbrain 0.0.10 ([#112](https://github.com/AllenInstitute/vis/pull/112))
-- Rename vis-scatterbrain package to vis-core ([#118](https://github.com/AllenInstitute/vis/pull/118))
-- Updates to package versions for Core, Geometry, OmeZarr + examples [DC-530] ([#124](https://github.com/AllenInstitute/vis/pull/124))
 - Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
 - *(deps)* Bump zod from 3.24.2 to 3.24.3 ([#154](https://github.com/AllenInstitute/vis/pull/154))
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
 - *(deps)* Bump zod from 3.24.3 to 3.25.46 ([#165](https://github.com/AllenInstitute/vis/pull/165))
 - *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
 - *(deps)* Bump zarrita from 0.5.1 to 0.5.2 ([#175](https://github.com/AllenInstitute/vis/pull/175))
+- Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
+
+## [alleninstitute/omezarr@0.0.10] - 2025-04-08
+
+### 🚀 Features
+
+- Support for arbitrary color channels in OME-Zarr images [DC-530] ([#123](https://github.com/AllenInstitute/vis/pull/123))
+
+### ⚙️ Miscellaneous Tasks
+
+- Rename vis-scatterbrain package to vis-core ([#118](https://github.com/AllenInstitute/vis/pull/118))
+- Updates to package versions for Core, Geometry, OmeZarr + examples [DC-530] ([#124](https://github.com/AllenInstitute/vis/pull/124))
+
+## [alleninstitute/omezarr@0.0.9] - 2025-03-31
+
+### 🐛 Bug Fixes
+
+- Fix issue with handling RGB channels in new OME-Zarr metadata code [DT-7615] ([#110](https://github.com/AllenInstitute/vis/pull/110))
+
+### ⚙️ Miscellaneous Tasks
+
+- Test coverage tooling ([#95](https://github.com/AllenInstitute/vis/pull/95))
+- Updating vis-dzi and vis-omezarr to enable use of vis-scatterbrain 0.0.10 ([#112](https://github.com/AllenInstitute/vis/pull/112))
+
+## [alleninstitute/omezarr@0.0.8] - 2025-03-28
+
+### 🐛 Bug Fixes
+
+- Remove non-null assertions ([#101](https://github.com/AllenInstitute/vis/pull/101))
+
+### ⚙️ Miscellaneous Tasks
+
+- Logger with log levels ([#97](https://github.com/AllenInstitute/vis/pull/97))
+- Update Vis OME-Zarr package to load the full set of metadata available in Zarr files [DT-7615] ([#103](https://github.com/AllenInstitute/vis/pull/103))
+
+## [alleninstitute/omezarr@0.0.7] - 2025-03-14
+
+### ⚙️ Miscellaneous Tasks
+
+- Update vis-omezarr 0.0.7 - upgrade zarrita to 0.5.0 ([#100](https://github.com/AllenInstitute/vis/pull/100))
+
+## [alleninstitute/omezarr@0.0.6] - 2025-03-14
+
+### 💼 Other
+
+- March 2025 ([#99](https://github.com/AllenInstitute/vis/pull/99))
+
+## [alleninstitute/omezarr@0.0.5] - 2025-03-14
+
+### 🐛 Bug Fixes
+
+- CI tests weren't running [DT-7060] ([#87](https://github.com/AllenInstitute/vis/pull/87))
+
+### ⚙️ Miscellaneous Tasks
+
+- Install Biome, fix formatting [DT-7060] ([#52](https://github.com/AllenInstitute/vis/pull/52))
+- Biome linting with auto-fixes [DT-7060] ([#53](https://github.com/AllenInstitute/vis/pull/53))
+- Dependency health configurations ([#17](https://github.com/AllenInstitute/vis/pull/17))
+- Clean up dependencies [DT-7060] ([#55](https://github.com/AllenInstitute/vis/pull/55))
+- Fix all but non-null assertion lints ([#96](https://github.com/AllenInstitute/vis/pull/96))
+
+## [alleninstitute/omezarr@0.0.4] - 2025-02-03
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
+- Version bumps for only-allow removal release ([#51](https://github.com/AllenInstitute/vis/pull/51))
+
+## [alleninstitute/omezarr@0.0.1] - 2024-11-20
 
 <!-- generated by git-cliff -->
