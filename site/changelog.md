@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 
 - Starlight Docs and Example Site ([#157](https://github.com/AllenInstitute/vis/pull/157))
 
+### 💼 Other
+
+- Some quick minor fixes to the examples in starlight ([#158](https://github.com/AllenInstitute/vis/pull/158))
+- A priority cache with a (better?) api ([#171](https://github.com/AllenInstitute/vis/pull/171))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 ### ⚙️ Miscellaneous Tasks
 
 - Upgrade Astro ([#161](https://github.com/AllenInstitute/vis/pull/161))

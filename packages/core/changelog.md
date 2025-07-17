@@ -13,6 +13,12 @@ All notable changes to this project will be documented in this file.
 - Color parsing supports hex strings without hash [135] ([#138](https://github.com/AllenInstitute/vis/pull/138))
 - Export Logger class and raise default log level ([#160](https://github.com/AllenInstitute/vis/pull/160))
 
+### 💼 Other
+
+- A priority cache with a (better?) api ([#171](https://github.com/AllenInstitute/vis/pull/171))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 ### ⚙️ Miscellaneous Tasks
 
 - Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
@@ -21,6 +27,12 @@ All notable changes to this project will be documented in this file.
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
 - *(deps)* Bump @types/lodash from 4.17.17 to 4.17.19 ([#177](https://github.com/AllenInstitute/vis/pull/177))
 - *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
+
+## [alleninstitute/core@0.0.3] - 2025-04-23
+
+### 💼 Other
+
+- Noah/webworker decoders ([#126](https://github.com/AllenInstitute/vis/pull/126))
 
 ## [alleninstitute/core@0.0.2] - 2025-04-08
 
