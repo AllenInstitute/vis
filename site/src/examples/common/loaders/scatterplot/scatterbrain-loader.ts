@@ -135,14 +135,14 @@ function convertTree2D(
         children:
             n.children !== undefined && n.children.length > 0
                 ? n.children.map((c) =>
-                      convertTree2D(
-                          c,
-                          getChildBoundsUsingPotreeIndexing(bounds, getRelativeIndex(safeName, sanitizeName(c.file))),
-                          depth + 1,
-                          metadataPath,
-                          genePath,
-                      ),
-                  )
+                    convertTree2D(
+                        c,
+                        getChildBoundsUsingPotreeIndexing(bounds, getRelativeIndex(safeName, sanitizeName(c.file))),
+                        depth + 1,
+                        metadataPath,
+                        genePath,
+                    ),
+                )
                 : [],
     };
 }
@@ -232,11 +232,11 @@ export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
     };
 }
 
-type MetadataColumn = {
+export type MetadataColumn = {
     type: 'METADATA';
     name: string;
 };
-type QuantitativeColumn = {
+export type QuantitativeColumn = {
     type: 'QUANTITATIVE';
     name: string;
 };
