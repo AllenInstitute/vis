@@ -43,6 +43,15 @@ const demoOptions: DemoOption[] = [
             url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
         },
     },
+    {
+        value: 'opt5',
+        label: 'Smart-SPIM (experimental)',
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://aind-open-data/SmartSPIM_787715_2025-04-08_18-33-36_stitched_2025-04-09_22-42-59/image_tile_fusing/OMEZarr/Ex_445_Em_469.zarr',
+        },
+    },
 ];
 
 const screenSize: vec2 = [800, 800];
@@ -67,7 +76,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omeza
 
     return {
         camera: { screenSize, view },
-        orthoVal,
+        planeLocation: { parameter: orthoVal },
         plane: PLANE_XY,
         tileSize: 256,
         channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
@@ -92,7 +101,7 @@ export function OmezarrDemo() {
         loadMetadata(res).then((v) => {
             setOmezarr(v);
             setOmezarrJson(JSON.stringify(v, undefined, 4));
-            setPlaneIndex(Math.floor(v.maxOrthogonal(PLANE_XY) / 2));
+            setPlaneIndex(0.5);
             const dataset = v.getFirstShapedDataset(0);
             if (!dataset) {
                 throw new Error('dataset 0 does not exist!');
@@ -132,7 +141,8 @@ export function OmezarrDemo() {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handlePlaneIndex = (next: 1 | -1) => {
-        setPlaneIndex((prev) => Math.max(0, Math.min(prev + next, (omezarr?.maxOrthogonal(PLANE_XY) ?? 1) - 1)));
+        const step = 1 / (omezarr?.maxOrthogonal(PLANE_XY) ?? 1);
+        setPlaneIndex((prev) => Math.max(0, Math.min(1, prev + step * next)));
     };
 
     const handleZoom = (e: WheelEvent) => {
@@ -233,7 +243,8 @@ export function OmezarrDemo() {
                             >
                                 {(omezarr && (
                                     <span>
-                                        Slide {planeIndex + 1} of {omezarr?.maxOrthogonal(PLANE_XY) ?? 0}
+                                        Slide {Math.floor(planeIndex * (omezarr?.maxOrthogonal(PLANE_XY) ?? 1))} of{' '}
+                                        {omezarr?.maxOrthogonal(PLANE_XY) ?? 0}
                                     </span>
                                 )) || <span>No image loaded</span>}
                                 <div style={{}}>

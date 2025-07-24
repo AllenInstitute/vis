@@ -9,6 +9,10 @@ export function RenderServerProvider(props: PropsWithChildren) {
     useEffect(() => {
         server.current = new RenderServer([2048, 2048], ['oes_texture_float']);
         logger.info('server started...');
+        return () => {
+            logger.info('server destroyed... (provider unmounted)');
+            server.current?.destroyServer();
+        };
     }, []);
     return <renderServerContext.Provider value={server.current ?? null}>{children}</renderServerContext.Provider>;
 }

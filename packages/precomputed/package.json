@@ -1,0 +1,55 @@
+{
+    "name": "@alleninstitute/vis-precomputed",
+    "version": "0.0.1",
+    "contributors": [
+        {
+            "name": "Lane Sawyer",
+            "email": "lane.sawyer@alleninstitute.org"
+        },
+        {
+            "name": "Noah Shepard",
+            "email": "noah.shepard@alleninstitute.org"
+        },
+        {
+            "name": "Skyler Moosman",
+            "email": "skyler.moosman@alleninstitute.org"
+        },
+        {
+            "name": "Su Li",
+            "email": "su.li@alleninstitute.org"
+        },
+        {
+            "name": "Joel Arbuckle",
+            "email": "joel.arbuckle@alleninstitute.org"
+        }
+    ],
+    "license": "BSD-3-Clause",
+    "source": "src/index.ts",
+    "main": "dist/main.js",
+    "module": "dist/module.js",
+    "types": "dist/types.d.ts",
+    "files": ["dist"],
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "build": "parcel build --no-cache",
+        "watch": "parcel watch",
+        "test": "vitest --watch",
+        "test:ci": "vitest run",
+        "coverage": "vitest run --coverage"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AllenInstitute/vis.git"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/AllenInstitute"
+    },
+    "packageManager": "pnpm@9.14.2",
+    "dependencies": {
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "@alleninstitute/vis-core": "workspace:*",
+        "regl": "2.1.0",
+        "ts-pattern": "5.7.1",
+        "zod": "3.24.3"
+    }
+}

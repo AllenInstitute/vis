@@ -87,6 +87,24 @@ importers:
         specifier: 3.25.50
         version: 3.25.50
 
+  packages/precomputed:
+    dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../core
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      regl:
+        specifier: 2.1.0
+        version: 2.1.0
+      ts-pattern:
+        specifier: 5.7.1
+        version: 5.7.1
+      zod:
+        specifier: 3.24.3
+        version: 3.24.3
+
   site:
     dependencies:
       '@alleninstitute/vis-core':
@@ -101,6 +119,9 @@ importers:
       '@alleninstitute/vis-omezarr':
         specifier: workspace:*
         version: link:../packages/omezarr
+      '@alleninstitute/vis-precomputed':
+        specifier: workspace:*
+        version: link:../packages/precomputed
       '@astrojs/check':
         specifier: 0.9.4
         version: 0.9.4(typescript@5.8.3)
@@ -3948,6 +3969,9 @@ packages:
   trough@2.2.0:
     resolution: {integrity: sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw==}
 
+  ts-pattern@5.7.1:
+    resolution: {integrity: sha512-EGs8PguQqAAUIcQfK4E9xdXxB6s2GK4sJfT/vcc9V1ELIvC4LH/zXu2t/5fajtv6oiRCxdv7BgtVK3vWgROxag==}
+
   tsconfck@3.1.5:
     resolution: {integrity: sha512-CLDfGgUp7XPswWnezWwsCRxNmgQjhYq3VXHM0/XIRxhVrKw0M1if9agzryh1QS3nxjCROvV+xWxoJO1YctzzWg==}
     engines: {node: ^18 || >=20}
@@ -4457,6 +4481,9 @@ packages:
     peerDependencies:
       typescript: ^4.9.4 || ^5.0.2
       zod: ^3
+
+  zod@3.24.3:
+    resolution: {integrity: sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg==}
 
   zod@3.25.50:
     resolution: {integrity: sha512-VstOnRxf4tlSq0raIwbn0n+LA34SxVoZ8r3pkwSUM0jqNiA/HCMQEVjTuS5FZmHsge+9MDGTiAuHyml5T0um6A==}
@@ -9105,6 +9132,8 @@ snapshots:
 
   trough@2.2.0: {}
 
+  ts-pattern@5.7.1: {}
+
   tsconfck@3.1.5(typescript@5.8.3):
     optionalDependencies:
       typescript: 5.8.3
@@ -9558,6 +9587,8 @@ snapshots:
     dependencies:
       typescript: 5.8.3
       zod: 3.25.50
+
+  zod@3.24.3: {}
 
   zod@3.25.50: {}
 
