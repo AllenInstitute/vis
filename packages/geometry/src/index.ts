@@ -10,6 +10,11 @@ export { Box2D } from './box2D';
 export type { box2D } from './box2D';
 export { Box3D } from './box3D';
 export type { box3D } from './box3D';
+export type { mat4 } from './matrix'
+export { Mat4 } from './matrix'
+
+export type { AxisAngle } from './axisAngle'
+export { composeRotation, rotateVector, } from './axisAngle'
 export {
     size,
     within,
