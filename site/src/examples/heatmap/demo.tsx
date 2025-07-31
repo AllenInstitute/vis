@@ -22,8 +22,8 @@ const supertype = 'CBGC0U30VV9JPR60TJU';
 const subclass = 'QY5S8KMO5HLJUF0P00K';
 const ntType = 'Y937CVUSVZC7KYOHWVO';
 export function HeatMapDemo() {
-  const [rows, setRows] = useState(countingUp(50));
-  const [cols, setCols] = useState(countingUp(8000));
+  const [rows, setRows] = useState(countingUp(30));
+  const [cols, setCols] = useState(countingUp(15000));
   return (
     <HeatmapView
       rows={rows}

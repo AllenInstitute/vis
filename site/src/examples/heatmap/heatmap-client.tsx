@@ -15,11 +15,13 @@ type Props = {
   rows: number[];
   genes: number[];
 };
+const noMouse: vec2 = [9999, 9999];
 export function HeatmapView(props: Props) {
   const { screenSize } = props;
   const [scatterplot, setScatterplot] = useState<ReturnType<typeof loadDataset> | null>(null);
   const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
   const [dragging, setDragging] = useState(false);
+  const [mouse, setMouse] = useState<vec2>([0, 0]);
   const [rotation, setRotation] = useState<AxisAngle>({ axis: [0, 1, 0], radians: 0 });
   const [renderer, setRenderer] = useState<ReturnType<typeof buildConnectedRenderer>>();
   const [tick, setTick] = useState<number>(0);
@@ -43,6 +45,11 @@ export function HeatmapView(props: Props) {
   );
 
   const handlePan = (e: React.MouseEvent) => {
+    if (e.ctrlKey) {
+      setMouse([e.nativeEvent.offsetX, screenSize[1] - e.nativeEvent.offsetY]);
+    } else {
+      setMouse(noMouse);
+    }
     if (dragging) {
       // you can combine these, but its actually super annoying
       if (e.altKey) {
@@ -101,6 +108,7 @@ export function HeatmapView(props: Props) {
       // const ctx = cnvs.current.getContext('2d');
       const settings: Parameters<typeof renderer.render>[1] = {
         cellSize: [1, 1],
+        mouse,
         geneIndexes: props.genes.map((id) => id.toFixed(0)),
         rowCategory: props.category,
         rowFilterValues: props.rows,
@@ -124,7 +132,7 @@ export function HeatmapView(props: Props) {
       });
       // }
     }
-  }, [scatterplot, view, tick, rotation]);
+  }, [scatterplot, view, tick, mouse, rotation]);
 
   useEffect(() => {
     if (cnvs?.current) {

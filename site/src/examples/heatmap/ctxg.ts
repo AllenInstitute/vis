@@ -43,6 +43,8 @@ type Props = {
     rowType: REGL.AttributeConfig;
     step: vec2;
     offset?: vec2 | undefined;
+    mouse: vec2;
+    column: number;
     zOffset: number;
     rotation: mat4;
     heatmap: Texture2D;
@@ -53,6 +55,7 @@ export type RenderSettings = {
     view: box2D;
     dataSize: vec2;
     pointSize: number;
+    mouse: vec2;
     congeal: number;
     rotation: number[];
     heatmap: Texture2D | Framebuffer2D;
@@ -69,17 +72,19 @@ export function buildRenderer(regl: REGL.Regl) {
     ) => {
         const { rowType, color, position } = columns;
         const count = item.count;
-        const { view, congeal, pointSize, rotation, heatmap, mapSize } = settings;
-
+        const { view, congeal, pointSize, rotation, heatmap, mapSize, dataSize, mouse } = settings;
+        // put the view in "table" space...
+        const tbl = Box2D.create(Vec2.div(view.minCorner, dataSize), Vec2.div(view.maxCorner, dataSize))
         const effective = congeal < 0.9 && congeal > 0 ? 1 + (congeal * congeal * congeal * 6) : pointSize;
         let cmd = congeal == 0.0 && effective >= 2 ? closeup : normal;
 
         cmd({
-            view: Box2D.toFlatArray(view),
+            view: [...tbl.minCorner, ...Box2D.size(tbl)],
             heatmap,
             mapSize,
             count,
             congeal,
+            mouse,
             step: settings.dataSize,
             rowType: {
                 buffer: rowType.vbo,
@@ -91,7 +96,8 @@ export function buildRenderer(regl: REGL.Regl) {
             position: position.vbo,
             pointSize: effective,
             color: color.vbo,
-            offset: item.offset ?? [0, 0],
+            column: item.offset?.[0] ?? [0],
+            offset: Vec2.sub(item.offset ?? [0, 0], tbl.minCorner),
             target: settings.target,
         });
 
@@ -102,7 +108,7 @@ export function buildRenderer(regl: REGL.Regl) {
 function buildRendererHelper(regl: REGL.Regl, accum: boolean) {
     // build the regl command first
     const cmd = regl<
-        { view: vec4; offset: vec2; pointSize: number, stepSize: vec2, congeal: number, zOffset: number, rotation: REGL.Mat4, heatmap: Texture2D | Framebuffer2D, mapSize: vec2 },
+        { view: vec4; offset: vec2; pointSize: number, stepSize: vec2, mouse: vec2, column: number, congeal: number, zOffset: number, rotation: REGL.Mat4, heatmap: Texture2D | Framebuffer2D, mapSize: vec2 },
         { position: REGL.Buffer; color: REGL.Buffer, rowType: REGL.Buffer },
         Props
     >({
@@ -119,23 +125,32 @@ function buildRendererHelper(regl: REGL.Regl, accum: boolean) {
     uniform vec4 view;
     uniform float congeal;
     uniform vec2 offset;
-
+    uniform vec2 mouse;
+    uniform float column;
     uniform float zOffset;
     uniform mat4 rotation;
 
     varying vec4 clr;
     void main(){
-        gl_PointSize=pointSize;
-        vec2 size = view.zw-view.xy;
-        vec2 off = (offset*stepSize) + vec2(0.0,stepSize.y*rowType);
+        vec2 size = view.zw;//view.zw-view.xy;
+        // vec2 off = (offset*stepSize) + vec2(0.0,stepSize.y*rowType);
+        vec2 off = offset+vec2(0.0,rowType);
         float z = (zOffset-30.0)/10.0;
         vec4 p = rotation*vec4(position,z,0.0)*vec4(1,1,1,1);
-        vec2 pos = ((mix(p.xy,vec2(0,0),congeal)+off)-view.xy)/size;
-        vec2 clip = (pos*2.0)-1.0;
+        vec2 pos = ((mix(p.xy/stepSize,vec2(0,0),congeal)+off))/size;
+        // float cursorDst = clamp(1.0-length(pos-mouse)*50.0,0.0,1.0);//clamp(1.0-length(pos-mouse)*1000.0,0.0,1.0);
+        // make nearby things small, make the center thing big
+        float dst = length(pos-mouse)*2.0;
+        float cursorDst = max(0.0,-120.0*dst*dst+1.0)*cos(dst*60.0);
+        // float cursorDst = cos(1.0-length(pos-mouse)*20.0*3.14159)*clamp(1.0-length(pos-mouse)*20.0,0.0,1.0);
+        // cursorDst = sqrt(cursorDst);
+        gl_PointSize=max(1.0,pointSize + (cursorDst < 0.0 ? cursorDst*30.0 : cursorDst*8.0));
 
-        clr = mix(vec4(color,1,0,0),texture2D(heatmap,(vec2(offset.x,rowType)+vec2(0.5,0.5))/mapSize),step(0.9,congeal));
-        
-        gl_Position = vec4(clip,z/10.0,1.0);
+        vec2 clip = (pos*2.0)-1.0;
+        vec4 avg = texture2D(heatmap,(vec2(column,rowType)+vec2(0.5,0.5))/mapSize);
+        clr = mix(vec4(color,1,0,0),avg,step(0.9,congeal));
+        // distance to cursor stuff:
+        gl_Position = vec4(clip,(z/10.0)-cursorDst/100.0,1.0);
     }`,
         frag: /*glsl*/`
         #extension GL_EXT_frag_depth : enable
@@ -158,6 +173,8 @@ function buildRendererHelper(regl: REGL.Regl, accum: boolean) {
         uniforms: {
             congeal: regl.prop<Props, 'congeal'>('congeal'),
             view: regl.prop<Props, 'view'>('view'),
+            column: regl.prop<Props, 'column'>('column'),
+            mouse: regl.prop<Props, 'mouse'>('mouse'),
             offset: regl.prop<Props, 'offset'>('offset'),
             stepSize: regl.prop<Props, 'step'>('step'),
             pointSize: regl.prop<Props, 'pointSize'>('pointSize'),
@@ -292,6 +309,7 @@ export type Settings = {
     rowCategory: string;
     cellSize: vec2; // the size of a cell in our heatmap - not biological 'cell' but "table cell".
     rotation: number[];
+    mouse: vec2;
 }
 
 export function buildAnalyzer(cache: SharedPriorityCache, onData: (k: string) => void) {
@@ -495,9 +513,11 @@ export function buildConnectedRenderer(regl: REGL.Regl, mapSize: vec2, cache: Sh
             const { bounds } = dataset.metadata
             const dataBound = bounds as box2D
             const dataSize = Box2D.size(dataBound);
-            const { view } = settings
+            const { view, mouse } = settings;
             const rotation = settings.rotation;
             const vSize = Box2D.size(settings.view);
+            // put the mouse in terms of the view
+            const unitMousePos = Vec2.div(mouse, [width, height]);
             const dpv = vSize[1] / dataSize[1];
             let congeal = Math.min(1, Math.max(0, (dpv - 14) / 28));
             let pointSize = 1;
@@ -505,7 +525,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, mapSize: vec2, cache: Sh
                 pointSize = 1 / dpv;
             }
             const { row, col, position } = cached;
-            renderer({ ...qtNode, offset: [colIndex, 0], zOffset }, { mapSize, heatmap: totalExpression, rotation, pointSize, dataSize, target, view, congeal }, { position, color: col, rowType: row });
+            renderer({ ...qtNode, offset: [colIndex, 0], zOffset }, { mouse: unitMousePos, mapSize, heatmap: totalExpression, rotation, pointSize, dataSize, target, view, congeal }, { position, color: col, rowType: row });
 
         }
     }
@@ -653,6 +673,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, mapSize: vec2, cache: Sh
                         mapSize,
                         pointSize,
                         rotation,
+                        mouse: [999, 999],
                         target: dotExpr,
                         view: settings.view,
                     }, { color: fake.col, position: fake.position, rowType: fake.row })
