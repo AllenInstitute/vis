@@ -1,7 +1,10 @@
 import type { Resource, SharedPriorityCache } from "@alleninstitute/vis-core";
 import { Box2D, Mat4, Vec2, visitBFS, type AxisAngle, type box2D, type mat4, type vec2, type vec3, type vec4 } from "@alleninstitute/vis-geometry";
-import REGL, { type Framebuffer2D } from "regl";
+import REGL, { type Framebuffer2D, type Texture2D } from "regl";
 import { fetchColumn, loadDataset, type ColumnarNode, type ColumnarTree, type ColumnData, type MetadataColumn, type QuantitativeColumn } from "../common/loaders/scatterplot/scatterbrain-loader";
+import { VBO } from "./vbo";
+import { buildAvgAccumulator } from "./accumulator";
+import { buildOutliner } from "./dataset-outline";
 
 // ok - so we've been asked to view heatmaps //
 //  data: connectivity and uh... other stuff? 
@@ -38,96 +41,27 @@ type Props = {
     position: REGL.Buffer;
     color: REGL.Buffer;
     rowType: REGL.AttributeConfig;
-    rowStep: number;
+    step: vec2;
     offset?: vec2 | undefined;
     zOffset: number;
     rotation: mat4;
+    heatmap: Texture2D;
+    mapSize: vec2;
     target: Framebuffer2D | null;
 };
 export type RenderSettings = {
     view: box2D;
     dataSize: vec2;
     pointSize: number;
-    rowStep: number;
     congeal: number;
     rotation: number[];
+    heatmap: Texture2D | Framebuffer2D;
+    mapSize: vec2;
     target: REGL.Framebuffer2D | null;
 };
 export function buildRenderer(regl: REGL.Regl) {
-    // build the regl command first
-    const cmd = regl<
-        { view: vec4; offset: vec2; pointSize: number, rowStep: number, congeal: number, zOffset: number, rotation: REGL.Mat4 },
-        { position: REGL.Buffer; color: REGL.Buffer, rowType: REGL.Buffer },
-        Props
-    >({
-        vert: /*glsl*/`
-    precision highp float;
-    attribute vec2 position;
-    attribute float color;
-    attribute float rowType;
-
-    uniform float rowStep;
-    uniform float pointSize;
-    uniform vec4 view;
-    uniform float congeal;
-    uniform vec2 offset;
-
-    uniform float zOffset;
-    uniform mat4 rotation;
-
-    varying vec4 clr;
-    void main(){
-        gl_PointSize=pointSize;
-        vec2 size = view.zw-view.xy;
-        vec2 off = offset + vec2(0.0,rowStep*rowType);
-        float z = (zOffset-30.0)/10.0;
-        vec4 p = rotation*vec4(position,z,0.0)*vec4(1,-1,1,1);
-        vec2 pos = ((mix(p.xy,vec2(0,0),congeal)+off)-view.xy)/size;
-        vec2 clip = (pos*2.0)-1.0;
-        // todo: gradients are cool
-        clr = vec4(color,1,0,0);
-        
-        // omit = abs(rowType-rowTypeFilter)<0.01 ? 0.0 : 1.0;//1.0-step(rowType-rowTypeFilter,0.25);
-        gl_Position = vec4(clip,0.0,1.0);
-    }`,
-        frag: /*glsl*/`
-        precision highp float;
-    varying vec4 clr;
-    void main(){
-        // if(clr.r==0.0){
-        //     discard;
-        // }
-        gl_FragColor = clr;
-    }`,
-        attributes: {
-            color: regl.prop<Props, 'color'>('color'),
-            position: regl.prop<Props, 'position'>('position'),
-            rowType: regl.prop<Props, 'rowType'>('rowType'),
-        },
-        uniforms: {
-            congeal: regl.prop<Props, 'congeal'>('congeal'),
-            view: regl.prop<Props, 'view'>('view'),
-            offset: regl.prop<Props, 'offset'>('offset'),
-            rowStep: regl.prop<Props, 'rowStep'>('rowStep'),
-            pointSize: regl.prop<Props, 'pointSize'>('pointSize'),
-            zOffset: regl.prop<Props, 'zOffset'>('zOffset'),
-            rotation: regl.prop<Props, 'rotation'>('rotation'),
-        },
-        depth: {
-            enable: false,
-        },
-        blend: {
-            enable: true,
-            func: {
-                dst: 'one',
-                src: 'one',
-            }
-        },
-        framebuffer: regl.prop<Props, 'target'>('target'),
-        count: regl.prop<Props, 'count'>('count'),
-        primitive: 'points',
-    });
-
+    const normal = buildRendererHelper(regl, true);
+    const closeup = buildRendererHelper(regl, false);
     const renderDots = (
         item: ColumnarNode<vec2> & { offset?: vec2 | undefined, zOffset: number },
         settings: RenderSettings,
@@ -135,13 +69,18 @@ export function buildRenderer(regl: REGL.Regl) {
     ) => {
         const { rowType, color, position } = columns;
         const count = item.count;
-        const { view, congeal, pointSize, rotation } = settings;
-        const effective = pointSize + congeal * 5;
+        const { view, congeal, pointSize, rotation, heatmap, mapSize } = settings;
+
+        const effective = congeal < 0.9 && congeal > 0 ? 1 + (congeal * congeal * congeal * 6) : pointSize;
+        let cmd = congeal == 0.0 && effective >= 2 ? closeup : normal;
+
         cmd({
             view: Box2D.toFlatArray(view),
+            heatmap,
+            mapSize,
             count,
             congeal,
-            rowStep: settings.rowStep,
+            step: settings.dataSize,
             rowType: {
                 buffer: rowType.vbo,
                 normalized: false,
@@ -158,6 +97,92 @@ export function buildRenderer(regl: REGL.Regl) {
 
     };
     return renderDots;
+
+}
+function buildRendererHelper(regl: REGL.Regl, accum: boolean) {
+    // build the regl command first
+    const cmd = regl<
+        { view: vec4; offset: vec2; pointSize: number, stepSize: vec2, congeal: number, zOffset: number, rotation: REGL.Mat4, heatmap: Texture2D | Framebuffer2D, mapSize: vec2 },
+        { position: REGL.Buffer; color: REGL.Buffer, rowType: REGL.Buffer },
+        Props
+    >({
+        vert: /*glsl*/`
+    precision highp float;
+    attribute vec2 position;
+    attribute float color;
+    attribute float rowType;
+
+    uniform sampler2D heatmap;
+    uniform vec2 mapSize;
+    uniform vec2 stepSize;
+    uniform float pointSize;
+    uniform vec4 view;
+    uniform float congeal;
+    uniform vec2 offset;
+
+    uniform float zOffset;
+    uniform mat4 rotation;
+
+    varying vec4 clr;
+    void main(){
+        gl_PointSize=pointSize;
+        vec2 size = view.zw-view.xy;
+        vec2 off = (offset*stepSize) + vec2(0.0,stepSize.y*rowType);
+        float z = (zOffset-30.0)/10.0;
+        vec4 p = rotation*vec4(position,z,0.0)*vec4(1,1,1,1);
+        vec2 pos = ((mix(p.xy,vec2(0,0),congeal)+off)-view.xy)/size;
+        vec2 clip = (pos*2.0)-1.0;
+
+        clr = mix(vec4(color,1,0,0),texture2D(heatmap,(vec2(offset.x,rowType)+vec2(0.5,0.5))/mapSize),step(0.9,congeal));
+        
+        gl_Position = vec4(clip,z/10.0,1.0);
+    }`,
+        frag: /*glsl*/`
+        #extension GL_EXT_frag_depth : enable
+        precision highp float;
+        uniform float congeal;
+    varying vec4 clr;
+    void main(){
+        float pL = length(gl_PointCoord.xy-vec2(0.5,0.5));
+        if(congeal<0.1 && pL > 0.5){
+            discard;
+        }
+        ${accum ? '' : 'gl_FragDepthEXT = gl_FragCoord.z + pL/1000.0;'}
+        gl_FragColor = clr;
+    }`,
+        attributes: {
+            color: regl.prop<Props, 'color'>('color'),
+            position: regl.prop<Props, 'position'>('position'),
+            rowType: regl.prop<Props, 'rowType'>('rowType'),
+        },
+        uniforms: {
+            congeal: regl.prop<Props, 'congeal'>('congeal'),
+            view: regl.prop<Props, 'view'>('view'),
+            offset: regl.prop<Props, 'offset'>('offset'),
+            stepSize: regl.prop<Props, 'step'>('step'),
+            pointSize: regl.prop<Props, 'pointSize'>('pointSize'),
+            zOffset: regl.prop<Props, 'zOffset'>('zOffset'),
+            rotation: regl.prop<Props, 'rotation'>('rotation'),
+            mapSize: regl.prop<Props, 'mapSize'>('mapSize'),
+            heatmap: regl.prop<Props, 'heatmap'>('heatmap'),
+        },
+        depth: {
+            enable: !accum,
+            func: 'lequal'
+        },
+        blend: {
+            enable: accum,
+            func: {
+                dst: 'one',
+                src: 'one',
+            }
+        },
+        framebuffer: regl.prop<Props, 'target'>('target'),
+        count: regl.prop<Props, 'count'>('count'),
+        primitive: 'points',
+    });
+
+    return cmd;
 }
 function buildHeatmapColorGradientRenderer(regl: REGL.Regl) {
     const cmd = regl({
@@ -236,18 +261,7 @@ type Item = {
     rowData: MetadataColumn,
     colData: QuantitativeColumn
 }
-class VBO implements Resource {
-    vbo: REGL.Buffer;
-    constructor(buff: REGL.Buffer) {
-        this.vbo = buff;
-    }
-    destroy() {
-        this.vbo.destroy();
-    }
-    sizeInBytes() {
-        return 400_000;
-    }
-}
+
 class ColInfo implements Resource {
     data: ColumnData;
     constructor(buff: ColumnData) {
@@ -357,15 +371,16 @@ export function buildAnalyzer(cache: SharedPriorityCache, onData: (k: string) =>
     return setup;
 }
 
-export function buildConnectedRenderer(regl: REGL.Regl, cache: SharedPriorityCache, onData: (k: string) => void) {
+export function buildConnectedRenderer(regl: REGL.Regl, mapSize: vec2, cache: SharedPriorityCache, onData: (k: string) => void) {
     const colToVbo = async (col: Promise<ColumnData>) => {
         const data = await col;
         const buf = regl.buffer(data)
         return new VBO(buf);
     }
     const renderer = buildRenderer(regl);
-    // const wtf = buildScatterplotRenderer(regl);
+    const accum = buildAvgAccumulator(regl);
     const display = buildHeatmapColorGradientRenderer(regl);
+    const outline = buildOutliner(regl);
     const C = cache.registerClient<Item, Content>({
         cacheKeys: (item) => {
             return {
@@ -390,36 +405,88 @@ export function buildConnectedRenderer(regl: REGL.Regl, cache: SharedPriorityCac
             onData(cacheKey);
         },
     })
-    const width = 800;
-    const height = 800;
+    const width = 1600;
+    const height = 900;
     // we need a float buffer for counting up all the expr values!
+    const exprTex = regl.texture({
+        min: 'nearest',
+        mag: 'nearest',
+        format: 'rgba',
+        type: 'float',
+        width: mapSize[0],
+        height: mapSize[1],
+    })
     const totalExpression = regl.framebuffer({
-        width,
-        height,
+        width: mapSize[0],
+        height: mapSize[1],
         depth: false,
+        stencil: false,
+        color: exprTex
+        // colorFormat: 'rgba',
+        // colorType: 'float',
+    })
+    const dotExpr = regl.framebuffer({
+        width, height,
+        depth: true,
         stencil: false,
         colorFormat: 'rgba', // bummer, we really only need one of these channels...
         colorType: 'float'
+    });
+    const regionSize: vec2 = [512, 512]
+    // lastly, we need a tmp fbo to draw the little regional outlines!
+    const rTex = regl.texture({
+        format: 'rgba',
+        type: 'float',
+        width: regionSize[0],
+        height: regionSize[1],
     })
+
+    const dTex = regl.texture({
+        min: 'linear',
+        mag: 'linear',
+        format: 'rgba',
+        width: regionSize[0],
+        height: regionSize[1],
+    })
+    const regions = regl.framebuffer({
+        width: regionSize[0], height: regionSize[1],
+        color: rTex,
+        depth: false,
+        stencil: false,
+    });
     const displayFbo = regl.framebuffer({
-        width, height
+        color: dTex
     });
-    // we need to make a cell offset buffer
-    const maxRows = 5000;
-    const fperv = 2;
-    const s = fperv * maxRows
-    const cellRow = regl.buffer({
-        type: 'uint16',
-        length: maxRows * fperv
-    }); // max expected elements in a column
-    const filter = regl.buffer({
-        type: 'uint16',
-        length: maxRows * fperv
-    });
-    const counting = new Uint16Array(5000);
-    for (let i = 0; i < 5000; i++) {
-        counting[i] = i;
+
+    // make some very silly buffers...
+    const fakeCat = new Uint16Array(mapSize[1])
+    const fakeGene = new Float32Array(mapSize[1])
+    const fakePos = new Float32Array(mapSize[1] * 2)
+    for (let r = 0; r < mapSize[1]; r++) {
+
+        fakeCat[r] = r;
+        fakeGene[r] = 0.0;
+        fakePos[r * 2 + 0] = 0.0;
+        fakePos[r * 2 + 1] = 0.0;
     }
+    const fR = regl.buffer(fakeCat);
+    const fC = regl.buffer(fakeGene);
+    const fP = regl.buffer(fakePos);
+    const fake: Content = {
+        position: new VBO(fP),
+        col: new VBO(fC),
+        row: new VBO(fR)
+    };
+    const accumColumn = (hmCol: Item & { colIndex: number, zOffset: number, }, settings: Settings, target: Framebuffer2D) => {
+        const cached = C.get(hmCol);
+        if (cached) {
+            const { colIndex, qtNode } = hmCol
+
+            const { row, col, position } = cached;
+            accum({ ...qtNode, columnIndex: colIndex }, { mapSize, target }, { position, color: col, rowType: row })
+        }
+    }
+
     const renderCell = (hmCol: Item & { colIndex: number, zOffset: number, }, settings: Settings, target: Framebuffer2D) => {
         const cached = C.get(hmCol);
         // Todo: if(inView(item,settings))
@@ -438,7 +505,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, cache: SharedPriorityCac
                 pointSize = 1 / dpv;
             }
             const { row, col, position } = cached;
-            renderer({ ...qtNode, offset: Vec2.mul(dataSize, [colIndex, 0]), zOffset }, { rotation, pointSize, dataSize, target, view, rowStep: dataSize[1], congeal }, { position, color: col, rowType: row });
+            renderer({ ...qtNode, offset: [colIndex, 0], zOffset }, { mapSize, heatmap: totalExpression, rotation, pointSize, dataSize, target, view, congeal }, { position, color: col, rowType: row });
 
         }
     }
@@ -452,16 +519,19 @@ export function buildConnectedRenderer(regl: REGL.Regl, cache: SharedPriorityCac
 
     }
     regl.clear({ framebuffer: totalExpression, color: [0, 0, 0, 1], depth: 1 })
+    regl.clear({ framebuffer: dotExpr, color: [0, 0, 0, 0], depth: 1 })
     regl.clear({ framebuffer: displayFbo, color: [0, 0, 0.1, 1], depth: 1 })
-    let fboSize: vec2 = [width, height];
 
 
+
+    const accounted: Set<string> = new Set<string>();
 
     const render = (dataset: Item['dataset'], settings: Omit<Settings, 'rotation'> & { rotation: AxisAngle }) => {
         const ppu = Vec2.div([width, height], Box2D.size(settings.view));
         const rotation = Mat4.toColumnMajorArray(Mat4.rotateAboutAxis(settings.rotation.axis, settings.rotation.radians));
+
         const pixelscovered = (bounds: box2D) => Vec2.mul(Box2D.size(bounds), ppu);
-        const visibleInTree = (tree: ColumnarTree<vec2>) => {
+        const visibleInTree = (tree: ColumnarTree<vec2>, lim: number) => {
             const visible: ColumnarNode<vec2>[] = []
             visitBFS(tree, (t) => t.children, (t) => visible.push(t.content), (t) => {
                 if (t.content.depth == 0) return true;
@@ -469,7 +539,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, cache: SharedPriorityCac
                 const px = pixelscovered(t.content.bounds)
                 const area = px[0] * px[1];
 
-                if (area < 100 * 100) {
+                if (area < lim * lim) {
                     return false;
                 }
                 return true;
@@ -482,71 +552,139 @@ export function buildConnectedRenderer(regl: REGL.Regl, cache: SharedPriorityCac
         const firstCol = Math.floor(settings.view.minCorner[0] / wh[0])
         const lastCol = Math.ceil(settings.view.maxCorner[0] / wh[0]);
         let heatmapCols: (Item & { colIndex: number, zOffset: number })[] = [];
+        let lowPriority: (Item & { colIndex: number, zOffset: number })[] = [];
+        const nodeToItem = (node: ColumnarNode<vec2>, column: number, zOffset: number) => ({
+            dataset,
+            rowData: { type: 'METADATA', name: settings.rowCategory } as const,
+            colData: { type: 'QUANTITATIVE', name: settings.geneIndexes[column] } as const,
+            qtNode: node,
+            colIndex: column,
+            zOffset,
+        })
+        const columnInView = (col: number) => col >= firstCol && col <= lastCol
+        // const nodeToItems = (node: ColumnarNode<vec2>, zOffset: number) =>
+        //     settings.geneIndexes.map((gene, colIndex) => ({
+        //         dataset,
+        //         rowData: { type: 'METADATA', name: settings.rowCategory } as const,
+        //         colData: { type: 'QUANTITATIVE', name: gene } as const,
+        //         qtNode: node,
+        //         colIndex,
+        //         zOffset,
+        //     })).filter((thing) => {
+
+        //         return (thing.colIndex >= firstCol && thing.colIndex <= lastCol)
+        //     })
+
         if ('tree' in metadata) {
             const { tree } = metadata;
-            // how much of the view does a single heat-map-cell occupy?
-            const visible = visibleInTree(tree);
+            const visible = visibleInTree(tree, 30);
+            const toAccumulate = visibleInTree(tree, 1);
+            heatmapCols = settings.geneIndexes.map((g, i) =>
+                columnInView(i) ? visible.map(n => nodeToItem(n, i, 0)) : []
+            ).flat()
 
-            heatmapCols =
-                visible.map(node => (
-                    settings.geneIndexes.map((gene, colIndex) => ({
-                        dataset,
-                        rowData: { type: 'METADATA', name: settings.rowCategory } as const,
-                        colData: { type: 'QUANTITATIVE', name: gene } as const,
-                        qtNode: node,
-                        colIndex,
-                        zOffset: 0,
-                    })).filter((thing) => {
+            lowPriority = settings.geneIndexes.map((g, i) =>
+                columnInView(i) ? toAccumulate.map(n => nodeToItem(n, i, 0)) : []
+            ).flat()
 
-                        return (thing.colIndex >= firstCol && thing.colIndex <= lastCol)
-                    })
-                )).flat()
         } else {
             // ok but what if we did want to support it... lets put all the slides in a stack, and then render the stack, but with a spinning animation, why not?
             const { slides } = metadata
             const order = Object.keys(slides).sort();
-            const visible = order.map((slideId) => visibleInTree(slides[slideId].tree));
-            heatmapCols =
-                visible.map((slide, index) => (
-                    slide.map((node) =>
-                        settings.geneIndexes.map((gene, colIndex) => ({
-                            dataset,
-                            rowData: { type: 'METADATA', name: settings.rowCategory } as const,
-                            colData: { type: 'QUANTITATIVE', name: gene } as const,
-                            qtNode: node,
-                            colIndex,
-                            zOffset: index,
-                        }))).flat())
-                    .filter((thing) => {
-                        return (thing.colIndex >= firstCol && thing.colIndex <= lastCol)
-                    })
-                ).flat()
+            const visible = order.map((slideId) => visibleInTree(slides[slideId].tree, 30));
+            const toAccumulate = order.map((slideId) => visibleInTree(slides[slideId].tree, 1));
+
+            heatmapCols = settings.geneIndexes.map((g, i) =>
+                columnInView(i) ? visible.map((s, sId) => s.map(n => nodeToItem(n, i, sId))).flat() : []
+            ).flat()
+
+            lowPriority = settings.geneIndexes.map((g, i) =>
+                columnInView(i) ? toAccumulate.map((s, sId) => s.map(n => nodeToItem(n, i, sId))).flat() : []
+            ).flat()
+
         }
         // console.log('draw columns: ', heatmapCols.length)
-        C.setPriorities(heatmapCols, [])
+        C.setPriorities(lowPriority, heatmapCols)
         // now, try and render all those columns
-        regl.clear({ framebuffer: totalExpression, color: [0, 0, 0, 0], depth: 1 })
-        regl.clear({ framebuffer: displayFbo, color: [0.5, 0.5, 0.55, 1], depth: 1 })
-        heatmapCols.forEach(col => renderColumn(col, { ...settings, rotation }, totalExpression));
+        regl.clear({ framebuffer: null, color: [0.5, 0.5, 0.55, 1], depth: 1 })
+        regl.clear({ framebuffer: dotExpr, color: [0, 0, 0, 0], depth: 1 })
+        // regl.clear({ framebuffer: displayFbo, color: [0.5, 0.5, 0.55, 1], depth: 1 })
 
-        const divisor = 6.0;
-        display({ texture: totalExpression, divisor, target: displayFbo, start: [0.1, 0.0, 0.2], middle: [0.95, 0.6, 0.01], end: [0.99, 0.99, 0.87] })
+
+        let first = true;
+        heatmapCols.forEach(col => {
+            if (C.has(col)) {
+                if (col.qtNode.name.endsWith('r') && col.colIndex === settings.rowFilterValues[0]) {
+                    // render the outline stuff...
+                    const buffs = C.get(col)!;
+                    if (first) {
+                        regl.clear({ framebuffer: regions, color: [0, 0, 0, 0], depth: 1 })
+                        regl.clear({ framebuffer: displayFbo, color: [0, 0, 0, 0], depth: 1 })
+                        first = false;
+                    }
+                    outline.dots({ ...col.qtNode, zOffset: col.zOffset }, { bounds: metadata.bounds, lineColor: [0, 0, 0, 1], rotation, size: regionSize, target: regions }, buffs);
+                    outline.edges({ target: displayFbo, color: [0, 0, 0, 0.33], size: regionSize, texture: regions })
+                }
+
+            }
+        })
+        lowPriority.forEach(col => {
+            const key = `${col.qtNode.name}|${col.colIndex}`
+            if (C.has(col)) {
+                if (!accounted.has(key)) {
+                    // accumulate it!
+                    accounted.add(key);
+                    accumColumn(col, { ...settings, rotation }, totalExpression)
+                }
+            }
+        })
+        const dataSize = Box2D.size(metadata.bounds);
+        const vSize = Box2D.size(settings.view);
+        const dpv = vSize[1] / dataSize[1];
+        let congeal = Math.min(1, Math.max(0, (dpv - 14) / 28));
+        if (congeal > 0.9) {
+            const pointSize = (congeal) * Math.min((height / Math.ceil(dpv)) - 1, 8);
+            heatmapCols.forEach(col =>
+                renderer({ count: mapSize[1], bounds: metadata.bounds, depth: 0, geneUrl: 'fake.com', name: 'nah', url: 'nope.net', zOffset: 0, offset: [col.colIndex, 0.0] },
+                    {
+                        congeal,
+                        dataSize,
+                        heatmap: totalExpression,
+                        mapSize,
+                        pointSize,
+                        rotation,
+                        target: dotExpr,
+                        view: settings.view,
+                    }, { color: fake.col, position: fake.position, rowType: fake.row })
+            )
+        } else {
+            heatmapCols.forEach(col => renderColumn(col, { ...settings, rotation }, dotExpr));
+        }
+
+        // display({ texture: totalExpression, divisor, target: displayFbo, start: [0.1, 0.0, 0.2], middle: [0.95, 0.6, 0.01], end: [0.99, 0.99, 0.87] })
+
     }
 
     return {
-        render, copyPixels: (canvas: CanvasRenderingContext2D) => {
-            const copyBuffer = regl.read({
-                framebuffer: displayFbo,
-                x: 0,
-                y: 0,
-                width: width,
-                height: height,
-                data: new Uint8Array(width * height * 4),
-            });
-            // read and copy?
-            const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
-            canvas.putImageData(img, 0, 0);
+        render,
+        display: (dataset: Item['dataset'], view: box2D) => {
+            const divisor = 9.0;
+            outline.display({ texture: displayFbo, mapSize, dataBound: dataset.metadata.bounds, view, target: null })
+            display({ texture: dotExpr, divisor, target: null, start: [0.1, 0.0, 0.2], middle: [0.95, 0.6, 0.01], end: [0.99, 0.99, 0.87] })
         },
+        // copyPixels: (canvas: CanvasRenderingContext2D) => {
+        //     const copyBuffer = regl.read({
+        //         framebuffer: displayFbo,
+        //         x: 0,
+        //         y: 0,
+        //         width: width,
+        //         height: height,
+        //         data: new Uint8Array(width * height * 4),
+        //     });
+        //     // read and copy?
+        //     const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
+        //     canvas.putImageData(img, 0, 0);
+        // },
         countAll: (dataset: Item['dataset'], settings: Settings) => {
 
         }

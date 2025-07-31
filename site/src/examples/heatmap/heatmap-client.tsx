@@ -2,9 +2,11 @@
 import { Box2D, composeRotation, type AxisAngle, type vec2 } from '@alleninstitute/vis-geometry';
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { zoom, pan } from '../common/camera';
-import { SharedCacheContext } from '../common/react/priority-cache-provider';
+// import { SharedCacheContext } from '../common/react/priority-cache-provider';
 import { buildAnalyzer, buildConnectedRenderer, type Settings } from './ctxg';
 import { loadDataset, loadScatterbrainJson } from '../common/loaders/scatterplot/scatterbrain-loader';
+import { SharedPriorityCache } from '@alleninstitute/vis-core';
+import REGL from 'regl';
 
 type Props = {
   screenSize: vec2;
@@ -15,7 +17,6 @@ type Props = {
 };
 export function HeatmapView(props: Props) {
   const { screenSize } = props;
-  const server = useContext(SharedCacheContext);
   const [scatterplot, setScatterplot] = useState<ReturnType<typeof loadDataset> | null>(null);
   const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
   const [dragging, setDragging] = useState(false);
@@ -35,7 +36,7 @@ export function HeatmapView(props: Props) {
       e.preventDefault();
 
       const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-      const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
+      const v = zoom(view, screenSize, zoomScale, [e.offsetX, screenSize[1] - e.offsetY]);
       setView(v);
     },
     [view, screenSize]
@@ -49,7 +50,7 @@ export function HeatmapView(props: Props) {
       } else if (e.ctrlKey) {
         setRotation(composeRotation({ axis: [0, 1, 0], radians: e.movementX / 100.0 }, rotation));
       } else {
-        const v = pan(view, screenSize, [e.movementX, e.movementY]);
+        const v = pan(view, screenSize, [e.movementX, -e.movementY]);
         setView(v);
       }
     }
@@ -63,9 +64,24 @@ export function HeatmapView(props: Props) {
     setDragging(false);
   };
   useEffect(() => {
-    if (cnvs.current && server && !renderer) {
-      const { regl, cache } = server;
-      const renderer = buildConnectedRenderer(regl, cache, () => {
+    if (cnvs.current && !renderer) {
+      // get a webgl canvas context
+      const canvas = cnvs.current;
+      const gl = canvas.getContext('webgl', {
+        alpha: true,
+        preserveDrawingBuffer: true,
+        antialias: true,
+        premultipliedAlpha: true,
+      });
+      if (!gl) {
+        throw new Error('WebGL not supported!');
+      }
+      const regl = REGL({
+        gl,
+        extensions: ['oes_texture_float', 'WEBGL_color_buffer_float', 'EXT_frag_depth'],
+      });
+      const cache = new SharedPriorityCache(new Map(), 2000 * 1024 * 1024, 50);
+      const renderer = buildConnectedRenderer(regl, [props.genes.length, props.rows.length], cache, () => {
         requestAnimationFrame(() => {
           setTick(performance.now());
         });
@@ -75,14 +91,14 @@ export function HeatmapView(props: Props) {
       setRenderer(renderer);
       load(props.url).then((data) => {
         setScatterplot(data);
-        setView(Box2D.create([0, 0], [10, 10]));
+        setView(Box2D.create([0, 0], [16, 9]));
       });
     }
   }, [cnvs.current]);
 
   useEffect(() => {
-    if (scatterplot && cnvs.current && renderer && server) {
-      const ctx = cnvs.current.getContext('2d');
+    if (scatterplot && cnvs.current && renderer) {
+      // const ctx = cnvs.current.getContext('2d');
       const settings: Parameters<typeof renderer.render>[1] = {
         cellSize: [1, 1],
         geneIndexes: props.genes.map((id) => id.toFixed(0)),
@@ -91,21 +107,22 @@ export function HeatmapView(props: Props) {
         view,
         rotation,
       };
-      if (ctx) {
-        // if (!window.doCount) {
-        //   const setup = buildAnalyzer(server.cache, () => {});
-        //   const doCount = setup(
-        //     { metadata: scatterplot, url: props.url },
-        //     { geneIndexes: ['3461'], rowCategory: '8RBF4DUUJ5SW83JZYW8' }
-        //   );
-        //   window.doCount = doCount;
-        // }
+      // if (ctx) {
+      // if (!window.doCount) {
+      //   const setup = buildAnalyzer(server.cache, () => {});
+      //   const doCount = setup(
+      //     { metadata: scatterplot, url: props.url },
+      //     { geneIndexes: ['3461'], rowCategory: '8RBF4DUUJ5SW83JZYW8' }
+      //   );
+      //   window.doCount = doCount;
+      // }
 
+      requestAnimationFrame(() => {
         renderer?.render({ metadata: scatterplot, url: props.url }, settings);
-        requestAnimationFrame(() => {
-          renderer?.copyPixels(ctx);
-        });
-      }
+        renderer.display({ metadata: scatterplot, url: props.url }, view);
+        // renderer?.copyPixels(ctx);
+      });
+      // }
     }
   }, [scatterplot, view, tick, rotation]);
 
