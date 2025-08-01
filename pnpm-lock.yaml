@@ -16,7 +16,7 @@ importers:
         version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@parcel/transformer-typescript-types':
         specifier: 2.15.4
-        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.8.3)
+        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.9.2)
       '@vitest/coverage-istanbul':
         specifier: 3.2.4
         version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(lightningcss@1.30.1)(yaml@2.7.1))
@@ -33,8 +33,8 @@ importers:
         specifier: 0.11.10
         version: 0.11.10
       typescript:
-        specifier: 5.8.3
-        version: 5.8.3
+        specifier: 5.9.2
+        version: 5.9.2
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/debug@4.1.12)(lightningcss@1.30.1)(yaml@2.7.1)
@@ -3983,6 +3983,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@5.9.2:
+    resolution: {integrity: sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   ufo@1.6.1:
     resolution: {integrity: sha512-9a4/uxlTWJ4+a5i0ooc1rU7C7YOw3wT+UGqdeNNHWnOF9qcMBgLRS+4IYUqbczewFx4mLEig6gawh7X6mFlEkA==}
 
@@ -6215,23 +6220,23 @@ snapshots:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/transformer-typescript-types@2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.8.3)':
+  '@parcel/transformer-typescript-types@2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.9.2)':
     dependencies:
       '@parcel/diagnostic': 2.15.4
       '@parcel/plugin': 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@parcel/source-map': 2.1.1
-      '@parcel/ts-utils': 2.15.4(typescript@5.8.3)
+      '@parcel/ts-utils': 2.15.4(typescript@5.9.2)
       '@parcel/utils': 2.15.4
       nullthrows: 1.1.1
-      typescript: 5.8.3
+      typescript: 5.9.2
     transitivePeerDependencies:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/ts-utils@2.15.4(typescript@5.8.3)':
+  '@parcel/ts-utils@2.15.4(typescript@5.9.2)':
     dependencies:
       nullthrows: 1.1.1
-      typescript: 5.8.3
+      typescript: 5.9.2
 
   '@parcel/types-internal@2.15.4':
     dependencies:
@@ -9125,6 +9130,8 @@ snapshots:
       semver: 7.7.2
 
   typescript@5.8.3: {}
+
+  typescript@5.9.2: {}
 
   ufo@1.6.1: {}
 
