@@ -21,7 +21,7 @@
         "@parcel/transformer-typescript-types": "2.15.4",
         "@vitest/coverage-istanbul": "3.2.4",
         "buffer": "6.0.0",
-        "git-cliff": "2.9.1",
+        "git-cliff": "2.10.0",
         "parcel": "2.15.4",
         "process": "0.11.10",
         "typescript": "5.8.3",
