@@ -9,14 +9,14 @@ importers:
   .:
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.0.6
-        version: 2.0.6
+        specifier: 2.1.3
+        version: 2.1.3
       '@parcel/packager-ts':
         specifier: 2.15.4
         version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@parcel/transformer-typescript-types':
         specifier: 2.15.4
-        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.8.3)
+        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.9.2)
       '@vitest/coverage-istanbul':
         specifier: 3.2.4
         version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(lightningcss@1.30.1)(yaml@2.7.1))
@@ -24,8 +24,8 @@ importers:
         specifier: 6.0.0
         version: 6.0.0
       git-cliff:
-        specifier: 2.9.1
-        version: 2.9.1
+        specifier: 2.10.0
+        version: 2.10.0
       parcel:
         specifier: 2.15.4
         version: 2.15.4(@swc/helpers@0.5.17)
@@ -33,8 +33,8 @@ importers:
         specifier: 0.11.10
         version: 0.11.10
       typescript:
-        specifier: 5.8.3
-        version: 5.8.3
+        specifier: 5.9.2
+        version: 5.9.2
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/debug@4.1.12)(lightningcss@1.30.1)(yaml@2.7.1)
@@ -52,8 +52,8 @@ importers:
         version: 2.1.0
     devDependencies:
       '@types/lodash':
-        specifier: 4.17.19
-        version: 4.17.19
+        specifier: 4.17.20
+        version: 4.17.20
 
   packages/dzi:
     dependencies:
@@ -84,8 +84,8 @@ importers:
         specifier: 0.5.2
         version: 0.5.2
       zod:
-        specifier: 3.25.50
-        version: 3.25.50
+        specifier: 4.0.14
+        version: 4.0.14
 
   site:
     dependencies:
@@ -378,55 +378,55 @@ packages:
     resolution: {integrity: sha512-8OLQgDScAOHXnAz2cV+RfzzNMipuLVBz2biuAJFMV9bfkNf393je3VM8CLkjQodW5+iWsSJdSgSWT6rsZoXHPw==}
     engines: {node: '>=6.9.0'}
 
-  '@biomejs/biome@2.0.6':
-    resolution: {integrity: sha512-RRP+9cdh5qwe2t0gORwXaa27oTOiQRQvrFf49x2PA1tnpsyU7FIHX4ZOFMtBC4QNtyWsN7Dqkf5EDbg4X+9iqA==}
+  '@biomejs/biome@2.1.3':
+    resolution: {integrity: sha512-KE/tegvJIxTkl7gJbGWSgun7G6X/n2M6C35COT6ctYrAy7SiPyNvi6JtoQERVK/VRbttZfgGq96j2bFmhmnH4w==}
     engines: {node: '>=14.21.3'}
     hasBin: true
 
-  '@biomejs/cli-darwin-arm64@2.0.6':
-    resolution: {integrity: sha512-AzdiNNjNzsE6LfqWyBvcL29uWoIuZUkndu+wwlXW13EKcBHbbKjNQEZIJKYDc6IL+p7bmWGx3v9ZtcRyIoIz5A==}
+  '@biomejs/cli-darwin-arm64@2.1.3':
+    resolution: {integrity: sha512-LFLkSWRoSGS1wVUD/BE6Nlt2dSn0ulH3XImzg2O/36BoToJHKXjSxzPEMAqT9QvwVtk7/9AQhZpTneERU9qaXA==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [darwin]
 
-  '@biomejs/cli-darwin-x64@2.0.6':
-    resolution: {integrity: sha512-wJjjP4E7bO4WJmiQaLnsdXMa516dbtC6542qeRkyJg0MqMXP0fvs4gdsHhZ7p9XWTAmGIjZHFKXdsjBvKGIJJQ==}
+  '@biomejs/cli-darwin-x64@2.1.3':
+    resolution: {integrity: sha512-Q/4OTw8P9No9QeowyxswcWdm0n2MsdCwWcc5NcKQQvzwPjwuPdf8dpPPf4r+x0RWKBtl1FLiAUtJvBlri6DnYw==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [darwin]
 
-  '@biomejs/cli-linux-arm64-musl@2.0.6':
-    resolution: {integrity: sha512-CVPEMlin3bW49sBqLBg2x016Pws7eUXA27XYDFlEtponD0luYjg2zQaMJ2nOqlkKG9fqzzkamdYxHdMDc2gZFw==}
+  '@biomejs/cli-linux-arm64-musl@2.1.3':
+    resolution: {integrity: sha512-KXouFSBnoxAWZYDQrnNRzZBbt5s9UJkIm40hdvSL9mBxSSoxRFQJbtg1hP3aa8A2SnXyQHxQfpiVeJlczZt76w==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-arm64@2.0.6':
-    resolution: {integrity: sha512-ZSVf6TYo5rNMUHIW1tww+rs/krol7U5A1Is/yzWyHVZguuB0lBnIodqyFuwCNqG9aJGyk7xIMS8HG0qGUPz0SA==}
+  '@biomejs/cli-linux-arm64@2.1.3':
+    resolution: {integrity: sha512-2hS6LgylRqMFmAZCOFwYrf77QMdUwJp49oe8PX/O8+P2yKZMSpyQTf3Eo5ewnsMFUEmYbPOskafdV1ds1MZMJA==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64-musl@2.0.6':
-    resolution: {integrity: sha512-mKHE/e954hR/hSnAcJSjkf4xGqZc/53Kh39HVW1EgO5iFi0JutTN07TSjEMg616julRtfSNJi0KNyxvc30Y4rQ==}
+  '@biomejs/cli-linux-x64-musl@2.1.3':
+    resolution: {integrity: sha512-KaLAxnROouzIWtl6a0Y88r/4hW5oDUJTIqQorOTVQITaKQsKjZX4XCUmHIhdEk8zMnaiLZzRTAwk1yIAl+mIew==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64@2.0.6':
-    resolution: {integrity: sha512-geM1MkHTV1Kh2Cs/Xzot9BOF3WBacihw6bkEmxkz4nSga8B9/hWy5BDiOG3gHDGIBa8WxT0nzsJs2f/hPqQIQw==}
+  '@biomejs/cli-linux-x64@2.1.3':
+    resolution: {integrity: sha512-NxlSCBhLvQtWGagEztfAZ4WcE1AkMTntZV65ZvR+J9jp06+EtOYEBPQndA70ZGhHbEDG57bR6uNvqkd1WrEYVA==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-win32-arm64@2.0.6':
-    resolution: {integrity: sha512-290V4oSFoKaprKE1zkYVsDfAdn0An5DowZ+GIABgjoq1ndhvNxkJcpxPsiYtT7slbVe3xmlT0ncdfOsN7KruzA==}
+  '@biomejs/cli-win32-arm64@2.1.3':
+    resolution: {integrity: sha512-V9CUZCtWH4u0YwyCYbQ3W5F4ZGPWp2C2TYcsiWFNNyRfmOW1j/TY/jAurl33SaRjgZPO5UUhGyr9m6BN9t84NQ==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [win32]
 
-  '@biomejs/cli-win32-x64@2.0.6':
-    resolution: {integrity: sha512-bfM1Bce0d69Ao7pjTjUS+AWSZ02+5UHdiAP85Th8e9yV5xzw6JrHXbL5YWlcEKQ84FIZMdDc7ncuti1wd2sdbw==}
+  '@biomejs/cli-win32-x64@2.1.3':
+    resolution: {integrity: sha512-dxy599q6lgp8ANPpR8sDMscwdp9oOumEsVXuVCVT9N2vAho8uYXlCz53JhxX6LtJOXaE73qzgkGQ7QqvFlMC0g==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
@@ -2118,8 +2118,8 @@ packages:
   '@types/lodash@4.17.16':
     resolution: {integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==}
 
-  '@types/lodash@4.17.19':
-    resolution: {integrity: sha512-NYqRyg/hIQrYPT9lbOeYc3kIRabJDn/k4qQHIXUpx88CBDww2fD15Sg5kbXlW86zm2XEW4g0QxkTI3/Kfkc7xQ==}
+  '@types/lodash@4.17.20':
+    resolution: {integrity: sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==}
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
@@ -2760,38 +2760,38 @@ packages:
     resolution: {integrity: sha512-VaUJspBffn/LMCJVoMvSAdmscJyS1auj5Zulnn5UoYcY531UWmdwhRWkcGKnGU93m5HSXP9LP2usOryrBtQowA==}
     engines: {node: '>=16'}
 
-  git-cliff-darwin-arm64@2.9.1:
-    resolution: {integrity: sha512-e/n/1N68lNx3MrVhmj8Ttgey/8d3UcRhkEOnEI769DUcZVUKy3D/Kz6ZGIMKvDpCmQ40WkEcOhprV+GpLrncnA==}
+  git-cliff-darwin-arm64@2.10.0:
+    resolution: {integrity: sha512-/x+KW+CRCpfn3xG71YD0lpQd1MmKH+fhUI7aki5QkU8dRp+IBxieswwb+lJcU4+FcLEbAEL/8hVxrBawrcmLcA==}
     cpu: [arm64]
     os: [darwin]
 
-  git-cliff-darwin-x64@2.9.1:
-    resolution: {integrity: sha512-sKf3wd+VBVXNmm3iMA6eThTz0AOkN7mRavStUJ+z5bSyZMrvgVXlj+GUImOuhPUsZd9qdE9wO7q+N10hCaCv8w==}
+  git-cliff-darwin-x64@2.10.0:
+    resolution: {integrity: sha512-Yiufjb9wNEJ6Y//Na/BvfSd68sB4kp3NPKHtA9keO4UX+EM7xd4qy4daWUTnbDyvqJw4ZHWrdXND0SYoZ1qUqA==}
     cpu: [x64]
     os: [darwin]
 
-  git-cliff-linux-arm64@2.9.1:
-    resolution: {integrity: sha512-VkHX6gIoTxCzG8Pxu3um98Ip2RCY7bbmlDpC8odx1rFK1J8bzu9hzIDfdSWy47yaVJnG47ACLVFsip5qSxRhGA==}
+  git-cliff-linux-arm64@2.10.0:
+    resolution: {integrity: sha512-rGhsuItIwZlYmoW0h74dox7hJNVwG9H6h61URIh+Ey6EJaQGt7toh7GmgPBnhOnzKXHiVgMAfZaVNuhuuaYTKQ==}
     cpu: [arm64]
     os: [linux]
 
-  git-cliff-linux-x64@2.9.1:
-    resolution: {integrity: sha512-fEvgOdO9PJNXiQh+MC9WxZ+Hjwc1Hv5yP0JGZZB3ucLn1r7ZWPbngzM/2VoYGDgTkhpo6cHYrs/jl7R5fnBnGA==}
+  git-cliff-linux-x64@2.10.0:
+    resolution: {integrity: sha512-MSXv/vvZuSfjfB81i3LiqnjwJm63Go+Ns2L+USLYktHZ69uq1iEWuhqNrCAU4V1xP1i6VMdXeax8Q6gc4Msehg==}
     cpu: [x64]
     os: [linux]
 
-  git-cliff-windows-arm64@2.9.1:
-    resolution: {integrity: sha512-zqCzo5VHFGc3f/dCHMAR1m1UWgMcU7lIy/YvoTJqp8h2q9debmnKe29bR9HvQUq3Q7VDOHL+aiRayxqZytMnCg==}
+  git-cliff-windows-arm64@2.10.0:
+    resolution: {integrity: sha512-38iGWPi8O+0c3ejIYZ00d1cXmJ+0Sx0j9WzFBwE2HS2I938sJssrEdkzQyg+/1m8HG+a8yWK86wPEOxvfJ6kQQ==}
     cpu: [arm64]
     os: [win32]
 
-  git-cliff-windows-x64@2.9.1:
-    resolution: {integrity: sha512-I+kAYLzmSQQ757Nxz+WnX9Ivcl9yfpkiULzrHywU95kUeH0SA07A74lcwjCIv0i4eujj0oCX2Ke5c/V4igPv2A==}
+  git-cliff-windows-x64@2.10.0:
+    resolution: {integrity: sha512-ke5yHH2BKtOyQWEtvasw2Dfd18PRbVJjbU/0FrBNBh/AjPOIKctDR0IaApxDDuEk+tJcSmrOA8s44Hw+Pd72Ig==}
     cpu: [x64]
     os: [win32]
 
-  git-cliff@2.9.1:
-    resolution: {integrity: sha512-jELmNuu5oolmxmpZ4tZVPeyT4Cjx0ZXZb1mqEcE+ZaLdCECguNtRMcbbAiNMlMn6DlMalJpFiNChQvEHx2idQw==}
+  git-cliff@2.10.0:
+    resolution: {integrity: sha512-V7rIKfGsmXq5oUqFn8GJ+hkZcdl/enbrUwZIQl7dDgo/PxLOdiXD69+XG4zB7ufaPqhHcMzzH5TZwpFaPK3qNg==}
     engines: {node: '>=18.19 || >=20.6 || >=21'}
     hasBin: true
 
@@ -3983,6 +3983,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@5.9.2:
+    resolution: {integrity: sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   ufo@1.6.1:
     resolution: {integrity: sha512-9a4/uxlTWJ4+a5i0ooc1rU7C7YOw3wT+UGqdeNNHWnOF9qcMBgLRS+4IYUqbczewFx4mLEig6gawh7X6mFlEkA==}
 
@@ -4458,8 +4463,11 @@ packages:
       typescript: ^4.9.4 || ^5.0.2
       zod: ^3
 
-  zod@3.25.50:
-    resolution: {integrity: sha512-VstOnRxf4tlSq0raIwbn0n+LA34SxVoZ8r3pkwSUM0jqNiA/HCMQEVjTuS5FZmHsge+9MDGTiAuHyml5T0um6A==}
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
+  zod@4.0.14:
+    resolution: {integrity: sha512-nGFJTnJN6cM2v9kXL+SOBq3AtjQby3Mv5ySGFof5UGRHrRioSJ5iG680cYNjE/yWk671nROcpPj4hAS8nyLhSw==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -4615,7 +4623,7 @@ snapshots:
     dependencies:
       sitemap: 8.0.0
       stream-replace-string: 2.0.0
-      zod: 3.25.50
+      zod: 3.25.76
 
   '@astrojs/starlight@0.34.3(astro@5.8.0(@types/node@22.1.0)(lightningcss@1.30.1)(rollup@4.44.1)(typescript@5.8.3)(yaml@2.7.1))':
     dependencies:
@@ -4852,39 +4860,39 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@biomejs/biome@2.0.6':
+  '@biomejs/biome@2.1.3':
     optionalDependencies:
-      '@biomejs/cli-darwin-arm64': 2.0.6
-      '@biomejs/cli-darwin-x64': 2.0.6
-      '@biomejs/cli-linux-arm64': 2.0.6
-      '@biomejs/cli-linux-arm64-musl': 2.0.6
-      '@biomejs/cli-linux-x64': 2.0.6
-      '@biomejs/cli-linux-x64-musl': 2.0.6
-      '@biomejs/cli-win32-arm64': 2.0.6
-      '@biomejs/cli-win32-x64': 2.0.6
+      '@biomejs/cli-darwin-arm64': 2.1.3
+      '@biomejs/cli-darwin-x64': 2.1.3
+      '@biomejs/cli-linux-arm64': 2.1.3
+      '@biomejs/cli-linux-arm64-musl': 2.1.3
+      '@biomejs/cli-linux-x64': 2.1.3
+      '@biomejs/cli-linux-x64-musl': 2.1.3
+      '@biomejs/cli-win32-arm64': 2.1.3
+      '@biomejs/cli-win32-x64': 2.1.3
 
-  '@biomejs/cli-darwin-arm64@2.0.6':
+  '@biomejs/cli-darwin-arm64@2.1.3':
     optional: true
 
-  '@biomejs/cli-darwin-x64@2.0.6':
+  '@biomejs/cli-darwin-x64@2.1.3':
     optional: true
 
-  '@biomejs/cli-linux-arm64-musl@2.0.6':
+  '@biomejs/cli-linux-arm64-musl@2.1.3':
     optional: true
 
-  '@biomejs/cli-linux-arm64@2.0.6':
+  '@biomejs/cli-linux-arm64@2.1.3':
     optional: true
 
-  '@biomejs/cli-linux-x64-musl@2.0.6':
+  '@biomejs/cli-linux-x64-musl@2.1.3':
     optional: true
 
-  '@biomejs/cli-linux-x64@2.0.6':
+  '@biomejs/cli-linux-x64@2.1.3':
     optional: true
 
-  '@biomejs/cli-win32-arm64@2.0.6':
+  '@biomejs/cli-win32-arm64@2.1.3':
     optional: true
 
-  '@biomejs/cli-win32-x64@2.0.6':
+  '@biomejs/cli-win32-x64@2.1.3':
     optional: true
 
   '@capsizecss/unpack@2.4.0':
@@ -6215,23 +6223,23 @@ snapshots:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/transformer-typescript-types@2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.8.3)':
+  '@parcel/transformer-typescript-types@2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.9.2)':
     dependencies:
       '@parcel/diagnostic': 2.15.4
       '@parcel/plugin': 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))
       '@parcel/source-map': 2.1.1
-      '@parcel/ts-utils': 2.15.4(typescript@5.8.3)
+      '@parcel/ts-utils': 2.15.4(typescript@5.9.2)
       '@parcel/utils': 2.15.4
       nullthrows: 1.1.1
-      typescript: 5.8.3
+      typescript: 5.9.2
     transitivePeerDependencies:
       - '@parcel/core'
       - napi-wasm
 
-  '@parcel/ts-utils@2.15.4(typescript@5.8.3)':
+  '@parcel/ts-utils@2.15.4(typescript@5.9.2)':
     dependencies:
       nullthrows: 1.1.1
-      typescript: 5.8.3
+      typescript: 5.9.2
 
   '@parcel/types-internal@2.15.4':
     dependencies:
@@ -6609,7 +6617,7 @@ snapshots:
 
   '@types/lodash@4.17.16': {}
 
-  '@types/lodash@4.17.19': {}
+  '@types/lodash@4.17.20': {}
 
   '@types/mdast@4.0.4':
     dependencies:
@@ -6888,9 +6896,9 @@ snapshots:
       xxhash-wasm: 1.1.0
       yargs-parser: 21.1.1
       yocto-spinner: 0.2.2
-      zod: 3.25.50
-      zod-to-json-schema: 3.24.5(zod@3.25.50)
-      zod-to-ts: 1.2.0(typescript@5.8.3)(zod@3.25.50)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.5(zod@3.25.76)
+      zod-to-ts: 1.2.0(typescript@5.8.3)(zod@3.25.76)
     optionalDependencies:
       sharp: 0.33.5
     transitivePeerDependencies:
@@ -7400,34 +7408,34 @@ snapshots:
 
   get-stream@8.0.1: {}
 
-  git-cliff-darwin-arm64@2.9.1:
+  git-cliff-darwin-arm64@2.10.0:
     optional: true
 
-  git-cliff-darwin-x64@2.9.1:
+  git-cliff-darwin-x64@2.10.0:
     optional: true
 
-  git-cliff-linux-arm64@2.9.1:
+  git-cliff-linux-arm64@2.10.0:
     optional: true
 
-  git-cliff-linux-x64@2.9.1:
+  git-cliff-linux-x64@2.10.0:
     optional: true
 
-  git-cliff-windows-arm64@2.9.1:
+  git-cliff-windows-arm64@2.10.0:
     optional: true
 
-  git-cliff-windows-x64@2.9.1:
+  git-cliff-windows-x64@2.10.0:
     optional: true
 
-  git-cliff@2.9.1:
+  git-cliff@2.10.0:
     dependencies:
       execa: 8.0.1
     optionalDependencies:
-      git-cliff-darwin-arm64: 2.9.1
-      git-cliff-darwin-x64: 2.9.1
-      git-cliff-linux-arm64: 2.9.1
-      git-cliff-linux-x64: 2.9.1
-      git-cliff-windows-arm64: 2.9.1
-      git-cliff-windows-x64: 2.9.1
+      git-cliff-darwin-arm64: 2.10.0
+      git-cliff-darwin-x64: 2.10.0
+      git-cliff-linux-arm64: 2.10.0
+      git-cliff-linux-x64: 2.10.0
+      git-cliff-windows-arm64: 2.10.0
+      git-cliff-windows-x64: 2.10.0
 
   github-slugger@2.0.0: {}
 
@@ -9126,6 +9134,8 @@ snapshots:
 
   typescript@5.8.3: {}
 
+  typescript@5.9.2: {}
+
   ufo@1.6.1: {}
 
   ultrahtml@1.6.0: {}
@@ -9550,15 +9560,17 @@ snapshots:
       '@zarrita/storage': 0.1.1
       numcodecs: 0.3.2
 
-  zod-to-json-schema@3.24.5(zod@3.25.50):
+  zod-to-json-schema@3.24.5(zod@3.25.76):
     dependencies:
-      zod: 3.25.50
+      zod: 3.25.76
 
-  zod-to-ts@1.2.0(typescript@5.8.3)(zod@3.25.50):
+  zod-to-ts@1.2.0(typescript@5.8.3)(zod@3.25.76):
     dependencies:
       typescript: 5.8.3
-      zod: 3.25.50
+      zod: 3.25.76
 
-  zod@3.25.50: {}
+  zod@3.25.76: {}
+
+  zod@4.0.14: {}
 
   zwitch@2.0.4: {}
