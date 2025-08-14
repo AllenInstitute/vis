@@ -76,7 +76,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omeza
 
     return {
         camera: { screenSize, view },
-        planeLocation: { parameter: orthoVal },
+        planeLocation: { index: orthoVal },
         plane: PLANE_XY,
         tileSize: 256,
         channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
@@ -101,7 +101,7 @@ export function OmezarrDemo() {
         loadMetadata(res).then((v) => {
             setOmezarr(v);
             setOmezarrJson(JSON.stringify(v, undefined, 4));
-            setPlaneIndex(0.5);
+            setPlaneIndex(Math.floor(v.maxOrthogonal(PLANE_XY) / 2));
             const dataset = v.getFirstShapedDataset(0);
             if (!dataset) {
                 throw new Error('dataset 0 does not exist!');
