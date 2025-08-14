@@ -94,10 +94,12 @@ export function getVisibleTiles(
         screenSize: vec2;
     },
     plane: CartesianPlane,
-    planeLocation: {
-        index: number;
-        parameter?: never;
-    } | { parameter: number; index?: never },
+    planeLocation:
+        | {
+              index: number;
+              parameter?: never;
+          }
+        | { parameter: number; index?: never },
     metadata: OmeZarrMetadata,
     tileSize: number,
 ): VoxelTile[] {
@@ -106,7 +108,9 @@ export function getVisibleTiles(
     const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
     // figure out the index of the slice
 
-    const sliceIndex = planeLocation.index ?? indexOfRelativeSlice(layer, metadata.attrs.multiscales[0].axes, planeLocation.parameter, plane.ortho)
+    const sliceIndex =
+        planeLocation.index ??
+        indexOfRelativeSlice(layer, metadata.attrs.multiscales[0].axes, planeLocation.parameter, plane.ortho);
     return getVisibleTilesInLayer(camera, plane, sliceIndex, metadata, tileSize, layer);
 }
 

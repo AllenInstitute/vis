@@ -34,7 +34,9 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omeza
 
     return {
         camera: { screenSize, view },
-        orthoVal,
+        planeLocation: {
+            index: orthoVal,
+        },
         plane: PLANE_XY,
         tileSize: 256,
         channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
