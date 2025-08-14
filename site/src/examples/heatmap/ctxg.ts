@@ -5,6 +5,7 @@ import { fetchColumn, loadDataset, type ColumnarNode, type ColumnarTree, type Co
 import { VBO } from "./vbo";
 import { buildAvgAccumulator } from "./accumulator";
 import { buildOutliner } from "./dataset-outline";
+import { idsInOrder } from "./slide-order";
 
 // ok - so we've been asked to view heatmaps //
 //  data: connectivity and uh... other stuff? 
@@ -610,7 +611,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, mapSize: vec2, cache: Sh
         } else {
             // ok but what if we did want to support it... lets put all the slides in a stack, and then render the stack, but with a spinning animation, why not?
             const { slides } = metadata
-            const order = Object.keys(slides).sort();
+            const order = idsInOrder();//Object.keys(slides).sort();
             const visible = order.map((slideId) => visibleInTree(slides[slideId].tree, 30));
             const toAccumulate = order.map((slideId) => visibleInTree(slides[slideId].tree, 1));
 
@@ -634,7 +635,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, mapSize: vec2, cache: Sh
         let first = true;
         heatmapCols.forEach(col => {
             if (C.has(col)) {
-                if (col.qtNode.name.endsWith('r') && col.colIndex === settings.rowFilterValues[0]) {
+                if (col.qtNode.name.endsWith('r')) {
                     // render the outline stuff...
                     const buffs = C.get(col)!;
                     if (first) {

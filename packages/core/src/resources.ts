@@ -49,7 +49,6 @@ function httpsFromS3Bucket(url: string, region: string) {
 
     return `https://${bucket}.s3.${region}.amazonaws.com/${path}`;
 }
-
 function isValidS3URL(url: string): boolean {
     return !!url && url.length >= 6 && url.slice(0, 5) === 's3://';
 }

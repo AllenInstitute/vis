@@ -22,13 +22,13 @@ const supertype = 'CBGC0U30VV9JPR60TJU';
 const subclass = 'QY5S8KMO5HLJUF0P00K';
 const ntType = 'Y937CVUSVZC7KYOHWVO';
 export function HeatMapDemo() {
-  const [rows, setRows] = useState(countingUp(30));
+  const [rows, setRows] = useState(countingUp(29));
   const [cols, setCols] = useState(countingUp(15000));
   return (
     <HeatmapView
       rows={rows}
       genes={cols}
-      category={ntType}
+      category={Class}
       screenSize={[1600, 900]}
       url={wmb_10x}
       // url="https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json"
