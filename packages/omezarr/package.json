@@ -51,7 +51,7 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-core": "workspace:*",
         "regl": "2.1.0",
-        "zarrita": "0.5.2",
+        "zarrita": "0.5.3",
         "zod": "4.0.14"
     },
     "packageManager": "pnpm@9.14.2"
