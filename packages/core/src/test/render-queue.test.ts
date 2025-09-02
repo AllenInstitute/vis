@@ -50,7 +50,7 @@ describe('beginLongRunningFrame', () => {
             rq,
             renderPretender,
             eventHandler,
-            (rq: string, item: FakeItem, settings: FakeSettings) => cacheKey(item, settings),
+            (_rq: string, item: FakeItem, settings: FakeSettings) => cacheKey(item, settings),
             9999,
         );
     beforeEach(() => {
@@ -63,7 +63,7 @@ describe('beginLongRunningFrame', () => {
     });
     it('runs the expected number of tasks', async () => {
         let done: () => void;
-        const testOver = new Promise<void>((resolve, reject) => {
+        const testOver = new Promise<void>((resolve, _reject) => {
             done = () => {
                 resolve();
             };
@@ -87,7 +87,7 @@ describe('beginLongRunningFrame', () => {
     });
     it('can be cancelled without crash', async () => {
         let done: () => void;
-        const testOver = new Promise<void>((resolve, reject) => {
+        const testOver = new Promise<void>((resolve, _reject) => {
             done = () => resolve();
         });
         try {
@@ -112,7 +112,7 @@ describe('beginLongRunningFrame', () => {
     it('synchronously completes the second frame, because the cache gets warmed up', async () => {
         const allEvents: string[] = [];
         let done: () => void;
-        const testOver = new Promise<void>((resolve, reject) => {
+        const testOver = new Promise<void>((resolve, _reject) => {
             done = () => resolve();
         });
         fakeFrame(9, (e) => {
