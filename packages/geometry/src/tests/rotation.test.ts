@@ -5,7 +5,7 @@ import { Vec4, type vec4 } from '../vec4';
 import { type AxisAngle, composeRotation, rotateVector } from '../axisAngle';
 
 function nearly(actual: vec3, expected: vec3) {
-    const dst = Vec3.length(Vec3.sub(actual, expected));
+    const _dst = Vec3.length(Vec3.sub(actual, expected));
 
     for (let i = 0; i < 3; i++) {
         expect(actual[i]).toBeCloseTo(expected[i]);

@@ -99,7 +99,7 @@ export class RenderServer {
 
                 const img = new ImageData(new Uint8ClampedArray(copyBuffer), width, height);
                 updateRequested(ctx, img);
-            } catch (err) {
+            } catch {
                 logger.error(
                     'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok',
                 );

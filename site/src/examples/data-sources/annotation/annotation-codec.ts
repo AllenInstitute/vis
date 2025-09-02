@@ -36,7 +36,7 @@ export function getAnnotationCodec() {
     if (!codec) {
         try {
             codec = compileSchema(parseSchema(AnnotationSchema));
-        } catch (err) {
+        } catch {
             return undefined;
         }
     }

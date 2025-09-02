@@ -136,7 +136,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
         settings: VoxelSliceRenderSettings,
         channels: Record<string, Bfr | object | undefined>,
     ) => {
-        const { view, viewport, gamut, target, rotation } = settings;
+        const { view, gamut, target, rotation } = settings;
         const { realBounds } = item;
         const { R, G, B } = channels;
 
@@ -226,7 +226,7 @@ function reqSlice(dataset: OmeZarrMetadata, req: ZarrRequest, layerIndex: number
     return getSlicePool().requestSlice(dataset, req, layer);
 }
 const LUMINANCE = 'luminance';
-export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, signal?: AbortSignal) {
+export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, _signal?: AbortSignal) {
     const { metadata, regl } = settings;
     const handleResponse = (vxl: Awaited<ReturnType<typeof reqSlice>>) => {
         const { shape, data } = vxl;

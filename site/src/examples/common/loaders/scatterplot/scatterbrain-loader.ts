@@ -207,7 +207,6 @@ export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
         return loadSlideViewDataset(metadata, datasetUrl);
     }
     const box = metadata.boundingBox;
-    const spatialDimName = metadata.spatialColumn;
     const rootBounds = Box3D.create([box.lx, box.ly, box.lz], [box.ux, box.uy, box.uz]);
     const columnInfo = metadata.pointAttributes.reduce(
         (dictionary, attr) => {

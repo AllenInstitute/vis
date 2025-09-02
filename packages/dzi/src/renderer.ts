@@ -40,7 +40,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
                     try {
                         const img = new Image();
                         img.crossOrigin = 'anonymous';
-                        img.onload = (ev) => {
+                        img.onload = () => {
                             resolve({
                                 type: 'texture',
                                 texture: regl.texture(img),
