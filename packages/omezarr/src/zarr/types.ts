@@ -79,12 +79,14 @@ export type OmeZarrMultiscale = {
     axes: OmeZarrAxis[];
     datasets: OmeZarrDataset[];
     name: string;
-    version: string;
+    version?: string | undefined;
+    type?: string | undefined;
 };
 
 export const OmeZarrMultiscaleSchema: z.ZodType<OmeZarrMultiscale> = z.object({
     name: z.string(),
-    version: z.string(),
+    version: z.string().optional(),
+    type: z.string().optional(),
     axes: OmeZarrAxisSchema.array().nonempty(),
     datasets: OmeZarrDatasetSchema.array().nonempty(),
 });
@@ -134,14 +136,46 @@ export const OmeZarrOmeroSchema: z.ZodType<OmeZarrOmero> = z.object({
     channels: OmeZarrOmeroChannelSchema.array().nonempty(),
 });
 
-export type OmeZarrAttrs = {
+export type BaseOmeZarrAttrs = {
     multiscales: OmeZarrMultiscale[];
     omero?: OmeZarrOmero | undefined; // omero is a transitional field, meaning it is expected to go away in a later version
+}
+
+export type OmeZarrAttrsV2 = BaseOmeZarrAttrs;
+
+export type OmeZarrAttrsV3 = {
+    ome: BaseOmeZarrAttrs;
 };
 
-export const OmeZarrAttrsSchema: z.ZodType<OmeZarrAttrs> = z.object({
+export type OmeZarrAttrs = {
+    zarrVersion: number;
+} & BaseOmeZarrAttrs;
+
+export const OmeZarrAttrsBaseSchema: z.ZodType<OmeZarrAttrsV2> = z.object({
     multiscales: OmeZarrMultiscaleSchema.array().nonempty(),
     omero: OmeZarrOmeroSchema.optional(),
+});
+
+export const OmeZarrAttrsV2Schema = OmeZarrAttrsBaseSchema;
+
+export const OmeZarrAttrsV3Schema: z.ZodType<OmeZarrAttrsV3> = z.object({
+    ome: OmeZarrAttrsBaseSchema
+});
+
+export const OmeZarrAttrsSchema = z.union([
+    OmeZarrAttrsV2Schema, OmeZarrAttrsV3Schema
+]).transform<OmeZarrAttrs>((v: OmeZarrAttrsV2 | OmeZarrAttrsV3) => {
+    if ('ome' in v) {
+        return {
+            zarrVersion: 3,
+            ...v.ome,
+        };
+    } else {
+        return {
+            zarrVersion: 2,
+            ...v,
+        }
+    }
 });
 
 export type DehydratedOmeZarrArray = {
