@@ -43,6 +43,15 @@ const demoOptions: DemoOption[] = [
             url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
         },
     },
+    {
+        value: 'opt5',
+        label: 'V3 Zarr Example Image (S3) (color channels: [R, G, B])',
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://h301-scanning-802451596237-us-west-2/2402091625/ome_zarr_conversion/1458501514.zarr/',
+        },
+    },
 ];
 
 const screenSize: vec2 = [800, 800];
