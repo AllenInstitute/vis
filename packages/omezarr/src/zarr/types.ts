@@ -139,7 +139,7 @@ export const OmeZarrOmeroSchema: z.ZodType<OmeZarrOmero> = z.object({
 export type BaseOmeZarrAttrs = {
     multiscales: OmeZarrMultiscale[];
     omero?: OmeZarrOmero | undefined; // omero is a transitional field, meaning it is expected to go away in a later version
-}
+};
 
 export type OmeZarrAttrsV2 = BaseOmeZarrAttrs;
 
@@ -159,23 +159,23 @@ export const OmeZarrAttrsBaseSchema: z.ZodType<OmeZarrAttrsV2> = z.object({
 export const OmeZarrAttrsV2Schema = OmeZarrAttrsBaseSchema;
 
 export const OmeZarrAttrsV3Schema: z.ZodType<OmeZarrAttrsV3> = z.object({
-    ome: OmeZarrAttrsBaseSchema
+    ome: OmeZarrAttrsBaseSchema,
 });
 
-export const OmeZarrAttrsSchema = z.union([
-    OmeZarrAttrsV2Schema, OmeZarrAttrsV3Schema
-]).transform<OmeZarrAttrs>((v: OmeZarrAttrsV2 | OmeZarrAttrsV3) => {
-    if ('ome' in v) {
+export const OmeZarrAttrsSchema = z
+    .union([OmeZarrAttrsV2Schema, OmeZarrAttrsV3Schema])
+    .transform<OmeZarrAttrs>((v: OmeZarrAttrsV2 | OmeZarrAttrsV3) => {
+        if ('ome' in v) {
+            return {
+                zarrVersion: 3,
+                ...v.ome,
+            };
+        }
         return {
-            zarrVersion: 3,
-            ...v.ome,
+            zarrVersion: 2,
+            ...v,
         };
-    }
-    return {
-        zarrVersion: 2,
-        ...v,
-    };
-});
+    });
 
 export type DehydratedOmeZarrArray = {
     path: string;
