@@ -170,12 +170,11 @@ export const OmeZarrAttrsSchema = z.union([
             zarrVersion: 3,
             ...v.ome,
         };
-    } else {
-        return {
-            zarrVersion: 2,
-            ...v,
-        }
     }
+    return {
+        zarrVersion: 2,
+        ...v,
+    };
 });
 
 export type DehydratedOmeZarrArray = {
