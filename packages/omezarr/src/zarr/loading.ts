@@ -98,10 +98,11 @@ async function loadZarrArrayFileFromStore(
  * The object returned from this function can be passed to most of the other utilities for ome-zarr data
  * manipulation.
  */
-export async function loadMetadata(res: WebResource, version = 2, loadV2ArrayAttrs = true): Promise<OmeZarrMetadata> {
+export async function loadMetadata(res: WebResource, loadV2ArrayAttrs = true): Promise<OmeZarrMetadata> {
     const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
     const attrs: OmeZarrAttrs = await loadZarrAttrsFileFromStore(store);
+    const version = attrs.zarrVersion;
     const arrays = await Promise.all(
         attrs.multiscales
             .map((multiscale) => {
@@ -318,7 +319,7 @@ export async function loadSlice(
         logger.error(message);
         throw new VisZarrDataError(message);
     }
-    const { raw } = await loadZarrArrayFileFromStore(store, arr.path, 2, false);
+    const { raw } = await loadZarrArrayFileFromStore(store, arr.path, metadata.zarrVersion, false);
     const result = await zarr.get(raw, buildQuery(r, axes, level.shape), { opts: { signal: signal ?? null } });
     if (typeof result === 'number') {
         throw new Error('oh noes, slice came back all weird');

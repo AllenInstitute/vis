@@ -3,7 +3,7 @@ import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute
 import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { pan, zoom } from '../common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
@@ -41,6 +41,15 @@ const demoOptions: DemoOption[] = [
             type: 's3',
             region: 'us-west-2',
             url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
+        },
+    },
+    {
+        value: 'opt5',
+        label: 'V3 Zarr Example Image (S3) (color channels: [R, G, B])',
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://h301-scanning-802451596237-us-west-2/2402091625/ome_zarr_conversion/1458501514.zarr/',
         },
     },
 ];
@@ -82,6 +91,10 @@ export function OmezarrDemo() {
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeIndex, setPlaneIndex] = useState(0);
     const [dragging, setDragging] = useState(false);
+
+    const selectId = useId();
+    const textAreaId = useId();
+    const omezarrId = useId();
 
     const settings: RenderSettings | undefined = useMemo(
         () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex, omezarr) : undefined),
@@ -162,8 +175,8 @@ export function OmezarrDemo() {
             <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label htmlFor="webresource-select">Select an OME-Zarr to View:</label>
-                        <select id="webresource-select" name="webresource" onChange={handleOptionSelected}>
+                        <label htmlFor={selectId}>Select an OME-Zarr to View:</label>
+                        <select id={selectId} name="webresource" onChange={handleOptionSelected}>
                             <option value="" key="default">
                                 -- Please select an option --
                             </option>
@@ -212,7 +225,7 @@ export function OmezarrDemo() {
                                 {omezarr && settings && (
                                     <OmezarrViewer
                                         omezarr={omezarr}
-                                        id="omezarr-viewer"
+                                        id={omezarrId}
                                         screenSize={screenSize}
                                         settings={settings}
                                         onWheel={handleZoom}
@@ -249,9 +262,9 @@ export function OmezarrDemo() {
                     </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
+                    <label htmlFor={textAreaId}>Selected Image Metadata:</label>
                     <textarea
-                        id="omezarr-json-view"
+                        id={textAreaId}
                         readOnly
                         cols={100}
                         rows={36}

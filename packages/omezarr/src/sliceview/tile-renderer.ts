@@ -142,9 +142,9 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
     const colorMerges = [];
     for (let i = 0; i < numChannels; i++) {
         reglChannelUniforms.push({
-            [`gamut${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].gamut,
-            [`color${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].rgb,
-            [`tex${i}`]: (context: unknown, props: TileRenderProps) => props.channels[i].tex,
+            [`gamut${i}`]: (_context: unknown, props: TileRenderProps) => props.channels[i].gamut,
+            [`color${i}`]: (_context: unknown, props: TileRenderProps) => props.channels[i].rgb,
+            [`tex${i}`]: (_context: unknown, props: TileRenderProps) => props.channels[i].tex,
         });
         fragmentChannelUniformDefs.push(`uniform vec2 gamut${i};`);
         fragmentChannelUniformDefs.push(`uniform vec3 color${i};`);
