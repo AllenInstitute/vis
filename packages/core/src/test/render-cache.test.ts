@@ -100,7 +100,7 @@ describe('async cache', () => {
     };
 
     let cache = new AsyncDataCache<Columns, string, Data>(
-        (item: Data) => {},
+        (_item: Data) => {},
         () => 1,
         10,
     );
@@ -175,7 +175,7 @@ describe('async cache', () => {
             for (let i = 0; i < 5; i++) {
                 const { fetchers, id, spies } = fetchFakeItem(i, [255, 0, i], [1, 2 * i, 3 * i]);
                 const toCacheKey = partial(cacheKey, { id });
-                const result = cache.cacheAndUse(fetchers, render, toCacheKey);
+                const _result = cache.cacheAndUse(fetchers, render, toCacheKey);
                 // store all the cache keys so we can expect them later
                 allKeysSoFar.push(toCacheKey('color'), toCacheKey('position'));
                 await resolveFakePromises(spies);
@@ -186,7 +186,7 @@ describe('async cache', () => {
             // now request a new thing - this should cause the cache to remove at least one item
             const { fetchers, id, spies } = fetchFakeItem(99, [99, 99, 99], [9, 9, 9]);
             const toCacheKey = partial(cacheKey, { id });
-            const result = cache.cacheAndUse(fetchers, render, toCacheKey);
+            const _result = cache.cacheAndUse(fetchers, render, toCacheKey);
             await resolveFakePromises(spies);
             // we would expect the items with id=0 to have been removed, as they are the oldest
             expect(cache.isCached(toCacheKey('color'))).toBeTruthy();
@@ -206,7 +206,7 @@ describe('async cache', () => {
             for (let i = 0; i < 6; i++) {
                 const { fetchers, id, spies } = fetchFakeItem(i, [255, 0, i], [1, 2 * i, 3 * i]);
                 const toCacheKey = partial(cacheKey, { id });
-                const result = cache.cacheAndUse(fetchers, render, toCacheKey);
+                const _result = cache.cacheAndUse(fetchers, render, toCacheKey);
                 if (i !== 0) {
                     // dont resolve the stuff for the first task!
                     allKeysSoFar.push(toCacheKey('color'), toCacheKey('position'));
@@ -225,7 +225,7 @@ describe('async cache', () => {
             // now request a new thing - this should cause the cache to remove at least one item
             const { fetchers, id, spies } = fetchFakeItem(99, [99, 99, 99], [9, 9, 9]);
 
-            const result = cache.cacheAndUse(fetchers, render, partial(cacheKey, { id }));
+            const _result = cache.cacheAndUse(fetchers, render, partial(cacheKey, { id }));
             await resolveFakePromises(spies);
 
             expect(cache.isCached(cacheKey({ id: 99 }, 'color'))).toBeTruthy();
@@ -271,7 +271,7 @@ describe('async cache', () => {
                 const { fetchers, id, spies } = fetchFakeItem(i, [255, 0, i], [1, 2 * i, 3 * i]);
                 const toCacheKey = partial(cacheKey, { id });
 
-                const result = cache.cacheAndUse(fetchers, render, toCacheKey);
+                const _result = cache.cacheAndUse(fetchers, render, toCacheKey);
                 // store all the cache keys so we can expect them later
                 allKeysSoFar.push(toCacheKey('color'), toCacheKey('position'));
                 await resolveFakePromises(spies);
@@ -287,7 +287,7 @@ describe('async cache', () => {
             // now request a new thing - this should cause the cache to remove at least one item
             const { fetchers, id, spies } = fetchFakeItem(99, [99, 99, 99], [9, 9, 9]);
             const toCacheKey = partial(cacheKey, { id });
-            const result = cache.cacheAndUse(fetchers, render, toCacheKey);
+            const _result = cache.cacheAndUse(fetchers, render, toCacheKey);
             await resolveFakePromises(spies);
             // we would expect the items with id=1 to have been removed (not id=0 because we re-requested it)
             expect(cache.isCached(toCacheKey('color'))).toBeTruthy();
@@ -311,7 +311,7 @@ describe('async cache', () => {
             // prior to this fix, the cache assumed that any incoming data would map to exactly one (per-task) semantic output -
             // the result would be that the task would resolve itself early, with several keys being undefined
             const clr: vec3 = [255, 0, 0];
-            const { fetchers, id, spies } = fetchTheSameThingTwice(1, clr, [1, 2, 3]);
+            const { fetchers, spies } = fetchTheSameThingTwice(1, clr, [1, 2, 3]);
             // in this case, we want to test what happens when one cache key is associated with multiple semantic keys:
             const toCacheKey = () => 'http://blah.channel0';
             const result = cache.cacheAndUse(fetchers, render, toCacheKey);
@@ -334,7 +334,7 @@ describe('async cache', () => {
         it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task (and also the promises beneath are the same promise): ', async () => {
             // same as above, but internally returns the same promise twice...
             const clr: vec3 = [255, 0, 0];
-            const { fetchers, id, spies } = fetchTheSameThingTwiceOnePromise(1, clr, [1, 2, 3]);
+            const { fetchers, spies } = fetchTheSameThingTwiceOnePromise(1, clr, [1, 2, 3]);
             // in this case, we want to test what happens when one cache key is associated with multiple semantic keys:
             const toCacheKey = () => 'http://blah.channel0';
             const result = cache.cacheAndUse(fetchers, render, toCacheKey);

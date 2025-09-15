@@ -24,18 +24,20 @@ describe('basics', () => {
         env = setupTestEnv(5, 10);
     });
     test('put 5 things in, see them in the store', async () => {
-        const { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises } = env;
+        const { cache, resolveFetches, fakeFetchItem } = env;
         const enq = (id: string) => cache.enqueue(id, fakeFetchItem(id));
         // enqueue 5 things, get them all back
         const things = ['a', 'b', 'c', 'd', 'e'];
         things.forEach(enq);
         await resolveFetches();
-        things.forEach((id) => expect(cache.has(id)));
+        things.forEach((id) => {
+            expect(cache.has(id));
+        });
     });
     test('when evicting and fetching, priority is respected', async () => {
         const score = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 };
         env = setupTestEnv(5, 1);
-        const { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises } = env;
+        const { cache, resolveFetches, fakeFetchItem } = env;
         const resolveAndRequestNext = async () => {
             await resolveFetches();
             await resolveFetches();
