@@ -45,7 +45,7 @@ const demoOptions: DemoOption[] = [
         res: {
             type: 's3',
             region: 'us-west-2',
-            url:'s3://allen-genetic-tools/lightsheet/SmartSPIM_741764_2024-07-25_19-33-17_stitched_2024-07-26_16-49-41/OMEZarr/sagittal_MIP.zarr/'
+            url: 's3://allen-genetic-tools/lightsheet/SmartSPIM_741764_2024-07-25_19-33-17_stitched_2024-07-26_16-49-41/OMEZarr/sagittal_MIP.zarr/',
         },
     },
 ];

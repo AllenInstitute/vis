@@ -77,7 +77,7 @@ export function OmeZarrView(props: Props) {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handleScrollSlice = (next: 1 | -1) => {
-        setPlaneParam((prev) => Math.max(0, Math.min(prev + (next/1000), 1)));
+        setPlaneParam((prev) => Math.max(0, Math.min(prev + next / 1000, 1)));
     };
 
     const handleZoom = useCallback(
