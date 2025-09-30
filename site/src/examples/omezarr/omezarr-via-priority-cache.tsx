@@ -36,7 +36,15 @@ const demoOptions: DemoOption[] = [
         res: {
             type: 's3',
             region: 'us-west-2',
-            // url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
+            url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
+        },
+    },
+    {
+        value: 'opt5',
+        label: 'SmartSpim Lightsheet',
+        res: {
+            type: 's3',
+            region: 'us-west-2',
             url:'s3://allen-genetic-tools/lightsheet/SmartSPIM_741764_2024-07-25_19-33-17_stitched_2024-07-26_16-49-41/OMEZarr/sagittal_MIP.zarr/'
         },
     },
@@ -47,7 +55,7 @@ const screenSize: vec2 = [800, 800];
 export function OmezarrDemo() {
     return (
         <SharedCacheProvider>
-            <OmeZarrView res={demoOptions[3].res} screenSize={screenSize} />
+            <OmeZarrView res={demoOptions[4].res} screenSize={screenSize} />
         </SharedCacheProvider>
     );
 }
