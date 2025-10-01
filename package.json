@@ -18,7 +18,7 @@
     "devDependencies": {
         "@biomejs/biome": "2.2.2",
         "@parcel/packager-ts": "2.15.4",
-        "@parcel/transformer-typescript-types": "2.15.4",
+        "@parcel/transformer-typescript-types": "2.16.0",
         "@vitest/coverage-istanbul": "3.2.4",
         "buffer": "6.0.0",
         "git-cliff": "2.10.1",
