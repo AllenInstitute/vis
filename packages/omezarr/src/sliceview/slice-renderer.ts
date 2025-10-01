@@ -35,15 +35,7 @@ export type RenderSettings = {
         view: box2D;
         screenSize: vec2;
     };
-    planeLocation:
-        | {
-              parameter?: never;
-              index: number;
-          }
-        | {
-              index?: never;
-              parameter: number;
-          };
+    planeLocation: number;
     tileSize: number;
     plane: CartesianPlane;
     channels: RenderSettingsChannels;

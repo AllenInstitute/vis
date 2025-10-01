@@ -1,5 +1,5 @@
 import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
+import { type OmeZarrMetadata, loadMetadata, nextSliceStep, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
@@ -53,7 +53,7 @@ const demoOptions: DemoOption[] = [
         },
     },
     {
-        value: 'opt5',
+        value: 'opt6',
         label: 'V3 Zarr Example Image (S3) (color channels: [R, G, B])',
         res: {
             type: 's3',
@@ -67,7 +67,7 @@ const screenSize: vec2 = [800, 800];
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
-function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omezarr: OmeZarrMetadata): RenderSettings {
+function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
     const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
         acc[val.label ?? `${index}`] = {
             rgb: val.rgb,
@@ -85,7 +85,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omeza
 
     return {
         camera: { screenSize, view },
-        planeLocation: { index: orthoVal },
+        planeLocation: param,
         plane: PLANE_XY,
         tileSize: 256,
         channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
@@ -98,7 +98,7 @@ export function OmezarrDemo() {
     const [omezarr, setOmezarr] = useState<OmeZarrMetadata | null>(null);
     const [omezarrJson, setOmezarrJson] = useState<string>('');
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
-    const [planeIndex, setPlaneIndex] = useState(0);
+    const [planeIndex, setPlaneParam] = useState(0);
     const [dragging, setDragging] = useState(false);
 
     const selectId = useId();
@@ -114,7 +114,6 @@ export function OmezarrDemo() {
         loadMetadata(res).then((v) => {
             setOmezarr(v);
             setOmezarrJson(JSON.stringify(v, undefined, 4));
-            setPlaneIndex(Math.floor(v.maxOrthogonal(PLANE_XY) / 2));
             const dataset = v.getFirstShapedDataset(0);
             if (!dataset) {
                 throw new Error('dataset 0 does not exist!');
@@ -154,8 +153,10 @@ export function OmezarrDemo() {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handlePlaneIndex = (next: 1 | -1) => {
-        const step = 1 / (omezarr?.maxOrthogonal(PLANE_XY) ?? 1);
-        setPlaneIndex((prev) => Math.max(0, Math.min(1, prev + step * next)));
+        if (omezarr) {
+            const step = nextSliceStep(omezarr, PLANE_XY, view, screenSize);
+            setPlaneParam((prev) => Math.max(0, Math.min(prev + next * (step ?? 1), 1)));
+        }
     };
 
     const handleZoom = (e: WheelEvent) => {

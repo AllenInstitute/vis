@@ -7,6 +7,7 @@ import {
     sizeInUnits,
     type RenderSettings,
     type RenderSettingsChannels,
+    nextSliceStep,
 } from '@alleninstitute/vis-omezarr';
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { zoom, pan } from '../common/camera';
@@ -34,9 +35,7 @@ function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr:
 
     return {
         camera: { screenSize, view },
-        planeLocation: {
-            parameter: param,
-        },
+        planeLocation: param,
         plane: PLANE_XY,
         tileSize: 256,
         channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
@@ -77,7 +76,10 @@ export function OmeZarrView(props: Props) {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handleScrollSlice = (next: 1 | -1) => {
-        setPlaneParam((prev) => Math.max(0, Math.min(prev + next / 1000, 1)));
+        if (omezarr) {
+            const step = nextSliceStep(omezarr, PLANE_XY, view, screenSize);
+            setPlaneParam((prev) => Math.max(0, Math.min(prev + next * (step ?? 1), 1)));
+        }
     };
 
     const handleZoom = useCallback(
