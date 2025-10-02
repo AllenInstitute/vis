@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-omezarr",
-    "version": "0.0.13",
+    "version": "0.0.14",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -53,7 +53,7 @@
         "regl": "2.1.0",
         "uuid": "13.0.0",
         "zarrita": "0.5.3",
-        "zod": "4.1.5"
+        "zod": "4.1.11"
     },
     "packageManager": "pnpm@9.14.2"
 }
