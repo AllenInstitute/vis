@@ -13,7 +13,8 @@
         "fmt:check": "biome format .",
         "lint": "biome lint . --write",
         "lint:check": "biome lint .",
-        "changelog": "pnpm -r run changelog"
+        "changelog": "pnpm -r run changelog",
+        "prepare": "node .husky/install.mjs"
     },
     "devDependencies": {
         "@biomejs/biome": "2.2.2",
@@ -23,6 +24,7 @@
         "buffer": "6.0.0",
         "git-cliff": "2.10.0",
         "husky": "9.1.7",
+        "lint-staged": "16.2.3",
         "parcel": "2.15.4",
         "process": "0.11.10",
         "typescript": "5.9.2",
