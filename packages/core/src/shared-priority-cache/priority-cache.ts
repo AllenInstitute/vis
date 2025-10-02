@@ -31,11 +31,7 @@ export class PriorityCache<T extends Cacheable> {
     private used: number;
 
     // items with lower scores will be evicted before items with high scores
-    constructor(
-        store: Store<CacheKey, T>,
-        score: (k: CacheKey) => number,
-        limitInBytes: number,
-    ) {
+    constructor(store: Store<CacheKey, T>, score: (k: CacheKey) => number, limitInBytes: number) {
         this.store = store;
         this.evictPriority = new MinHeap<CacheKey>(5000, score);
         this.limit = limitInBytes;
@@ -111,13 +107,12 @@ export class PriorityCache<T extends Cacheable> {
     }
 }
 
-
 export class AsyncPriorityCache<T extends Cacheable> extends PriorityCache<T> {
     private fetchPriority: KeyedMinHeap<PendingResource<T>, CacheKey>;
     private pendingFetches: Map<CacheKey, AbortController>;
     private MAX_INFLIGHT_FETCHES: number;
     private notify: undefined | ((k: CacheKey, result: FetchResult) => void);
-    
+
     // items with lower scores will be evicted before items with high scores
     constructor(
         store: Store<CacheKey, T>,
@@ -133,7 +128,7 @@ export class AsyncPriorityCache<T extends Cacheable> extends PriorityCache<T> {
         this.MAX_INFLIGHT_FETCHES = maxFetches;
         this.notify = onDataArrived;
     }
-    
+
     enqueue(key: CacheKey, fetcher: (abort: AbortSignal) => Promise<T>) {
         // enqueue the item, if we dont already have it, or are not already asking
         if (!this.has(key) && !this.pendingFetches.has(key) && !this.fetchPriority.hasItemWithKey(key)) {
