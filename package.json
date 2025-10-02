@@ -37,7 +37,8 @@
     "packageManager": "pnpm@9.14.2",
     "lint-staged": {
         "*": [
-            "biome check . --write"
+            "biome check . --write",
+            "git add"
         ]
     }
 }
