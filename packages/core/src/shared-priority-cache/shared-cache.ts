@@ -1,6 +1,7 @@
-import { PriorityCache, type Store, type Resource, type FetchResult } from './priority-cache';
+import { type Store, type Cacheable, type FetchResult, AsyncPriorityCache } from './priority-cache';
 import { mergeAndAdd, prioritizeCacheKeys, priorityDelta } from './utils';
 import uniqueId from 'lodash/uniqueId';
+
 // goal: we want clients of the cache to experience a type-safe interface -
 // they expect that the things coming out of the cache are the type they expect (what they put in it)
 // this is not strictly true, as the cache is shared, and other clients may use different types
@@ -10,18 +11,18 @@ import uniqueId from 'lodash/uniqueId';
 //  metadata {url, bounds} for a tile in a larger dataset.
 // ItemContent = the actual heavy data that Item is a placeholder for - for example one or more arrays of
 //  raw data used by the client of the cache - the value we are caching.
-type CacheInterface<Item, ItemContent extends Record<string, Resource>> = {
+type CacheInterface<Item, ItemContent extends Record<string, Cacheable>> = {
     get: (k: Item) => ItemContent | undefined;
     has: (k: Item) => boolean;
     unsubscribeFromCache: () => void;
     setPriorities: (low: Iterable<Item>, high: Iterable<Item>) => void;
 };
 
-export type ClientSpec<Item, ItemContent extends Record<string, Resource>> = {
-    isValue: (v: Record<string, Resource | undefined>) => v is ItemContent;
+export type ClientSpec<Item, ItemContent extends Record<string, Cacheable>> = {
+    isValue: (v: Record<string, Cacheable | undefined>) => v is ItemContent;
     cacheKeys: (item: Item) => { [k in keyof ItemContent]: string };
     onDataArrived?: (cacheKey: string, result: FetchResult) => void;
-    fetch: (item: Item) => { [k in keyof ItemContent]: (abort: AbortSignal) => Promise<Resource> };
+    fetch: (item: Item) => { [k in keyof ItemContent]: (abort: AbortSignal) => Promise<Cacheable> };
 };
 
 type KV<T extends Record<string, unknown>> = readonly [keyof T, T[keyof T]];
@@ -43,13 +44,13 @@ type Client = {
         | ((cacheKey: string, result: { status: 'success' } | { status: 'failure'; reason: unknown }) => void);
 };
 export class SharedPriorityCache {
-    private cache: PriorityCache;
+    private cache: AsyncPriorityCache<Cacheable>;
     private clients: Record<string, Client>;
     private importance: Record<string, number>;
-    constructor(store: Store<string, Resource>, limitInBytes: number, max_concurrent_fetches = 10) {
+    constructor(store: Store<string, Cacheable>, limitInBytes: number, max_concurrent_fetches = 10) {
         this.importance = {};
         this.clients = {};
-        this.cache = new PriorityCache(
+        this.cache = new AsyncPriorityCache(
             store,
             (ck) => this.importance[ck] ?? 0,
             limitInBytes,
@@ -57,7 +58,7 @@ export class SharedPriorityCache {
             (ck, result) => this.onCacheEntryArrived(ck, result),
         );
     }
-    registerClient<Item, ItemContent extends Record<string, Resource>>(
+    registerClient<Item, ItemContent extends Record<string, Cacheable>>(
         spec: ClientSpec<Item, ItemContent>,
     ): CacheInterface<Item, ItemContent> {
         const id = uniqueId('client');
@@ -101,7 +102,7 @@ export class SharedPriorityCache {
         return {
             get: (k: Item) => {
                 const keys = spec.cacheKeys(k);
-                const v = mapFields<Record<string, string>, Resource | undefined>(keys, (k) => this.cache.get(k));
+                const v = mapFields<Record<string, string>, Cacheable | undefined>(keys, (k) => this.cache.get(k));
                 return spec.isValue(v) ? v : undefined;
             },
             has: (k: Item) => {

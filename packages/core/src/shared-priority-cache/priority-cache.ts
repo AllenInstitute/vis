@@ -2,11 +2,11 @@ import { MinHeap } from './min-heap';
 import { KeyedMinHeap } from './keyed-heap';
 
 type CacheKey = string;
-export interface Resource {
+export interface Cacheable {
     destroy?: () => void;
     sizeInBytes: () => number;
 }
-export interface Store<K extends {}, V extends {}> {
+export interface Store<K extends {}, V> {
     set(k: K, v: V): void;
     get(k: K): V | undefined;
     has(k: K): boolean;
@@ -14,45 +14,33 @@ export interface Store<K extends {}, V extends {}> {
     keys(): Iterable<K>;
     values(): Iterable<V>;
 }
-type PendingResource = {
+type PendingResource<T extends Cacheable> = {
     key: CacheKey;
-    fetch: (sig: AbortSignal) => Promise<Resource>;
+    fetch: (sig: AbortSignal) => Promise<T>;
 };
 
 function negate(fn: (k: CacheKey) => number) {
     return (k: CacheKey) => -fn(k);
 }
 export type FetchResult = { status: 'success' } | { status: 'failure'; reason: unknown };
-export class PriorityCache {
-    private store: Store<CacheKey, Resource>;
+
+export class PriorityCache<T extends Cacheable> {
+    private store: Store<CacheKey, T>;
     private evictPriority: MinHeap<CacheKey>;
-    private fetchPriority: KeyedMinHeap<PendingResource, CacheKey>;
-    private pendingFetches: Map<CacheKey, AbortController>;
     private limit: number;
     private used: number;
-    private MAX_INFLIGHT_FETCHES: number;
-    private notify: undefined | ((k: CacheKey, result: FetchResult) => void);
+
     // items with lower scores will be evicted before items with high scores
-    constructor(
-        store: Store<CacheKey, Resource>,
-        score: (k: CacheKey) => number,
-        limitInBytes: number,
-        maxFetches: number,
-        onDataArrived?: (key: CacheKey, result: FetchResult) => void,
-    ) {
+    constructor(store: Store<CacheKey, T>, score: (k: CacheKey) => number, limitInBytes: number) {
         this.store = store;
         this.evictPriority = new MinHeap<CacheKey>(5000, score);
-        this.fetchPriority = new KeyedMinHeap<PendingResource, CacheKey>(5000, negate(score), (pr) => pr.key);
         this.limit = limitInBytes;
-        this.pendingFetches = new Map();
         this.used = 0;
-        this.MAX_INFLIGHT_FETCHES = maxFetches;
-        this.notify = onDataArrived;
     }
     // add {key:item} to the cache - return false (and fail) if the key is already present
     // may evict items to make room
     // return true on success
-    put(key: CacheKey, item: Resource): boolean {
+    put(key: CacheKey, item: T): boolean {
         if (this.store.has(key)) {
             return false;
         }
@@ -65,12 +53,83 @@ export class PriorityCache {
         this.used += size;
         return true;
     }
-    private sanitizedSize(item: Resource) {
+    private sanitizedSize(item: T) {
         const givenSize = item.sizeInBytes?.() ?? 0;
         const size = Number.isFinite(givenSize) ? Math.max(0, givenSize) : 0;
         return size;
     }
-    enqueue(key: CacheKey, fetcher: (abort: AbortSignal) => Promise<Resource>) {
+
+    // it is expected that the score function is not "pure" -
+    // it has a closure over data that changes over time, representing changing priorities
+    // thus - the owner of this cache has a responsibility to notify the cache when significant
+    // changes in priority occur!
+    reprioritize(score: (k: CacheKey) => number) {
+        this.evictPriority.rebuild(score);
+    }
+
+    get(key: CacheKey): T | undefined {
+        return this.store.get(key);
+    }
+
+    has(key: CacheKey): boolean {
+        return this.store.has(key);
+    }
+
+    cached(key: CacheKey): boolean {
+        return this.store.has(key);
+    }
+
+    isFull(): boolean {
+        return this.used >= this.limit;
+    }
+
+    private evictLowestPriority() {
+        const evictMe = this.evictPriority.popMinItem();
+        if (evictMe === null) return false;
+
+        const data = this.store.get(evictMe);
+        if (data) {
+            data.destroy?.();
+            this.store.delete(evictMe);
+            const size = this.sanitizedSize(data);
+            this.used -= size;
+        }
+        return true;
+    }
+
+    private evictUntil(targetUsedBytes: number) {
+        while (this.used > targetUsedBytes) {
+            if (!this.evictLowestPriority()) {
+                // note: evictLowestPriority mutates this.used
+                return; // all items evicted...
+            }
+        }
+    }
+}
+
+export class AsyncPriorityCache<T extends Cacheable> extends PriorityCache<T> {
+    private fetchPriority: KeyedMinHeap<PendingResource<T>, CacheKey>;
+    private pendingFetches: Map<CacheKey, AbortController>;
+    private MAX_INFLIGHT_FETCHES: number;
+    private notify: undefined | ((k: CacheKey, result: FetchResult) => void);
+
+    // items with lower scores will be evicted before items with high scores
+    constructor(
+        store: Store<CacheKey, T>,
+        score: (k: CacheKey) => number,
+        limitInBytes: number,
+        maxFetches: number,
+        onDataArrived?: (key: CacheKey, result: FetchResult) => void,
+    ) {
+        super(store, score, limitInBytes);
+
+        this.fetchPriority = new KeyedMinHeap<PendingResource<T>, CacheKey>(5000, negate(score), (pr) => pr.key);
+        this.pendingFetches = new Map();
+        this.MAX_INFLIGHT_FETCHES = maxFetches;
+        this.notify = onDataArrived;
+    }
+
+    enqueue(key: CacheKey, fetcher: (abort: AbortSignal) => Promise<T>) {
         // enqueue the item, if we dont already have it, or are not already asking
         if (!this.has(key) && !this.pendingFetches.has(key) && !this.fetchPriority.hasItemWithKey(key)) {
             this.fetchPriority.addItem({ key, fetch: fetcher });
@@ -79,7 +138,8 @@ export class PriorityCache {
         }
         return false;
     }
-    private beginFetch({ key, fetch }: PendingResource) {
+
+    private beginFetch({ key, fetch }: PendingResource<T>) {
         const abort = new AbortController();
         this.pendingFetches.set(key, abort);
         return fetch(abort.signal)
@@ -95,6 +155,7 @@ export class PriorityCache {
                 this.fetchToLimit();
             });
     }
+
     private fetchToLimit() {
         let toFetch = Math.max(0, this.MAX_INFLIGHT_FETCHES - this.pendingFetches.size);
         for (let i = 0; i < toFetch; i++) {
@@ -116,8 +177,8 @@ export class PriorityCache {
     // it has a closure over data that changes over time, representing changing priorities
     // thus - the owner of this cache has a responsibility to notify the cache when significant
     // changes in priority occur!
-    reprioritize(score: (k: CacheKey) => number) {
-        this.evictPriority.rebuild(score);
+    override reprioritize(score: (k: CacheKey) => number) {
+        super.reprioritize(score);
         this.fetchPriority.rebuild(negate(score));
         for (const [key, abort] of this.pendingFetches) {
             if (score(key) === 0) {
@@ -126,38 +187,8 @@ export class PriorityCache {
             }
         }
     }
-    get(key: CacheKey): Resource | undefined {
-        return this.store.get(key);
-    }
 
-    has(key: CacheKey): boolean {
-        return this.store.has(key);
-    }
     cachedOrPending(key: CacheKey): boolean {
-        return this.store.has(key) || this.fetchPriority.hasItemWithKey(key) || this.pendingFetches.has(key);
-    }
-    isFull(): boolean {
-        return this.used >= this.limit;
-    }
-    private evictLowestPriority() {
-        const evictMe = this.evictPriority.popMinItem();
-        if (evictMe === null) return false;
-
-        const data = this.store.get(evictMe);
-        if (data) {
-            data.destroy?.();
-            this.store.delete(evictMe);
-            const size = this.sanitizedSize(data);
-            this.used -= size;
-        }
-        return true;
-    }
-    private evictUntil(targetUsedBytes: number) {
-        while (this.used > targetUsedBytes) {
-            if (!this.evictLowestPriority()) {
-                // note: evictLowestPriority mutates this.used
-                return; // all items evicted...
-            }
-        }
+        return this.cached(key) || this.fetchPriority.hasItemWithKey(key) || this.pendingFetches.has(key);
     }
 }

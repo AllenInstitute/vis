@@ -48,9 +48,10 @@
         "registry": "https://npm.pkg.github.com/AllenInstitute"
     },
     "dependencies": {
-        "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
         "regl": "2.1.0",
+        "uuid": "13.0.0",
         "zarrita": "0.5.3",
         "zod": "4.1.11"
     },

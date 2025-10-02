@@ -1,4 +1,4 @@
-import type { SharedPriorityCache, CachedTexture, Resource } from '@alleninstitute/vis-core';
+import type { SharedPriorityCache, CachedTexture, Cacheable } from '@alleninstitute/vis-core';
 import type { vec2 } from '@alleninstitute/vis-geometry';
 import {
     buildOmeZarrSliceRenderer,
@@ -9,7 +9,7 @@ import {
 } from '@alleninstitute/vis-omezarr';
 import type REGL from 'regl';
 
-class Tex implements Resource {
+class Tex implements Cacheable {
     texture: CachedTexture;
     constructor(tx: CachedTexture) {
         this.texture = tx;
@@ -65,7 +65,7 @@ export function buildConnectedRenderer(
         },
         isValue: (v): v is Record<string, Tex> =>
             renderer.isPrepared(
-                mapValues(v, (tx: Resource | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined)),
+                mapValues(v, (tx: Cacheable | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined)),
             ),
         onDataArrived: onData,
     });
