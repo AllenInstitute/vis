@@ -26,6 +26,9 @@ importers:
       git-cliff:
         specifier: 2.10.0
         version: 2.10.0
+      husky:
+        specifier: 9.1.7
+        version: 9.1.7
       parcel:
         specifier: 2.15.4
         version: 2.15.4(@swc/helpers@0.5.17)
@@ -2906,6 +2909,11 @@ packages:
   human-signals@5.0.0:
     resolution: {integrity: sha512-AXcZb6vzzrFAUE61HnN4mpLqd/cSIwNQjtNWR0euPm6y0iqx3G4gOXaIDdtdDwZmhwe82LA6+zinmW4UBWVePQ==}
     engines: {node: '>=16.17.0'}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   i18next@23.16.8:
     resolution: {integrity: sha512-06r/TitrM88Mg5FdUXAKL96dJMzgqLE5dv3ryBAra4KCwD9mJ4ndOTS95ZuymIGoE+2hzfdaMak2X11/es7ZWg==}
@@ -7680,6 +7688,8 @@ snapshots:
   http-cache-semantics@4.1.1: {}
 
   human-signals@5.0.0: {}
+
+  husky@9.1.7: {}
 
   i18next@23.16.8:
     dependencies:
