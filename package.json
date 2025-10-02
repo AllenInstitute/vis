@@ -37,7 +37,7 @@
     "packageManager": "pnpm@9.14.2",
     "lint-staged": {
         "*": [
-            "biome check --no-errors-on-unmatched --files-ignore-unknown=true --write"
+            "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
         ]
     }
 }
