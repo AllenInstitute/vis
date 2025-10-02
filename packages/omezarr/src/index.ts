@@ -49,6 +49,7 @@ export {
     loadSlice,
     sizeInUnits,
     sizeInVoxels,
+    nextSliceStep,
     planeSizeInVoxels,
     type ZarrRequest,
 } from './zarr/loading';
