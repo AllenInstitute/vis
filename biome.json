@@ -15,7 +15,13 @@
         "indentWidth": 4,
         "lineWidth": 120
     },
-    "assist": { "actions": { "source": { "organizeImports": "on" } } },
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    },
     "linter": {
         "enabled": true,
         "rules": {

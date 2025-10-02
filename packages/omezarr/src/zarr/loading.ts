@@ -179,9 +179,45 @@ export function pickBestScale(
     }, datasets[0]);
     return choice ?? datasets[datasets.length - 1];
 }
-
+// TODO this is a duplicate of indexOfDimension... delete one of them!
 function indexFor(dim: ZarrDimension, axes: readonly OmeZarrAxis[]) {
     return axes.findIndex((axis) => axis.name === dim);
+}
+/**
+ *
+ * @param layer a shaped layer from within the omezarr dataset
+ * @param axes the axes describing this omezarr dataset
+ * @param parameter a value from [0:1] indicating a parameter of the volume, along the given dimension @param dim,
+ * @param dim the dimension (axis) along which @param parameter refers
+ * @returns a valid index (between [0,layer.shape[axis] ]) from the volume, suitable for
+ */
+export function indexOfRelativeSlice(
+    layer: OmeZarrShapedDataset,
+    axes: readonly OmeZarrAxis[],
+    parameter: number,
+    dim: ZarrDimension,
+): number {
+    const dimIndex = indexFor(dim, axes);
+    return Math.floor(layer.shape[dimIndex] * Math.max(0, Math.min(1, parameter)));
+}
+/**
+ * @param zarr
+ * @param plane
+ * @param relativeView
+ * @param displayResolution
+ * @returns
+ */
+export function nextSliceStep(
+    zarr: OmeZarrMetadata,
+    plane: CartesianPlane,
+    relativeView: box2D, // a box in data-unit-space
+    displayResolution: vec2, // in the plane given above
+) {
+    // figure out what layer we'd be viewing
+    const layer = pickBestScale(zarr, plane, relativeView, displayResolution);
+    const axes = zarr.attrs.multiscales[0].axes;
+    const slices = sizeInVoxels(plane.ortho, axes, layer);
+    return slices === undefined ? undefined : 1 / slices;
 }
 
 /**
@@ -211,8 +247,8 @@ export function sizeInUnits(
     for (const trn of dataset.coordinateTransformations) {
         if (trn.type === 'scale') {
             // try to apply it!
-            const uIndex = indexOfDimension(axes, plane.u);
-            const vIndex = indexOfDimension(axes, plane.v);
+            const uIndex = indexFor(plane.u, axes);
+            const vIndex = indexFor(plane.v, axes);
             size = Vec2.mul(size, [trn.scale[uIndex], trn.scale[vIndex]]);
         }
     }
@@ -285,9 +321,6 @@ export async function explain(z: OmeZarrMetadata) {
     logger.dir(z);
 }
 
-export function indexOfDimension(axes: readonly OmeZarrAxis[], dim: ZarrDimension) {
-    return axes.findIndex((ax) => ax.name === dim);
-}
 /**
  * get voxels / pixels from a region of a layer of an omezarr dataset
  * @param metadata a ZarrMetadata from which to request a slice of voxels
