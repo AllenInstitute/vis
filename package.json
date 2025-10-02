@@ -38,6 +38,7 @@
     "lint-staged": {
         "*": [
             "biome check . --write",
+            "echo 'wat'",
             "git add"
         ]
     }
