@@ -22,7 +22,7 @@
         "@parcel/transformer-typescript-types": "2.15.4",
         "@vitest/coverage-istanbul": "3.2.4",
         "buffer": "6.0.0",
-        "git-cliff": "2.10.0",
+        "git-cliff": "2.10.1",
         "husky": "9.1.7",
         "lint-staged": "16.2.3",
         "parcel": "2.15.4",
