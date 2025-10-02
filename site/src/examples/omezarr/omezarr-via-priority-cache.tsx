@@ -41,12 +41,22 @@ const demoOptions: DemoOption[] = [
     },
 ];
 
+const overrideOption: DemoOption = {
+    value: 'opt5',
+    label: 'Example V3 OME-Zarr',
+    res: {
+        type: 's3',
+        region: 'us-west-2',
+        url: 's3://public-development-802451596237-us-west-2/tissuecyte/478097069/ome_zarr_conversion/478097069.zarr'
+    }
+}
+
 const screenSize: vec2 = [800, 800];
 
 export function OmezarrDemo() {
     return (
         <SharedCacheProvider>
-            <OmeZarrView res={demoOptions[3].res} screenSize={screenSize} />
+            <OmeZarrView res={overrideOption.res} screenSize={screenSize} />
         </SharedCacheProvider>
     );
 }
