@@ -1,9 +1,9 @@
-import type { Resource } from './priority-cache';
+import type { Cacheable } from './priority-cache';
 import type { ClientSpec } from './shared-cache';
 
 // some utils for tracking changing priorities in our priority cache
 
-export function prioritizeCacheKeys<Item, ItemContent extends Record<string, Resource>>(
+export function prioritizeCacheKeys<Item, ItemContent extends Record<string, Cacheable>>(
     spec: ClientSpec<Item, ItemContent>,
     items: Iterable<Item>,
     priority: 1 | 2,

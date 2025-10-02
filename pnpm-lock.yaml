@@ -80,6 +80,9 @@ importers:
       regl:
         specifier: 2.1.0
         version: 2.1.0
+      uuid:
+        specifier: 13.0.0
+        version: 13.0.0
       zarrita:
         specifier: 0.5.3
         version: 0.5.3
@@ -4117,6 +4120,10 @@ packages:
   utility-types@3.11.0:
     resolution: {integrity: sha512-6Z7Ma2aVEWisaL6TvBCy7P8rm2LQoPv6dJ7ecIaIixHcwfbJ0x7mWdbcwlIM5IGQxPZSFYeqRCqlOOeKoJYMkw==}
     engines: {node: '>= 4'}
+
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+    hasBin: true
 
   uzip-module@1.0.3:
     resolution: {integrity: sha512-AMqwWZaknLM77G+VPYNZLEruMGWGzyigPK3/Whg99B3S6vGHuqsyl5ZrOv1UUF3paGK1U6PM0cnayioaryg/fA==}
@@ -9239,6 +9246,8 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   utility-types@3.11.0: {}
+
+  uuid@13.0.0: {}
 
   uzip-module@1.0.3: {}
 
