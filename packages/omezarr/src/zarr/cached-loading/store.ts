@@ -1,23 +1,17 @@
-import { AsyncPriorityCache, type FetchResult, logger, type Cacheable } from '@alleninstitute/vis-core';
+import { type Cacheable, PriorityCache } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
 import { WorkerPool } from './worker-pool';
-import { FETCH_SLICE_MESSAGE_TYPE, isFetchSliceResponseMessage } from './fetch-slice.interface';
+import { FETCH_SLICE_MESSAGE_TYPE, type FetchSliceResponseMessage, isFetchSliceResponseMessage } from './fetch-slice.interface';
 
 const DEFAULT_NUM_WORKERS = 6;
 const DEFAULT_MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
-const DEFAULT_NUM_CONCURRENT_FETCHES = DEFAULT_NUM_WORKERS;
 
 // @TODO implement a much more context-aware cache size limiting mechanism
 const getDataCacheSizeLimit = () => {
     return DEFAULT_MAX_DATA_CACHE_BYTES;
 };
 
-// @TODO implement a much more context-aware cache size limiting mechanism
-const getMaxConcurrentFetches = () => {
-    return DEFAULT_NUM_CONCURRENT_FETCHES;
-};
-
-const asCacheKey = (key: zarr.AbsolutePath, range?: zarr.RangeQuery | undefined): string => {
+export const asCacheKey = (key: zarr.AbsolutePath, range?: zarr.RangeQuery | undefined): string => {
     const keyStr = JSON.stringify(key);
     const rangeStr = range ? JSON.stringify(range) : 'no-range';
     return `${keyStr} ${rangeStr}`;
@@ -112,15 +106,18 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      * fetched. This data is stored in raw byte array form so that it
      * integrates properly with the Zarrita framework.
      */
-    #dataCache: AsyncPriorityCache<CacheableByteArray>;
+    #dataCache: PriorityCache<CacheableByteArray>;
 
     /**
      * Maps cache keys to numeric times; the higher the time, the higher the priority.
      *
      * This effectively means that more frequently-requested items will be kept longer.
      */
-    #priorityMap: Map<CacheKey, number>;
+    #priorityByTimestamp: Map<CacheKey, number>;
 
+    /**
+     * Stores in-progress requests that have not yet resolved.
+     */
     #pendingRequests: Map<CacheKey, PendingRequest<Uint8Array | undefined>>;
 
     /**
@@ -131,14 +128,12 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);
-        this.#dataCache = new AsyncPriorityCache<CacheableByteArray>(
+        this.#dataCache = new PriorityCache<CacheableByteArray>(
             new Map<CacheKey, CacheableByteArray>(),
             this.#scoreFn,
             options?.maxBytes ?? getDataCacheSizeLimit(),
-            options?.maxFetches ?? getMaxConcurrentFetches(),
-            (key: CacheKey, result: FetchResult) => this.#dataReceived(key, result),
         );
-        this.#priorityMap = new Map<CacheKey, number>();
+        this.#priorityByTimestamp = new Map<CacheKey, number>();
         this.#workerPool = new WorkerPool(
             options?.numWorkers ?? DEFAULT_NUM_WORKERS,
             new URL('./fetch-slice.worker.ts', import.meta.url),
@@ -147,7 +142,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     }
 
     protected score(key: CacheKey): number {
-        return this.#priorityMap.get(key) ?? 0;
+        return this.#priorityByTimestamp.get(key) ?? 0;
     }
 
     #fromCache(cacheKey: CacheKey): Uint8Array | undefined {
@@ -155,28 +150,8 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         if (cached === undefined) {
             return undefined;
         }
-        this.#priorityMap.set(cacheKey, Date.now());
+        this.#priorityByTimestamp.set(cacheKey, Date.now());
         return new Uint8Array(cached.buffer());
-    }
-
-    #dataReceived(key: CacheKey, result: FetchResult) {
-        const pending = this.#pendingRequests.get(key);
-        if (pending === undefined) {
-            logger.warn('received data for unrecognized request');
-            return;
-        }
-        if (result.status === 'failure') {
-            const reason = new Error('data retrieval failed:', { cause: result.reason });
-            pending.reject(reason);
-            this.#pendingRequests.delete(key);
-            throw reason;
-        }
-        const cacheable = this.#dataCache.get(key);
-        if (cacheable === undefined) {
-            pending.resolve(undefined);
-            return;
-        }
-        pending.resolve(new Uint8Array(cacheable.buffer()));
     }
 
     async #doFetch(
@@ -185,47 +160,57 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         options: TransferableRequestInit,
         abort: AbortSignal | undefined,
     ): Promise<Uint8Array | undefined> {
-        const fetcher = async (signal: AbortSignal) => {
-            const response = await this.#workerPool.submitRequest(
-                {
-                    type: FETCH_SLICE_MESSAGE_TYPE,
-                    rootUrl: this.url,
-                    path: key,
-                    range,
-                    options,
-                    signal,
-                },
-                isFetchSliceResponseMessage,
-                [],
-            );
-            if (response.payload === undefined) {
-                throw new Error('data retrieval failed: resoonse payload was empty');
-            }
-            const arr = new Uint8Array(response.payload);
-            return new CacheableByteArray(arr);
-        };
-
+        
         const cacheKey = asCacheKey(key, range);
-        this.#priorityMap.set(cacheKey, Date.now());
 
+        this.#priorityByTimestamp.set(cacheKey, Date.now());
+        this.#dataCache.reprioritize();
+
+        const pending = this.#pendingRequests.get(cacheKey);
+        if (pending !== undefined) {
+            return pending.promise;
+        }
+
+        const { promise, resolve, reject } = Promise.withResolvers<Uint8Array | undefined>();
+
+        this.#pendingRequests.set(cacheKey, { promise, resolve, reject });
+        
         if (abort) {
             abort.onabort = () => {
-                this.#priorityMap.set(cacheKey, 0);
+                this.#priorityByTimestamp.set(cacheKey, 0);
                 this.#dataCache.reprioritize();
             };
         }
 
-        const queued = this.#dataCache.enqueue(cacheKey, fetcher);
-        if (!queued) {
-            const pending = this.#pendingRequests.get(cacheKey);
-            if (pending === undefined) {
-                throw new Error('data cache did not queue request, but request was not found to be pending');
+        const request = this.#workerPool.submitRequest(
+            {
+                type: FETCH_SLICE_MESSAGE_TYPE,
+                rootUrl: this.url,
+                path: key,
+                range,
+                options,
+                abort,
+            },
+            isFetchSliceResponseMessage,
+            [],
+        );
+
+        request.then((response: FetchSliceResponseMessage) => {
+            const payload = response.payload;
+            if (payload === undefined) {
+                resolve(undefined);
+                return;
             }
-            return await pending.promise;
-        }
-        const { promise, resolve, reject } = Promise.withResolvers<Uint8Array | undefined>();
-        this.#pendingRequests.set(cacheKey, { promise, resolve, reject });
-        return await promise;
+            const arr = new Uint8Array(payload);
+            this.#dataCache.put(cacheKey, new CacheableByteArray(arr));
+            resolve(arr);
+        }).catch((e) => {
+            reject(e);
+        }).finally(() => {
+            this.#pendingRequests.delete(cacheKey);
+        });
+
+        return promise;
     }
 
     async get(key: zarr.AbsolutePath, options?: RequestInit): Promise<Uint8Array | undefined> {
@@ -234,6 +219,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         if (cached !== undefined) {
             return cached;
         }
+
         const workerOptions = copyToTransferableRequestInit(options);
         const abort = options?.signal ?? undefined;
         return this.#doFetch(key, undefined, workerOptions, abort);
@@ -249,6 +235,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         if (cached !== undefined) {
             return cached;
         }
+        
         const workerOptions = copyToTransferableRequestInit(options);
         const abort = options?.signal ?? undefined;
         return this.#doFetch(key, range, workerOptions, abort);
