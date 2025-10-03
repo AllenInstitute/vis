@@ -97,7 +97,7 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
     return keys.every((key) => cacheData[key]?.type === 'texture');
 }
 
-export type Decoder = (
+type Decoder = (
     dataset: OmeZarrMetadata,
     req: ZarrRequest,
     level: OmeZarrShapedDataset,
