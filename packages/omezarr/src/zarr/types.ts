@@ -4,6 +4,7 @@ import { logger, makeRGBAColorVector } from '@alleninstitute/vis-core';
 import { z } from 'zod';
 
 export type ZarrDimension = 't' | 'c' | 'z' | 'y' | 'x';
+export type OmeZarrDimension = ZarrDimension;
 
 // these dimension indices are given for a 4-element shape array
 const SHAPE_Z_DIM_INDEX = 1;
