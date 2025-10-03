@@ -17,19 +17,24 @@ type FetchStoreOptions = {
 };
 
 class CacheableByteArray implements Cacheable {
-    #arr: Uint8Array;
+    #arr: Uint8Array | null;
 
     constructor(arr: Uint8Array) {
         this.#arr = arr;
     }
 
-    destroy() {}
+    destroy() {
+        this.#arr = null;
+    }
 
     sizeInBytes(): number {
-        return this.#arr.byteLength;
+        return this.#arr?.byteLength ?? 0;
     }
 
     buffer(): ArrayBufferLike {
+        if (this.#arr === null) {
+            throw new Error('cannot retrieve data buffer: array is null');
+        }
         return this.#arr.buffer;
     }
 }
