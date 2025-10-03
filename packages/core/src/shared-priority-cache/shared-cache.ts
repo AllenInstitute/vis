@@ -34,7 +34,13 @@ function mapFields<R extends Record<string, unknown>, Result>(
     r: R,
     fn: (v: R[keyof R]) => Result,
 ): { [k in keyof R]: Result } {
-    return entries(r).reduce((acc, [k, v]) => ({ ...acc, [k]: fn(v) }), {} as { [k in keyof R]: Result });
+    return entries(r).reduce(
+        (acc, [k, v]) => {
+            acc[k] = fn(v);
+            return acc;
+        },
+        {} as { [k in keyof R]: Result },
+    );
 }
 
 type Client = {

@@ -28,9 +28,11 @@ type Thing = {
     settings: RenderSettings;
 };
 function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): { [k in keyof T]: R } {
-    return Object.keys(obj).reduce(
+    return (Object.keys(obj) as (keyof T)[]).reduce(
+        // typecast is annoyingly necessary in this case to avoid a linting warning
         (acc, k) => {
-            return { ...acc, [k]: fn(obj[k]) };
+            acc[k] = fn(obj[k]);
+            return acc;
         },
         {} as { [k in keyof T]: R },
     );
@@ -48,8 +50,9 @@ export function buildConnectedRenderer(
     const client = cache.registerClient<Thing, Record<string, Tex>>({
         cacheKeys: (item) => {
             const channelKeys = Object.keys(item.settings.channels);
-            return channelKeys.reduce((chans, key) => {
-                return { ...chans, [key]: renderer.cacheKey(item.tile, key, item.dataset, item.settings) };
+            return channelKeys.reduce<Record<string, string>>((chans, key) => {
+                chans[key] = renderer.cacheKey(item.tile, key, item.dataset, item.settings);
+                return chans;
             }, {});
         },
         fetch: (item) => {
