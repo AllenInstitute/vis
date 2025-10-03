@@ -4,6 +4,12 @@ import { WorkerPool } from './worker-pool';
 import { FETCH_SLICE_MESSAGE_TYPE, isFetchSliceResponseMessage } from './fetch-slice.interface';
 
 const DEFAULT_NUM_WORKERS = 6;
+const DEFAULT_MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
+
+// @TODO implement a much more context-aware cache size limiting mechanism
+const getDataCacheSizeLimit = () => {
+    return DEFAULT_MAX_DATA_CACHE_BYTES;
+};
 
 const asCacheKey = (key: zarr.AbsolutePath, range?: zarr.RangeQuery | undefined): string => {
     const keyStr = JSON.stringify(key);
@@ -106,13 +112,13 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      */
     #scoreFn: (h: CacheKey) => number;
 
-    constructor(url: string | URL, maxBytes: number, options?: CachingMultithreadedFetchStoreOptions) {
+    constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);
         this.#dataCache = new PriorityCache<CacheableByteArray>(
             new Map<CacheKey, CacheableByteArray>(),
             this.#scoreFn,
-            maxBytes,
+            options?.maxBytes ?? getDataCacheSizeLimit(),
         );
         this.#priorityMap = new Map<CacheKey, number>();
         this.#workerPool = new WorkerPool(
