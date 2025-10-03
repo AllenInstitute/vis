@@ -1,7 +1,11 @@
 import { type Cacheable, PriorityCache } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
 import { WorkerPool } from './worker-pool';
-import { FETCH_SLICE_MESSAGE_TYPE, type FetchSliceResponseMessage, isFetchSliceResponseMessage } from './fetch-slice.interface';
+import {
+    FETCH_SLICE_MESSAGE_TYPE,
+    type FetchSliceResponseMessage,
+    isFetchSliceResponseMessage,
+} from './fetch-slice.interface';
 
 const DEFAULT_NUM_WORKERS = 6;
 const DEFAULT_MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
@@ -160,7 +164,6 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         options: TransferableRequestInit,
         abort: AbortSignal | undefined,
     ): Promise<Uint8Array | undefined> {
-        
         const cacheKey = asCacheKey(key, range);
 
         this.#priorityByTimestamp.set(cacheKey, Date.now());
@@ -174,7 +177,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         const { promise, resolve, reject } = Promise.withResolvers<Uint8Array | undefined>();
 
         this.#pendingRequests.set(cacheKey, { promise, resolve, reject });
-        
+
         if (abort) {
             abort.onabort = () => {
                 this.#priorityByTimestamp.set(cacheKey, 0);
@@ -195,20 +198,23 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             [],
         );
 
-        request.then((response: FetchSliceResponseMessage) => {
-            const payload = response.payload;
-            if (payload === undefined) {
-                resolve(undefined);
-                return;
-            }
-            const arr = new Uint8Array(payload);
-            this.#dataCache.put(cacheKey, new CacheableByteArray(arr));
-            resolve(arr);
-        }).catch((e) => {
-            reject(e);
-        }).finally(() => {
-            this.#pendingRequests.delete(cacheKey);
-        });
+        request
+            .then((response: FetchSliceResponseMessage) => {
+                const payload = response.payload;
+                if (payload === undefined) {
+                    resolve(undefined);
+                    return;
+                }
+                const arr = new Uint8Array(payload);
+                this.#dataCache.put(cacheKey, new CacheableByteArray(arr));
+                resolve(arr);
+            })
+            .catch((e) => {
+                reject(e);
+            })
+            .finally(() => {
+                this.#pendingRequests.delete(cacheKey);
+            });
 
         return promise;
     }
@@ -235,7 +241,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         if (cached !== undefined) {
             return cached;
         }
-        
+
         const workerOptions = copyToTransferableRequestInit(options);
         const abort = options?.signal ?? undefined;
         return this.#doFetch(key, range, workerOptions, abort);
