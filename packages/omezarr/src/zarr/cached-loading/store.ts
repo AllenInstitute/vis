@@ -1,4 +1,4 @@
-import { logger, type WebResource, PriorityCache, Cacheable } from '@alleninstitute/vis-core';
+import { logger, type WebResource, PriorityCache, type Cacheable } from '@alleninstitute/vis-core';
 import {
     OmeZarrAttrsSchema,
     OmeZarrMetadata,
@@ -9,21 +9,23 @@ import {
 import * as zarr from 'zarrita';
 import { ZodError } from 'zod';
 
-import { Decoder, VoxelTileImage } from '../../sliceview/slice-renderer';
-import { ZarrRequest } from '../loading';
+import type { Decoder, VoxelTileImage } from '../../sliceview/slice-renderer';
+import type { ZarrRequest } from '../loading';
 import { WorkerPool } from './worker-pool';
+import { FETCH_SLICE_MESSAGE_TYPE, isFetchSliceResponseMessage } from './fetch-slice.interface';
 
-const MAX_ATTRS_CACHE_BYTES = 16 * 2 ** 10; // 16 MB -- aribtrarily chosen at this point
-const MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
+const DEFAULT_MAX_ATTRS_CACHE_BYTES = 16 * 2 ** 10; // 16 MB -- aribtrarily chosen at this point
+const DEFAULT_MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
+const DEFAULT_NUM_WORKERS = 6;
 
 // @TODO implement a much more context-aware cache size limiting mechanism
 const getAttrsCacheSizeLimit = () => {
-    return MAX_ATTRS_CACHE_BYTES;
+    return DEFAULT_MAX_ATTRS_CACHE_BYTES;
 };
 
 // @TODO implement a much more context-aware cache size limiting mechanism
 const getDataCacheSizeLimit = () => {
-    return MAX_ATTRS_CACHE_BYTES;
+    return DEFAULT_MAX_ATTRS_CACHE_BYTES;
 };
 
 const asCacheKey = (
@@ -83,8 +85,23 @@ export type CachedFetchStoreInit = {
     }
 };
 
-export class CachedMultithreadedFetchStore extends zarr.FetchStore {
+export type CachingMultithreadedFetchStoreOptions = {
+    maxBytes?: number | undefined;
+    numWorkers?: number | undefined;
+    fetchStoreOptions?: FetchStoreOptions | undefined;
+}
+
+export class CachingMultithreadedFetchStore extends zarr.FetchStore {
+    /**
+     * Maintains a pool of available worker threads.
+     */
     #workerPool: WorkerPool;
+
+    /**
+     * Stores the current set of cached data that has been successfully
+     * fetched. This data is stored in raw byte array form so that it
+     * integrates properly with the Zarrita framework.
+     */
     #dataCache: PriorityCache<CacheableByteArray>;
 
     /**
@@ -94,28 +111,69 @@ export class CachedMultithreadedFetchStore extends zarr.FetchStore {
      */
     #priorityMap: Map<CacheKey, number>;
 
+    /**
+     * A callback form of the `score` function.
+     */
+    #scoreFn: (h: CacheKey) => number;
+
     constructor(
         url: string | URL,
         maxBytes: number,
-        options?: FetchStoreOptions
+        options?: CachingMultithreadedFetchStoreOptions
     ) {
-        super(url, options);
-        this.#dataCache = new PriorityCache<CacheableByteArray>(new Map<CacheKey, CacheableByteArray>(), (h: CacheKey) => this.score(h), maxBytes);
+        super(url, options?.fetchStoreOptions);
+        this.#scoreFn = (h: CacheKey) => this.score(h);
+        this.#dataCache = new PriorityCache<CacheableByteArray>(new Map<CacheKey, CacheableByteArray>(), this.#scoreFn, maxBytes);
         this.#priorityMap = new Map<CacheKey, number>;
+        this.#workerPool = new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, new URL('./fetch-slice.worker.ts', import.meta.url));
     }
 
     protected score(key: CacheKey): number {
         return this.#priorityMap.get(key) ?? 0;
     }
 
-    #retrieve(cacheKey: CacheKey,)
+    #fromCache(cacheKey: CacheKey): Uint8Array | undefined {
+        const cached = this.#dataCache.get(cacheKey);
+        if (cached === undefined) {
+            return undefined;
+        }
+        this.#priorityMap.set(cacheKey, Date.now());
+        return new Uint8Array(cached.buffer());
+    }
+
+    async #doFetch(
+        key: zarr.AbsolutePath,
+        range?: zarr.RangeQuery | undefined,
+        options?: RequestInit
+    ): Promise<Uint8Array | undefined> {
+        const response = await this.#workerPool.submitRequest({
+            type: FETCH_SLICE_MESSAGE_TYPE,
+            rootUrl: this.url,
+            path: key,
+            range,
+            options
+        }, isFetchSliceResponseMessage, []);
+        if (response.payload === undefined) {
+            return undefined;
+        }
+        const arr = new Uint8Array(response.payload);
+        const cacheKey = asCacheKey(key, range);
+
+        this.#priorityMap.set(cacheKey, Date.now());
+        this.#dataCache.put(cacheKey, new CacheableByteArray(arr));
+        return arr;
+    }
 
     async get(
         key: zarr.AbsolutePath,
         options?: RequestInit
     ): Promise<Uint8Array | undefined> {
         const cacheKey = asCacheKey(key);
-        return this.#retrieve(cacheKey, key);
+        const cached = this.#fromCache(cacheKey);
+        if (cached !== undefined) {
+            return cached;
+        }
+        return this.#doFetch(key, undefined, options);
     }
 
     async getRange(
@@ -124,7 +182,11 @@ export class CachedMultithreadedFetchStore extends zarr.FetchStore {
         options?: RequestInit
     ): Promise<Uint8Array | undefined> {
         const cacheKey = asCacheKey(key, range);
-        return this.#retrieveRange(cacheKey, () => super.getRange(key, range, options));
+        const cached = this.#fromCache(cacheKey);
+        if (cached !== undefined) {
+            return cached;
+        }
+        return this.#doFetch(key, range, options);
     }
 }
 
