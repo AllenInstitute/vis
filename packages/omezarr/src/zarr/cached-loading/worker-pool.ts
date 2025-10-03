@@ -1,14 +1,10 @@
-import {
-    isWorkerMessageWithId,
-    type WorkerMessage,
-    type WorkerMessageWithId,
-} from './fetch-slice.interface';
+import { isWorkerMessageWithId, type WorkerMessage, type WorkerMessageWithId } from './fetch-slice.interface';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@alleninstitute/vis-core';
 
 type PromiseResolve<T extends WorkerMessageWithId> = (t: T) => void;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 // biome-ignore lint/suspicious/noExplicitAny: This is aligned with the standard Promise API
 type PromiseReject = (reason: any) => void;
 
@@ -72,7 +68,7 @@ export class WorkerPool {
         const messagePromise = this.#createMessagePromise<ResponseType>(responseValidator);
 
         // TODO this cast is very annoying; would be nice to remove it
-        this.#promises.set(reqId, messagePromise as unknown as MessagePromise<WorkerMessageWithId>); 
+        this.#promises.set(reqId, messagePromise as unknown as MessagePromise<WorkerMessageWithId>);
 
         if (signal) {
             signal.onabort = () => {
