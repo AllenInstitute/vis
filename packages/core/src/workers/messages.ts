@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from '../logger';
 
 export type WorkerMessage = {
     type: string;
@@ -17,9 +18,17 @@ const WorkerMessageWithIdSchema = WorkerMessageSchema.extend({
 });
 
 export function isWorkerMessage(val: unknown): val is WorkerMessage {
-    return WorkerMessageSchema.safeParse(val).success;
+    const { success, error } = WorkerMessageSchema.safeParse(val);
+    if (error) {
+        logger.error('parsing WorkerMessage failed', error);
+    }
+    return success;
 }
 
 export function isWorkerMessageWithId(val: unknown): val is WorkerMessageWithId {
-    return WorkerMessageWithIdSchema.safeParse(val).success;
+    const { success, error } = WorkerMessageWithIdSchema.safeParse(val);
+    if (error) {
+        logger.error('parsing WorkerMessageWithId failed', error);
+    }
+    return success;
 }

@@ -45,10 +45,14 @@ export class WorkerPool {
                 return;
             }
             if (!messagePromise.validator(data)) {
-                logger.error('invalid response from worker: message type did not match expected type');
+                const reason = 'invalid response from worker: message type did not match expected type'
+                logger.error(reason);
+                messagePromise.reject(new Error(reason));
                 return;
             }
             messagePromise.resolve(data);
+        } else {
+            logger.error('encountered an invalid message; skipping');
         }
     }
 
