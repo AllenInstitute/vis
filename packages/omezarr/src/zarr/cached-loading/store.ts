@@ -176,7 +176,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         return newCount;
     }
 
-    #decrementKeyCount(cacheKey: CacheKey): number { 
+    #decrementKeyCount(cacheKey: CacheKey): number {
         const count = this.#pendingRequestKeyCounts.get(cacheKey);
         if (count === undefined) {
             logger.warn('attempted to decrement a non-existent request key');
