@@ -50,6 +50,9 @@ importers:
       regl:
         specifier: 2.1.0
         version: 2.1.0
+      zod:
+        specifier: 4.1.11
+        version: 4.1.11
     devDependencies:
       '@types/lodash':
         specifier: 4.17.20

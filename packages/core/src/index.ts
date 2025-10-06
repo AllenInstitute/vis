@@ -22,3 +22,5 @@ export { RenderServer } from './abstract/render-server';
 export { Logger, logger } from './logger';
 export { PriorityCache, AsyncPriorityCache, type Cacheable } from './shared-priority-cache/priority-cache';
 export { SharedPriorityCache } from './shared-priority-cache/shared-cache';
+
+export { type WorkerMessage, type WorkerMessageWithId, isWorkerMessage, isWorkerMessageWithId } from './workers/messages';

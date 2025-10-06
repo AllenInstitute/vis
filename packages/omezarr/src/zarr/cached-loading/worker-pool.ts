@@ -1,4 +1,4 @@
-import { isWorkerMessageWithId, type WorkerMessage, type WorkerMessageWithId } from './fetch-slice.interface';
+import { isWorkerMessageWithId, type WorkerMessage, type WorkerMessageWithId } from '@alleninstitute/vis-core';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@alleninstitute/vis-core';
 

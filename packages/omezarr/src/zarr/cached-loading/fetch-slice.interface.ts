@@ -13,30 +13,6 @@ export type FetchSliceMessagePayload = {
     options?: TransferrableRequestInit | undefined;
 };
 
-export type WorkerMessage = {
-    type: string;
-};
-
-export type WorkerMessageWithId = WorkerMessage & {
-    id: string;
-};
-
-const WorkerMessageSchema = z.object({
-    type: z.string(),
-});
-
-const WorkerMessageWithIdSchema = WorkerMessageSchema.extend({
-    id: z.string().nonempty(),
-});
-
-export function isWorkerMessage(val: unknown): val is WorkerMessage {
-    return WorkerMessageSchema.safeParse(val).success;
-}
-
-export function isWorkerMessageWithId(val: unknown): val is WorkerMessageWithId {
-    return WorkerMessageWithIdSchema.safeParse(val).success;
-}
-
 export const FETCH_SLICE_MESSAGE_TYPE = 'fetch-slice' as const;
 export const FETCH_SLICE_RESPOSNE_MESSAGE_TYPE = 'fetch-slice-response' as const;
 export const CANCEL_MESSAGE_TYPE = 'cancel' as const;
