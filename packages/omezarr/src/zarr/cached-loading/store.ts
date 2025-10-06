@@ -1,4 +1,4 @@
-import { type Cacheable, PriorityCache } from '@alleninstitute/vis-core';
+import { type Cacheable, logger, PriorityCache } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
 import { WorkerPool } from './worker-pool';
 import {
@@ -125,6 +125,16 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     #pendingRequests: Map<CacheKey, PendingRequest<Uint8Array | undefined>>;
 
     /**
+     * Stores one instance of a cache key for each time that cache key was requested,
+     * removing them all once that particular request is fulfilled. This allows us to
+     * keep track of whether or not it is safe to abort a pending request: as long as
+     * there are at least 2 instances of the same cache key in this array, then that
+     * means multiple requestors are waiting on a particular piece of data, and it is
+     * not safe to abort that request.
+     */
+    #pendingRequestKeyCounts: Map<CacheKey, number>;
+
+    /**
      * A callback form of the `score` function.
      */
     #scoreFn: (h: CacheKey) => number;
@@ -143,6 +153,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             new URL('./fetch-slice.worker.ts', import.meta.url),
         );
         this.#pendingRequests = new Map();
+        this.#pendingRequestKeyCounts = new Map();
     }
 
     protected score(key: CacheKey): number {
@@ -158,6 +169,28 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         return new Uint8Array(cached.buffer());
     }
 
+    #incrementKeyCount(cacheKey: CacheKey): number {
+        const count = this.#pendingRequestKeyCounts.get(cacheKey);
+        const newCount = count !== undefined ? count + 1 : 1;
+        this.#pendingRequestKeyCounts.set(cacheKey, newCount);
+        return newCount;
+    }
+
+    #decrementKeyCount(cacheKey: CacheKey): number { 
+        const count = this.#pendingRequestKeyCounts.get(cacheKey);
+        if (count === undefined) {
+            logger.warn('attempted to decrement a non-existent request key');
+            return 0;
+        }
+        if (count <= 1) {
+            this.#pendingRequestKeyCounts.delete(cacheKey);
+            return 0;
+        }
+        const newCount = count - 1;
+        this.#pendingRequestKeyCounts.set(cacheKey, newCount);
+        return newCount;
+    }
+
     async #doFetch(
         key: zarr.AbsolutePath,
         range: zarr.RangeQuery | undefined,
@@ -168,6 +201,8 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
 
         this.#priorityByTimestamp.set(cacheKey, Date.now());
         this.#dataCache.reprioritize();
+
+        this.#incrementKeyCount(cacheKey);
 
         const pending = this.#pendingRequests.get(cacheKey);
         if (pending !== undefined) {
@@ -180,8 +215,11 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
 
         if (abort) {
             abort.onabort = () => {
-                this.#priorityByTimestamp.set(cacheKey, 0);
-                this.#dataCache.reprioritize();
+                const count = this.#decrementKeyCount(cacheKey);
+                if (count === 0) {
+                    this.#priorityByTimestamp.set(cacheKey, 0);
+                    this.#dataCache.reprioritize();
+                }
             };
         }
 
@@ -214,6 +252,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             })
             .finally(() => {
                 this.#pendingRequests.delete(cacheKey);
+                this.#pendingRequestKeyCounts.delete(cacheKey);
             });
 
         return promise;
