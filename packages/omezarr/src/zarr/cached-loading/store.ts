@@ -36,11 +36,11 @@ class CacheableByteArray implements Cacheable {
     destroy() {}
 
     sizeInBytes(): number {
-        return this.#arr?.byteLength ?? 0;
+        return this.#arr.byteLength;
     }
 
-    buffer(): ArrayBufferLike {
-        return this.#arr.buffer;
+    get array(): Uint8Array {
+        return this.#arr;
     }
 }
 
@@ -166,7 +166,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             return undefined;
         }
         this.#priorityByTimestamp.set(cacheKey, Date.now());
-        return new Uint8Array(cached.buffer());
+        return cached.array;
     }
 
     #incrementKeyCount(cacheKey: CacheKey): number {
