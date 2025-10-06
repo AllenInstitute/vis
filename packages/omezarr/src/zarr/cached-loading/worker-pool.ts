@@ -1,6 +1,5 @@
-import { isWorkerMessageWithId, type WorkerMessage, type WorkerMessageWithId } from '@alleninstitute/vis-core';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '@alleninstitute/vis-core';
+import { logger, isWorkerMessageWithId, type WorkerMessage, type WorkerMessageWithId } from '@alleninstitute/vis-core';
 
 type PromiseResolve<T extends WorkerMessageWithId> = (t: T) => void;
 
@@ -21,38 +20,39 @@ type MessagePromise<T extends WorkerMessageWithId> = {
 
 export class WorkerPool {
     #workers: Worker[];
-    #promises: Map<string, MessagePromise<WorkerMessageWithId>>;
+    #promises: Map<number, MessagePromise<WorkerMessageWithId>>;
     #which: number;
 
     constructor(size: number, workerModule: URL) {
         this.#workers = new Array(size);
         for (let i = 0; i < size; i++) {
             this.#workers[i] = new Worker(workerModule, { type: 'module' });
-            this.#workers[i].onmessage = (msg) => this.#handleResponse(msg);
+            this.#workers[i].onmessage = (msg) => this.#handleResponse(i, msg);
         }
         this.#promises = new Map();
         this.#which = 0;
     }
 
-    #handleResponse(msg: MessageEvent<unknown>) {
+    #handleResponse(workerIndex: number, msg: MessageEvent<unknown>) {
         const { data } = msg;
+        const messagePromise = this.#promises.get(workerIndex);
+        if (messagePromise === undefined) {
+            logger.warn('unexpected message from worker');
+            return;
+        }
         if (isWorkerMessageWithId(data)) {
-            const { id } = data;
-            const messagePromise = this.#promises.get(id);
-            this.#promises.delete(id);
-            if (messagePromise === undefined) {
-                logger.warn('unexpected message from worker');
-                return;
-            }
+            this.#promises.delete(workerIndex);
             if (!messagePromise.validator(data)) {
-                const reason = 'invalid response from worker: message type did not match expected type'
+                const reason = 'invalid response from worker: message type did not match expected type';
                 logger.error(reason);
                 messagePromise.reject(new Error(reason));
                 return;
             }
             messagePromise.resolve(data);
         } else {
-            logger.error('encountered an invalid message; skipping');
+            const reason = 'encountered an invalid message; skipping';
+            logger.error(reason);
+            messagePromise.reject(new Error(reason));
         }
     }
 
@@ -72,7 +72,7 @@ export class WorkerPool {
         const messagePromise = this.#createMessagePromise<ResponseType>(responseValidator);
 
         // TODO this cast is very annoying; would be nice to remove it
-        this.#promises.set(reqId, messagePromise as unknown as MessagePromise<WorkerMessageWithId>);
+        this.#promises.set(workerIndex, messagePromise as unknown as MessagePromise<WorkerMessageWithId>);
 
         if (signal) {
             signal.onabort = () => {
