@@ -233,7 +233,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             },
             isFetchSliceResponseMessage,
             [],
-            abort
+            abort,
         );
 
         request
