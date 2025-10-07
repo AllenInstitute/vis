@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { logger, isWorkerMessageWithId, type WorkerMessage, type WorkerMessageWithId } from '@alleninstitute/vis-core';
+import { logger } from '../logger';
+import { isWorkerMessageWithId, type WorkerMessage, type WorkerMessageWithId } from './messages';
 
 type PromiseResolve<T extends WorkerMessageWithId> = (t: T) => void;
 

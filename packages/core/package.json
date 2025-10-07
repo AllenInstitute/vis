@@ -57,6 +57,7 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "lodash": "4.17.21",
         "regl": "2.1.0",
+        "uuid": "13.0.0",
         "zod": "4.1.11"
     },
     "packageManager": "pnpm@9.14.2"
