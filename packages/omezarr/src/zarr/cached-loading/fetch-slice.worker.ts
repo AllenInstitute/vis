@@ -1,7 +1,7 @@
 // a web-worker which fetches slices of data, decodes them, and returns the result as a flat float32 array, using transferables
 
-import { type AbsolutePath, type RangeQuery, FetchStore } from 'zarrita';
-import { logger } from '@alleninstitute/vis-core';
+import { HEARTBEAT_RATE_MS, logger } from '@alleninstitute/vis-core';
+import { type AbsolutePath, FetchStore, type RangeQuery } from 'zarrita';
 import type { CancelMessage, FetchSliceMessage, TransferrableRequestInit } from './fetch-slice.interface';
 import { isCancellationError, isCancelMessage, isFetchSliceMessage } from './fetch-slice.interface';
 
@@ -60,6 +60,10 @@ const handleCancel = (message: CancelMessage) => {
         abortController.abort('cancelled');
     }
 };
+
+self.setInterval(() => {
+    self.postMessage({ type: 'heartbeat' });
+}, HEARTBEAT_RATE_MS);
 
 self.onmessage = async (e: MessageEvent<unknown>) => {
     const { data: message } = e;
