@@ -29,3 +29,5 @@ export {
     isWorkerMessage,
     isWorkerMessageWithId,
 } from './workers/messages';
+
+export { WorkerPool } from './workers/worker-pool';

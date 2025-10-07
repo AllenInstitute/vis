@@ -1,6 +1,5 @@
-import { type Cacheable, logger, PriorityCache } from '@alleninstitute/vis-core';
+import { type Cacheable, logger, PriorityCache, WorkerPool } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
-import { WorkerPool } from './worker-pool';
 import {
     FETCH_SLICE_MESSAGE_TYPE,
     type FetchSliceResponseMessage,
@@ -51,7 +50,7 @@ type TransferableRequestInit = Omit<RequestInit, 'body' | 'headers' | 'signal'> 
     headers?: Record<string, string>;
 };
 
-const copyHeaders = (headers: RequestInit['headers']): Record<string, string> | undefined => {
+const copyToTransferableHeaders = (headers: RequestInit['headers']): Record<string, string> | undefined => {
     if (Array.isArray(headers)) {
         const result: Record<string, string> = {};
         headers.forEach(([key, val]) => {
@@ -77,7 +76,7 @@ const copyToTransferableRequestInit = (req: RequestInit | undefined): Transferab
     const updReq = { ...req };
     delete updReq.signal;
     delete updReq.window;
-    return { ...updReq, body: req.body?.toString(), headers: copyHeaders(req.headers) };
+    return { ...updReq, body: req.body?.toString(), headers: copyToTransferableHeaders(req.headers) };
 };
 
 export type CachingMultithreadedFetchStoreOptions = {
