@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { ICachingMultithreadedFetchStore, RequestHandler } from './store';
-import { FetchSliceMessage, FetchSliceResponseMessage } from './fetch-slice.interface';
+import { CachingMultithreadedFetchStore, type RequestHandler } from './store';
+import type { FetchSliceMessage, FetchSliceResponseMessage } from './fetch-slice.interface';
 import { PromiseFarm } from '@alleninstitute/vis-core/src/shared-priority-cache/test-utils';
 
 type SpyLog = {
@@ -53,7 +53,7 @@ describe('basics', () => {
     test('requests seem to work', async () => {
         const farm = new PromiseFarm();
         const pool = new Whatever(farm);
-        const store = new ICachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
+        const store = new CachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
 
         const a = store.get('/0/0');
         const b = store.get('/0/1');
@@ -68,7 +68,7 @@ describe('basics', () => {
     test('duplicate requests get cached', async () => {
         const farm = new PromiseFarm();
         const pool = new Whatever(farm);
-        const store = new ICachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
+        const store = new CachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
 
         const a = store.getRange('/0/0', { length: 100, offset: 0, suffixLength: 22 });
         const b = store.getRange('/0/1', { length: 100, offset: 0, suffixLength: 22 });
@@ -85,7 +85,7 @@ describe('basics', () => {
     test('requests can be cancelled', async () => {
         const farm = new PromiseFarm();
         const pool = new Whatever(farm);
-        const store = new ICachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
+        const store = new CachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
         const abortBoth = new AbortController();
         const a = store.get('/0/0', { signal: abortBoth.signal });
         const b = store.get('/0/1', { signal: abortBoth.signal });
@@ -112,7 +112,7 @@ describe('basics', () => {
     test('request the same thing twice, cancel one of the requests before either can resolve', async () => {
         const farm = new PromiseFarm();
         const pool = new Whatever(farm);
-        const store = new ICachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
+        const store = new CachingMultithreadedFetchStore('fake.zarr', pool, { maxFetches: 10, numWorkers: 5 });
         const abortA = new AbortController();
         const abortB = new AbortController();
         const a = store.get('/0/0', { signal: abortA.signal });
