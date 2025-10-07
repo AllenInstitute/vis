@@ -30,7 +30,6 @@
     "license": "BSD-3-Clause",
     "source": "src/index.ts",
     "main": "dist/main.js",
-    "module": "dist/module.js",
     "types": "dist/types.d.ts",
     "type": "module",
     "files": [
