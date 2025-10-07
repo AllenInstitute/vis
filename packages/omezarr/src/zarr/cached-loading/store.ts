@@ -100,7 +100,7 @@ type PendingRequest<T> = {
 
 type Guard<T> = (obj: unknown) => obj is T
 export interface RequestHandler<RequestType, ResponseType> {
-    submitRequest<RequestType, ResponseType>(
+    submitRequest(
         message: RequestType,
         responseValidator: Guard<ResponseType>,
         transfers: Transferable[],
@@ -108,10 +108,15 @@ export interface RequestHandler<RequestType, ResponseType> {
     ): Promise<ResponseType>;
 }
 
-export class ICachingMultithreadedFetchStore extends zarr.FetchStore {
+export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     /**
      * Maintains a pool of available worker threads.
+     * 
+     * TODO: Enable end-to-end Message-based type constraints for these that
+     * enable us to restrict what types of messages can be sent to workers
+     * for a given store instance.
      */
+    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
     #workerPool: RequestHandler<any, any>;
 
     /**
@@ -148,6 +153,7 @@ export class ICachingMultithreadedFetchStore extends zarr.FetchStore {
      */
     #scoreFn: (h: CacheKey) => number;
 
+    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
     constructor(url: string | URL, handler: RequestHandler<any, any>, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);
@@ -292,7 +298,7 @@ export class ICachingMultithreadedFetchStore extends zarr.FetchStore {
         return this.#doFetch(key, range, workerOptions, abort);
     }
 }
-export class CachingMultithreadedFetchStore extends ICachingMultithreadedFetchStore {
+export class ZarrSliceFetchStore extends CachingMultithreadedFetchStore {
     constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, new WorkerPool(
             options?.numWorkers ?? DEFAULT_NUM_WORKERS,
