@@ -103,10 +103,10 @@ export class WorkerPool {
         this.#promises.set(workerIndex, messagePromise as unknown as MessagePromise<WorkerMessageWithId>);
 
         if (signal) {
-            signal.onabort = () => {
+            signal.addEventListener('abort', () => {
                 this.#sendMessageToWorker(workerIndex, { type: 'cancel', id: reqId }, []);
                 messagePromise.reject('cancelled');
-            };
+            })
         }
 
         this.#sendMessageToWorker(workerIndex, messageWithId, transfers);
