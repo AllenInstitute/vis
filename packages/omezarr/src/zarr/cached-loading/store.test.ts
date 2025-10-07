@@ -15,12 +15,12 @@ class Whatever implements RequestHandler<FetchSliceMessage, FetchSliceResponseMe
         this.promises = farm;
         this.log = [];
     }
-    submitRequest<RequestType, ResponseType>(
-        message: RequestType,
-        responseValidator: (obj: unknown) => obj is ResponseType,
+    submitRequest(
+        message: FetchSliceMessage,
+        responseValidator: (obj: unknown) => obj is FetchSliceResponseMessage,
         transfers: Transferable[],
         signal?: AbortSignal | undefined,
-    ): Promise<ResponseType> {
+    ): Promise<FetchSliceResponseMessage> {
         // so the generic parameters here cant work - the compile-time types of the interface to the worker are determined at construction time, not request time.
         // you can make the types work out here, but its a foot-gun. if you pass a responseValidator that the worker cant handle, the types will work out, but none of your promises will ever
         // resolve.
