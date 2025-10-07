@@ -28,6 +28,7 @@ export {
     type WorkerMessageWithId,
     isWorkerMessage,
     isWorkerMessageWithId,
+    HEARTBEAT_RATE_MS,
 } from './workers/messages';
 
 export { WorkerPool } from './workers/worker-pool';
