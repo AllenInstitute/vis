@@ -32,7 +32,7 @@ class CacheableByteArray implements Cacheable {
         this.#arr = arr;
     }
 
-    destroy() { }
+    destroy() {}
 
     sizeInBytes(): number {
         return this.#arr.byteLength;
@@ -98,7 +98,7 @@ type PendingRequest<T> = {
     promise: Promise<T>;
 };
 
-type Guard<T> = (obj: unknown) => obj is T
+type Guard<T> = (obj: unknown) => obj is T;
 export interface RequestHandler<RequestType, ResponseType> {
     submitRequest(
         message: RequestType,
@@ -111,7 +111,7 @@ export interface RequestHandler<RequestType, ResponseType> {
 export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     /**
      * Maintains a pool of available worker threads.
-     * 
+     *
      * TODO: Enable end-to-end Message-based type constraints for these that
      * enable us to restrict what types of messages can be sent to workers
      * for a given store instance.
@@ -300,9 +300,13 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
 }
 export class ZarrSliceFetchStore extends CachingMultithreadedFetchStore {
     constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
-        super(url, new WorkerPool(
-            options?.numWorkers ?? DEFAULT_NUM_WORKERS,
-            new URL('./fetch-slice.worker.ts', import.meta.url),
-        ), options)
+        super(
+            url,
+            new WorkerPool(
+                options?.numWorkers ?? DEFAULT_NUM_WORKERS,
+                new URL('./fetch-slice.worker.ts', import.meta.url),
+            ),
+            options,
+        );
     }
 }
