@@ -32,7 +32,7 @@ class CacheableByteArray implements Cacheable {
         this.#arr = arr;
     }
 
-    destroy() {}
+    destroy() { }
 
     sizeInBytes(): number {
         return this.#arr.byteLength;
@@ -98,11 +98,21 @@ type PendingRequest<T> = {
     promise: Promise<T>;
 };
 
-export class CachingMultithreadedFetchStore extends zarr.FetchStore {
+type Guard<T> = (obj: unknown) => obj is T
+export interface RequestHandler<RequestType, ResponseType> {
+    submitRequest<RequestType, ResponseType>(
+        message: RequestType,
+        responseValidator: Guard<ResponseType>,
+        transfers: Transferable[],
+        signal?: AbortSignal | undefined,
+    ): Promise<ResponseType>;
+}
+
+export class ICachingMultithreadedFetchStore extends zarr.FetchStore {
     /**
      * Maintains a pool of available worker threads.
      */
-    #workerPool: WorkerPool;
+    #workerPool: RequestHandler<any, any>;
 
     /**
      * Stores the current set of cached data that has been successfully
@@ -138,7 +148,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      */
     #scoreFn: (h: CacheKey) => number;
 
-    constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
+    constructor(url: string | URL, handler: RequestHandler<any, any>, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);
         this.#dataCache = new PriorityCache<CacheableByteArray>(
@@ -147,10 +157,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             options?.maxBytes ?? getDataCacheSizeLimit(),
         );
         this.#priorityByTimestamp = new Map<CacheKey, number>();
-        this.#workerPool = new WorkerPool(
-            options?.numWorkers ?? DEFAULT_NUM_WORKERS,
-            new URL('./fetch-slice.worker.ts', import.meta.url),
-        );
+        this.#workerPool = handler;
         this.#pendingRequests = new Map();
         this.#pendingRequestKeyCounts = new Map();
     }
@@ -283,5 +290,13 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         const workerOptions = copyToTransferableRequestInit(options);
         const abort = options?.signal ?? undefined;
         return this.#doFetch(key, range, workerOptions, abort);
+    }
+}
+export class CachingMultithreadedFetchStore extends ICachingMultithreadedFetchStore {
+    constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
+        super(url, new WorkerPool(
+            options?.numWorkers ?? DEFAULT_NUM_WORKERS,
+            new URL('./fetch-slice.worker.ts', import.meta.url),
+        ), options)
     }
 }
