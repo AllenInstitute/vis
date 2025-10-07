@@ -199,7 +199,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         const cacheKey = asCacheKey(key, range);
 
         this.#priorityByTimestamp.set(cacheKey, Date.now());
-        this.#dataCache.reprioritize();
+        this.#dataCache.reprioritize(this.#scoreFn);
 
         this.#incrementKeyCount(cacheKey);
 
@@ -217,7 +217,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
                 const count = this.#decrementKeyCount(cacheKey);
                 if (count === 0) {
                     this.#priorityByTimestamp.set(cacheKey, 0);
-                    this.#dataCache.reprioritize();
+                    this.#dataCache.reprioritize(this.#scoreFn);
                 }
             };
         }
@@ -233,6 +233,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             },
             isFetchSliceResponseMessage,
             [],
+            abort
         );
 
         request
@@ -246,7 +247,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
                 this.#dataCache.put(cacheKey, new CacheableByteArray(arr));
                 resolve(arr);
             })
-            .catch((e) => {
+            .catch((e: unknown) => {
                 reject(e);
             })
             .finally(() => {
