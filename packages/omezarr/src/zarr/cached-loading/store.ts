@@ -32,7 +32,7 @@ class CacheableByteArray implements Cacheable {
         this.#arr = arr;
     }
 
-    destroy() {}
+    destroy() { }
 
     sizeInBytes(): number {
         return this.#arr.byteLength;
@@ -226,13 +226,13 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         this.#pendingRequests.set(cacheKey, { promise, resolve, reject });
 
         if (abort) {
-            abort.onabort = () => {
+            abort.addEventListener('abort', () => {
                 const count = this.#decrementKeyCount(cacheKey);
                 if (count === 0) {
                     this.#priorityByTimestamp.set(cacheKey, 0);
                     this.#dataCache.reprioritize(this.#scoreFn);
                 }
-            };
+            })
         }
 
         const request = this.#workerPool.submitRequest(
