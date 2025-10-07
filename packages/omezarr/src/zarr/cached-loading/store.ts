@@ -224,13 +224,14 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         const { promise, resolve, reject } = Promise.withResolvers<Uint8Array | undefined>();
 
         this.#pendingRequests.set(cacheKey, { promise, resolve, reject });
-
+        const chain = new AbortController()
         if (abort) {
             abort.addEventListener('abort', () => {
                 const count = this.#decrementKeyCount(cacheKey);
                 if (count === 0) {
                     this.#priorityByTimestamp.set(cacheKey, 0);
                     this.#dataCache.reprioritize(this.#scoreFn);
+                    chain.abort()
                 }
             })
         }
@@ -245,7 +246,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             },
             isFetchSliceResponseMessage,
             [],
-            abort,
+            chain.signal,
         );
 
         request
