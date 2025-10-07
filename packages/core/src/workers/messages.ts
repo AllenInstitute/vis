@@ -1,6 +1,3 @@
-import { z } from 'zod';
-import { logger } from '../logger';
-
 export type WorkerMessage = {
     type: string;
 };
@@ -9,44 +6,27 @@ export type WorkerMessageWithId = WorkerMessage & {
     id: string;
 };
 
-export const WorkerMessageSchema = z.object({
-    type: z.string(),
-});
-
-export const WorkerMessageWithIdSchema = WorkerMessageSchema.extend({
-    id: z.string().nonempty(),
-});
-
 export function isWorkerMessage(val: unknown): val is WorkerMessage {
-    const { success, error } = WorkerMessageSchema.safeParse(val);
-    if (error) {
-        logger.warn('parsing WorkerMessage failed', error);
-    }
-    return success;
+    return (
+        val !== undefined &&
+        val !== null &&
+        typeof val === 'object' &&
+        'type' in val &&
+        typeof val.type === 'string' &&
+        val.type.length > 0
+    );
 }
 
 export function isWorkerMessageWithId(val: unknown): val is WorkerMessageWithId {
-    const { success, error } = WorkerMessageWithIdSchema.safeParse(val);
-    if (error) {
-        logger.warn('parsing WorkerMessageWithId failed', error);
-    }
-    return success;
+    return isWorkerMessage(val) && 'id' in val && typeof val.id === 'string' && val.id.length > 0;
 }
 
 export type HeartbeatMessage = {
     type: 'heartbeat';
 };
 
-export const HeartbeatMessageSchema = z.object({
-    type: z.literal('heartbeat'),
-});
-
 export function isHeartbeatMessage(val: unknown): val is HeartbeatMessage {
-    const { success, error } = HeartbeatMessageSchema.safeParse(val);
-    if (error) {
-        logger.warn('parsing WorkerMessageWithId failed', error);
-    }
-    return success;
+    return isWorkerMessage(val) && val.type === 'heartbeat';
 }
 
 export const HEARTBEAT_RATE_MS = 500;
