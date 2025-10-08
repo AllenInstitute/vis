@@ -50,6 +50,9 @@ importers:
       regl:
         specifier: 2.1.0
         version: 2.1.0
+      uuid:
+        specifier: 13.0.0
+        version: 13.0.0
     devDependencies:
       '@types/lodash':
         specifier: 4.17.20
@@ -80,9 +83,6 @@ importers:
       regl:
         specifier: 2.1.0
         version: 2.1.0
-      uuid:
-        specifier: 13.0.0
-        version: 13.0.0
       zarrita:
         specifier: 0.5.3
         version: 0.5.3

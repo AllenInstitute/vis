@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noConsole: <its tests> */
 import { beforeEach, describe, expect, test } from 'vitest';
-import { AsyncPriorityCache, Cacheable } from './priority-cache';
-import { FakeStore, Payload, PayloadFactory, PromiseFarm } from './test-utils';
+import { AsyncPriorityCache, type Cacheable } from './priority-cache';
+import { FakeStore, type Payload, PayloadFactory, PromiseFarm } from './test-utils';
 
 let factory = new PayloadFactory();
 

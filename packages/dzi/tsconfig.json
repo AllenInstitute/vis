@@ -5,9 +5,9 @@
             "~/*": ["./*"]
         },
         "moduleResolution": "Bundler",
-        "module": "ES2022",
-        "target": "ES2022",
-        "lib": ["es2022", "DOM"]
+        "module": "es6",
+        "target": "es2024",
+        "lib": ["es2024", "DOM"]
     },
     "include": ["./src/index.ts"]
 }
