@@ -1,10 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import { CachingMultithreadedFetchStore, type RequestHandler } from './store';
-import type { FetchSliceMessage, FetchSliceResponseMessage } from './fetch-slice.interface';
+import {
+    FETCH_SLICE_RESPONSE_MESSAGE_TYPE,
+    type FetchSliceMessage,
+    type FetchSliceResponseMessage,
+} from './fetch-slice.interface';
 import { PromiseFarm } from '@alleninstitute/vis-core/src/shared-priority-cache/test-utils';
 
 type SpyLog = {
+    // biome-ignore lint/suspicious/noExplicitAny: Typing improvements for Messages are a future enhancement
     request: any;
+    // biome-ignore lint/suspicious/noExplicitAny: Typing improvements for Messages are a future enhancement
     response: any;
     status: 'cancelled' | 'failed' | 'resolved';
 };
@@ -17,8 +23,8 @@ class Whatever implements RequestHandler<FetchSliceMessage, FetchSliceResponseMe
     }
     submitRequest(
         message: FetchSliceMessage,
-        responseValidator: (obj: unknown) => obj is FetchSliceResponseMessage,
-        transfers: Transferable[],
+        _responseValidator: (obj: unknown) => obj is FetchSliceResponseMessage,
+        _transfers: Transferable[],
         signal?: AbortSignal | undefined,
     ): Promise<FetchSliceResponseMessage> {
         // so the generic parameters here cant work - the compile-time types of the interface to the worker are determined at construction time, not request time.
@@ -26,9 +32,10 @@ class Whatever implements RequestHandler<FetchSliceMessage, FetchSliceResponseMe
         // resolve.
         const p = this.promises.promiseMe(() => {
             const resp = {
+                type: FETCH_SLICE_RESPONSE_MESSAGE_TYPE,
                 request: message,
                 id: message.id,
-                payload: new Uint8Array(400),
+                payload: new Uint8Array(400).buffer,
             };
             this.log.push({ request: message, response: resp, status: 'resolved' });
             return resp;
@@ -36,13 +43,14 @@ class Whatever implements RequestHandler<FetchSliceMessage, FetchSliceResponseMe
         // this if(signal) block simulates the real worker-pool.ts, line 78
         if (signal) {
             signal.addEventListener('abort', () => {
-                console.log('simulate cancel message to worker', message);
                 this.log.push({ request: message, response: undefined, status: 'cancelled' });
                 if (!this.promises.mockReject(p, 'cancel')) {
+                    // biome-ignore lint/suspicious/noConsole: Provides test outcome context
                     console.log('fake promise could not be found to reject...');
                 }
             });
         } else {
+            // biome-ignore lint/suspicious/noConsole: Provides test outcome context
             console.warn('warning - test request had no abort signal!');
         }
 
@@ -60,7 +68,6 @@ describe('basics', () => {
 
         farm.resolveAll();
         const [A, B] = await Promise.all([a, b]);
-        console.log(pool.log);
         expect(pool.log).toHaveLength(2);
         expect(A).toBeDefined();
         expect(B).toBeDefined();
@@ -76,7 +83,6 @@ describe('basics', () => {
 
         farm.resolveAll();
         const [A, B, C] = await Promise.all([a, b, c]);
-        console.log(pool.log);
         expect(pool.log).toHaveLength(2); // c should come from the cache, the pool should not even see it
         expect(A).toBeDefined();
         expect(B).toBeDefined();
@@ -118,26 +124,20 @@ describe('basics', () => {
         const a = store.get('/0/0', { signal: abortA.signal });
         const b = store.get('/0/0', { signal: abortB.signal });
         try {
-            console.log('lets abort');
-            abortA.abort()
-            // try {
-            //     abortA.abort();
-            //     const A = await a;
-            //     expect(false).toBe(true);
-            // } catch (reasonForA) {
-            //     console.log('a cancelled, this is fine');
-            //     expect(reasonForA).toBe('cancel'); // we aborted it, this is fine
-            // }
-            console.log('--------- resolve now?')
+            abortA.abort();
             farm.resolveAll();
             const B = await b;
             // we know a is toast... do it this way for shortness:
-            a.then((x) => console.log('a should be cancelled, but instead its', x), (why) => console.log('all is well'))
-            console.log('B is ', B);
+            a.then(
+                // biome-ignore lint/suspicious/noConsole: Provides test outcome context
+                (x) => console.log('a should be cancelled, but instead its', x),
+                () => {},
+            );
             expect(B instanceof Uint8Array).toBeTruthy();
             expect(pool.log).toHaveLength(1);
             expect(pool.log[0].status).toEqual('resolved');
         } catch (reason) {
+            // biome-ignore lint/suspicious/noConsole: Provides test outcome context
             console.error('b was aborted - this is a bug! ', reason);
             expect(false).toBeTruthy();
         }

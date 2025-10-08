@@ -14,7 +14,7 @@ export type FetchSliceMessagePayload = {
 };
 
 export const FETCH_SLICE_MESSAGE_TYPE = 'fetch-slice' as const;
-export const FETCH_SLICE_RESPOSNE_MESSAGE_TYPE = 'fetch-slice-response' as const;
+export const FETCH_SLICE_RESPONSE_MESSAGE_TYPE = 'fetch-slice-response' as const;
 export const CANCEL_MESSAGE_TYPE = 'cancel' as const;
 
 export type FetchSliceMessage = {
@@ -24,7 +24,7 @@ export type FetchSliceMessage = {
 };
 
 export type FetchSliceResponseMessage = {
-    type: typeof FETCH_SLICE_RESPOSNE_MESSAGE_TYPE;
+    type: typeof FETCH_SLICE_RESPONSE_MESSAGE_TYPE;
     id: string;
     payload: ArrayBufferLike | undefined;
 };
@@ -56,7 +56,7 @@ const FetchSliceMessageSchema = z.object({
 });
 
 const FetchSliceResponseMessageSchema = z.object({
-    type: z.literal(FETCH_SLICE_RESPOSNE_MESSAGE_TYPE),
+    type: z.literal(FETCH_SLICE_RESPONSE_MESSAGE_TYPE),
     id: z.string().nonempty(),
     payload: z.unknown().optional(), // unclear if it's feasible/wise to define a schema for this one
 });
