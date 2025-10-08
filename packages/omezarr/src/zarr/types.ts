@@ -1,6 +1,7 @@
 import type { CartesianPlane, Interval, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
 import { logger, makeRGBAColorVector } from '@alleninstitute/vis-core';
+import type * as zarr from 'zarrita';
 import { z } from 'zod';
 
 export type ZarrDimension = 't' | 'c' | 'z' | 'y' | 'x';
@@ -152,6 +153,33 @@ export type OmeZarrAttrs = {
     zarrVersion: number;
 } & BaseOmeZarrAttrs;
 
+// newer types that align a little more closely with how Zarr/OME-Zarr data
+// is actually represented
+export type OmeZarrNode = {
+    nodeType: 'group' | 'array';
+}
+
+export type OmeZarrGroup = OmeZarrNode & {
+    nodeType: 'group';
+    zarrFormat: 2 | 3;
+    attributes: OmeZarrGroupAttributes;
+}
+
+export type OmeZarrGroupAttributes = {
+    multiscales: OmeZarrMultiscale[];
+    omero?: OmeZarrOmero | undefined; // omero is a transitional field, meaning it is expected to go away in a later version
+    version?: string | undefined;
+};
+
+export type OmeZarrArray = OmeZarrNode & {
+    nodeType: 'array';
+    path: string;
+    chunkShape: number[];
+    dataType: string;
+    shape: number[];
+    attributes: Record<string, unknown>;
+};
+
 export const OmeZarrAttrsBaseSchema: z.ZodType<OmeZarrAttrsV2> = z.object({
     multiscales: OmeZarrMultiscaleSchema.array().nonempty(),
     omero: OmeZarrOmeroSchema.optional(),
@@ -177,6 +205,36 @@ export const OmeZarrAttrsSchema = z
             ...v,
         };
     });
+
+export const OmeZarrGroupTransform = z.union([OmeZarrAttrsV2Schema, OmeZarrAttrsV3Schema])
+    .transform<OmeZarrGroup>((v: OmeZarrAttrsV2 | OmeZarrAttrsV3) => {
+        if ('ome' in v) {
+            return {
+                nodeType: 'group',
+                zarrFormat: 3,
+                attributes: v.ome,
+            };
+        }
+        return {
+            nodeType: 'group',
+            zarrFormat: 2,
+            attributes: v,
+        };
+    });
+
+
+type ZarritaArray = zarr.Array<zarr.DataType, zarr.FetchStore>;
+
+export const OmeZarrArrayTransform = z.transform<ZarritaArray, OmeZarrArray>((v: ZarritaArray) => {
+    return {
+        nodeType: 'array',
+        path: v.path,
+        chunkShape: v.chunks,
+        dataType: v.dtype,
+        shape: v.shape,
+        attributes: v.attrs,
+    } as OmeZarrArray;
+});
 
 export type DehydratedOmeZarrArray = {
     path: string;
