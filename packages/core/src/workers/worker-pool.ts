@@ -84,7 +84,6 @@ export class WorkerPool {
         const messageWithId = { ...message, id: reqId };
         const messagePromise = this.#createMessagePromise(responseValidator);
 
-        // TODO this cast vexes me; would be nice to remove it
         this.#promises.set(workerIndex, messagePromise);
 
         if (signal) {
