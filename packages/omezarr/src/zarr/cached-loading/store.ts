@@ -98,11 +98,26 @@ type PendingRequest<T> = {
     promise: Promise<T>;
 };
 
+type Guard<T> = (obj: unknown) => obj is T;
+export interface RequestHandler<RequestType, ResponseType> {
+    submitRequest(
+        message: RequestType,
+        responseValidator: Guard<ResponseType>,
+        transfers: Transferable[],
+        signal?: AbortSignal | undefined,
+    ): Promise<ResponseType>;
+}
+
 export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     /**
      * Maintains a pool of available worker threads.
+     *
+     * TODO: Enable end-to-end Message-based type constraints for these that
+     * enable us to restrict what types of messages can be sent to workers
+     * for a given store instance.
      */
-    #workerPool: WorkerPool;
+    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
+    #workerPool: RequestHandler<any, any>;
 
     /**
      * Stores the current set of cached data that has been successfully
@@ -138,7 +153,8 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      */
     #scoreFn: (h: CacheKey) => number;
 
-    constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
+    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
+    constructor(url: string | URL, handler: RequestHandler<any, any>, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);
         this.#dataCache = new PriorityCache<CacheableByteArray>(
@@ -147,10 +163,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             options?.maxBytes ?? getDataCacheSizeLimit(),
         );
         this.#priorityByTimestamp = new Map<CacheKey, number>();
-        this.#workerPool = new WorkerPool(
-            options?.numWorkers ?? DEFAULT_NUM_WORKERS,
-            new URL('./fetch-slice.worker.ts', import.meta.url),
-        );
+        this.#workerPool = handler;
         this.#pendingRequests = new Map();
         this.#pendingRequestKeyCounts = new Map();
     }
@@ -211,15 +224,16 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         const { promise, resolve, reject } = Promise.withResolvers<Uint8Array | undefined>();
 
         this.#pendingRequests.set(cacheKey, { promise, resolve, reject });
-
+        const chain = new AbortController();
         if (abort) {
-            abort.onabort = () => {
+            abort.addEventListener('abort', () => {
                 const count = this.#decrementKeyCount(cacheKey);
                 if (count === 0) {
                     this.#priorityByTimestamp.set(cacheKey, 0);
                     this.#dataCache.reprioritize(this.#scoreFn);
+                    chain.abort();
                 }
-            };
+            });
         }
 
         const request = this.#workerPool.submitRequest(
@@ -232,7 +246,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             },
             isFetchSliceResponseMessage,
             [],
-            abort,
+            chain.signal,
         );
 
         request
@@ -283,5 +297,17 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         const workerOptions = copyToTransferableRequestInit(options);
         const abort = options?.signal ?? undefined;
         return this.#doFetch(key, range, workerOptions, abort);
+    }
+}
+export class ZarrSliceFetchStore extends CachingMultithreadedFetchStore {
+    constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
+        super(
+            url,
+            new WorkerPool(
+                options?.numWorkers ?? DEFAULT_NUM_WORKERS,
+                new URL('./fetch-slice.worker.ts', import.meta.url),
+            ),
+            options,
+        );
     }
 }
