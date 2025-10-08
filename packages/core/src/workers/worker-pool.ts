@@ -12,41 +12,31 @@ type MessageValidator<T> = TypeGuardFunction<unknown, T>;
 
 type TypeGuardFunction<T, S extends T> = (value: T) => value is S;
 
-type MessagePromise<T extends WorkerMessageWithId> = {
-    validator: MessageValidator<T>;
-    resolve: PromiseResolve<T>;
+type MessagePromise = {
+    validator: MessageValidator<WorkerMessageWithId>;
+    resolve: PromiseResolve<WorkerMessageWithId>;
     reject: PromiseReject;
-    promise: Promise<T>;
+    promise: Promise<WorkerMessageWithId>;
 };
 
 export enum WorkerStatus {
     Available = 'Available',
-    Working = 'Working',
     Unresponsive = 'Unresponsive',
 }
 
 export class WorkerPool {
     #workers: Worker[];
-    #promises: Map<number, MessagePromise<WorkerMessageWithId>>;
-    #statuses: Map<number, WorkerStatus>;
+    #promises: Map<number, MessagePromise>;
     #timeOfPreviousHeartbeat: Map<number, number>;
     #which: number;
 
     constructor(size: number, workerModule: URL) {
         this.#workers = new Array(size);
         this.#timeOfPreviousHeartbeat = new Map();
-        this.#statuses = new Map();
         for (let i = 0; i < size; i++) {
             this.#workers[i] = new Worker(workerModule, { type: 'module' });
             this.#workers[i].onmessage = (msg) => this.#handleMessage(i, msg);
             this.#timeOfPreviousHeartbeat.set(i, Date.now());
-            this.#statuses.set(i, WorkerStatus.Available);
-            setInterval(() => {
-                const delta = Date.now() - (this.#timeOfPreviousHeartbeat.get(i) ?? 0);
-                if (delta && delta > 1500) {
-                    this.#statuses.set(i, WorkerStatus.Unresponsive);
-                }
-            }, 2000);
         }
         this.#promises = new Map();
         this.#which = 0;
@@ -57,11 +47,6 @@ export class WorkerPool {
         const messagePromise = this.#promises.get(workerIndex);
         if (isHeartbeatMessage(data)) {
             this.#timeOfPreviousHeartbeat.set(workerIndex, Date.now());
-            if (messagePromise === undefined) {
-                this.#statuses.set(workerIndex, WorkerStatus.Available);
-            } else {
-                this.#statuses.set(workerIndex, WorkerStatus.Working);
-            }
             return;
         }
         if (messagePromise === undefined) {
@@ -88,19 +73,19 @@ export class WorkerPool {
         this.#which = (this.#which + 1) % this.#workers.length;
     }
 
-    submitRequest<RequestType extends WorkerMessage, ResponseType extends WorkerMessageWithId>(
-        message: RequestType,
-        responseValidator: MessageValidator<ResponseType>,
+    submitRequest(
+        message: WorkerMessage,
+        responseValidator: MessageValidator<WorkerMessageWithId>,
         transfers: Transferable[],
         signal?: AbortSignal | undefined,
-    ): Promise<ResponseType> {
+    ): Promise<WorkerMessageWithId> {
         const reqId = `rq${uuidv4()}`;
         const workerIndex = this.#which;
         const messageWithId = { ...message, id: reqId };
-        const messagePromise = this.#createMessagePromise<ResponseType>(responseValidator);
+        const messagePromise = this.#createMessagePromise(responseValidator);
 
         // TODO this cast vexes me; would be nice to remove it
-        this.#promises.set(workerIndex, messagePromise as unknown as MessagePromise<WorkerMessageWithId>);
+        this.#promises.set(workerIndex, messagePromise);
 
         if (signal) {
             signal.addEventListener('abort', () => {
@@ -122,8 +107,8 @@ export class WorkerPool {
         worker.postMessage(message, transfers);
     }
 
-    #createMessagePromise<T extends WorkerMessageWithId>(responseValidator: MessageValidator<T>): MessagePromise<T> {
-        const { promise, resolve, reject } = Promise.withResolvers<T>();
+    #createMessagePromise(responseValidator: MessageValidator<WorkerMessageWithId>): MessagePromise {
+        const { promise, resolve, reject } = Promise.withResolvers<WorkerMessageWithId>();
 
         return {
             validator: responseValidator,
@@ -133,15 +118,31 @@ export class WorkerPool {
         };
     }
 
+    #isValidIndex(index: number): boolean {
+        const len = this.#workers.length;
+        return index < len && index >= 0;
+    }
+
     getStatus(workerIndex: number): WorkerStatus {
-        const status = this.#statuses.get(workerIndex);
-        if (status === undefined) {
-            throw new Error(`invalid worker index: ${workerIndex}`);
+        if (!this.#isValidIndex(workerIndex)) {
+            throw new Error('invalid worker index');
         }
-        return status;
+        const delta = Date.now() - (this.#timeOfPreviousHeartbeat.get(workerIndex) ?? 0);
+        if (delta && delta > 1500) {
+            return WorkerStatus.Unresponsive;
+        }
+        return WorkerStatus.Available;
     }
 
     getStatuses(): ReadonlyMap<number, WorkerStatus> {
-        return new Map<number, WorkerStatus>(this.#statuses.entries());
+        return this.#workers.reduce<Map<number, WorkerStatus>>((acc, _w, i) => {
+            const delta = Date.now() - (this.#timeOfPreviousHeartbeat.get(i) ?? 0);
+            if (delta && delta > 1500) {
+                acc.set(i, WorkerStatus.Unresponsive);
+            } else {
+                acc.set(i, WorkerStatus.Available);
+            }
+            return acc;
+        }, new Map());
     }
 }
