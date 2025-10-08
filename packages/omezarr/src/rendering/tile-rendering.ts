@@ -6,7 +6,8 @@ import type { vec2, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 
-const vert = /*glsl*/ `
+/* ========================= STANDARD VERTEX SHADER ========================= */
+const tileVert = /*glsl*/ `
 precision highp float;
 attribute vec2 pos;
     
@@ -27,6 +28,35 @@ void main(){
     gl_Position = vec4(p.x,p.y,depth,1.0);
 }
 `;
+/* -------------------------------------------------------------------------- */
+
+/* ======================== RGB TILE FRAGMENT SHADER ======================== */
+const rgbTileFrag = /*glsl*/ `
+precision highp float;
+uniform sampler2D R;
+uniform sampler2D G;
+uniform sampler2D B; // for reasons which are pretty annoying
+// its more direct to do 3 separate channels...
+uniform vec2 Rgamut;
+uniform vec2 Ggamut;
+uniform vec2 Bgamut;
+
+varying vec2 texCoord;
+void main(){
+    vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
+    vec3 maxs = vec3(Rgamut.y,Ggamut.y,Bgamut.y);
+    vec3 span = maxs-mins;
+    vec3 color = (vec3(
+        texture2D(R, texCoord).r,
+        texture2D(G, texCoord).r,
+        texture2D(B, texCoord).r
+    )-mins) /span;
+    
+    gl_FragColor = vec4(color, 1.0);
+}
+`;
+/* -------------------------------------------------------------------------- */
+
 type CommonRenderProps = {
     target: Framebuffer2D | null;
     depth: number; // the Z value at which to render the tile, from 0 (the front) to 1 (the back)
@@ -53,78 +83,6 @@ type TileRenderProps = CommonRenderProps & {
     channels: Channel[];
 };
 
-/**
- *
- * @param regl an active REGL context
- * @returns a function (regl command) which renders 3 individual channels as the RGB
- * components of an image. Each channel is mapped to the output RGB space via the given Gamut.
- * the rendering is done in the given target buffer (or null for the screen).
- */
-export function buildRGBTileRenderer(regl: REGL.Regl) {
-    const cmd = regl<
-        {
-            view: vec4;
-            tile: vec4;
-            depth: number;
-            R: REGL.Texture2D;
-            G: REGL.Texture2D;
-            B: REGL.Texture2D;
-            Rgamut: vec2;
-            Ggamut: vec2;
-            Bgamut: vec2;
-        },
-        { pos: REGL.BufferData },
-        RGBTileRenderProps
-    >({
-        vert,
-        frag: `
-    precision highp float;
-    uniform sampler2D R;
-    uniform sampler2D G;
-    uniform sampler2D B; // for reasons which are pretty annoying
-    // its more direct to do 3 separate channels...
-    uniform vec2 Rgamut;
-    uniform vec2 Ggamut;
-    uniform vec2 Bgamut;
-    
-    varying vec2 texCoord;
-    void main(){
-            vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
-            vec3 maxs = vec3(Rgamut.y,Ggamut.y,Bgamut.y);
-            vec3 span = maxs-mins;
-            vec3 color = (vec3(
-                texture2D(R, texCoord).r,
-                texture2D(G, texCoord).r,
-                texture2D(B, texCoord).r
-            )-mins) /span;
-           
-            gl_FragColor = vec4(color, 1.0);
-        }`,
-        framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
-        attributes: {
-            pos: [0, 0, 1, 0, 1, 1, 0, 1],
-        },
-        uniforms: {
-            tile: regl.prop<RGBTileRenderProps, 'tile'>('tile'),
-            view: regl.prop<RGBTileRenderProps, 'view'>('view'),
-            depth: regl.prop<RGBTileRenderProps, 'depth'>('depth'),
-            R: regl.prop<RGBTileRenderProps, 'R'>('R'),
-            G: regl.prop<RGBTileRenderProps, 'G'>('G'),
-            B: regl.prop<RGBTileRenderProps, 'B'>('B'),
-            Rgamut: regl.prop<RGBTileRenderProps, 'Rgamut'>('Rgamut'),
-            Ggamut: regl.prop<RGBTileRenderProps, 'Ggamut'>('Ggamut'),
-            Bgamut: regl.prop<RGBTileRenderProps, 'Bgamut'>('Bgamut'),
-        },
-        depth: {
-            enable: true,
-        },
-        count: 4,
-        primitive: 'triangle fan',
-    });
-
-    return (p: RGBTileRenderProps) => cmd(p);
-}
-
 // biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
 type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, TileRenderProps>;
 
@@ -136,7 +94,7 @@ type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, TileRend
  * into a single RGB image. Each channel is mapped to the output RGB space via the given Gamut.
  * The rendering is done in the given target buffer (or null for the screen).
  */
-export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
+export function buildTileRenderCommand(regl: REGL.Regl, numChannels: number) {
     const reglChannelUniforms: ReglUniforms[] = [];
     const fragmentChannelUniformDefs = [];
     const colorMerges = [];
@@ -181,7 +139,7 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
 
     // biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
     const cmd = regl<any, { pos: REGL.BufferData }, TileRenderProps>({
-        vert,
+        vert: tileVert,
         frag,
         framebuffer: regl.prop<TileRenderProps, 'target'>('target'),
         attributes: {
@@ -196,4 +154,54 @@ export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
     });
 
     return (p: TileRenderProps) => cmd(p);
+}
+
+/**
+ * A simplified Tile Render Command that specifically handles RGB channels.
+ * @param regl an active REGL context
+ * @returns a function (regl command) which renders 3 individual channels as the RGB
+ * components of an image. Each channel is mapped to the output RGB space via the given Gamut.
+ * the rendering is done in the given target buffer (or null for the screen).
+ */
+export function buildRGBTileRenderCommand(regl: REGL.Regl) {
+    const cmd = regl<
+        {
+            view: vec4;
+            tile: vec4;
+            depth: number;
+            R: REGL.Texture2D;
+            G: REGL.Texture2D;
+            B: REGL.Texture2D;
+            Rgamut: vec2;
+            Ggamut: vec2;
+            Bgamut: vec2;
+        },
+        { pos: REGL.BufferData },
+        RGBTileRenderProps
+    >({
+        vert: tileVert,
+        frag: rgbTileFrag,
+        framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
+        attributes: {
+            pos: [0, 0, 1, 0, 1, 1, 0, 1],
+        },
+        uniforms: {
+            tile: regl.prop<RGBTileRenderProps, 'tile'>('tile'),
+            view: regl.prop<RGBTileRenderProps, 'view'>('view'),
+            depth: regl.prop<RGBTileRenderProps, 'depth'>('depth'),
+            R: regl.prop<RGBTileRenderProps, 'R'>('R'),
+            G: regl.prop<RGBTileRenderProps, 'G'>('G'),
+            B: regl.prop<RGBTileRenderProps, 'B'>('B'),
+            Rgamut: regl.prop<RGBTileRenderProps, 'Rgamut'>('Rgamut'),
+            Ggamut: regl.prop<RGBTileRenderProps, 'Ggamut'>('Ggamut'),
+            Bgamut: regl.prop<RGBTileRenderProps, 'Bgamut'>('Bgamut'),
+        },
+        depth: {
+            enable: true,
+        },
+        count: 4,
+        primitive: 'triangle fan',
+    });
+
+    return (p: RGBTileRenderProps) => cmd(p);
 }
