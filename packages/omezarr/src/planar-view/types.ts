@@ -7,7 +7,7 @@ import type {
     vec2,
     vec3,
 } from '@alleninstitute/vis-geometry';
-import type { OmeZarrDataContext } from '../zarr/omezarr-fileset';
+import type { OmeZarrLevel } from '../zarr/omezarr-level';
 
 // represent a 2D slice of a volume
 export type PlanarVoxelTile = {
@@ -15,7 +15,7 @@ export type PlanarVoxelTile = {
     realBounds: box2D; // in the space given by the axis descriptions of the omezarr dataset
     bounds: box2D; // in voxels, in the plane
     orthoVal: number; // the value along the orthogonal axis to the plane (e.g. the slice index along Z relative to an XY plane)
-    dataContext: OmeZarrDataContext; // the index in the resolution pyramid of the omezarr dataset
+    dataContext: OmeZarrLevel; // the index in the resolution pyramid of the omezarr dataset
 };
 
 // a slice of a volume (as voxels suitable for display)

@@ -8,9 +8,10 @@ import {
 import { Box2D, type Interval, intervalToVec2, type OrthogonalCartesianAxes } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import { buildTileRenderCommand } from '../rendering/tile-rendering';
-import type { OmeZarrDataContext, OmeZarrFileset, ZarrDataRequest, ZarrSlice } from '../zarr/omezarr-fileset';
-import { getVisibleTiles } from './calculations';
+import type { OmeZarrFileset, ZarrDataRequest, ZarrSlice } from '../zarr/omezarr-fileset';
 import type { PlanarRenderSettings, PlanarRendererOptions, PlanarVoxelTile, PlanarVoxelTileImage } from './types';
+import { getVisibleOmeZarrTiles } from './visibility';
+import type { OmeZarrLevel } from '../zarr/omezarr-level';
 
 type ImageChannels = {
     [channelKey: string]: CachedTexture;
@@ -77,7 +78,7 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
 export type OmeZarrVoxelTileImageDecoder = (
     fileset: OmeZarrFileset,
     req: ZarrDataRequest,
-    dataContext: OmeZarrDataContext,
+    dataContext: OmeZarrLevel,
     signal?: AbortSignal,
 ) => Promise<PlanarVoxelTileImage>;
 
@@ -102,7 +103,9 @@ export function buildOmeZarrPlanarRenderer(
             type: 'texture',
         };
     }
+
     const cmd = buildTileRenderCommand(regl, numChannels);
+
     return {
         cacheKey: (item, requestKey, dataset, settings) => {
             const channelKeys = Object.keys(settings.channels);
@@ -113,11 +116,14 @@ export function buildOmeZarrPlanarRenderer(
             }
             return `${dataset.url}_${JSON.stringify(item)}_ch=${requestKey}`;
         },
+
         destroy: () => {},
+
         getVisibleItems: (dataset, settings) => {
             const { camera, plane, planeLocation, tileSize } = settings;
-            return getVisibleTiles(camera, plane, planeLocation, dataset, tileSize);
+            return getVisibleOmeZarrTiles(dataset, camera, plane, planeLocation, tileSize);
         },
+
         fetchItemContent: (item, dataset, settings): Record<string, (sig: AbortSignal) => Promise<CachedTexture>> => {
             const contents: Record<string, (signal: AbortSignal) => Promise<CachedTexture>> = {};
             for (const key in settings.channels) {
@@ -131,7 +137,9 @@ export function buildOmeZarrPlanarRenderer(
             }
             return contents;
         },
+
         isPrepared,
+
         renderItem: (target, item, _fileset, settings, gpuData) => {
             const channels = Object.keys(gpuData).map((key) => ({
                 tex: gpuData[key].texture,

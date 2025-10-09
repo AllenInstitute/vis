@@ -1,19 +1,30 @@
 import { logger, type WebResource, WorkerPool } from '@alleninstitute/vis-core';
-import { type Interval, limit } from '@alleninstitute/vis-geometry';
+import {
+    Box2D,
+    type box2D,
+    type CartesianPlane,
+    type Interval,
+    limit,
+    Vec2,
+    type vec2,
+} from '@alleninstitute/vis-geometry';
 import * as zarr from 'zarrita';
 import { z } from 'zod';
 import { VisZarrDataError } from '../errors';
 import { CachingMultithreadedFetchStore } from './cached-loading/store';
 import { OmeZarrArrayTransform, OmeZarrGroupTransform } from './omezarr-transforms';
-import type {
-    OmeZarrArray,
-    OmeZarrAxis,
-    OmeZarrDataset,
-    OmeZarrGroup,
-    OmeZarrGroupAttributes,
-    OmeZarrMultiscale,
-    ZarrDimension,
+import {
+    convertFromOmeroToColorChannels,
+    type OmeZarrArray,
+    type OmeZarrAxis,
+    type OmeZarrColorChannel,
+    type OmeZarrDataset,
+    type OmeZarrGroup,
+    type OmeZarrGroupAttributes,
+    type OmeZarrMultiscale,
+    type ZarrDimension,
 } from './types';
+import { OmeZarrLevel } from './omezarr-level';
 
 const WORKER_MODULE_URL = new URL('./cached-loading/fetch-slice.worker.ts', import.meta.url);
 const NUM_WORKERS = 8;
@@ -23,6 +34,11 @@ export type ZarrDimensionSelection = number | Interval | null;
 export type ZarrSelection = (number | zarr.Slice | null)[];
 
 export type ZarrSlice = Record<ZarrDimension, ZarrDimensionSelection>;
+
+export type OmeZarrFieldsetJsonOptions = {
+    readable?: boolean | undefined;
+    spaces?: number | undefined;
+};
 
 export type ZarrDataRequest = {
     multiscale?: string | undefined;
@@ -53,15 +69,15 @@ export const buildSliceQuery = (
     });
 };
 
-export type OmeZarrDataContext = {
-    path: string;
-    multiscale: OmeZarrMultiscale;
-    dataset: OmeZarrDataset;
-    datasetIndex: number;
-    array: OmeZarrArray;
-};
+export type OmeZarrMultiscaleSpecifier =
+    | {
+          index: number;
+      }
+    | {
+          name: string;
+      };
 
-export type OmeZarrDatasetSpecifier = {
+export type OmeZarrLevelSpecifier = {
     multiscale?: string | undefined;
 } & (
     | {
@@ -167,27 +183,24 @@ export class OmeZarrFileset {
         return multiscale?.axes;
     }
 
-    getDataContexts(): Iterable<OmeZarrDataContext> {
-        const multiscales = this.#rootGroup?.attributes.multiscales ?? [];
-        const arrays = this.#arrays;
+    getMultiscale(specifier: OmeZarrMultiscaleSpecifier): OmeZarrMultiscale | undefined {
+        if (!this.ready) {
+            const message = 'cannot get multiscale: OME-Zarr metadata not yet loaded';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
 
-        return {
-            *[Symbol.iterator]() {
-                for (const multiscale of multiscales) {
-                    for (const dataset of multiscale.datasets) {
-                        const path = dataset.path;
-                        const array = arrays.get(path);
-                        if (array === undefined) {
-                            return;
-                        }
-                        yield { path, multiscale, dataset, array } as OmeZarrDataContext;
-                    }
-                }
-            },
-        };
+        const multiscales = this.#rootGroup?.attributes.multiscales;
+        if (multiscales === undefined) {
+            const message = 'cannot get multiscale: no multiscales found';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+
+        return 'index' in specifier ? multiscales[specifier.index] : multiscales.find((m) => m.name === specifier.name);
     }
 
-    getDataContext(specifier: OmeZarrDatasetSpecifier): OmeZarrDataContext | undefined {
+    getLevel(specifier: OmeZarrLevelSpecifier): OmeZarrLevel | undefined {
         if (this.#rootGroup === undefined) {
             return;
         }
@@ -267,7 +280,186 @@ export class OmeZarrFileset {
             logger.error(message);
             throw new VisZarrDataError(message);
         }
-        return { path, multiscale, dataset, datasetIndex, array };
+        return new OmeZarrLevel(path, multiscale, dataset, datasetIndex, array);
+    }
+
+    getLevels(): Iterable<OmeZarrLevel> {
+        const multiscales = this.#rootGroup?.attributes.multiscales ?? [];
+        const arrays = this.#arrays;
+
+        return {
+            *[Symbol.iterator]() {
+                for (const multiscale of multiscales) {
+                    let i = 0;
+                    for (const dataset of multiscale.datasets) {
+                        const path = dataset.path;
+                        const array = arrays.get(path);
+                        if (array === undefined) {
+                            return;
+                        }
+                        yield new OmeZarrLevel(path, multiscale, dataset, i, array);
+                        i += 1;
+                    }
+                }
+            },
+        };
+    }
+
+    getColorChannels(): OmeZarrColorChannel[] {
+        const omero = this.#rootGroup?.attributes.omero;
+        return omero ? convertFromOmeroToColorChannels(omero) : [];
+    }
+
+    toJSON() {
+        const rootGroup = this.#zarritaGroups.get(this.#root.path);
+        return rootGroup ? { url: this.#root.path, ready: true, rootGroup } : { url: this.#root.path, ready: false };
+    }
+
+    pickBestScale(
+        plane: CartesianPlane,
+        relativeView: box2D, // a box in data-unit-space
+        displayResolution: vec2, // in the plane given above
+        multiscaleName?: string | undefined,
+    ): OmeZarrLevel {
+        if (!this.ready) {
+            const message = 'cannot pick best-fitting scale: OME-Zarr metadata not yet loaded';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+
+        const level = this.getLevel({ index: 0, multiscale: multiscaleName });
+        if (!level) {
+            const message = 'cannot pick best-fitting scale: no initial dataset context found';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+
+        const realSize = level.sizeInUnits(plane);
+        if (!realSize) {
+            const message = 'invalid Zarr data: could not determine the size of the plane in the given units';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+
+        const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
+
+        // size, in dataspace, of a pixel 1/res
+        const pxPitch = Vec2.div(Box2D.size(relativeView), displayResolution);
+        const dstToDesired = (a: vec2, goal: vec2) => {
+            const diff = Vec2.sub(a, goal);
+            if (diff[0] * diff[1] > 0) {
+                // the res (a) is higher than our goal -
+                // weight this heavily to prefer smaller than the goal
+                return 1000 * Vec2.length(Vec2.sub(a, goal));
+            }
+            return Vec2.length(Vec2.sub(a, goal));
+        };
+
+        const dataContexts = Array.from(this.getLevels());
+
+        // per the OME-Zarr spec, datasets/levels are ordered by scale
+        const choice = dataContexts.reduce((bestSoFar, cur) => {
+            const planeSizeBest = bestSoFar.planeSizeInVoxels(plane);
+            const planeSizeCur = cur.planeSizeInVoxels(plane);
+            if (!planeSizeBest || !planeSizeCur) {
+                return bestSoFar;
+            }
+            return dstToDesired(vxlPitch(planeSizeBest), pxPitch) > dstToDesired(vxlPitch(planeSizeCur), pxPitch)
+                ? cur
+                : bestSoFar;
+        }, dataContexts[0]);
+        return choice ?? dataContexts[dataContexts.length - 1];
+    }
+
+    nextSliceStep(
+        plane: CartesianPlane,
+        relativeView: box2D, // a box in data-unit-space
+        displayResolution: vec2, // in the plane given above
+    ) {
+        if (!this.ready) {
+            const message = 'cannot pick best-fitting scale: OME-Zarr metadata not yet loaded';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+
+        // figure out what layer we'd be viewing
+        const level = this.pickBestScale(plane, relativeView, displayResolution);
+        const slices = level.sizeInVoxels(plane.ortho);
+        return slices === undefined ? undefined : 1 / slices;
+    }
+
+    #getDimensionIndex(dim: ZarrDimension, multiscaleSpec: OmeZarrMultiscaleSpecifier): number | undefined {
+        if (!this.ready) {
+            return undefined;
+        }
+        const multiscale = this.getMultiscale(multiscaleSpec);
+        if (multiscale === undefined) {
+            return undefined;
+        }
+        const index = multiscale.axes.findIndex((a) => a.name === dim);
+        return index > -1 ? index : undefined;
+    }
+
+    #getMaximumForDimension(dim: ZarrDimension, multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+        const multiscale = this.getMultiscale(multiscaleSpec);
+        if (multiscale === undefined) {
+            const message = `cannot get maximum ${dim}: no matching multiscale found`;
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+
+        const arrays = multiscale.datasets.map((d) => this.#arrays.get(d.path));
+        const dimIdx = this.#getDimensionIndex(dim, multiscaleSpec);
+        if (dimIdx === undefined) {
+            const message = `cannot get maximum ${dim}: '${dim}' is not a valid dimension for this multiscale`;
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+        const sortedValues = arrays.map((arr) => arr?.shape[dimIdx] ?? 0).sort();
+        return sortedValues.at(sortedValues.length - 1) ?? 0;
+    }
+
+    /**
+     * Given a specific @param multiscaleIdent representation of the Zarr data, finds the
+     * largest X shape component among the shapes of the different dataset arrays.
+     * @param multiscaleIdent the index or path of a specific multiscale representation (defaults to 0)
+     * @returns the largest Z scale for the specified multiscale representation
+     */
+    maxX(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+        return this.#getMaximumForDimension('x', multiscaleSpec);
+    }
+
+    /**
+     * Given a specific @param multiscale representation of the Zarr data, finds the
+     * largest Y shape component among the shapes of the different dataset arrays.
+     * @param multiscale the index or path of a specific multiscale representation (defaults to 0)
+     * @returns the largest Z scale for the specified multiscale representation
+     */
+    maxY(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+        return this.#getMaximumForDimension('y', multiscaleSpec);
+    }
+
+    /**
+     * Given a specific @param multiscale representation of the Zarr data, finds the
+     * largest Z shape component among the shapes of the different dataset arrays.
+     * @param multiscale the index or path of a specific multiscale representation (defaults to 0)
+     * @returns the largest Z scale for the specified multiscale representation
+     */
+    maxZ(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+        return this.#getMaximumForDimension('z', multiscaleSpec);
+    }
+
+    maxOrthogonal(plane: CartesianPlane, multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+        if (plane.ortho === 'x') {
+            return this.maxX(multiscaleSpec);
+        }
+        if (plane.ortho === 'y') {
+            return this.maxY(multiscaleSpec);
+        }
+        if (plane.ortho === 'z') {
+            return this.maxZ(multiscaleSpec);
+        }
+        throw new VisZarrDataError(`invalid plane: ortho set to '${plane.ortho}'`);
     }
 
     /**

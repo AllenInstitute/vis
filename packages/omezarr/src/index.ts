@@ -57,14 +57,14 @@ export {
 export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
 
 export {
-    type OmeZarrDataContext,
-    type OmeZarrDatasetSpecifier,
+    type OmeZarrLevelSpecifier as OmeZarrDatasetSpecifier,
     OmeZarrFileset,
     type ZarrDataRequest,
     type ZarrDimensionSelection,
     type ZarrSelection,
     type ZarrSlice,
 } from './zarr/omezarr-fileset';
+export { OmeZarrLevel } from './zarr/omezarr-level';
 export {
     OmeZarrArrayTransform,
     OmeZarrGroupTransform,
