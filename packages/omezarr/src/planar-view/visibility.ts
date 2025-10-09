@@ -3,7 +3,6 @@ import type { OmeZarrFileset } from '../zarr/omezarr-fileset';
 import type { OmeZarrLevel } from '../zarr/omezarr-level';
 import type { PlanarVoxelTile } from './types';
 
-
 /**
  * given a image with @param size pixels, break it into tiles, each @param idealTilePx.
  * for all such tiles which intersect the given bounds, call the visitor

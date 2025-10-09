@@ -1,15 +1,5 @@
-import {
-    type CartesianPlane,
-    Vec2,
-    type vec2,
-} from '@alleninstitute/vis-geometry';
-import type {
-    OmeZarrArray,
-    OmeZarrAxis,
-    OmeZarrDataset,
-    OmeZarrMultiscale,
-    ZarrDimension,
-} from './types';
+import { type CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import type { OmeZarrArray, OmeZarrAxis, OmeZarrDataset, OmeZarrMultiscale, ZarrDimension } from './types';
 
 export class OmeZarrLevel {
     readonly path: string;
