@@ -70,10 +70,13 @@ export {
     OmeZarrGroupTransform,
 } from './zarr/omezarr-transforms';
 export type {
-    OmeZarrVoxelTile,
-    OmeZarrVoxelTileImage,
+    PlanarVoxelTile,
+    PlanarVoxelTileImage,
+    PlanarRenderSettings,
+    PlanarRenderSettingsChannel,
+    PlanarRenderSettingsChannels,
 } from './planar-view/types';
 export {
     buildOmeZarrPlanarRenderer,
     buildAsyncOmeZarrPlanarRenderer,
-} from './planar-view/planar-renderer';
+} from './planar-view/renderer';

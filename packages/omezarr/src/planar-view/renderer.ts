@@ -2,7 +2,6 @@ import {
     buildAsyncRenderer,
     type CachedTexture,
     logger,
-    type QueueOptions,
     type ReglCacheEntry,
     type Renderer,
 } from '@alleninstitute/vis-core';
@@ -11,8 +10,7 @@ import type REGL from 'regl';
 import { buildTileRenderCommand } from '../rendering/tile-rendering';
 import type { OmeZarrDataContext, OmeZarrFileset, ZarrDataRequest, ZarrSlice } from '../zarr/omezarr-fileset';
 import { getVisibleTiles } from './calculations';
-import type { PlanarRenderSettings } from './settings';
-import type { OmeZarrVoxelTile, OmeZarrVoxelTileImage } from './types';
+import type { PlanarRenderSettings, PlanarRendererOptions, PlanarVoxelTile, PlanarVoxelTileImage } from './types';
 
 type ImageChannels = {
     [channelKey: string]: CachedTexture;
@@ -53,7 +51,7 @@ function toZarrSlice(
     }
 }
 
-function toZarrDataRequest(tile: OmeZarrVoxelTile, channel: number): ZarrDataRequest {
+function toZarrDataRequest(tile: PlanarVoxelTile, channel: number): ZarrDataRequest {
     const { plane, orthoVal, bounds } = tile;
     const { minCorner: min, maxCorner: max } = bounds;
     const u = { min: min[0], max: max[0] };
@@ -76,27 +74,22 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
     return keys.every((key) => cacheData[key]?.type === 'texture');
 }
 
-type OmeZarrVoxelTileImageDecoder = (
+export type OmeZarrVoxelTileImageDecoder = (
     fileset: OmeZarrFileset,
     req: ZarrDataRequest,
     dataContext: OmeZarrDataContext,
     signal?: AbortSignal,
-) => Promise<OmeZarrVoxelTileImage>;
-
-export type OmeZarrSliceRendererOptions = {
-    numChannels?: number;
-    queueOptions?: QueueOptions;
-};
+) => Promise<PlanarVoxelTileImage>;
 
 const DEFAULT_NUM_CHANNELS = 3;
 
 export function buildOmeZarrPlanarRenderer(
     regl: REGL.Regl,
     decoder: OmeZarrVoxelTileImageDecoder,
-    options?: OmeZarrSliceRendererOptions | undefined,
-): Renderer<OmeZarrFileset, OmeZarrVoxelTile, PlanarRenderSettings, ImageChannels> {
+    options?: PlanarRendererOptions | undefined,
+): Renderer<OmeZarrFileset, PlanarVoxelTile, PlanarRenderSettings, ImageChannels> {
     const numChannels = options?.numChannels ?? DEFAULT_NUM_CHANNELS;
-    function sliceAsTexture(slice: OmeZarrVoxelTileImage): CachedTexture {
+    function sliceAsTexture(slice: PlanarVoxelTileImage): CachedTexture {
         const { data, shape } = slice;
         return {
             bytes: data.byteLength,
@@ -164,7 +157,7 @@ export function buildOmeZarrPlanarRenderer(
 export function buildAsyncOmeZarrPlanarRenderer(
     regl: REGL.Regl,
     decoder: OmeZarrVoxelTileImageDecoder,
-    options?: OmeZarrSliceRendererOptions,
+    options?: PlanarRendererOptions,
 ) {
     return buildAsyncRenderer(buildOmeZarrPlanarRenderer(regl, decoder, options), options?.queueOptions);
 }
