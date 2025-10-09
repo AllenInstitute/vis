@@ -3,7 +3,7 @@ import { Box2D, type box2D, type CartesianPlane, Vec2, type vec2 } from '@alleni
 import { VisZarrDataError } from '../errors';
 import type { OmeZarrFileset, OmeZarrDataContext as OmeZarrLevel } from '../zarr/omezarr-fileset';
 import type { OmeZarrAxis, OmeZarrCoordinateTransform, ZarrDimension } from '../zarr/types';
-import type { VoxelTile } from './types';
+import type { OmeZarrVoxelTile } from './types';
 
 function indexFor(dim: ZarrDimension, axes: readonly OmeZarrAxis[]) {
     return axes.findIndex((axis) => axis.name === dim);
@@ -237,7 +237,7 @@ function getVisibleTilesInLayer(
     const scale = Vec2.div(realSize, size);
     const vxlToReal = (vxl: box2D) => Box2D.scale(vxl, scale);
     const realToVxl = (real: box2D) => Box2D.scale(real, Vec2.div([1, 1], scale));
-    const visibleTiles: VoxelTile[] = [];
+    const visibleTiles: OmeZarrVoxelTile[] = [];
     visitTilesWithin([tileSize, tileSize], size, realToVxl(camera.view), (uv) => {
         visibleTiles.push({
             plane: plane.axes,
@@ -273,7 +273,7 @@ export function getVisibleTiles(
     planeLocation: number,
     fileset: OmeZarrFileset,
     tileSize: number,
-): VoxelTile[] {
+): OmeZarrVoxelTile[] {
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
     const level = pickBestScale(fileset, plane, camera.view, camera.screenSize);

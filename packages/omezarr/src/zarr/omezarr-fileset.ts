@@ -62,7 +62,7 @@ export type OmeZarrDataContext = {
 };
 
 export type OmeZarrDatasetSpecifier = {
-    multiscale?: string;
+    multiscale?: string | undefined;
 } & (
     | {
           index: number;

@@ -2,7 +2,7 @@ import type { box2D, OrthogonalCartesianAxes } from '@alleninstitute/vis-geometr
 import type { OmeZarrDataContext } from '../zarr/omezarr-fileset';
 
 // represent a 2D slice of a volume
-export type VoxelTile = {
+export type OmeZarrVoxelTile = {
     plane: OrthogonalCartesianAxes; // the plane in which the tile sits
     realBounds: box2D; // in the space given by the axis descriptions of the omezarr dataset
     bounds: box2D; // in voxels, in the plane
@@ -11,7 +11,7 @@ export type VoxelTile = {
 };
 
 // a slice of a volume (as voxels suitable for display)
-export type VoxelTileImage = {
+export type OmeZarrVoxelTileImage = {
     data: Float32Array;
-    shape: number[];
+    shape: readonly number[];
 };

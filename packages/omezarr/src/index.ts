@@ -69,3 +69,11 @@ export {
     OmeZarrArrayTransform,
     OmeZarrGroupTransform,
 } from './zarr/omezarr-transforms';
+export type {
+    OmeZarrVoxelTile,
+    OmeZarrVoxelTileImage,
+} from './planar-view/types';
+export {
+    buildOmeZarrPlanarRenderer,
+    buildAsyncOmeZarrPlanarRenderer,
+} from './planar-view/planar-renderer';
