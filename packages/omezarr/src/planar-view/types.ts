@@ -1,5 +1,12 @@
 import type { QueueOptions } from '@alleninstitute/vis-core';
-import type { box2D, CartesianPlane, Interval, OrthogonalCartesianAxes, vec2, vec3 } from '@alleninstitute/vis-geometry';
+import type {
+    box2D,
+    CartesianPlane,
+    Interval,
+    OrthogonalCartesianAxes,
+    vec2,
+    vec3,
+} from '@alleninstitute/vis-geometry';
 import type { OmeZarrDataContext } from '../zarr/omezarr-fileset';
 
 // represent a 2D slice of a volume
