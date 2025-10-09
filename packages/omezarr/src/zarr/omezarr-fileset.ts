@@ -78,7 +78,7 @@ export type OmeZarrMultiscaleSpecifier =
       };
 
 export type OmeZarrLevelSpecifier = {
-    multiscale?: string | undefined;
+    multiscale?: OmeZarrMultiscaleSpecifier | undefined;
 } & (
     | {
           index: number;
@@ -204,79 +204,49 @@ export class OmeZarrFileset {
         if (this.#rootGroup === undefined) {
             return;
         }
-        const multiscales = this.#rootGroup?.attributes.multiscales ?? [];
-        const selectedMultiscales = multiscales.filter((m) =>
-            specifier.multiscale ? m.name === specifier.multiscale : true,
-        );
+        const targetDesc = 'index' in specifier ? `index [${specifier.index}]` : `path [${specifier.path}]`; 
 
-        let matching: { path: string; multiscale: OmeZarrMultiscale; dataset: OmeZarrDataset; datasetIndex: number }[];
+        const multiscale = this.getMultiscale(specifier.multiscale ?? { index: 0 });
+        if (multiscale === undefined) {
+            const message = `cannot get matching dataset and array for ${targetDesc}: multiple multiscales specified`;
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+
+        let matching: { path: string; dataset: OmeZarrDataset; datasetIndex: number };
 
         if ('index' in specifier) {
             const i = specifier.index;
-            if (selectedMultiscales.length > 1) {
-                const message = `cannot get matching dataset and array for index [${i}]: multiple multiscales specified`;
+            // matching = selectedMultiscales.map((m) => {
+            if (i < 0 || i >= multiscale.datasets.length) {
+                const message = `cannot get matching dataset and array for ${targetDesc}: index out of bounds`;
                 logger.error(message);
                 throw new VisZarrDataError(message);
             }
-            matching = selectedMultiscales.map((m) => {
-                if (i < 0 || i >= m.datasets.length) {
-                    const message = `cannot get matching dataset and array for index [${i}]: index out of bounds`;
-                    logger.error(message);
-                    throw new VisZarrDataError(message);
-                }
-                const dataset = m.datasets[specifier.index];
-                if (dataset === undefined) {
-                    const message = `cannot get matching dataset and array for index [${i}]: dataset undefined`;
-                    logger.error(message);
-                    throw new VisZarrDataError(message);
-                }
-                return { path: dataset.path, datasetIndex: i, multiscale: m, dataset };
-            });
+            const dataset = multiscale.datasets[specifier.index];
+            if (dataset === undefined) {
+                const message = `cannot get matching dataset and array for index ${targetDesc}: no dataset found at that index`;
+                logger.error(message);
+                throw new VisZarrDataError(message);
+            }
+            matching = { path: dataset.path, datasetIndex: i, dataset };
 
-            if (matching.length > 1) {
-                const message = `cannot get matching dataset and array for index [${i}]: multiple matching datasets found`;
-                logger.error(message);
-                throw new VisZarrDataError(message);
-            }
         } else {
             const path = specifier.path;
-            matching = selectedMultiscales.map((m) => {
-                const datasets = m.datasets.filter((d) => d.path === path);
-                if (datasets.length > 1) {
-                    const message = `cannot get matching dataset and array for path [${path}]: multiple matching datasets found`;
-                    logger.error(message);
-                    throw new VisZarrDataError(message);
-                }
-                const dataset = datasets[0];
-                if (dataset === undefined) {
-                    const message = `cannot get matching dataset and array for path [${path}]: dataset was undefined`;
-                    logger.error(message);
-                    throw new VisZarrDataError(message);
-                }
-                const datasetIndex = m.datasets.findIndex((d) => d.path === dataset.path);
-                if (datasetIndex === -1) {
-                    const message = `cannot get matching dataset and array for path [${path}]: index of matching dataset was not found`;
-                    logger.error(message);
-                    throw new VisZarrDataError(message);
-                }
-                return { path, multiscale: m, dataset, datasetIndex };
-            });
-
-            if (matching.length > 1) {
-                const message = `cannot get matching dataset and array for path [${path}]: multiple matching datasets found`;
+            const datasetIndex = multiscale.datasets.findIndex((d) => d.path === path);
+            const dataset = multiscale.datasets[datasetIndex];
+            if (datasetIndex === -1 || dataset === undefined) {
+                const message = `cannot get matching dataset and array for ${targetDesc}: no matching path found`;
                 logger.error(message);
                 throw new VisZarrDataError(message);
             }
+            matching = { path, dataset, datasetIndex };
         }
 
-        if (matching.length < 1) {
-            return;
-        }
-
-        const { path, multiscale, dataset, datasetIndex } = matching[0];
+        const { path, dataset, datasetIndex } = matching;
         const array = this.#arrays.get(path);
-        if (multiscale === undefined || dataset === undefined || array === undefined) {
-            const message = `cannot get matching dataset and array for path [${path}]: one or more elements were undefined`;
+        if (array === undefined) {
+            const message = `cannot get matching dataset and array for ${targetDesc}: no matching array found`;
             logger.error(message);
             throw new VisZarrDataError(message);
         }
@@ -319,7 +289,7 @@ export class OmeZarrFileset {
         plane: CartesianPlane,
         relativeView: box2D, // a box in data-unit-space
         displayResolution: vec2, // in the plane given above
-        multiscaleName?: string | undefined,
+        multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined,
     ): OmeZarrLevel {
         if (!this.ready) {
             const message = 'cannot pick best-fitting scale: OME-Zarr metadata not yet loaded';
@@ -327,7 +297,7 @@ export class OmeZarrFileset {
             throw new VisZarrDataError(message);
         }
 
-        const level = this.getLevel({ index: 0, multiscale: multiscaleName });
+        const level = this.getLevel({ index: 0, multiscale: multiscaleSpec });
         if (!level) {
             const message = 'cannot pick best-fitting scale: no initial dataset context found';
             logger.error(message);
