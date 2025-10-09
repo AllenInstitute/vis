@@ -196,7 +196,7 @@ export class OmeZarrFileset {
             specifier.multiscale ? m.name === specifier.multiscale : true,
         );
 
-        let matching: { path: string, multiscale: OmeZarrMultiscale, dataset: OmeZarrDataset, datasetIndex: number }[];
+        let matching: { path: string; multiscale: OmeZarrMultiscale; dataset: OmeZarrDataset; datasetIndex: number }[];
 
         if ('index' in specifier) {
             const i = specifier.index;
@@ -225,7 +225,6 @@ export class OmeZarrFileset {
                 logger.error(message);
                 throw new VisZarrDataError(message);
             }
-
         } else {
             const path = specifier.path;
             matching = selectedMultiscales.map((m) => {

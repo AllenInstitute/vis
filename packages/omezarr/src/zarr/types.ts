@@ -157,13 +157,13 @@ export type OmeZarrAttrs = {
 // is actually represented
 export type OmeZarrNode = {
     nodeType: 'group' | 'array';
-}
+};
 
 export type OmeZarrGroup = OmeZarrNode & {
     nodeType: 'group';
     zarrFormat: 2 | 3;
     attributes: OmeZarrGroupAttributes;
-}
+};
 
 export type OmeZarrGroupAttributes = {
     multiscales: OmeZarrMultiscale[];
@@ -206,7 +206,8 @@ export const OmeZarrAttrsSchema = z
         };
     });
 
-export const OmeZarrGroupTransform = z.union([OmeZarrAttrsV2Schema, OmeZarrAttrsV3Schema])
+export const OmeZarrGroupTransform = z
+    .union([OmeZarrAttrsV2Schema, OmeZarrAttrsV3Schema])
     .transform<OmeZarrGroup>((v: OmeZarrAttrsV2 | OmeZarrAttrsV3) => {
         if ('ome' in v) {
             return {
@@ -221,7 +222,6 @@ export const OmeZarrGroupTransform = z.union([OmeZarrAttrsV2Schema, OmeZarrAttrs
             attributes: v,
         };
     });
-
 
 type ZarritaArray = zarr.Array<zarr.DataType, zarr.FetchStore>;
 

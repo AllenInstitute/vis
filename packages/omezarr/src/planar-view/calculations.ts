@@ -1,9 +1,9 @@
-import { logger } from "@alleninstitute/vis-core";
-import { Box2D, type box2D, type CartesianPlane, Vec2, type vec2 } from "@alleninstitute/vis-geometry";
-import { VisZarrDataError } from "../errors";
-import type { OmeZarrFileset, OmeZarrDataContext as OmeZarrLevel } from "../zarr/omezarr-fileset";
-import type { OmeZarrAxis, OmeZarrCoordinateTransform, ZarrDimension } from "../zarr/types";
-import type { VoxelTile } from "./types";
+import { logger } from '@alleninstitute/vis-core';
+import { Box2D, type box2D, type CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import { VisZarrDataError } from '../errors';
+import type { OmeZarrFileset, OmeZarrDataContext as OmeZarrLevel } from '../zarr/omezarr-fileset';
+import type { OmeZarrAxis, OmeZarrCoordinateTransform, ZarrDimension } from '../zarr/types';
+import type { VoxelTile } from './types';
 
 function indexFor(dim: ZarrDimension, axes: readonly OmeZarrAxis[]) {
     return axes.findIndex((axis) => axis.name === dim);
@@ -70,7 +70,7 @@ export const pickBestScale = (
             : bestSoFar;
     }, dataContexts[0]);
     return choice ?? dataContexts[dataContexts.length - 1];
-}
+};
 
 /**
  *
@@ -133,7 +133,7 @@ export function sizeInUnits(
     plane: CartesianPlane,
     axes: readonly OmeZarrAxis[],
     transforms: OmeZarrCoordinateTransform[],
-    shape: readonly number[]
+    shape: readonly number[],
 ): vec2 | undefined {
     const vxls = planeSizeInVoxels(plane, axes, shape);
 

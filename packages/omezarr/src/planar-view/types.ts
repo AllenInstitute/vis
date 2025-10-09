@@ -1,5 +1,5 @@
-import type { box2D, OrthogonalCartesianAxes } from "@alleninstitute/vis-geometry";
-import type { OmeZarrDataContext } from "../zarr/omezarr-fileset";
+import type { box2D, OrthogonalCartesianAxes } from '@alleninstitute/vis-geometry';
+import type { OmeZarrDataContext } from '../zarr/omezarr-fileset';
 
 // represent a 2D slice of a volume
 export type VoxelTile = {

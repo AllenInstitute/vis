@@ -46,8 +46,8 @@ class CacheableByteArray implements Cacheable {
 type CacheKey = string;
 
 type TransferableRequestInit = Omit<RequestInit, 'body' | 'headers' | 'signal'> & {
-    body?: string;
-    headers?: Record<string, string>;
+    body?: string | undefined;
+    headers?: Record<string, string> | undefined;
 };
 
 const copyToTransferableHeaders = (headers: RequestInit['headers']): Record<string, string> | undefined => {
