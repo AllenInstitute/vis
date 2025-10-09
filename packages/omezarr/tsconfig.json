@@ -5,7 +5,7 @@
             "~/*": ["./*"]
         },
         "moduleResolution": "Bundler",
-        "module": "es6",
+        "module": "esnext",
         "target": "es2024",
         "lib": ["es2024", "DOM"]
     },

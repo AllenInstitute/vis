@@ -12,7 +12,7 @@ export {
     defaultDecoder,
     getVisibleTiles,
 } from './sliceview/loader';
-export { buildTileRenderer, buildRGBTileRenderer } from './sliceview/tile-renderer';
+export { buildTileRenderCommand, buildRGBTileRenderCommand } from './rendering/tile-rendering';
 export {
     type ZarrDimension,
     type OmeZarrAxis,
@@ -55,3 +55,17 @@ export {
 } from './zarr/loading';
 
 export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
+
+export {
+    type OmeZarrDataContext,
+    type OmeZarrDatasetSpecifier,
+    OmeZarrFileset,
+    type ZarrDataRequest,
+    type ZarrDimensionSelection,
+    type ZarrSelection,
+    type ZarrSlice,
+} from './zarr/omezarr-fileset';
+export {
+    OmeZarrArrayTransform,
+    OmeZarrGroupTransform,
+} from './zarr/omezarr-transforms';
