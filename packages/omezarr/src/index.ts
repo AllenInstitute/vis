@@ -63,6 +63,7 @@ export {
     type ZarrDimensionSelection,
     type ZarrSelection,
     type ZarrSlice,
+    loadOmeZarrFileset,
 } from './zarr/omezarr-fileset';
 export { OmeZarrLevel } from './zarr/omezarr-level';
 export {
@@ -79,4 +80,19 @@ export type {
 export {
     buildOmeZarrPlanarRenderer,
     buildAsyncOmeZarrPlanarRenderer,
+    defaultPlanarDecoder,
 } from './planar-view/renderer';
+export {
+    setupFetchDataWorker
+} from './zarr/cached-loading/fetch-data.worker-loader';
+export {
+    type TransferrableRequestInit,
+    type FetchMessagePayload,
+    type FetchMessage,
+    type FetchResponseMessage,
+    type CancelMessage,
+    isFetchMessage,
+    isFetchResponseMessage,
+    isCancelMessage,
+    isCancellationError,
+} from './zarr/cached-loading/fetch-data.interface';

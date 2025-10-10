@@ -11,7 +11,7 @@ import { buildTileRenderCommand } from '../rendering/tile-rendering';
 import type { OmeZarrFileset, ZarrDataRequest, ZarrSlice } from '../zarr/omezarr-fileset';
 import type { PlanarRenderSettings, PlanarRendererOptions, PlanarVoxelTile, PlanarVoxelTileImage } from './types';
 import { getVisibleOmeZarrTiles } from './visibility';
-import type { OmeZarrLevel } from '../zarr/omezarr-level';
+import type { Chunk } from 'zarrita';
 
 type ImageChannels = {
     [channelKey: string]: CachedTexture;
@@ -78,7 +78,6 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
 export type OmeZarrVoxelTileImageDecoder = (
     fileset: OmeZarrFileset,
     req: ZarrDataRequest,
-    dataContext: OmeZarrLevel,
     signal?: AbortSignal,
 ) => Promise<PlanarVoxelTileImage>;
 
@@ -131,7 +130,6 @@ export function buildOmeZarrPlanarRenderer(
                     decoder(
                         dataset,
                         toZarrDataRequest(item, settings.channels[key].index),
-                        item.dataContext,
                         signal,
                     ).then(sliceAsTexture);
             }
@@ -168,4 +166,14 @@ export function buildAsyncOmeZarrPlanarRenderer(
     options?: PlanarRendererOptions,
 ) {
     return buildAsyncRenderer(buildOmeZarrPlanarRenderer(regl, decoder, options), options?.queueOptions);
+}
+
+export const defaultPlanarDecoder: OmeZarrVoxelTileImageDecoder = async (
+    fileset: OmeZarrFileset,
+    req: ZarrDataRequest,
+    signal?: AbortSignal,
+) => {
+    const result: { shape: number[]; buffer: Chunk<'float32'> } = await fileset.loadSlice(req, signal);
+    const { shape, buffer } = result;
+    return { shape, data: new Float32Array(buffer.data) };
 }

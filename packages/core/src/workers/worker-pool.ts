@@ -36,7 +36,7 @@ export class WorkerPool {
         for (let i = 0; i < size; i++) {
             this.#workers[i] = new Worker(workerModule, { type: 'module' });
             this.#workers[i].onmessage = (msg) => this.#handleMessage(i, msg);
-            this.#timeOfPreviousHeartbeat.set(i, Date.now());
+            this.#timeOfPreviousHeartbeat.set(i, 0);
         }
         this.#promises = new Map();
         this.#which = 0;
@@ -73,16 +73,44 @@ export class WorkerPool {
         this.#which = (this.#which + 1) % this.#workers.length;
     }
 
-    submitRequest(
+    async #getNextInitializedWorker(timeout = 5000, waitTime = 200): Promise<number> {
+        const wait = (millis: number) => new Promise((resolve) => setTimeout(resolve, millis));
+        let timeWaited = 0;
+        while (timeWaited < timeout) {
+            for (let i = this.#which; i < this.#workers.length; i++) {
+                const lastHeartbeat = this.#timeOfPreviousHeartbeat.get(i);
+                if (lastHeartbeat === undefined) {
+                    throw new Error('invalid worker state');
+                }
+                if (lastHeartbeat > 0) {
+                    this.#which = i;
+                    return i;
+                }
+            }
+            const beforeWaiting = Date.now();
+            wait(waitTime);
+            timeWaited += Date.now() - beforeWaiting;
+        }
+        // we didn't find an initialized worker before the timeout occurred :(
+        return -1;
+    }
+
+    async submitRequest(
         message: WorkerMessage,
         responseValidator: MessageValidator<WorkerMessageWithId>,
         transfers: Transferable[],
         signal?: AbortSignal | undefined,
     ): Promise<WorkerMessageWithId> {
         const reqId = `rq${uuidv4()}`;
-        const workerIndex = this.#which;
+        const workerIndex = await this.#getNextInitializedWorker();
+        if (workerIndex === -1) {
+            throw new Error('could not submit request: workers have not initialized');
+        }
         const messageWithId = { ...message, id: reqId };
         const messagePromise = this.#createMessagePromise(responseValidator);
+
+        console.log('>>> >>> >>> received submission of request');
+        console.log('>>> >>> >>> worker health:', this.getStatus(workerIndex));
 
         this.#promises.set(reqId, messagePromise);
 
@@ -126,7 +154,13 @@ export class WorkerPool {
         if (!this.#isValidIndex(workerIndex)) {
             throw new Error('invalid worker index');
         }
-        const delta = Date.now() - (this.#timeOfPreviousHeartbeat.get(workerIndex) ?? 0);
+        const lastHeartbeat = this.#timeOfPreviousHeartbeat.get(workerIndex) ?? 0;
+        if (lastHeartbeat === 0) {
+            return WorkerStatus.Unresponsive;
+        }
+        const delta = Date.now() - lastHeartbeat;
+        console.log('>>> >>> >>> >>> lastHeartbeat:', lastHeartbeat);
+        console.log('>>> >>> >>> >>> delta:', delta);
         if (delta && delta > 1500) {
             return WorkerStatus.Unresponsive;
         }

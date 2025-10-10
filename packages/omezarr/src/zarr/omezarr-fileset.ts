@@ -1,4 +1,4 @@
-import { logger, type WebResource, WorkerPool } from '@alleninstitute/vis-core';
+import { logger, type WebResource } from '@alleninstitute/vis-core';
 import {
     Box2D,
     type box2D,
@@ -11,7 +11,7 @@ import {
 import * as zarr from 'zarrita';
 import { z } from 'zod';
 import { VisZarrDataError } from '../errors';
-import { CachingMultithreadedFetchStore } from './cached-loading/store';
+import { ZarrFetchStore } from './cached-loading/store';
 import { OmeZarrArrayTransform, OmeZarrGroupTransform } from './omezarr-transforms';
 import {
     convertFromOmeroToColorChannels,
@@ -25,9 +25,6 @@ import {
     type ZarrDimension,
 } from './types';
 import { OmeZarrLevel } from './omezarr-level';
-
-const WORKER_MODULE_URL = new URL('./cached-loading/fetch-slice.worker.ts', import.meta.url);
-const NUM_WORKERS = 8;
 
 export type ZarrDimensionSelection = number | Interval | null;
 
@@ -88,78 +85,108 @@ export type OmeZarrLevelSpecifier = {
       }
 );
 
+export type LoadOmeZarrMetadataOptions = {
+    numWorkers?: number | undefined;
+};
+
+type OmeZarrGroupLoadSet<T extends zarr.FetchStore> = {
+    raw: zarr.Group<T>;
+    transformed: OmeZarrGroup;
+};
+
+type OmeZarrArrayLoadSet<T extends zarr.FetchStore> = {
+    raw: zarr.Array<zarr.DataType, T>;
+    transformed: OmeZarrArray;
+};
+
+const loadGroup = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZarrGroupLoadSet<ZarrFetchStore>> => {
+    console.log('>>> group loading...');
+    const group = await zarr.open(location, { kind: 'group' });
+    console.log('>>> group loaded!');
+    try {
+        return { raw: group, transformed: OmeZarrGroupTransform.parse(group.attrs) };
+    } catch (e) {
+        if (e instanceof z.ZodError) {
+            logger.error('could not load Zarr group metadata: parsing failed');
+        }
+        throw e;
+    }
+};
+
+const loadArray = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZarrArrayLoadSet<ZarrFetchStore>> => {
+    const array = await zarr.open(location, { kind: 'array' });
+    try {
+        return { raw: array, transformed: OmeZarrArrayTransform.parse(array) };
+    } catch (e) {
+        if (e instanceof z.ZodError) {
+            logger.error('could not load Zarr array metadata: parsing failed');
+        }
+        throw e;
+    }
+};
+
+export async function loadOmeZarrFileset(
+    res: WebResource,
+    workerModule: URL,
+    options?: LoadOmeZarrMetadataOptions | undefined,
+): Promise<OmeZarrFileset> {
+    console.log('generating store');
+    const store = new ZarrFetchStore(res.url, workerModule, { numWorkers: options?.numWorkers });
+    console.log('store generated');
+    const root = zarr.root(store);
+    console.log('zarr root:', root.path);
+
+    const zarritaGroups = new Map<string, zarr.Group<ZarrFetchStore>>();
+    const zarritaArrays = new Map<string, zarr.Array<zarr.DataType, ZarrFetchStore>>();
+
+    console.log('loading root group');
+    const { raw: rawRootGroup, transformed: rootGroup } = await loadGroup(root);
+    console.log('loaded root group');
+    zarritaGroups.set('/', rawRootGroup);
+
+    const arrayResults = await Promise.all(
+        rootGroup.attributes.multiscales
+            .map((multiscale) =>
+                multiscale.datasets?.map(async (dataset) => {
+                    return await loadArray(root.resolve(dataset.path));
+                }),
+            )
+            .reduce((prev, curr) => prev.concat(curr))
+            .filter((arr) => arr !== undefined),
+    );
+
+    const arrays = new Map<string, OmeZarrArray>();
+
+    arrayResults.forEach(({ raw, transformed }) => {
+        arrays.set(transformed.path, transformed);
+        zarritaArrays.set(raw.path, raw);
+    });
+
+    return new OmeZarrFileset(store, root, rootGroup, arrays, zarritaGroups, zarritaArrays);
+}
+
 export class OmeZarrFileset {
-    #store: CachingMultithreadedFetchStore;
-    #root: zarr.Location<CachingMultithreadedFetchStore>;
-    #rootGroup: OmeZarrGroup | null;
+    #store: ZarrFetchStore;
+    #root: zarr.Location<ZarrFetchStore>;
+    #rootGroup: OmeZarrGroup;
     #arrays: Map<string, OmeZarrArray>;
     #zarritaGroups: Map<string, zarr.Group<zarr.FetchStore>>;
     #zarritaArrays: Map<string, zarr.Array<zarr.DataType, zarr.FetchStore>>;
 
-    constructor(res: WebResource) {
-        this.#store = new CachingMultithreadedFetchStore(res.url, new WorkerPool(NUM_WORKERS, WORKER_MODULE_URL));
-        this.#root = zarr.root(this.#store);
-        this.#rootGroup = null;
-        this.#arrays = new Map();
-        this.#zarritaGroups = new Map();
-        this.#zarritaArrays = new Map();
-    }
-
-    async #loadGroup(location: zarr.Location<zarr.FetchStore>): Promise<OmeZarrGroup> {
-        const group = await zarr.open(location, { kind: 'group' });
-        this.#zarritaGroups.set(location.path, group);
-        try {
-            return OmeZarrGroupTransform.parse(group.attrs);
-        } catch (e) {
-            if (e instanceof z.ZodError) {
-                logger.error('could not load Zarr group metadata: parsing failed');
-            }
-            throw e;
-        }
-    }
-
-    async #loadArray(location: zarr.Location<zarr.FetchStore>): Promise<OmeZarrArray> {
-        const array = await zarr.open(location, { kind: 'array' });
-        this.#zarritaArrays.set(location.path, array);
-        try {
-            return OmeZarrArrayTransform.parse(array);
-        } catch (e) {
-            if (e instanceof z.ZodError) {
-                logger.error('could not load Zarr array metadata: parsing failed');
-            }
-            throw e;
-        }
-    }
-
-    async #loadRootAttrs(): Promise<OmeZarrGroup> {
-        return await this.#loadGroup(this.#root);
-    }
-
-    async loadMetadata() {
-        if (this.#rootGroup !== null) {
-            logger.warn('attempted to load the same OME-Zarr fileset after it was already loaded');
-            return;
-        }
-        this.#rootGroup = await this.#loadRootAttrs();
-
-        const arrayResults = await Promise.all(
-            this.#rootGroup.attributes.multiscales
-                .map((multiscale) =>
-                    multiscale.datasets?.map(async (dataset) => {
-                        return await this.#loadArray(this.#root.resolve(dataset.path));
-                    }),
-                )
-                .reduce((prev, curr) => prev.concat(curr))
-                .filter((arr) => arr !== undefined),
-        );
-
-        arrayResults.forEach((arr) => {
-            this.#arrays.set(arr.path, arr);
-        });
-    }
-
-    get ready(): boolean {
-        return this.#rootGroup !== null;
+    constructor(
+        store: ZarrFetchStore,
+        root: zarr.Location<ZarrFetchStore>,
+        rootGroup: OmeZarrGroup,
+        arrays: Map<string, OmeZarrArray>,
+        zarritaGroups: Map<string, zarr.Group<zarr.FetchStore>>,
+        zarritaArrays: Map<string, zarr.Array<zarr.DataType, zarr.FetchStore>>,
+    ) {
+        this.#store = store;
+        this.#root = root;
+        this.#rootGroup = rootGroup;
+        this.#arrays = arrays;
+        this.#zarritaGroups = zarritaGroups;
+        this.#zarritaArrays = zarritaArrays;
     }
 
     get url(): string | URL {
@@ -171,12 +198,6 @@ export class OmeZarrFileset {
     }
 
     getAxes(multiscaleName: string | undefined): OmeZarrAxis[] | undefined {
-        if (this.#rootGroup === null || this.#rootGroup.attributes.multiscales.length < 1) {
-            const message =
-                'cannot request multiscale axes: OME-Zarr fileset has no multiscale data (it may not have been loaded yet)';
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
         const multiscales = this.#rootGroup.attributes.multiscales;
         const multiscale =
             multiscaleName === undefined ? multiscales[0] : multiscales.find((v) => v.name === multiscaleName);
@@ -184,13 +205,7 @@ export class OmeZarrFileset {
     }
 
     getMultiscale(specifier: OmeZarrMultiscaleSpecifier): OmeZarrMultiscale | undefined {
-        if (!this.ready) {
-            const message = 'cannot get multiscale: OME-Zarr metadata not yet loaded';
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
-
-        const multiscales = this.#rootGroup?.attributes.multiscales;
+         const multiscales = this.#rootGroup.attributes.multiscales;
         if (multiscales === undefined) {
             const message = 'cannot get multiscale: no multiscales found';
             logger.error(message);
@@ -201,10 +216,7 @@ export class OmeZarrFileset {
     }
 
     getLevel(specifier: OmeZarrLevelSpecifier): OmeZarrLevel | undefined {
-        if (this.#rootGroup === undefined) {
-            return;
-        }
-        const targetDesc = 'index' in specifier ? `index [${specifier.index}]` : `path [${specifier.path}]`; 
+        const targetDesc = 'index' in specifier ? `index [${specifier.index}]` : `path [${specifier.path}]`;
 
         const multiscale = this.getMultiscale(specifier.multiscale ?? { index: 0 });
         if (multiscale === undefined) {
@@ -230,7 +242,6 @@ export class OmeZarrFileset {
                 throw new VisZarrDataError(message);
             }
             matching = { path: dataset.path, datasetIndex: i, dataset };
-
         } else {
             const path = specifier.path;
             const datasetIndex = multiscale.datasets.findIndex((d) => d.path === path);
@@ -291,12 +302,6 @@ export class OmeZarrFileset {
         displayResolution: vec2, // in the plane given above
         multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined,
     ): OmeZarrLevel {
-        if (!this.ready) {
-            const message = 'cannot pick best-fitting scale: OME-Zarr metadata not yet loaded';
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
-
         const level = this.getLevel({ index: 0, multiscale: multiscaleSpec });
         if (!level) {
             const message = 'cannot pick best-fitting scale: no initial dataset context found';
@@ -346,12 +351,6 @@ export class OmeZarrFileset {
         relativeView: box2D, // a box in data-unit-space
         displayResolution: vec2, // in the plane given above
     ) {
-        if (!this.ready) {
-            const message = 'cannot pick best-fitting scale: OME-Zarr metadata not yet loaded';
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
-
         // figure out what layer we'd be viewing
         const level = this.pickBestScale(plane, relativeView, displayResolution);
         const slices = level.sizeInVoxels(plane.ortho);
@@ -359,9 +358,6 @@ export class OmeZarrFileset {
     }
 
     #getDimensionIndex(dim: ZarrDimension, multiscaleSpec: OmeZarrMultiscaleSpecifier): number | undefined {
-        if (!this.ready) {
-            return undefined;
-        }
         const multiscale = this.getMultiscale(multiscaleSpec);
         if (multiscale === undefined) {
             return undefined;

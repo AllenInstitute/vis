@@ -1,10 +1,10 @@
 import { type Cacheable, logger, PriorityCache, WorkerPool } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
 import {
-    FETCH_SLICE_MESSAGE_TYPE,
-    type FetchSliceResponseMessage,
-    isFetchSliceResponseMessage,
-} from './fetch-slice.interface';
+    FETCH_MESSAGE_TYPE,
+    type FetchResponseMessage,
+    isFetchResponseMessage,
+} from './fetch-data.interface';
 
 const DEFAULT_NUM_WORKERS = 6;
 const DEFAULT_MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
@@ -209,6 +209,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         options: TransferableRequestInit,
         abort: AbortSignal | undefined,
     ): Promise<Uint8Array | undefined> {
+        console.log('>>> >>> starting doFetch');
         const cacheKey = asCacheKey(key, range);
 
         this.#priorityByTimestamp.set(cacheKey, Date.now());
@@ -236,21 +237,23 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             });
         }
 
+        console.log('>>> >>> submitting request');
         const request = this.#workerPool.submitRequest(
             {
-                type: FETCH_SLICE_MESSAGE_TYPE,
+                type: FETCH_MESSAGE_TYPE,
                 rootUrl: this.url,
                 path: key,
                 range,
                 options,
             },
-            isFetchSliceResponseMessage,
+            isFetchResponseMessage,
             [],
             chain.signal,
         );
 
         request
-            .then((response: FetchSliceResponseMessage) => {
+            .then((response: FetchResponseMessage) => {
+                console.log('>>> >>> received resolve');
                 const payload = response.payload;
                 if (payload === undefined) {
                     resolve(undefined);
@@ -261,6 +264,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
                 resolve(arr);
             })
             .catch((e: unknown) => {
+                console.log('>>> >>> received reject');
                 reject(e);
             })
             .finally(() => {
@@ -299,13 +303,13 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         return this.#doFetch(key, range, workerOptions, abort);
     }
 }
-export class ZarrSliceFetchStore extends CachingMultithreadedFetchStore {
-    constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
+export class ZarrFetchStore extends CachingMultithreadedFetchStore {
+    constructor(url: string | URL, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
         super(
             url,
             new WorkerPool(
                 options?.numWorkers ?? DEFAULT_NUM_WORKERS,
-                new URL('./fetch-slice.worker.ts', import.meta.url),
+                workerModule,
             ),
             options,
         );
