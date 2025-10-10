@@ -82,9 +82,7 @@ export {
     buildAsyncOmeZarrPlanarRenderer,
     defaultPlanarDecoder,
 } from './planar-view/renderer';
-export {
-    setupFetchDataWorker
-} from './zarr/cached-loading/fetch-data.worker-loader';
+export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';
 export {
     type TransferrableRequestInit,
     type FetchMessagePayload,

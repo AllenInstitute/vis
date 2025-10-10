@@ -127,11 +127,9 @@ export function buildOmeZarrPlanarRenderer(
             const contents: Record<string, (signal: AbortSignal) => Promise<CachedTexture>> = {};
             for (const key in settings.channels) {
                 contents[key] = (signal) =>
-                    decoder(
-                        dataset,
-                        toZarrDataRequest(item, settings.channels[key].index),
-                        signal,
-                    ).then(sliceAsTexture);
+                    decoder(dataset, toZarrDataRequest(item, settings.channels[key].index), signal).then(
+                        sliceAsTexture,
+                    );
             }
             return contents;
         },
@@ -176,4 +174,4 @@ export const defaultPlanarDecoder: OmeZarrVoxelTileImageDecoder = async (
     const result: { shape: number[]; buffer: Chunk<'float32'> } = await fileset.loadSlice(req, signal);
     const { shape, buffer } = result;
     return { shape, data: new Float32Array(buffer.data) };
-}
+};

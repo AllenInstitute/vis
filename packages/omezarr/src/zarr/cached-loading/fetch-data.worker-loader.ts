@@ -3,7 +3,12 @@
 import { HEARTBEAT_RATE_MS, logger } from '@alleninstitute/vis-core';
 import { type AbsolutePath, FetchStore, type RangeQuery } from 'zarrita';
 import type { CancelMessage, FetchMessage, TransferrableRequestInit } from './fetch-data.interface';
-import { FETCH_RESPONSE_MESSAGE_TYPE, isCancellationError, isCancelMessage, isFetchMessage } from './fetch-data.interface';
+import {
+    FETCH_RESPONSE_MESSAGE_TYPE,
+    isCancellationError,
+    isCancelMessage,
+    isFetchMessage,
+} from './fetch-data.interface';
 
 const NUM_RETRIES = 2;
 const RETRY_DELAY_MS = 500;
@@ -16,7 +21,7 @@ const fetchFile = async (
 ): Promise<Uint8Array | undefined> => {
     const store = new FetchStore(rootUrl);
     return store.get(path, { ...(options || {}), signal: abortController?.signal ?? null });
-}
+};
 
 const fetchSlice = async (
     rootUrl: string,
@@ -26,22 +31,25 @@ const fetchSlice = async (
     abortController?: AbortController | undefined,
 ): Promise<Uint8Array | undefined> => {
     const store = new FetchStore(rootUrl);
-    const wait = async (ms: number) => new Promise((resolve) => { setTimeout(resolve, ms)});
+    const wait = async (ms: number) =>
+        new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        });
     for (let i = 0; i < NUM_RETRIES; i++) {
         try {
             return await store.getRange(path, range, { ...(options || {}), signal: abortController?.signal ?? null });
         } catch (e) {
             logger.error('getRange request failed:', e);
             const hasRetries = i < NUM_RETRIES - 1;
-            const message = `getRange request ${i < NUM_RETRIES - 1 ? `will retry in ${RETRY_DELAY_MS}ms` : 'has no retries left'}`
-            logger.warn(message)
+            const message = `getRange request ${i < NUM_RETRIES - 1 ? `will retry in ${RETRY_DELAY_MS}ms` : 'has no retries left'}`;
+            logger.warn(message);
             if (hasRetries) {
                 await wait(RETRY_DELAY_MS);
             }
         }
     }
     return undefined;
-}
+};
 
 const handleFetch = (message: FetchMessage, abortControllers: Record<string, AbortController>) => {
     const { id, payload } = message;
@@ -55,8 +63,11 @@ const handleFetch = (message: FetchMessage, abortControllers: Record<string, Abo
     const abort = new AbortController();
     abortControllers[id] = abort;
 
-    const fetchFn = range !== undefined ? () => fetchSlice(rootUrl, path, range, options, abort) : () => fetchFile(rootUrl, path, options, abort);
-    
+    const fetchFn =
+        range !== undefined
+            ? () => fetchSlice(rootUrl, path, range, options, abort)
+            : () => fetchFile(rootUrl, path, options, abort);
+
     fetchFn()
         .then((result: Uint8Array | undefined) => {
             const buffer = result?.buffer;
@@ -88,9 +99,10 @@ const handleCancel = (message: CancelMessage, abortControllers: Record<string, A
     }
 };
 
-const startHeartbeat = () => setInterval(() => {
-    self.postMessage({ type: 'heartbeat' });
-}, HEARTBEAT_RATE_MS);
+const startHeartbeat = () =>
+    setInterval(() => {
+        self.postMessage({ type: 'heartbeat' });
+    }, HEARTBEAT_RATE_MS);
 
 const setupOnMessage = () => {
     const abortControllers: Record<string, AbortController> = {};
@@ -104,9 +116,9 @@ const setupOnMessage = () => {
         }
     };
     return onmessage;
-}
+};
 
 export const setupFetchDataWorker = (ctx: typeof self) => {
     ctx.onmessage = setupOnMessage();
     return { startHeartbeat };
-}
+};

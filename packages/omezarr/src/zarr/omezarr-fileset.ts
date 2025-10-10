@@ -131,7 +131,7 @@ export async function loadOmeZarrFileset(
     const url = getResourceUrl(res);
     const store = new ZarrFetchStore(url, workerModule, { numWorkers: options?.numWorkers });
     const root = zarr.root(store);
-    
+
     const zarritaGroups = new Map<string, zarr.Group<ZarrFetchStore>>();
     const zarritaArrays = new Map<string, zarr.Array<zarr.DataType, ZarrFetchStore>>();
 
@@ -199,7 +199,7 @@ export class OmeZarrFileset {
     }
 
     getMultiscale(specifier: OmeZarrMultiscaleSpecifier): OmeZarrMultiscale | undefined {
-         const multiscales = this.#rootGroup.attributes.multiscales;
+        const multiscales = this.#rootGroup.attributes.multiscales;
         if (multiscales === undefined) {
             const message = 'cannot get multiscale: no multiscales found';
             logger.error(message);

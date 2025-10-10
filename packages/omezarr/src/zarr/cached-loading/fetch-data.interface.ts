@@ -9,7 +9,7 @@ export type TransferrableRequestInit = Omit<RequestInit, 'body' | 'headers' | 's
 export type FetchMessagePayload = {
     rootUrl: string;
     path: AbsolutePath;
-    range?: RangeQuery | undefined; 
+    range?: RangeQuery | undefined;
     options?: TransferrableRequestInit | undefined;
 };
 
@@ -37,15 +37,17 @@ export type CancelMessage = {
 const FetchMessagePayloadSchema = z.object({
     rootUrl: z.string().nonempty(),
     path: z.string().nonempty().startsWith('/'),
-    range: z.union([
-        z.object({
-            offset: z.number(),
-            length: z.number(),
-        }),
-        z.object({
-            suffixLength: z.number(),
-        }),
-    ]).optional(),
+    range: z
+        .union([
+            z.object({
+                offset: z.number(),
+                length: z.number(),
+            }),
+            z.object({
+                suffixLength: z.number(),
+            }),
+        ])
+        .optional(),
     options: z.unknown().optional(), // being "lazy" for now; doing a full schema for this could be complex and fragile
 });
 

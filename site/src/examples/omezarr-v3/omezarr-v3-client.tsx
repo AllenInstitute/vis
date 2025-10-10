@@ -60,7 +60,7 @@ export function OmeZarrView(props: Props) {
         const fileset = await loadOmeZarrFileset(res, new URL('./fetch.worker.ts', import.meta.url));
         setOmezarr(fileset);
         setPlaneParam(0.5);
-        const level = fileset.getLevel({ index: 0 }); 
+        const level = fileset.getLevel({ index: 0 });
         if (!level) {
             throw new Error('level 0 does not exist!');
         }

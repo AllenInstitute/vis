@@ -1,10 +1,6 @@
 import { type Cacheable, logger, PriorityCache, WorkerPool } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
-import {
-    FETCH_MESSAGE_TYPE,
-    type FetchResponseMessage,
-    isFetchResponseMessage,
-} from './fetch-data.interface';
+import { FETCH_MESSAGE_TYPE, type FetchResponseMessage, isFetchResponseMessage } from './fetch-data.interface';
 
 const DEFAULT_NUM_WORKERS = 6;
 const DEFAULT_MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
@@ -244,7 +240,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
                     path: key,
                     range,
                     options,
-                }
+                },
             },
             isFetchResponseMessage,
             [],
@@ -303,13 +299,6 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
 }
 export class ZarrFetchStore extends CachingMultithreadedFetchStore {
     constructor(url: string | URL, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
-        super(
-            url,
-            new WorkerPool(
-                options?.numWorkers ?? DEFAULT_NUM_WORKERS,
-                workerModule,
-            ),
-            options,
-        );
+        super(url, new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule), options);
     }
 }
