@@ -73,7 +73,7 @@ export class WorkerPool {
         this.#which = (this.#which + 1) % this.#workers.length;
     }
 
-    async #getNextInitializedWorker(timeout = 5000, waitTime = 200): Promise<number> {
+    async #getNextInitializedWorker(timeout = 10000, waitTime = 200): Promise<number> {
         const wait = (millis: number) => new Promise((resolve) => setTimeout(resolve, millis));
         let timeWaited = 0;
         while (timeWaited < timeout) {
@@ -88,7 +88,7 @@ export class WorkerPool {
                 }
             }
             const beforeWaiting = Date.now();
-            wait(waitTime);
+            await wait(waitTime);
             timeWaited += Date.now() - beforeWaiting;
         }
         // we didn't find an initialized worker before the timeout occurred :(
