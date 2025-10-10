@@ -100,9 +100,7 @@ type OmeZarrArrayLoadSet<T extends zarr.FetchStore> = {
 };
 
 const loadGroup = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZarrGroupLoadSet<ZarrFetchStore>> => {
-    console.log('>>> group loading...');
     const group = await zarr.open(location, { kind: 'group' });
-    console.log('>>> group loaded!');
     try {
         return { raw: group, transformed: OmeZarrGroupTransform.parse(group.attrs) };
     } catch (e) {

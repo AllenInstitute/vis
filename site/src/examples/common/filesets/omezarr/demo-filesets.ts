@@ -79,4 +79,14 @@ export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
             url: 's3://cortex-aav-toolbox-802451596237-us-west-2/epifluorescence/1161864579/ome_zarr_conversion/1161864579.zarr',
         },
     },
+    {
+        value: 'opt9',
+        label: 'STPT #802451596237 (Zarr v3)',
+        zarrVersion: 3,
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://public-development-802451596237-us-west-2/tissuecyte/478097069/ome_zarr_conversion/478097069.zarr/',
+        },
+    },
 ];

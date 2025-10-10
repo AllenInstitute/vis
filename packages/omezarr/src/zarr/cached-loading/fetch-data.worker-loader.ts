@@ -5,6 +5,9 @@ import { type AbsolutePath, FetchStore, type RangeQuery } from 'zarrita';
 import type { CancelMessage, FetchMessage, TransferrableRequestInit } from './fetch-data.interface';
 import { FETCH_RESPONSE_MESSAGE_TYPE, isCancellationError, isCancelMessage, isFetchMessage } from './fetch-data.interface';
 
+const NUM_RETRIES = 2;
+const RETRY_DELAY_MS = 500;
+
 const fetchFile = async (
     rootUrl: string,
     path: AbsolutePath,
@@ -23,7 +26,21 @@ const fetchSlice = async (
     abortController?: AbortController | undefined,
 ): Promise<Uint8Array | undefined> => {
     const store = new FetchStore(rootUrl);
-    return store.getRange(path, range, { ...(options || {}), signal: abortController?.signal ?? null });
+    const wait = async (ms: number) => new Promise((resolve) => { setTimeout(resolve, ms)});
+    for (let i = 0; i < NUM_RETRIES; i++) {
+        try {
+            return await store.getRange(path, range, { ...(options || {}), signal: abortController?.signal ?? null });
+        } catch (e) {
+            logger.error('getRange request failed:', e);
+            const hasRetries = i < NUM_RETRIES - 1;
+            const message = `getRange request ${i < NUM_RETRIES - 1 ? `will retry in ${RETRY_DELAY_MS}ms` : 'has no retries left'}`
+            logger.warn(message)
+            if (hasRetries) {
+                await wait(RETRY_DELAY_MS);
+            }
+        }
+    }
+    return undefined;
 }
 
 const handleFetch = (message: FetchMessage, abortControllers: Record<string, AbortController>) => {

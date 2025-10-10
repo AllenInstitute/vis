@@ -49,6 +49,7 @@ export class WorkerPool {
             return;
         }
         if (isWorkerMessageWithId(data)) {
+            logger.debug(`worker ${workerIndex} responded to a message`);
             const { id } = data;
             const messagePromise = this.#promises.get(id);
             if (messagePromise === undefined) {
@@ -64,6 +65,7 @@ export class WorkerPool {
             }
             messagePromise.resolve(data);
         } else {
+            logger.debug(`worker ${workerIndex} received an invalid message`);
             const reason = 'encountered an invalid message; skipping';
             logger.warn(reason);
         }
@@ -73,28 +75,6 @@ export class WorkerPool {
         this.#which = (this.#which + 1) % this.#workers.length;
     }
 
-    async #getNextInitializedWorker(timeout = 10000, waitTime = 200): Promise<number> {
-        const wait = (millis: number) => new Promise((resolve) => setTimeout(resolve, millis));
-        let timeWaited = 0;
-        while (timeWaited < timeout) {
-            for (let i = this.#which; i < this.#workers.length; i++) {
-                const lastHeartbeat = this.#timeOfPreviousHeartbeat.get(i);
-                if (lastHeartbeat === undefined) {
-                    throw new Error('invalid worker state');
-                }
-                if (lastHeartbeat > 0) {
-                    this.#which = i;
-                    return i;
-                }
-            }
-            const beforeWaiting = Date.now();
-            await wait(waitTime);
-            timeWaited += Date.now() - beforeWaiting;
-        }
-        // we didn't find an initialized worker before the timeout occurred :(
-        return -1;
-    }
-
     async submitRequest(
         message: WorkerMessage,
         responseValidator: MessageValidator<WorkerMessageWithId>,
@@ -102,15 +82,10 @@ export class WorkerPool {
         signal?: AbortSignal | undefined,
     ): Promise<WorkerMessageWithId> {
         const reqId = `rq${uuidv4()}`;
-        const workerIndex = await this.#getNextInitializedWorker();
-        if (workerIndex === -1) {
-            throw new Error('could not submit request: workers have not initialized');
-        }
+        const workerIndex = this.#which;
         const messageWithId = { ...message, id: reqId };
         const messagePromise = this.#createMessagePromise(responseValidator);
-
-        console.log('>>> >>> >>> received submission of request');
-        console.log('>>> >>> >>> worker health:', this.getStatus(workerIndex));
+        logger.debug(`worker ${workerIndex} being handed a request`);
 
         this.#promises.set(reqId, messagePromise);
 
@@ -159,8 +134,6 @@ export class WorkerPool {
             return WorkerStatus.Unresponsive;
         }
         const delta = Date.now() - lastHeartbeat;
-        console.log('>>> >>> >>> >>> lastHeartbeat:', lastHeartbeat);
-        console.log('>>> >>> >>> >>> delta:', delta);
         if (delta && delta > 1500) {
             return WorkerStatus.Unresponsive;
         }
