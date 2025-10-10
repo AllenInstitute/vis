@@ -209,7 +209,6 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         options: TransferableRequestInit,
         abort: AbortSignal | undefined,
     ): Promise<Uint8Array | undefined> {
-        console.log('>>> >>> starting doFetch');
         const cacheKey = asCacheKey(key, range);
 
         this.#priorityByTimestamp.set(cacheKey, Date.now());
@@ -237,14 +236,15 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             });
         }
 
-        console.log('>>> >>> submitting request');
         const request = this.#workerPool.submitRequest(
             {
                 type: FETCH_MESSAGE_TYPE,
-                rootUrl: this.url,
-                path: key,
-                range,
-                options,
+                payload: {
+                    rootUrl: this.url,
+                    path: key,
+                    range,
+                    options,
+                }
             },
             isFetchResponseMessage,
             [],
@@ -253,7 +253,6 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
 
         request
             .then((response: FetchResponseMessage) => {
-                console.log('>>> >>> received resolve');
                 const payload = response.payload;
                 if (payload === undefined) {
                     resolve(undefined);
@@ -264,7 +263,6 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
                 resolve(arr);
             })
             .catch((e: unknown) => {
-                console.log('>>> >>> received reject');
                 reject(e);
             })
             .finally(() => {

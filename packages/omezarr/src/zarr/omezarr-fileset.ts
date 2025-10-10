@@ -1,4 +1,4 @@
-import { logger, type WebResource } from '@alleninstitute/vis-core';
+import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
 import {
     Box2D,
     type box2D,
@@ -130,18 +130,14 @@ export async function loadOmeZarrFileset(
     workerModule: URL,
     options?: LoadOmeZarrMetadataOptions | undefined,
 ): Promise<OmeZarrFileset> {
-    console.log('generating store');
-    const store = new ZarrFetchStore(res.url, workerModule, { numWorkers: options?.numWorkers });
-    console.log('store generated');
+    const url = getResourceUrl(res);
+    const store = new ZarrFetchStore(url, workerModule, { numWorkers: options?.numWorkers });
     const root = zarr.root(store);
-    console.log('zarr root:', root.path);
-
+    
     const zarritaGroups = new Map<string, zarr.Group<ZarrFetchStore>>();
     const zarritaArrays = new Map<string, zarr.Array<zarr.DataType, ZarrFetchStore>>();
 
-    console.log('loading root group');
     const { raw: rawRootGroup, transformed: rootGroup } = await loadGroup(root);
-    console.log('loaded root group');
     zarritaGroups.set('/', rawRootGroup);
 
     const arrayResults = await Promise.all(
