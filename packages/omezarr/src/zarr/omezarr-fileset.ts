@@ -251,7 +251,7 @@ export class OmeZarrFileset {
         }
 
         const { path, dataset, datasetIndex } = matching;
-        const array = this.#arrays.get(path);
+        const array = this.#arrays.get(`/${path}`); // TODO this is a short-term fix, a more ideal fix would calculate the path from the array's group
         if (array === undefined) {
             const message = `cannot get matching dataset and array for ${targetDesc}: no matching array found`;
             logger.error(message);
@@ -260,26 +260,26 @@ export class OmeZarrFileset {
         return new OmeZarrLevel(path, multiscale, dataset, datasetIndex, array);
     }
 
-    getLevels(): Iterable<OmeZarrLevel> {
+    getLevels(): OmeZarrLevel[] {
         const multiscales = this.#rootGroup?.attributes.multiscales ?? [];
         const arrays = this.#arrays;
 
-        return {
-            *[Symbol.iterator]() {
-                for (const multiscale of multiscales) {
-                    let i = 0;
-                    for (const dataset of multiscale.datasets) {
-                        const path = dataset.path;
-                        const array = arrays.get(path);
-                        if (array === undefined) {
-                            return;
-                        }
-                        yield new OmeZarrLevel(path, multiscale, dataset, i, array);
-                        i += 1;
-                    }
+        const levels = [];
+        for (const multiscale of multiscales) {
+            let i = 0;
+            for (const dataset of multiscale.datasets) {
+                const path = dataset.path;
+                const array = arrays.get(`/${path}`);
+                if (array === undefined) {
+                    const message = 'cannot get list of levels: mismatched array and dataset';
+                    logger.error(message);
+                    throw new VisZarrDataError(message);
                 }
-            },
-        };
+                levels.push(new OmeZarrLevel(path, multiscale, dataset, i, array));
+                i += 1;
+            }
+        }
+        return levels;
     }
 
     getColorChannels(): OmeZarrColorChannel[] {
@@ -326,10 +326,10 @@ export class OmeZarrFileset {
             return Vec2.length(Vec2.sub(a, goal));
         };
 
-        const dataContexts = Array.from(this.getLevels());
+        const levels = Array.from(this.getLevels());
 
         // per the OME-Zarr spec, datasets/levels are ordered by scale
-        const choice = dataContexts.reduce((bestSoFar, cur) => {
+        const choice = levels.reduce((bestSoFar, cur) => {
             const planeSizeBest = bestSoFar.planeSizeInVoxels(plane);
             const planeSizeCur = cur.planeSizeInVoxels(plane);
             if (!planeSizeBest || !planeSizeCur) {
@@ -338,8 +338,8 @@ export class OmeZarrFileset {
             return dstToDesired(vxlPitch(planeSizeBest), pxPitch) > dstToDesired(vxlPitch(planeSizeCur), pxPitch)
                 ? cur
                 : bestSoFar;
-        }, dataContexts[0]);
-        return choice ?? dataContexts[dataContexts.length - 1];
+        }, levels[0]);
+        return choice ?? levels[levels.length - 1];
     }
 
     nextSliceStep(
@@ -439,7 +439,7 @@ export class OmeZarrFileset {
             logger.error(message);
             throw new VisZarrDataError(message);
         }
-        const arr = this.#zarritaArrays.get(r.dataset);
+        const arr = this.#zarritaArrays.get(`/${r.dataset}`);
         if (arr === undefined) {
             const message = 'invalid Zarr data: no array found for specified dataset';
             logger.error(message);
