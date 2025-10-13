@@ -79,17 +79,17 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
     >({
         vert,
         frag: `
-        precision highp float;
-        uniform sampler2D R;
-        uniform sampler2D G;
-        uniform sampler2D B; // for reasons which are pretty annoying
-        // its more direct to do 3 separate channels...
-        uniform vec2 Rgamut;
-        uniform vec2 Ggamut;
-        uniform vec2 Bgamut;
+    precision highp float;
+    uniform sampler2D R;
+    uniform sampler2D G;
+    uniform sampler2D B; // for reasons which are pretty annoying
+    // its more direct to do 3 separate channels...
+    uniform vec2 Rgamut;
+    uniform vec2 Ggamut;
+    uniform vec2 Bgamut;
 
-        varying vec2 texCoord;
-        void main(){
+    varying vec2 texCoord;
+    void main(){
             vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
             vec3 maxs = vec3(Rgamut.y,Ggamut.y,Bgamut.y);
             vec3 span = maxs-mins;
@@ -100,8 +100,7 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
             )-mins) /span;
             
             gl_FragColor = vec4(color, 1.0);
-        }
-        `,
+        }`,
         framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
         attributes: {
             pos: [0, 0, 1, 0, 1, 1, 0, 1],
