@@ -69,20 +69,18 @@ const handleFetch = (message: FetchMessage, abortControllers: Record<string, Abo
             : () => fetchFile(rootUrl, path, options, abort);
 
     fetchFn()
-        .then(
-            (result: Uint8Array | undefined) => {
-                const buffer = result?.buffer;
-                const options = buffer !== undefined ? { transfer: [buffer] } : {};
-                self.postMessage(
-                    {
-                        type: FETCH_RESPONSE_MESSAGE_TYPE,
-                        id,
-                        payload: result?.buffer,
-                    },
-                    { ...options },
-                );
-            },
-        )
+        .then((result: Uint8Array | undefined) => {
+            const buffer = result?.buffer;
+            const options = buffer !== undefined ? { transfer: [buffer] } : {};
+            self.postMessage(
+                {
+                    type: FETCH_RESPONSE_MESSAGE_TYPE,
+                    id,
+                    payload: result?.buffer,
+                },
+                { ...options },
+            );
+        })
         .catch((e) => {
             if (!isCancellationError(e)) {
                 logger.error('error in slice fetch worker: ', e);

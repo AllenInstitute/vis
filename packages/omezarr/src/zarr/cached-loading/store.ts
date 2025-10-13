@@ -28,7 +28,7 @@ class CacheableByteArray implements Cacheable {
         this.#arr = arr;
     }
 
-    destroy() { }
+    destroy() {}
 
     sizeInBytes(): number {
         return this.#arr.byteLength;
