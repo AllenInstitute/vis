@@ -30,27 +30,28 @@ void main(){
 `;
 /* -------------------------------------------------------------- */
 
-/* ============== RGB TILE RENDERING VERTEX SHADER ============== */
+/* ============= RGB TILE RENDERING FRAGMENT SHADER ============= */
 const rgbFrag = /*glsl*/ `
 precision highp float;
 uniform sampler2D R;
 uniform sampler2D G;
-uniform sampler2D B; // for reasons which are pretty annoying
+uniform sampler2D B; 
+// for reasons which are pretty annoying
 // its more direct to do 3 separate channels...
 uniform vec2 Rgamut;
 uniform vec2 Ggamut;
 uniform vec2 Bgamut;
-
 varying vec2 texCoord;
+
 void main(){
-    vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
-    vec3 maxs = vec3(Rgamut.y,Ggamut.y,Bgamut.y);
-    vec3 span = maxs-mins;
+    vec3 mins = vec3(Rgamut.x, Ggamut.x, Bgamut.x);
+    vec3 maxs = vec3(Rgamut.y, Ggamut.y, Bgamut.y);
+    vec3 span = maxs - mins;
     vec3 color = (vec3(
         texture2D(R, texCoord).r,
         texture2D(G, texCoord).r,
         texture2D(B, texCoord).r
-    )-mins) /span;
+    ) - mins) / span;
     
     gl_FragColor = vec4(color, 1.0);
 }
