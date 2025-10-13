@@ -40,10 +40,9 @@ export function decoderFactory(url: string, workerModule: URL, options?: Caching
         if (typeof data !== 'object' || !('buffer' in data)) {
             throw new Error('slice was malformed, array-buffer response required');
         }
-        zarr.Array
         // biome-ignore lint/suspicious/noExplicitAny: <hard to prove - but the typeof check above is sufficient for this to be safe>
         return { shape, data: new Float32Array(data as any) };
 
     };
-    return { decoder: getSlice, store };
+    return { decoder: getSlice, destroy: () => { store.destroy(); } };
 }

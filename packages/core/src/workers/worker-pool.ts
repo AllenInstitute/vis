@@ -41,7 +41,17 @@ export class WorkerPool {
         this.#promises = new Map();
         this.#which = 0;
     }
-
+    /**
+      * Warning - nothing in this class should be considered useable after
+      * calling this method - any/all methods called should be expected to be
+      * completely unreliable. dont call me unless you're about to dispose of all references to this object
+      */
+    destroy() {
+        for (let i = 0; i < this.#workers.length; i++) {
+            this.#workers[i].terminate();
+        }
+        this.#workers = []
+    }
     #handleMessage(workerIndex: number, msg: MessageEvent<unknown>) {
         const { data } = msg;
         if (isHeartbeatMessage(data)) {
@@ -81,6 +91,9 @@ export class WorkerPool {
         transfers: Transferable[],
         signal?: AbortSignal | undefined,
     ): Promise<WorkerMessageWithId> {
+        if (this.#workers.length < 1) {
+            return Promise.reject('this woorker pool has been disposed');
+        }
         const reqId = `rq${uuidv4()}`;
         const workerIndex = this.#which;
         const messageWithId = { ...message, id: reqId };

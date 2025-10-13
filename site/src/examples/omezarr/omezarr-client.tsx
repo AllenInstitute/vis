@@ -107,8 +107,14 @@ export function OmeZarrView(props: Props) {
         setDragging(false);
     };
     useEffect(() => {
+        let cleanup = () => {}; // no-op for now
         if (cnvs.current && server && !renderer) {
-            const { decoder } = decoderFactory(getResourceUrl(props.res), WORKERS);
+            const { decoder, destroy } = decoderFactory(getResourceUrl(props.res), WORKERS);
+            cleanup = () => {
+                // biome-ignore lint/suspicious/noConsole: <>
+                console.log('cleaning up worker-pool');
+                destroy();
+            };
             const { regl, cache } = server;
             const renderer = buildConnectedRenderer(regl, screenSize, cache, decoder, () => {
                 requestAnimationFrame(() => {
@@ -118,6 +124,7 @@ export function OmeZarrView(props: Props) {
             setRenderer(renderer);
             load(props.res);
         }
+        return cleanup;
     }, [cnvs.current, props.res]);
 
     useEffect(() => {

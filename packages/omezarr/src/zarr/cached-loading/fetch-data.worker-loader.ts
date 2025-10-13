@@ -62,7 +62,12 @@ const handleFetch = (message: FetchMessage, abortControllers: Record<string, Abo
 
     const abort = new AbortController();
     abortControllers[id] = abort;
-
+    abort.signal.addEventListener('abort', () => {
+        console.error('intentional abort ', id)
+        if (!abortControllers[id]) {
+            console.log('however it seems to have been resolved too soon')
+        }
+    })
     const fetchFn =
         range !== undefined
             ? () => fetchSlice(rootUrl, path, range, options, abort)
@@ -80,6 +85,8 @@ const handleFetch = (message: FetchMessage, abortControllers: Record<string, Abo
                 },
                 { ...options },
             );
+        }, (reason) => {
+            console.warn('worker fetch rejected: ', reason)
         })
         .catch((e) => {
             if (!isCancellationError(e)) {
