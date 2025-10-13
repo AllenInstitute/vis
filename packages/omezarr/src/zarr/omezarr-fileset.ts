@@ -12,7 +12,7 @@ import * as zarr from 'zarrita';
 import { z } from 'zod';
 import { VisZarrDataError } from '../errors';
 import { ZarrFetchStore } from './cached-loading/store';
-import { OmeZarrArrayTransform, OmeZarrGroupTransform } from './omezarr-transforms';
+import { OmeZarrArrayTransform, OmeZarrGroupTransform } from './types';
 import {
     convertFromOmeroToColorChannels,
     type OmeZarrArray,
