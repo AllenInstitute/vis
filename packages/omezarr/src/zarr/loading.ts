@@ -179,11 +179,10 @@ export function pickBestScale(
     }, datasets[0]);
     return choice ?? datasets[datasets.length - 1];
 }
-
+// TODO this is a duplicate of indexOfDimension... delete one of them!
 function indexFor(dim: ZarrDimension, axes: readonly OmeZarrAxis[]) {
     return axes.findIndex((axis) => axis.name === dim);
 }
-
 /**
  *
  * @param layer a shaped layer from within the omezarr dataset
