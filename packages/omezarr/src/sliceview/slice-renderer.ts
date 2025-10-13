@@ -18,7 +18,7 @@ import {
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
-import { buildTileRenderer } from './tile-renderer';
+import { buildTileRenderCommand } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
 export type RenderSettingsChannel = {
@@ -130,7 +130,7 @@ export function buildOmeZarrSliceRenderer(
             type: 'texture',
         };
     }
-    const cmd = buildTileRenderer(regl, numChannels);
+    const cmd = buildTileRenderCommand(regl, numChannels);
     return {
         cacheKey: (item, requestKey, dataset, settings) => {
             const channelKeys = Object.keys(settings.channels);

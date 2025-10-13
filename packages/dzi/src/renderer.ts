@@ -2,7 +2,7 @@ import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { type CachedTexture, type ReglCacheEntry, type Renderer, buildAsyncRenderer } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import { type DziImage, type DziTile, getVisibleTiles } from './loader';
-import { buildTileRenderer } from './tile-renderer';
+import { buildTileRenderCommand } from './tile-renderer';
 
 export type RenderSettings = {
     camera: {
@@ -27,7 +27,7 @@ type GpuProps = {
  * using regl (which uses webGL)
  */
 export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, RenderSettings, GpuProps> {
-    const renderCmd = buildTileRenderer(regl, { enable: false });
+    const renderCmd = buildTileRenderCommand(regl, { enable: false });
     const fetchDziTile = (
         tile: DziTile,
         _img: DziImage,

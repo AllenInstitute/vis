@@ -7,25 +7,31 @@ type Props = {
     depth: number;
     target: REGL.Framebuffer2D | null;
 };
-const vert = `
+
+/* ======================== VERTEX SHADER ======================= */
+const vert = /*glsl*/ `
 precision highp float;
 uniform vec4 view;
 uniform vec4 tile;
 uniform float depth;
 attribute vec2 position;
 varying vec2 uv;
+
 void main(){
     uv = position;
-    vec2 size = view.zw-view.xy;
-    vec2 tileSize = tile.zw-tile.xy;
-    vec2 tilePosition = (position * tileSize)+tile.xy;
-    vec2 pos =(tilePosition-view.xy)/size;
+    vec2 size = view.zw - view.xy;
+    vec2 tileSize = tile.zw - tile.xy;
+    vec2 tilePosition = (position * tileSize) + tile.xy;
+    vec2 pos = (tilePosition - view.xy)/size;
     // to clip space:
-    pos = (pos*2.0)-1.0;
-    gl_Position = vec4(pos.x,pos.y,depth,1);
-}`;
+    pos = (pos * 2.0) - 1.0;
+    gl_Position = vec4(pos.x, pos.y, depth, 1);
+}
+`;
+/* -------------------------------------------------------------- */
 
-const frag = `
+/* ======================= FRAGMENT SHADER ====================== */
+const frag = /*glsl*/ `
 precision highp float;
 varying vec2 uv;
 uniform sampler2D img;
@@ -34,7 +40,9 @@ void main(){
     gl_FragColor = texture2D(img, uv);
 }
 `;
-export function buildTileRenderer(regl: REGL.Regl, blend: REGL.BlendingOptions) {
+/* -------------------------------------------------------------- */
+
+export function buildTileRenderCommand(regl: REGL.Regl, blend: REGL.BlendingOptions) {
     const cmd = regl({
         vert,
         frag,
