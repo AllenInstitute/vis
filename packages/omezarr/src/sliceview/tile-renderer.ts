@@ -54,13 +54,13 @@ type TileRenderProps = CommonRenderProps & {
 };
 
 /**
- * A simplified Tile Render Command that specifically handles RGB channels.
+ *
  * @param regl an active REGL context
  * @returns a function (regl command) which renders 3 individual channels as the RGB
  * components of an image. Each channel is mapped to the output RGB space via the given Gamut.
  * the rendering is done in the given target buffer (or null for the screen).
  */
-export function buildRGBTileRenderCommand(regl: REGL.Regl) {
+export function buildRGBTileRenderer(regl: REGL.Regl) {
     const cmd = regl<
         {
             view: vec4;
@@ -136,7 +136,7 @@ type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, TileRend
  * into a single RGB image. Each channel is mapped to the output RGB space via the given Gamut.
  * The rendering is done in the given target buffer (or null for the screen).
  */
-export function buildTileRenderCommand(regl: REGL.Regl, numChannels: number) {
+export function buildTileRenderer(regl: REGL.Regl, numChannels: number) {
     const reglChannelUniforms: ReglUniforms[] = [];
     const fragmentChannelUniformDefs = [];
     const colorMerges = [];
