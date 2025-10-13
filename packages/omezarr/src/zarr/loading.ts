@@ -62,7 +62,7 @@ export async function loadZarrArrayFile(
     return result.metadata;
 }
 
-async function loadZarrArrayFileFromStore(
+export async function loadZarrArrayFileFromStore(
     store: zarr.FetchStore,
     path: string,
     version = 2,
@@ -298,7 +298,7 @@ export function planeSizeInVoxels(
 }
 
 // feel free to freak out if the request is over or under determined or whatever
-function buildQuery(r: Readonly<ZarrRequest>, axes: readonly OmeZarrAxis[], shape: readonly number[]) {
+export function buildQuery(r: Readonly<ZarrRequest>, axes: readonly OmeZarrAxis[], shape: readonly number[]) {
     const ordered = axes.map((a) => r[a.name as ZarrDimension]);
     // if any are undefined, throw up
     if (ordered.some((a) => a === undefined)) {

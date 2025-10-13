@@ -26,7 +26,7 @@ export enum WorkerStatus {
 
 export class WorkerPool {
     #workers: Worker[];
-    #promises: Map<number, MessagePromise>;
+    #promises: Map<string, MessagePromise>;
     #timeOfPreviousHeartbeat: Map<number, number>;
     #which: number;
 
@@ -36,7 +36,7 @@ export class WorkerPool {
         for (let i = 0; i < size; i++) {
             this.#workers[i] = new Worker(workerModule, { type: 'module' });
             this.#workers[i].onmessage = (msg) => this.#handleMessage(i, msg);
-            this.#timeOfPreviousHeartbeat.set(i, Date.now());
+            this.#timeOfPreviousHeartbeat.set(i, 0);
         }
         this.#promises = new Map();
         this.#which = 0;
@@ -44,17 +44,19 @@ export class WorkerPool {
 
     #handleMessage(workerIndex: number, msg: MessageEvent<unknown>) {
         const { data } = msg;
-        const messagePromise = this.#promises.get(workerIndex);
         if (isHeartbeatMessage(data)) {
             this.#timeOfPreviousHeartbeat.set(workerIndex, Date.now());
             return;
         }
-        if (messagePromise === undefined) {
-            logger.warn('unexpected message from worker');
-            return;
-        }
         if (isWorkerMessageWithId(data)) {
-            this.#promises.delete(workerIndex);
+            logger.debug(`worker ${workerIndex} responded to a message`);
+            const { id } = data;
+            const messagePromise = this.#promises.get(id);
+            if (messagePromise === undefined) {
+                logger.warn('unexpected message from worker');
+                return;
+            }
+            this.#promises.delete(id);
             if (!messagePromise.validator(data)) {
                 const reason = 'invalid response from worker: message type did not match expected type';
                 logger.error(reason);
@@ -63,9 +65,9 @@ export class WorkerPool {
             }
             messagePromise.resolve(data);
         } else {
+            logger.debug(`worker ${workerIndex} received an invalid message`);
             const reason = 'encountered an invalid message; skipping';
-            logger.error(reason);
-            messagePromise.reject(new Error(reason));
+            logger.warn(reason);
         }
     }
 
@@ -73,7 +75,7 @@ export class WorkerPool {
         this.#which = (this.#which + 1) % this.#workers.length;
     }
 
-    submitRequest(
+    async submitRequest(
         message: WorkerMessage,
         responseValidator: MessageValidator<WorkerMessageWithId>,
         transfers: Transferable[],
@@ -83,8 +85,9 @@ export class WorkerPool {
         const workerIndex = this.#which;
         const messageWithId = { ...message, id: reqId };
         const messagePromise = this.#createMessagePromise(responseValidator);
+        logger.debug(`worker ${workerIndex} being handed a request`);
 
-        this.#promises.set(workerIndex, messagePromise);
+        this.#promises.set(reqId, messagePromise);
 
         if (signal) {
             signal.addEventListener('abort', () => {
@@ -126,7 +129,11 @@ export class WorkerPool {
         if (!this.#isValidIndex(workerIndex)) {
             throw new Error('invalid worker index');
         }
-        const delta = Date.now() - (this.#timeOfPreviousHeartbeat.get(workerIndex) ?? 0);
+        const lastHeartbeat = this.#timeOfPreviousHeartbeat.get(workerIndex) ?? 0;
+        if (lastHeartbeat === 0) {
+            return WorkerStatus.Unresponsive;
+        }
+        const delta = Date.now() - lastHeartbeat;
         if (delta && delta > 1500) {
             return WorkerStatus.Unresponsive;
         }

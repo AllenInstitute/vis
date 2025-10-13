@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <this is a demo, but not a demo of correct react-hook useage!> */
-import { logger, type WebResource } from '@alleninstitute/vis-core';
+import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
 import { Box2D, PLANE_XY, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type OmeZarrMetadata,
@@ -11,10 +11,9 @@ import {
 } from '@alleninstitute/vis-omezarr';
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { zoom, pan } from '../common/camera';
-import { multithreadedDecoder } from '../common/loaders/ome-zarr/sliceWorkerPool';
+import { decoderFactory } from '@alleninstitute/vis-omezarr';
 import { SharedCacheContext } from '../common/react/priority-cache-provider';
 import { buildConnectedRenderer } from './render-utils';
-
 const defaultInterval: Interval = { min: 0, max: 80 };
 
 function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
@@ -46,7 +45,8 @@ type Props = {
     res: WebResource;
     screenSize: vec2;
 };
-
+const WORKERS = new URL('../omezarr-v3/fetch.worker.ts', import.meta.url);
+// const WORKERS = new URL('../common/loaders/ome-zarr/fetch-slice.worker', import.meta.url);
 export function OmeZarrView(props: Props) {
     const { screenSize } = props;
     const server = useContext(SharedCacheContext);
@@ -57,7 +57,6 @@ export function OmeZarrView(props: Props) {
     const [renderer, setRenderer] = useState<ReturnType<typeof buildConnectedRenderer>>();
     const [tick, setTick] = useState<number>(0);
     const cnvs = useRef<HTMLCanvasElement>(null);
-
     const load = (res: WebResource) => {
         loadMetadata(res).then((v) => {
             setOmezarr(v);
@@ -109,8 +108,9 @@ export function OmeZarrView(props: Props) {
     };
     useEffect(() => {
         if (cnvs.current && server && !renderer) {
+            const { decoder } = decoderFactory(getResourceUrl(props.res), WORKERS);
             const { regl, cache } = server;
-            const renderer = buildConnectedRenderer(regl, screenSize, cache, multithreadedDecoder, () => {
+            const renderer = buildConnectedRenderer(regl, screenSize, cache, decoder, () => {
                 requestAnimationFrame(() => {
                     setTick(performance.now());
                 });
@@ -118,7 +118,7 @@ export function OmeZarrView(props: Props) {
             setRenderer(renderer);
             load(props.res);
         }
-    }, [cnvs.current]);
+    }, [cnvs.current, props.res]);
 
     useEffect(() => {
         if (omezarr && cnvs.current && renderer) {
