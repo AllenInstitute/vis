@@ -18,7 +18,7 @@ import {
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
-import { buildTileRenderer } from '../sliceview/tile-renderer';
+import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
 export type RenderSettingsChannel = {
