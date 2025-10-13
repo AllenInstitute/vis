@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { CachingMultithreadedFetchStore, type RequestHandler } from './store';
-import {
-    FETCH_RESPONSE_MESSAGE_TYPE,
-    type FetchMessage,
-    type FetchResponseMessage,
-} from './fetch-data.interface';
+import { FETCH_RESPONSE_MESSAGE_TYPE, type FetchMessage, type FetchResponseMessage } from './fetch-data.interface';
 import { PromiseFarm } from '@alleninstitute/vis-core/src/shared-priority-cache/test-utils';
 
 type SpyLog = {
