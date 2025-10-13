@@ -63,31 +63,34 @@ const handleFetch = (message: FetchMessage, abortControllers: Record<string, Abo
     const abort = new AbortController();
     abortControllers[id] = abort;
     abort.signal.addEventListener('abort', () => {
-        console.error('intentional abort ', id)
+        console.error('intentional abort ', id);
         if (!abortControllers[id]) {
-            console.log('however it seems to have been resolved too soon')
+            console.log('however it seems to have been resolved too soon');
         }
-    })
+    });
     const fetchFn =
         range !== undefined
             ? () => fetchSlice(rootUrl, path, range, options, abort)
             : () => fetchFile(rootUrl, path, options, abort);
 
     fetchFn()
-        .then((result: Uint8Array | undefined) => {
-            const buffer = result?.buffer;
-            const options = buffer !== undefined ? { transfer: [buffer] } : {};
-            self.postMessage(
-                {
-                    type: FETCH_RESPONSE_MESSAGE_TYPE,
-                    id,
-                    payload: result?.buffer,
-                },
-                { ...options },
-            );
-        }, (reason) => {
-            console.warn('worker fetch rejected: ', reason)
-        })
+        .then(
+            (result: Uint8Array | undefined) => {
+                const buffer = result?.buffer;
+                const options = buffer !== undefined ? { transfer: [buffer] } : {};
+                self.postMessage(
+                    {
+                        type: FETCH_RESPONSE_MESSAGE_TYPE,
+                        id,
+                        payload: result?.buffer,
+                    },
+                    { ...options },
+                );
+            },
+            (reason) => {
+                console.warn('worker fetch rejected: ', reason);
+            },
+        )
         .catch((e) => {
             if (!isCancellationError(e)) {
                 logger.error('error in slice fetch worker: ', e);

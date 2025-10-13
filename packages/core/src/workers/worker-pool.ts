@@ -42,15 +42,15 @@ export class WorkerPool {
         this.#which = 0;
     }
     /**
-      * Warning - nothing in this class should be considered useable after
-      * calling this method - any/all methods called should be expected to be
-      * completely unreliable. dont call me unless you're about to dispose of all references to this object
-      */
+     * Warning - nothing in this class should be considered useable after
+     * calling this method - any/all methods called should be expected to be
+     * completely unreliable. dont call me unless you're about to dispose of all references to this object
+     */
     destroy() {
         for (let i = 0; i < this.#workers.length; i++) {
             this.#workers[i].terminate();
         }
-        this.#workers = []
+        this.#workers = [];
     }
     #handleMessage(workerIndex: number, msg: MessageEvent<unknown>) {
         const { data } = msg;

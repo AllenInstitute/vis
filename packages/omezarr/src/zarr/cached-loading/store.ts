@@ -28,7 +28,7 @@ class CacheableByteArray implements Cacheable {
         this.#arr = arr;
     }
 
-    destroy() { }
+    destroy() {}
 
     sizeInBytes(): number {
         return this.#arr.byteLength;
@@ -165,17 +165,17 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         this.#pendingRequestKeyCounts = new Map();
     }
     /**
-      * Warning - nothing in this class should be considered useable after
-      * calling this method - any/all methods called should be expected to be
-      * completely unreliable. dont call me unless you're about to dispose of all references to this object
-      */
+     * Warning - nothing in this class should be considered useable after
+     * calling this method - any/all methods called should be expected to be
+     * completely unreliable. dont call me unless you're about to dispose of all references to this object
+     */
     destroy() {
         // release all the web-workers!
         this.#workerPool.destroy();
         // todo: reject all promises
         this.#pendingRequests.forEach((p) => {
-            p.reject('cancelled')
-        })
+            p.reject('cancelled');
+        });
     }
     protected score(key: CacheKey): number {
         return this.#priorityByTimestamp.get(key) ?? 0;
@@ -311,11 +311,10 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     }
 }
 export class ZarrFetchStore extends CachingMultithreadedFetchStore {
-    #_pool: WorkerPool
+    #_pool: WorkerPool;
     constructor(url: string | URL, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
-        const pool = new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule)
+        const pool = new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule);
         super(url, pool, options);
         this.#_pool = pool;
     }
-
 }

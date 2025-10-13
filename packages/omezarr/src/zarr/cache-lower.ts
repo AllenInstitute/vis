@@ -42,7 +42,11 @@ export function decoderFactory(url: string, workerModule: URL, options?: Caching
         }
         // biome-ignore lint/suspicious/noExplicitAny: <hard to prove - but the typeof check above is sufficient for this to be safe>
         return { shape, data: new Float32Array(data as any) };
-
     };
-    return { decoder: getSlice, destroy: () => { store.destroy(); } };
+    return {
+        decoder: getSlice,
+        destroy: () => {
+            store.destroy();
+        },
+    };
 }
