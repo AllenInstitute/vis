@@ -7,7 +7,7 @@ import {
 } from '@alleninstitute/vis-core';
 import { Box2D, type Interval, intervalToVec2, type OrthogonalCartesianAxes } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
-import { buildTileRenderCommand } from '../rendering/tile-rendering';
+import { buildTileRenderer } from '../sliceview/tile-renderer';
 import type { OmeZarrFileset, ZarrDataRequest, ZarrSlice } from '../zarr/omezarr-fileset';
 import type { PlanarRenderSettings, PlanarRendererOptions, PlanarVoxelTile, PlanarVoxelTileImage } from './types';
 import { getVisibleOmeZarrTiles } from './visibility';
@@ -103,7 +103,7 @@ export function buildOmeZarrPlanarRenderer(
         };
     }
 
-    const cmd = buildTileRenderCommand(regl, numChannels);
+    const cmd = buildTileRenderer(regl, numChannels);
 
     return {
         cacheKey: (item, requestKey, dataset, settings) => {

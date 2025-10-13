@@ -13,7 +13,6 @@ export {
     defaultDecoder,
     getVisibleTiles,
 } from './sliceview/loader';
-export { buildTileRenderCommand, buildRGBTileRenderCommand } from './rendering/tile-rendering';
 export {
     type ZarrDimension,
     type OmeZarrAxis,
