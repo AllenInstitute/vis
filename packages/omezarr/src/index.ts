@@ -27,11 +27,13 @@ export {
     type OmeZarrOmero,
     type OmeZarrAttrs,
     type OmeZarrArrayMetadata,
+    OmeZarrArrayTransform,
     OmeZarrAxisSchema,
     OmeZarrCoordinateTranslationSchema,
     OmeZarrCoordinateScaleSchema,
     OmeZarrCoordinateTransformSchema,
     OmeZarrDatasetSchema,
+    OmeZarrGroupTransform,
     OmeZarrMultiscaleSchema,
     OmeZarrOmeroChannelWindowSchema,
     OmeZarrOmeroChannelSchema,
@@ -66,10 +68,7 @@ export {
     loadOmeZarrFileset,
 } from './zarr/omezarr-fileset';
 export { OmeZarrLevel } from './zarr/omezarr-level';
-export {
-    OmeZarrArrayTransform,
-    OmeZarrGroupTransform,
-} from './zarr/omezarr-transforms';
+export {} from './zarr/omezarr-transforms';
 export type {
     PlanarVoxelTile,
     PlanarVoxelTileImage,
