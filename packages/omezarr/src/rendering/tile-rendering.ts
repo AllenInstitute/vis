@@ -54,9 +54,6 @@ type TileRenderProps = CommonRenderProps & {
     channels: Channel[];
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
-type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, TileRenderProps>;
-
 /**
  * A simplified Tile Render Command that specifically handles RGB channels.
  * @param regl an active REGL context
@@ -80,31 +77,31 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
         { pos: REGL.BufferData },
         RGBTileRenderProps
     >({
-        vert: vert,
+        vert,
         frag: `
-precision highp float;
-uniform sampler2D R;
-uniform sampler2D G;
-uniform sampler2D B; // for reasons which are pretty annoying
-// its more direct to do 3 separate channels...
-uniform vec2 Rgamut;
-uniform vec2 Ggamut;
-uniform vec2 Bgamut;
+        precision highp float;
+        uniform sampler2D R;
+        uniform sampler2D G;
+        uniform sampler2D B; // for reasons which are pretty annoying
+        // its more direct to do 3 separate channels...
+        uniform vec2 Rgamut;
+        uniform vec2 Ggamut;
+        uniform vec2 Bgamut;
 
-varying vec2 texCoord;
-void main(){
-    vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
-    vec3 maxs = vec3(Rgamut.y,Ggamut.y,Bgamut.y);
-    vec3 span = maxs-mins;
-    vec3 color = (vec3(
-        texture2D(R, texCoord).r,
-        texture2D(G, texCoord).r,
-        texture2D(B, texCoord).r
-    )-mins) /span;
-    
-    gl_FragColor = vec4(color, 1.0);
-}
-`,
+        varying vec2 texCoord;
+        void main(){
+            vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
+            vec3 maxs = vec3(Rgamut.y,Ggamut.y,Bgamut.y);
+            vec3 span = maxs-mins;
+            vec3 color = (vec3(
+                texture2D(R, texCoord).r,
+                texture2D(G, texCoord).r,
+                texture2D(B, texCoord).r
+            )-mins) /span;
+            
+            gl_FragColor = vec4(color, 1.0);
+        }
+        `,
         framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
         attributes: {
             pos: [0, 0, 1, 0, 1, 1, 0, 1],
@@ -129,6 +126,9 @@ void main(){
 
     return (p: RGBTileRenderProps) => cmd(p);
 }
+
+// biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
+type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, TileRenderProps>;
 
 /**
  *
@@ -183,7 +183,7 @@ export function buildTileRenderCommand(regl: REGL.Regl, numChannels: number) {
 
     // biome-ignore lint/suspicious/noExplicitAny: type of uniforms cannot be given explicitly due to dynamic nature of uniforms in these shaders
     const cmd = regl<any, { pos: REGL.BufferData }, TileRenderProps>({
-        vert: vert,
+        vert,
         frag,
         framebuffer: regl.prop<TileRenderProps, 'target'>('target'),
         attributes: {
