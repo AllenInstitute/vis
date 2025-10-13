@@ -27,7 +27,6 @@ void main(){
     gl_Position = vec4(p.x,p.y,depth,1.0);
 }
 `;
-
 type CommonRenderProps = {
     target: Framebuffer2D | null;
     depth: number; // the Z value at which to render the tile, from 0 (the front) to 1 (the back)
@@ -98,6 +97,7 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
                 texture2D(G, texCoord).r,
                 texture2D(B, texCoord).r
             )-mins) /span;
+
             gl_FragColor = vec4(color, 1.0);
         }`,
         framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
