@@ -1,10 +1,6 @@
 import { type Cacheable, logger, PriorityCache, WorkerPool } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
-import {
-    FETCH_SLICE_MESSAGE_TYPE,
-    type FetchSliceResponseMessage,
-    isFetchSliceResponseMessage,
-} from './fetch-slice.interface';
+import { FETCH_MESSAGE_TYPE, type FetchResponseMessage, isFetchResponseMessage } from './fetch-data.interface';
 
 const DEFAULT_NUM_WORKERS = 6;
 const DEFAULT_MAX_DATA_CACHE_BYTES = 256 * 2 ** 10; // 256 MB -- aribtrarily chosen at this point
@@ -46,8 +42,8 @@ class CacheableByteArray implements Cacheable {
 type CacheKey = string;
 
 type TransferableRequestInit = Omit<RequestInit, 'body' | 'headers' | 'signal'> & {
-    body?: string;
-    headers?: Record<string, string>;
+    body?: string | undefined;
+    headers?: Record<string, string> | undefined;
 };
 
 const copyToTransferableHeaders = (headers: RequestInit['headers']): Record<string, string> | undefined => {
@@ -106,6 +102,7 @@ export interface RequestHandler<RequestType, ResponseType> {
         transfers: Transferable[],
         signal?: AbortSignal | undefined,
     ): Promise<ResponseType>;
+    destroy: () => void;
 }
 
 export class CachingMultithreadedFetchStore extends zarr.FetchStore {
@@ -167,7 +164,19 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         this.#pendingRequests = new Map();
         this.#pendingRequestKeyCounts = new Map();
     }
-
+    /**
+     * Warning - nothing in this class should be considered useable after
+     * calling this method - any/all methods called should be expected to be
+     * completely unreliable. dont call me unless you're about to dispose of all references to this object
+     */
+    destroy() {
+        // release all the web-workers!
+        this.#workerPool.destroy();
+        // todo: reject all promises
+        this.#pendingRequests.forEach((p) => {
+            p.reject('cancelled');
+        });
+    }
     protected score(key: CacheKey): number {
         return this.#priorityByTimestamp.get(key) ?? 0;
     }
@@ -238,19 +247,21 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
 
         const request = this.#workerPool.submitRequest(
             {
-                type: FETCH_SLICE_MESSAGE_TYPE,
-                rootUrl: this.url,
-                path: key,
-                range,
-                options,
+                type: FETCH_MESSAGE_TYPE,
+                payload: {
+                    rootUrl: this.url,
+                    path: key,
+                    range,
+                    options,
+                },
             },
-            isFetchSliceResponseMessage,
+            isFetchResponseMessage,
             [],
             chain.signal,
         );
 
         request
-            .then((response: FetchSliceResponseMessage) => {
+            .then((response: FetchResponseMessage) => {
                 const payload = response.payload;
                 if (payload === undefined) {
                     resolve(undefined);
@@ -299,15 +310,8 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         return this.#doFetch(key, range, workerOptions, abort);
     }
 }
-export class ZarrSliceFetchStore extends CachingMultithreadedFetchStore {
-    constructor(url: string | URL, options?: CachingMultithreadedFetchStoreOptions) {
-        super(
-            url,
-            new WorkerPool(
-                options?.numWorkers ?? DEFAULT_NUM_WORKERS,
-                new URL('./fetch-slice.worker.ts', import.meta.url),
-            ),
-            options,
-        );
+export class ZarrFetchStore extends CachingMultithreadedFetchStore {
+    constructor(url: string | URL, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
+        super(url, new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule), options);
     }
 }
