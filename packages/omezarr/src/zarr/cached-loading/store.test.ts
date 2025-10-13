@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { CachingMultithreadedFetchStore, type RequestHandler } from './store';
 import {
-    FETCH_SLICE_RESPONSE_MESSAGE_TYPE,
-    type FetchSliceMessage,
-    type FetchSliceResponseMessage,
-} from './fetch-slice.interface';
+    FETCH_RESPONSE_MESSAGE_TYPE,
+    type FetchMessage,
+    type FetchResponseMessage,
+} from './fetch-data.interface';
 import { PromiseFarm } from '@alleninstitute/vis-core/src/shared-priority-cache/test-utils';
 
 type SpyLog = {
@@ -14,7 +14,7 @@ type SpyLog = {
     response: any;
     status: 'cancelled' | 'failed' | 'resolved';
 };
-class Whatever implements RequestHandler<FetchSliceMessage, FetchSliceResponseMessage> {
+class Whatever implements RequestHandler<FetchMessage, FetchResponseMessage> {
     promises: PromiseFarm;
     log: SpyLog[];
     constructor(farm: PromiseFarm) {
@@ -22,17 +22,17 @@ class Whatever implements RequestHandler<FetchSliceMessage, FetchSliceResponseMe
         this.log = [];
     }
     submitRequest(
-        message: FetchSliceMessage,
-        _responseValidator: (obj: unknown) => obj is FetchSliceResponseMessage,
+        message: FetchMessage,
+        _responseValidator: (obj: unknown) => obj is FetchResponseMessage,
         _transfers: Transferable[],
         signal?: AbortSignal | undefined,
-    ): Promise<FetchSliceResponseMessage> {
+    ): Promise<FetchResponseMessage> {
         // so the generic parameters here cant work - the compile-time types of the interface to the worker are determined at construction time, not request time.
         // you can make the types work out here, but its a foot-gun. if you pass a responseValidator that the worker cant handle, the types will work out, but none of your promises will ever
         // resolve.
         const p = this.promises.promiseMe(() => {
             const resp = {
-                type: FETCH_SLICE_RESPONSE_MESSAGE_TYPE,
+                type: FETCH_RESPONSE_MESSAGE_TYPE,
                 request: message,
                 id: message.id,
                 payload: new Uint8Array(400).buffer,
