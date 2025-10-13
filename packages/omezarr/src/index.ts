@@ -81,6 +81,7 @@ export {
     buildOmeZarrPlanarRenderer,
     buildAsyncOmeZarrPlanarRenderer,
     defaultPlanarDecoder,
+    type OmeZarrVoxelTileImageDecoder,
 } from './planar-view/renderer';
 export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';
 export {

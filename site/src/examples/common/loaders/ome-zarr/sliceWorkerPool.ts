@@ -90,6 +90,11 @@ export function getSlicePool() {
     return slicePool;
 }
 
-export const multithreadedDecoder: Decoder = (metadata: OmeZarrMetadata, req: ZarrRequest, level: OmeZarrShapedDataset, signal?: AbortSignal) => {
+export const multithreadedDecoder: Decoder = (
+    metadata: OmeZarrMetadata,
+    req: ZarrRequest,
+    level: OmeZarrShapedDataset,
+    signal?: AbortSignal,
+) => {
     return getSlicePool().requestSlice(metadata, req, level, signal);
 };
