@@ -87,7 +87,7 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
     uniform vec2 Rgamut;
     uniform vec2 Ggamut;
     uniform vec2 Bgamut;
-
+    
     varying vec2 texCoord;
     void main(){
             vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
@@ -98,7 +98,6 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
                 texture2D(G, texCoord).r,
                 texture2D(B, texCoord).r
             )-mins) /span;
-            
             gl_FragColor = vec4(color, 1.0);
         }`,
         framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
