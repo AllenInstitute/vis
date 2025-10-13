@@ -97,7 +97,7 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
                 texture2D(G, texCoord).r,
                 texture2D(B, texCoord).r
             )-mins) /span;
-
+           
             gl_FragColor = vec4(color, 1.0);
         }`,
         framebuffer: regl.prop<RGBTileRenderProps, 'target'>('target'),
