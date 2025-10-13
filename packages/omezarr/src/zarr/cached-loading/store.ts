@@ -28,7 +28,7 @@ class CacheableByteArray implements Cacheable {
         this.#arr = arr;
     }
 
-    destroy() {}
+    destroy() { }
 
     sizeInBytes(): number {
         return this.#arr.byteLength;
@@ -311,10 +311,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     }
 }
 export class ZarrFetchStore extends CachingMultithreadedFetchStore {
-    #_pool: WorkerPool;
     constructor(url: string | URL, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
-        const pool = new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule);
-        super(url, pool, options);
-        this.#_pool = pool;
+        super(url, new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule), options);
     }
 }
