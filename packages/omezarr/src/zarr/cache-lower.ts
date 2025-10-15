@@ -2,10 +2,10 @@ import type { OmeZarrShapedDataset, OmeZarrMetadata } from './types';
 import { type ZarrRequest, buildQuery, loadZarrArrayFileFromStore } from './loading';
 import { VisZarrDataError } from '../errors';
 import * as zarr from 'zarrita';
-import { logger } from '@alleninstitute/vis-core';
+import { logger, type WorkerInit } from '@alleninstitute/vis-core';
 import { ZarrFetchStore, type CachingMultithreadedFetchStoreOptions } from './cached-loading/store';
 
-export function decoderFactory(url: string, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
+export function decoderFactory(url: string, workerModule: WorkerInit, options?: CachingMultithreadedFetchStoreOptions) {
     const store = new ZarrFetchStore(url, workerModule, options);
     const getSlice = async (
         metadata: OmeZarrMetadata,

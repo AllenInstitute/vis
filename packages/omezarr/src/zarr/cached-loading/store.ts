@@ -1,4 +1,4 @@
-import { type Cacheable, logger, PriorityCache, WorkerPool } from '@alleninstitute/vis-core';
+import { type Cacheable, logger, PriorityCache, type WorkerInit, WorkerPool } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
 import { FETCH_MESSAGE_TYPE, type FetchResponseMessage, isFetchResponseMessage } from './fetch-data.interface';
 
@@ -310,8 +310,9 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         return this.#doFetch(key, range, workerOptions, abort);
     }
 }
+
 export class ZarrFetchStore extends CachingMultithreadedFetchStore {
-    constructor(url: string | URL, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
+    constructor(url: string | URL, workerModule: WorkerInit, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule), options);
     }
 }

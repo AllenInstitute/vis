@@ -12,6 +12,10 @@ type MessageValidator<T> = TypeGuardFunction<unknown, T>;
 
 type TypeGuardFunction<T, S extends T> = (value: T) => value is S;
 
+export type WorkerInstantiationCallback = () => Worker;
+
+export type WorkerInit = URL | WorkerInstantiationCallback;
+
 type MessagePromise = {
     validator: MessageValidator<WorkerMessageWithId>;
     resolve: PromiseResolve<WorkerMessageWithId>;
@@ -30,11 +34,15 @@ export class WorkerPool {
     #timeOfPreviousHeartbeat: Map<number, number>;
     #which: number;
 
-    constructor(size: number, workerModule: URL) {
+    constructor(size: number, workerInit: WorkerInit) {
         this.#workers = new Array(size);
         this.#timeOfPreviousHeartbeat = new Map();
         for (let i = 0; i < size; i++) {
-            this.#workers[i] = new Worker(workerModule, { type: 'module' });
+            if (workerInit instanceof URL) {
+                this.#workers[i] = new Worker(workerInit, { type: 'module' });
+            } else {
+                this.#workers[i] = workerInit();
+            }
             this.#workers[i].onmessage = (msg) => this.#handleMessage(i, msg);
             this.#timeOfPreviousHeartbeat.set(i, 0);
         }
