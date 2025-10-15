@@ -16,10 +16,10 @@ import {
     type vec3,
 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
-import { getVisibleTiles, type VoxelTile } from './loader';
-import { buildTileRenderer } from './tile-renderer';
 import type { OmeZarrFileset } from '../zarr/fileset';
 import type { OmeZarrConnection, ZarrDataSpecifier } from '../zarr/loading';
+import { type VoxelTile, getVisibleTiles } from './loader';
+import { buildTileRenderCommand } from './tile-renderer';
 
 export type RenderSettingsChannel = {
     index: number;
@@ -139,7 +139,7 @@ export function buildOmeZarrSliceRenderer(
             type: 'texture',
         };
     }
-    const cmd = buildTileRenderer(regl, numChannels);
+    const cmd = buildTileRenderCommand(regl, numChannels);
     return {
         cacheKey: (item, requestKey, dataset, settings) => {
             const channelKeys = Object.keys(settings.channels);
