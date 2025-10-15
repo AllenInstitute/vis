@@ -129,7 +129,13 @@ export function OmeZarrViewer({
                 stash.current.camera = { ...settings.camera };
             }
         };
-        if (server && renderer.current && canvas.current && (omezarr?.metadata !== undefined) && (omezarr.metadata !== null)) {
+        if (
+            server &&
+            renderer.current &&
+            canvas.current &&
+            omezarr?.metadata !== undefined &&
+            omezarr.metadata !== null
+        ) {
             const metadata = omezarr.metadata;
             const renderFrame: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {

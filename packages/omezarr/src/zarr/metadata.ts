@@ -35,14 +35,14 @@ export type OmeZarrLevelSpecifier = {
 /**
  * An `OmeZarrFileset` represents the metadata describing a full fileset for a given OME-Zarr.
  * It provides access to all of the metadata information available about that fileset, and
- * makes it easy to access a particular level-of-detail's full contextual information 
+ * makes it easy to access a particular level-of-detail's full contextual information
  * (provided as instances of the `OmeZarrLevel` class).
- * 
+ *
  * `OmeZarrFileset`s are possible to construct given raw data, but they are generally produced
  * via the `loadMetadata` function of the `OmeZarrConnection` type. Connections have a close
  * relationship with the Fileset objects, and are able to load both metadata and the associated
  * data for a given OME-Zarr.
- * 
+ *
  * @see OmeZarrLevel
  * @see OmeZarrConnection
  */
@@ -226,7 +226,7 @@ export class OmeZarrMetadata {
         plane: CartesianPlane,
         relativeView: box2D, // a box in data-unit-space
         displayResolution: vec2, // in the plane given above
-        multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined
+        multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined,
     ) {
         // figure out what layer we'd be viewing
         const level = this.pickBestScale(plane, relativeView, displayResolution, multiscaleSpec);
@@ -263,7 +263,7 @@ export class OmeZarrMetadata {
     }
 
     /**
-     * Given a specific multiscale representation of the Zarr data, finds the largest X shape component 
+     * Given a specific multiscale representation of the Zarr data, finds the largest X shape component
      * among the shapes of the different dataset arrays.
      * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
@@ -273,7 +273,7 @@ export class OmeZarrMetadata {
     }
 
     /**
-     * Given a specific multiscale representation of the Zarr data, finds the largest Y shape component 
+     * Given a specific multiscale representation of the Zarr data, finds the largest Y shape component
      * among the shapes of the different dataset arrays.
      * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
@@ -283,7 +283,7 @@ export class OmeZarrMetadata {
     }
 
     /**
-     * Given a specific multiscale representation of the Zarr data, finds the largest Z shape component 
+     * Given a specific multiscale representation of the Zarr data, finds the largest Z shape component
      * among the shapes of the different dataset arrays.
      * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
@@ -293,7 +293,7 @@ export class OmeZarrMetadata {
     }
 
     /**
-     * Given a specific plane and multiscale, determines the maximum value of the orthogonal axis to 
+     * Given a specific plane and multiscale, determines the maximum value of the orthogonal axis to
      * that plane within that multiscale.
      * @param plane a cartesian plane
      * @param multiscaleSpec identifies the multiscale to operate within

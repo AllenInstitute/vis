@@ -1,5 +1,10 @@
 import { Box2D, type Interval, PLANE_XY, type vec2 } from '@alleninstitute/vis-geometry';
-import { CachedOmeZarrConnection, type OmeZarrConnection, type RenderSettings, makeRenderSettings } from '@alleninstitute/vis-omezarr';
+import {
+    CachedOmeZarrConnection,
+    type OmeZarrConnection,
+    type RenderSettings,
+    makeRenderSettings,
+} from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
 import { useId, useMemo, useState } from 'react';
@@ -28,7 +33,10 @@ export function OmezarrDemo() {
     const omezarrId = useId();
 
     const settings: RenderSettings | undefined = useMemo(
-        () => (omeZarr?.metadata ? makeRenderSettings(omeZarr.metadata, screenSize, view, planeIndex, defaultGamut) : undefined),
+        () =>
+            omeZarr?.metadata
+                ? makeRenderSettings(omeZarr.metadata, screenSize, view, planeIndex, defaultGamut)
+                : undefined,
         [omeZarr, view, planeIndex],
     );
 
@@ -183,7 +191,8 @@ export function OmezarrDemo() {
                             >
                                 {(omeZarr && (
                                     <span>
-                                        Slide {Math.floor(planeIndex * (omeZarr.metadata?.maxOrthogonal(PLANE_XY) ?? 1))} of{' '}
+                                        Slide{' '}
+                                        {Math.floor(planeIndex * (omeZarr.metadata?.maxOrthogonal(PLANE_XY) ?? 1))} of{' '}
                                         {omeZarr.metadata?.maxOrthogonal(PLANE_XY) ?? 0}
                                     </span>
                                 )) || <span>No image loaded</span>}

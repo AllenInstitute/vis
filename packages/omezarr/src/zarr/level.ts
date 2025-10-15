@@ -112,7 +112,7 @@ export class OmeZarrLevel {
 
     /**
      * Determines the integer index within the given dimensional for the specified parametric value.
-     * 
+     *
      * For example, if the Z dimension has a depth of 100 and the parameter is given as 0.5, this will return
      * an index of 49 (halfway from 0 to 99).
      * @param parameter a value from [0:1] indicating a parameter of the volume, along the given dimension @param dim,

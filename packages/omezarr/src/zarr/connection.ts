@@ -63,7 +63,7 @@ type ZarritaSelection = (number | zarr.Slice | null)[];
 
 export interface ZarritaOmeZarrData<T extends zarr.DataType> extends OmeZarrData<zarr.Chunk<T>> {
     buffer: zarr.Chunk<T>;
-};
+}
 
 export type ZarrDataSpecifier = {
     level: OmeZarrLevelSpecifier;
@@ -147,7 +147,7 @@ export class CachedOmeZarrConnection implements OmeZarrConnection {
                     }),
                 )
                 .reduce((prev, curr) => prev.concat(curr))
-                .filter((arr) => arr !== undefined)
+                .filter((arr) => arr !== undefined),
         );
 
         const arrays: Record<string, OmeZarrArray> = {};
@@ -182,7 +182,9 @@ export class CachedOmeZarrConnection implements OmeZarrConnection {
         signal?: AbortSignal | undefined,
     ): Promise<ZarritaOmeZarrData<zarr.DataType>> {
         if (this.#metadata === null) {
-            throw new VisZarrDataError('cannot load array data until metadata has been loaded; please ensure loadMetadata() has completed first');
+            throw new VisZarrDataError(
+                'cannot load array data until metadata has been loaded; please ensure loadMetadata() has completed first',
+            );
         }
         const axes = this.#metadata.getMultiscale(spec.level.multiscale)?.axes;
         if (axes === undefined) {

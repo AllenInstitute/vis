@@ -15,7 +15,6 @@
 //         level: OmeZarrShapedDataset,
 //         signal?: AbortSignal,
 //     ) => {
-        
 
 //         if (metadata.url !== url) {
 //             throw new Error(

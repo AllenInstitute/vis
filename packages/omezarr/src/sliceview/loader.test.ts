@@ -254,7 +254,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
             shape: [3, 142, 58, 78],
             attributes: {},
         },
-    }
+    },
 );
 
 describe('omezarr basic tiled loading', () => {
@@ -269,7 +269,7 @@ describe('omezarr basic tiled loading', () => {
             // this is a basic regression test: we had a bug which would result in
             // tiles from the image being larger than the image itself (they would be the given tile size)
             expect(visible.length).toBe(1);
-            const expectedLayer = exampleOmeZarr.getLevel({ multiscale: { index: 0 }, index: 9});
+            const expectedLayer = exampleOmeZarr.getLevel({ multiscale: { index: 0 }, index: 9 });
             expect(expectedLayer).toBeDefined();
             if (expectedLayer === undefined) {
                 throw new Error('invalid test condition: passed expect.toBeDefined while still undefined');
@@ -282,8 +282,8 @@ describe('omezarr basic tiled loading', () => {
     describe('sizeInUnits', () => {
         it('respects scale transformations', () => {
             // const axes = exampleOmeZarr.attrs.multiscales[0].axes;
-            const firstDataset = exampleOmeZarr.getLevel({ multiscale: { index: 0 }, index: 0});
-            const lastDataset = exampleOmeZarr.getLevel({ multiscale: { index: 0 }, index: 9});
+            const firstDataset = exampleOmeZarr.getLevel({ multiscale: { index: 0 }, index: 0 });
+            const lastDataset = exampleOmeZarr.getLevel({ multiscale: { index: 0 }, index: 9 });
             expect(firstDataset).toBeDefined();
             expect(lastDataset).toBeDefined();
 
