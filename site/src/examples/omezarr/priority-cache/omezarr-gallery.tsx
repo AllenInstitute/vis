@@ -1,5 +1,5 @@
 import type { WebResource } from '@alleninstitute/vis-core';
-import { SharedCacheProvider } from '../common/react/priority-cache-provider';
+import { SharedCacheProvider } from '../../common/react/priority-cache-provider';
 import { OmeZarrView } from './omezarr-client';
 import type { vec2 } from '@alleninstitute/vis-geometry';
 

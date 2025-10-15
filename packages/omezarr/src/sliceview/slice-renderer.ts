@@ -12,12 +12,13 @@ import {
     type CartesianPlane,
     type Interval,
     intervalToVec2,
+    PLANE_XY,
     type vec2,
     type vec3,
 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
-import type { OmeZarrFileset } from '../zarr/fileset';
-import type { OmeZarrConnection, ZarrDataSpecifier } from '../zarr/loading';
+import type { OmeZarrMetadata } from '../zarr/metadata';
+import type { OmeZarrConnection, ZarrDataSpecifier } from '../zarr/connection';
 import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderCommand } from './tile-renderer';
 
@@ -52,6 +53,41 @@ export type VoxelTileImage = {
 type ImageChannels = {
     [channelKey: string]: CachedTexture;
 };
+
+export const makeRGBColorChannels = (gamut: Interval): RenderSettingsChannels => ({
+    R: { rgb: [1.0, 0, 0], gamut, index: 0 },
+    G: { rgb: [0, 1.0, 0], gamut, index: 1 },
+    B: { rgb: [0, 0, 1.0], gamut, index: 2 },
+});
+
+export function makeRenderSettings(
+    fileset: OmeZarrMetadata,
+    screenSize: vec2,
+    view: box2D,
+    param: number,
+    defaultGamut: Interval,
+    tileSize = 256,
+    plane = PLANE_XY,
+) {
+    const omezarrChannels = fileset.getColorChannels().reduce((acc, val, index) => {
+        acc[val.label ?? `${index}`] = {
+            rgb: val.rgb,
+            gamut: val.range,
+            index,
+        };
+        return acc;
+    }, {} as RenderSettingsChannels);
+
+    const fallbackChannels = makeRGBColorChannels(defaultGamut);
+
+    return {
+        camera: { screenSize, view },
+        planeLocation: param,
+        plane,
+        tileSize,
+        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
+    };
+}
 
 function toZarrDataSpecifier(tile: VoxelTile, channel: number): ZarrDataSpecifier {
     const { plane, orthoVal, bounds } = tile;
@@ -124,7 +160,7 @@ export function buildOmeZarrSliceRenderer(
     connection: OmeZarrConnection,
     decoder: Decoder,
     options?: OmeZarrSliceRendererOptions | undefined,
-): Renderer<OmeZarrFileset, VoxelTile, RenderSettings, ImageChannels> {
+): Renderer<OmeZarrMetadata, VoxelTile, RenderSettings, ImageChannels> {
     const numChannels = options?.numChannels ?? DEFAULT_NUM_CHANNELS;
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
         const { data, shape } = slice;

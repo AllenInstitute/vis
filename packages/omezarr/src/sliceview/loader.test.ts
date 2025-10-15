@@ -4,8 +4,8 @@
 import { Box2D, PLANE_XY, PLANE_YZ, type box2D } from '@alleninstitute/vis-geometry';
 import { describe, expect, it } from 'vitest';
 import { getVisibleTiles } from './loader';
-import { OmeZarrFileset } from '../zarr/fileset';
-const exampleOmeZarr: OmeZarrFileset = new OmeZarrFileset(
+import { OmeZarrMetadata } from '../zarr/metadata';
+const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
     new URL('https://allen-genetic-tools.s3.us-west-2.amazonaws.com/tissuecyte/1263343692/ome-zarr/'),
     {
         nodeType: 'group',

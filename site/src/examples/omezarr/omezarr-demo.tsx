@@ -1,102 +1,24 @@
-import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { type OmeZarrMetadata, loadMetadata, nextSliceStep, sizeInUnits } from '@alleninstitute/vis-omezarr';
-import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
+import { Box2D, type Interval, PLANE_XY, type vec2 } from '@alleninstitute/vis-geometry';
+import { CachedOmeZarrConnection, type OmeZarrConnection, type RenderSettings, makeRenderSettings } from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { pan, zoom } from '../common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
-import { OmezarrViewer } from './omezarr-viewer';
-import { SliceView } from './sliceview';
-type DemoOption = { value: string; label: string; res: WebResource };
-
-const demoOptions: DemoOption[] = [
-    {
-        value: 'opt1',
-        label: 'VERSA OME-Zarr Example (HTTPS) (color channels: [R, G, B])',
-        res: { type: 'https', url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/' },
-    },
-    {
-        value: 'opt2',
-        label: 'VS200 Example Image (S3) (color channels: [CFP, YFP])',
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://allen-genetic-tools/epifluorescence/1401210938/ome_zarr_conversion/1401210938.zarr/',
-        },
-    },
-    {
-        value: 'opt3',
-        label: 'EPI Example Image (S3) (color channels: [R, G, B])',
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://allen-genetic-tools/epifluorescence/1383646325/ome_zarr_conversion/1383646325.zarr/',
-        },
-    },
-    {
-        value: 'opt4',
-        label: 'STPT Example Image (S3) (color channels: [R, G, B])',
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
-        },
-    },
-    {
-        value: 'opt5',
-        label: 'Smart-SPIM (experimental)',
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://aind-open-data/SmartSPIM_787715_2025-04-08_18-33-36_stitched_2025-04-09_22-42-59/image_tile_fusing/OMEZarr/Ex_445_Em_469.zarr',
-        },
-    },
-    {
-        value: 'opt6',
-        label: 'V3 Zarr Example Image (S3) (color channels: [R, G, B])',
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://h301-scanning-802451596237-us-west-2/2402091625/ome_zarr_conversion/1458501514.zarr/',
-        },
-    },
-];
+import { OmeZarrViewer } from './omezarr-viewer';
+import { OMEZARR_FILESET_OPTIONS } from '../common/filesets/omezarr/demo-filesets';
 
 const screenSize: vec2 = [800, 800];
 
-const defaultInterval: Interval = { min: 0, max: 80 };
+const defaultGamut: Interval = { min: 0, max: 80 };
 
-function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
-    const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
-        acc[val.label ?? `${index}`] = {
-            rgb: val.rgb,
-            gamut: val.range,
-            index,
-        };
-        return acc;
-    }, {} as RenderSettingsChannels);
-
-    const fallbackChannels: RenderSettingsChannels = {
-        R: { rgb: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
-        G: { rgb: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
-        B: { rgb: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
-    };
-
-    return {
-        camera: { screenSize, view },
-        planeLocation: param,
-        plane: PLANE_XY,
-        tileSize: 256,
-        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
-    };
-}
+const workerFactory = () => new Worker(new URL('./fetch.worker.ts', import.meta.url));
 
 export function OmezarrDemo() {
     const [customUrl, setCustomUrl] = useState<string>('');
     const [selectedDemoOptionValue, setSelectedDemoOptionValue] = useState<string>('');
-    const [omezarr, setOmezarr] = useState<OmeZarrMetadata | null>(null);
-    const [omezarrJson, setOmezarrJson] = useState<string>('');
+    const [omeZarr, setOmeZarr] = useState<OmeZarrConnection | null>(null);
+    const [omeZarrJson, setOmeZarrJson] = useState<string>('');
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeIndex, setPlaneParam] = useState(0);
     const [dragging, setDragging] = useState(false);
@@ -106,19 +28,20 @@ export function OmezarrDemo() {
     const omezarrId = useId();
 
     const settings: RenderSettings | undefined = useMemo(
-        () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex, omezarr) : undefined),
-        [omezarr, view, planeIndex],
+        () => (omeZarr?.metadata ? makeRenderSettings(omeZarr.metadata, screenSize, view, planeIndex, defaultGamut) : undefined),
+        [omeZarr, view, planeIndex],
     );
 
-    const load = (res: WebResource) => {
-        loadMetadata(res).then((v) => {
-            setOmezarr(v);
-            setOmezarrJson(JSON.stringify(v, undefined, 4));
-            const dataset = v.getFirstShapedDataset(0);
-            if (!dataset) {
+    const load = async (res: WebResource) => {
+        const newOmezarr = new CachedOmeZarrConnection(res, workerFactory);
+        newOmezarr.loadMetadata().then((metadata) => {
+            setOmeZarr(newOmezarr);
+            setOmeZarrJson(JSON.stringify(metadata, undefined, 4));
+            const level = metadata.getLevel({ index: 0 });
+            if (!level) {
                 throw new Error('dataset 0 does not exist!');
             }
-            const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
+            const size = level.sizeInUnits(PLANE_XY);
             if (size) {
                 logger.info('size', size);
                 setView(Box2D.create([0, 0], size));
@@ -128,10 +51,13 @@ export function OmezarrDemo() {
 
     const handleOptionSelected = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedValue = e.target.value;
-        setOmezarr(null);
+        if (omeZarr !== null) {
+            omeZarr.close(); // VERY IMPORTANT! Cleans up web workers that won't be used anymore
+        }
+        setOmeZarr(null);
         setSelectedDemoOptionValue(selectedValue);
         if (selectedValue && selectedValue !== 'custom') {
-            const option = demoOptions.find((v) => v.value === selectedValue);
+            const option = OMEZARR_FILESET_OPTIONS.find((v) => v.value === selectedValue);
             if (option) {
                 load(option.res);
             }
@@ -153,8 +79,8 @@ export function OmezarrDemo() {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handlePlaneIndex = (next: 1 | -1) => {
-        if (omezarr) {
-            const step = nextSliceStep(omezarr, PLANE_XY, view, screenSize);
+        if (omeZarr?.metadata) {
+            const step = omeZarr.metadata.nextSliceStep(PLANE_XY, view, screenSize);
             setPlaneParam((prev) => Math.max(0, Math.min(prev + next * (step ?? 1), 1)));
         }
     };
@@ -191,7 +117,7 @@ export function OmezarrDemo() {
                             <option value="" key="default">
                                 -- Please select an option --
                             </option>
-                            {demoOptions.map((opt) => (
+                            {OMEZARR_FILESET_OPTIONS.map((opt) => (
                                 <option value={opt.value} key={opt.value}>
                                     {opt.label}
                                 </option>
@@ -233,9 +159,9 @@ export function OmezarrDemo() {
                                     backgroundColor: '#777',
                                 }}
                             >
-                                {omezarr && settings && (
-                                    <OmezarrViewer
-                                        omezarr={omezarr}
+                                {omeZarr && settings && (
+                                    <OmeZarrViewer
+                                        omezarr={omeZarr}
                                         id={omezarrId}
                                         screenSize={screenSize}
                                         settings={settings}
@@ -255,10 +181,10 @@ export function OmezarrDemo() {
                                     justifyContent: 'space-between',
                                 }}
                             >
-                                {(omezarr && (
+                                {(omeZarr && (
                                     <span>
-                                        Slide {Math.floor(planeIndex * (omezarr?.maxOrthogonal(PLANE_XY) ?? 1))} of{' '}
-                                        {omezarr?.maxOrthogonal(PLANE_XY) ?? 0}
+                                        Slide {Math.floor(planeIndex * (omeZarr.metadata?.maxOrthogonal(PLANE_XY) ?? 1))} of{' '}
+                                        {omeZarr.metadata?.maxOrthogonal(PLANE_XY) ?? 0}
                                     </span>
                                 )) || <span>No image loaded</span>}
                                 <div style={{}}>
@@ -281,34 +207,10 @@ export function OmezarrDemo() {
                         cols={100}
                         rows={36}
                         style={{ resize: 'none' }}
-                        value={omezarrJson}
+                        value={omeZarrJson}
                     />
                 </div>
             </div>
-        </RenderServerProvider>
-    );
-}
-/**
- * HEY!!!
- * this is an example React Component for rendering A single slice of an OMEZARR image in a react component
- * This example is as bare-bones as possible! It is NOT the recommended way to do anything, its just trying to show
- * one way of:
- * 1. using our rendering utilities for OmeZarr data, specifically in a react component. Your needs for state-management,
- * slicing logic, etc might all be different!
- *
- */
-function DataPlease() {
-    // load our canned data for now:
-    const [omezarr, setfile] = useState<OmeZarrMetadata | undefined>(undefined);
-    useEffect(() => {
-        loadMetadata(demoOptions[0].res).then((dataset) => {
-            setfile(dataset);
-            logger.info('loaded!');
-        });
-    }, []);
-    return (
-        <RenderServerProvider>
-            <SliceView omezarr={omezarr} />
         </RenderServerProvider>
     );
 }

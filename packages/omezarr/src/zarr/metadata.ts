@@ -46,7 +46,7 @@ export type OmeZarrLevelSpecifier = {
  * @see OmeZarrLevel
  * @see OmeZarrConnection
  */
-export class OmeZarrFileset {
+export class OmeZarrMetadata {
     #url: URL;
     #rootGroup: OmeZarrGroup;
     #arrays: Record<string, OmeZarrArray>;
@@ -226,14 +226,15 @@ export class OmeZarrFileset {
         plane: CartesianPlane,
         relativeView: box2D, // a box in data-unit-space
         displayResolution: vec2, // in the plane given above
+        multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined
     ) {
         // figure out what layer we'd be viewing
-        const level = this.pickBestScale(plane, relativeView, displayResolution);
+        const level = this.pickBestScale(plane, relativeView, displayResolution, multiscaleSpec);
         const slices = level.sizeInVoxels(plane.ortho);
         return slices === undefined ? undefined : 1 / slices;
     }
 
-    #getDimensionIndex(dim: ZarrDimension, multiscaleSpec: OmeZarrMultiscaleSpecifier): number | undefined {
+    #getDimensionIndex(dim: ZarrDimension, multiscaleSpec: OmeZarrMultiscaleSpecifier | undefined): number | undefined {
         const multiscale = this.getMultiscale(multiscaleSpec);
         if (multiscale === undefined) {
             return undefined;
@@ -242,7 +243,7 @@ export class OmeZarrFileset {
         return index > -1 ? index : undefined;
     }
 
-    #getMaximumForDimension(dim: ZarrDimension, multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+    #getMaximumForDimension(dim: ZarrDimension, multiscaleSpec: OmeZarrMultiscaleSpecifier | undefined): number {
         const multiscale = this.getMultiscale(multiscaleSpec);
         if (multiscale === undefined) {
             const message = `cannot get maximum ${dim}: no matching multiscale found`;
@@ -267,7 +268,7 @@ export class OmeZarrFileset {
      * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
-    maxX(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+    maxX(multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined): number {
         return this.#getMaximumForDimension('x', multiscaleSpec);
     }
 
@@ -277,7 +278,7 @@ export class OmeZarrFileset {
      * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
-    maxY(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+    maxY(multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined): number {
         return this.#getMaximumForDimension('y', multiscaleSpec);
     }
 
@@ -287,7 +288,7 @@ export class OmeZarrFileset {
      * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
-    maxZ(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+    maxZ(multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined): number {
         return this.#getMaximumForDimension('z', multiscaleSpec);
     }
 
@@ -298,7 +299,7 @@ export class OmeZarrFileset {
      * @param multiscaleSpec identifies the multiscale to operate within
      * @returns the maximum value of the axis orthogonal to `plane`
      */
-    maxOrthogonal(plane: CartesianPlane, multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
+    maxOrthogonal(plane: CartesianPlane, multiscaleSpec?: OmeZarrMultiscaleSpecifier | undefined): number {
         if (plane.ortho === 'x') {
             return this.maxX(multiscaleSpec);
         }

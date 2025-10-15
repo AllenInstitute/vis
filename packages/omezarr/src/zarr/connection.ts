@@ -1,9 +1,9 @@
-import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
+import { getResourceUrl, logger, type WebResource, type WorkerInit } from '@alleninstitute/vis-core';
 import { limit, type Interval } from '@alleninstitute/vis-geometry';
 import * as zarr from 'zarrita';
 import { z } from 'zod';
 import { ZarrFetchStore } from './cached-loading/store';
-import { OmeZarrFileset, type OmeZarrLevelSpecifier } from './fileset';
+import { OmeZarrMetadata, type OmeZarrLevelSpecifier } from './metadata';
 import {
     type OmeZarrArray,
     OmeZarrArrayTransform,
@@ -99,11 +99,13 @@ export type LoadOmeZarrMetadataOptions = {
 
 export interface OmeZarrConnection {
     url: URL;
-    loadMetadata: () => Promise<OmeZarrFileset>;
+    metadata: OmeZarrMetadata | null;
+    loadMetadata: () => Promise<OmeZarrMetadata>;
     loadData: <T extends zarr.DataType>(
         spec: ZarrDataSpecifier,
         signal?: AbortSignal | undefined,
     ) => Promise<ZarritaOmeZarrData<T>>;
+    close: () => void;
 }
 
 export class CachedOmeZarrConnection implements OmeZarrConnection {
@@ -112,30 +114,31 @@ export class CachedOmeZarrConnection implements OmeZarrConnection {
     #root: zarr.Location<ZarrFetchStore>;
     #zarritaGroups: Map<string, zarr.Group<zarr.FetchStore>>;
     #zarritaArrays: Map<string, zarr.Array<zarr.DataType, zarr.FetchStore>>;
-    #fileset: OmeZarrFileset | null;
+    #metadata: OmeZarrMetadata | null;
+    #loadingMetadataPromise: Promise<OmeZarrMetadata> | null;
 
-    constructor(res: WebResource, workerModule: URL, options?: LoadOmeZarrMetadataOptions | undefined) {
+    constructor(res: WebResource, workerInit: WorkerInit, options?: LoadOmeZarrMetadataOptions | undefined) {
         this.#res = res;
         const url = getResourceUrl(res);
-        this.#store = new ZarrFetchStore(url, workerModule, { numWorkers: options?.numWorkers });
+        this.#store = new ZarrFetchStore(url, workerInit, { numWorkers: options?.numWorkers });
         this.#root = zarr.root(this.#store);
         this.#zarritaGroups = new Map<string, zarr.Group<ZarrFetchStore>>();
         this.#zarritaArrays = new Map<string, zarr.Array<zarr.DataType, ZarrFetchStore>>();
-        this.#fileset = null;
+        this.#metadata = null;
+        this.#loadingMetadataPromise = null;
     }
 
     get url(): URL {
         return new URL(getResourceUrl(this.#res));
     }
 
-    get fileset(): OmeZarrFileset | null {
-        return this.#fileset;
+    get metadata(): OmeZarrMetadata | null {
+        return this.#metadata;
     }
 
-    async loadMetadata(): Promise<OmeZarrFileset> {
+    async #loadOmeZarrFileset(): Promise<OmeZarrMetadata> {
         const { raw: rawRootGroup, transformed: rootGroup } = await loadGroup(this.#root);
         this.#zarritaGroups.set('/', rawRootGroup);
-
         const arrayResults = await Promise.all(
             rootGroup.attributes.multiscales
                 .map((multiscale) =>
@@ -144,18 +147,26 @@ export class CachedOmeZarrConnection implements OmeZarrConnection {
                     }),
                 )
                 .reduce((prev, curr) => prev.concat(curr))
-                .filter((arr) => arr !== undefined),
+                .filter((arr) => arr !== undefined)
         );
 
         const arrays: Record<string, OmeZarrArray> = {};
-
         arrayResults.forEach(({ raw, transformed }) => {
             arrays[transformed.path] = transformed;
             this.#zarritaArrays.set(raw.path, raw);
         });
 
-        this.#fileset = new OmeZarrFileset(this.url, rootGroup, arrays);
-        return this.#fileset;
+        this.#metadata = new OmeZarrMetadata(this.url, rootGroup, arrays);
+        return this.#metadata;
+    }
+
+    loadMetadata(): Promise<OmeZarrMetadata> {
+        if (this.#loadingMetadataPromise !== null) {
+            return this.#loadingMetadataPromise;
+        }
+
+        this.#loadingMetadataPromise = this.#loadOmeZarrFileset();
+        return this.#loadingMetadataPromise;
     }
 
     /**
@@ -170,16 +181,16 @@ export class CachedOmeZarrConnection implements OmeZarrConnection {
         spec: ZarrDataSpecifier,
         signal?: AbortSignal | undefined,
     ): Promise<ZarritaOmeZarrData<zarr.DataType>> {
-        if (this.#fileset === null) {
-            throw new VisZarrDataError('cannot load array data until metadata has been loaded; please call loadMetadata() first');
+        if (this.#metadata === null) {
+            throw new VisZarrDataError('cannot load array data until metadata has been loaded; please ensure loadMetadata() has completed first');
         }
-        const axes = this.#fileset.getMultiscale(spec.level.multiscale)?.axes;
+        const axes = this.#metadata.getMultiscale(spec.level.multiscale)?.axes;
         if (axes === undefined) {
             const message = 'invalid Zarr data: no axes found for specified multiscale';
             logger.error(message);
             throw new VisZarrDataError(message);
         }
-        const path = this.#fileset.getLevel(spec.level)?.path;
+        const path = this.#metadata.getLevel(spec.level)?.path;
         if (path === undefined) {
             const message = 'invalid Zarr data: no path found for specified dataset';
             logger.error(message);
@@ -203,5 +214,15 @@ export class CachedOmeZarrConnection implements OmeZarrConnection {
             shape: result.shape,
             buffer: result,
         };
+    }
+
+    /**
+     * Closes the connection and cleans up any volatile resources (such as web workers).
+     * Note that this DOES NOT remove the already-loaded data or metadata. That is expected
+     * to be removed from the system via other means, as needed by the application, and is
+     * left up to the application to oversee.
+     */
+    close() {
+        this.#store.destroy();
     }
 }

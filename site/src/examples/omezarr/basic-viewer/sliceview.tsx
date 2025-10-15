@@ -2,6 +2,7 @@ import { Box2D, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry'
 import {
     type RenderSettings,
     type VoxelTile,
+    type OmeZarrConnection,
     type OmeZarrMetadata,
     buildAsyncOmezarrRenderer,
     defaultDecoder,
@@ -10,9 +11,9 @@ import type { RenderFrameFn } from '@alleninstitute/vis-core';
 import { useCallback, useState } from 'react';
 import { useContext, useEffect, useRef } from 'react';
 
-import { renderServerContext } from '../common/react/render-server-provider';
+import { renderServerContext } from '../../common/react/render-server-provider';
 type Props = {
-    omezarr: OmeZarrMetadata | undefined;
+    omezarr: OmeZarrConnection | undefined;
 };
 const settings: RenderSettings = {
     tileSize: 256,
@@ -60,22 +61,23 @@ export function SliceView(props: Props) {
     const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>(undefined);
     const [view, setView] = useState<box2D>(Box2D.create([0, 0], [250, 120]));
     useEffect(() => {
-        if (server?.regl) {
-            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
+        if (server?.regl && omezarr !== undefined) {
+            renderer.current = buildAsyncOmezarrRenderer(server.regl, omezarr, defaultDecoder);
         }
         return () => {
             if (cnvs.current) {
                 server?.destroyClient(cnvs.current);
             }
         };
-    }, [server]);
+    }, [server, omezarr]);
 
     useEffect(() => {
-        if (server && renderer.current && cnvs.current && omezarr) {
+        if (server && renderer.current && cnvs.current && omezarr?.metadata && omezarr.metadata !== null) {
+            const metadata = omezarr.metadata;
             const renderFn: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     return renderer.current(
-                        omezarr,
+                        metadata,
                         { ...settings, camera: { ...settings.camera, view } },
                         callback,
                         target,

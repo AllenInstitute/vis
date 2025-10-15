@@ -1,6 +1,8 @@
 export {
     buildOmeZarrSliceRenderer,
     buildAsyncOmezarrRenderer,
+    makeRGBColorChannels,
+    makeRenderSettings,
     type Decoder,
     type VoxelTileImage,
     type RenderSettings,
@@ -42,13 +44,13 @@ export {
 export {
     CachedOmeZarrConnection,
     type OmeZarrConnection,
-} from './zarr/loading';
+} from './zarr/connection';
 
 export {
     type OmeZarrLevelSpecifier,
     type OmeZarrMultiscaleSpecifier,
-    OmeZarrFileset,
-} from './zarr/fileset';
+    OmeZarrMetadata,
+} from './zarr/metadata';
 export { OmeZarrLevel } from './zarr/level';
 export {} from './zarr/omezarr-transforms';
 // export { decoderFactory } from './zarr/cache-lower';

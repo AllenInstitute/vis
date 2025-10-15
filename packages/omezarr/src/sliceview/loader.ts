@@ -7,9 +7,9 @@ import {
     type vec2,
 } from '@alleninstitute/vis-geometry';
 import type { Decoder, VoxelTileImage } from './slice-renderer';
-import type { OmeZarrFileset } from '../zarr/fileset';
+import type { OmeZarrMetadata } from '../zarr/metadata';
 import type { OmeZarrLevel } from '../zarr/level';
-import type { OmeZarrConnection, ZarritaOmeZarrData, ZarrDataSpecifier } from '../zarr/loading';
+import type { OmeZarrConnection, ZarritaOmeZarrData, ZarrDataSpecifier } from '../zarr/connection';
 
 export type VoxelTile = {
     plane: OrthogonalCartesianAxes; // the plane in which the tile sits
@@ -93,7 +93,7 @@ export function getVisibleTiles(
     },
     plane: CartesianPlane,
     planeLocation: number,
-    fileset: OmeZarrFileset,
+    fileset: OmeZarrMetadata,
     tileSize: number,
 ): VoxelTile[] {
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!

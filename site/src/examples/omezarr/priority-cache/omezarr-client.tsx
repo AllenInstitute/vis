@@ -1,71 +1,47 @@
 /** biome-ignore-all lint/correctness/useExhaustiveDependencies: <this is a demo, but not a demo of correct react-hook useage!> */
-import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
-import { Box2D, PLANE_XY, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
+import { logger, type WebResource } from '@alleninstitute/vis-core';
+import { Box2D, PLANE_XY, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
 import {
-    type OmeZarrMetadata,
-    loadMetadata,
-    sizeInUnits,
-    type RenderSettings,
-    type RenderSettingsChannels,
-    nextSliceStep,
+    CachedOmeZarrConnection,
+    defaultDecoder,
+    makeRenderSettings,
+    type OmeZarrConnection,
 } from '@alleninstitute/vis-omezarr';
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
-import { zoom, pan } from '../common/camera';
-import { decoderFactory } from '@alleninstitute/vis-omezarr';
-import { SharedCacheContext } from '../common/react/priority-cache-provider';
-import { buildConnectedRenderer } from './render-utils';
-const defaultInterval: Interval = { min: 0, max: 80 };
+import { zoom, pan } from '../../common/camera';
+import { SharedCacheContext } from '../../common/react/priority-cache-provider';
+import { buildConnectedRenderer } from '../render-utils';
 
-function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
-    const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
-        acc[val.label ?? `${index}`] = {
-            rgb: val.rgb,
-            gamut: val.range,
-            index,
-        };
-        return acc;
-    }, {} as RenderSettingsChannels);
-
-    const fallbackChannels: RenderSettingsChannels = {
-        R: { rgb: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
-        G: { rgb: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
-        B: { rgb: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
-    };
-
-    return {
-        camera: { screenSize, view },
-        planeLocation: param,
-        plane: PLANE_XY,
-        tileSize: 256,
-        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
-    };
-}
+const defaultGamut: Interval = { min: 0, max: 80 };
 
 type Props = {
     res: WebResource;
     screenSize: vec2;
 };
-const WORKERS = new URL('../omezarr-v3/fetch.worker.ts', import.meta.url);
-// const WORKERS = new URL('../common/loaders/ome-zarr/fetch-slice.worker', import.meta.url);
+
+const workerFactory = () => new Worker(new URL('../omezarr-v3/fetch.worker.ts', import.meta.url));
+
 export function OmeZarrView(props: Props) {
     const { screenSize } = props;
     const server = useContext(SharedCacheContext);
-    const [omezarr, setOmezarr] = useState<OmeZarrMetadata | null>(null);
+    const [omeZarr, setOmeZarr] = useState<OmeZarrConnection | null>(null);
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeParam, setPlaneParam] = useState(0.5);
     const [dragging, setDragging] = useState(false);
     const [renderer, setRenderer] = useState<ReturnType<typeof buildConnectedRenderer>>();
     const [tick, setTick] = useState<number>(0);
     const cnvs = useRef<HTMLCanvasElement>(null);
+
     const load = (res: WebResource) => {
-        loadMetadata(res).then((v) => {
-            setOmezarr(v);
+        const newOmeZarr = new CachedOmeZarrConnection(res, workerFactory);
+        newOmeZarr.loadMetadata().then((v) => {
+            setOmeZarr(newOmeZarr);
             setPlaneParam(0.5);
-            const dataset = v.getFirstShapedDataset(0);
-            if (!dataset) {
+            const level = v.getLevel({ index: 0 });
+            if (!level) {
                 throw new Error('dataset 0 does not exist!');
             }
-            const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
+            const size = level.sizeInUnits(PLANE_XY);
             if (size) {
                 logger.info('size', size);
                 setView(Box2D.create([0, 0], size));
@@ -75,8 +51,8 @@ export function OmeZarrView(props: Props) {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handleScrollSlice = (next: 1 | -1) => {
-        if (omezarr) {
-            const step = nextSliceStep(omezarr, PLANE_XY, view, screenSize);
+        if (omeZarr?.metadata) {
+            const step = omeZarr.metadata.nextSliceStep(PLANE_XY, view, screenSize);
             setPlaneParam((prev) => Math.max(0, Math.min(prev + next * (step ?? 1), 1)));
         }
     };
@@ -106,33 +82,35 @@ export function OmeZarrView(props: Props) {
     const handleMouseUp = () => {
         setDragging(false);
     };
+
     useEffect(() => {
         if (cnvs.current && server && !renderer) {
-            const { decoder } = decoderFactory(getResourceUrl(props.res), WORKERS);
-
             const { regl, cache } = server;
-            const renderer = buildConnectedRenderer(regl, screenSize, cache, decoder, () => {
+            const renderer = buildConnectedRenderer(regl, screenSize, cache, defaultDecoder, () => {
                 requestAnimationFrame(() => {
                     setTick(performance.now());
                 });
             });
             setRenderer(renderer);
+            if (omeZarr) {
+                omeZarr.close(); // VERY IMPORTANT! Cleans up soon-to-be-unused workers
+            }
             load(props.res);
         }
     }, [cnvs.current, props.res]);
 
     useEffect(() => {
-        if (omezarr && cnvs.current && renderer) {
-            const settings = makeZarrSettings(screenSize, view, planeParam, omezarr);
+        if (omeZarr?.metadata && omeZarr.metadata !== null && cnvs.current && renderer) {
+            const settings = makeRenderSettings(omeZarr?.metadata, screenSize, view, planeParam, defaultGamut);
             const ctx = cnvs.current.getContext('2d');
             if (ctx) {
-                renderer?.render(omezarr, settings);
+                renderer?.render(omeZarr.metadata, settings);
                 requestAnimationFrame(() => {
                     renderer?.copyPixels(ctx);
                 });
             }
         }
-    }, [omezarr, planeParam, view, tick]);
+    }, [omeZarr, planeParam, view, tick]);
 
     useEffect(() => {
         if (cnvs?.current) {
