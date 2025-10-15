@@ -31,4 +31,4 @@ export {
     HEARTBEAT_RATE_MS,
 } from './workers/messages';
 
-export { WorkerPool } from './workers/worker-pool';
+export { WorkerPool, type WorkerInit } from './workers/worker-pool';

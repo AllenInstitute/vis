@@ -55,3 +55,16 @@ export {
 } from './zarr/loading';
 
 export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
+export { decoderFactory } from './zarr/cache-lower';
+export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';
+export {
+    type TransferrableRequestInit,
+    type FetchMessagePayload,
+    type FetchMessage,
+    type FetchResponseMessage,
+    type CancelMessage,
+    isFetchMessage,
+    isFetchResponseMessage,
+    isCancelMessage,
+    isCancellationError,
+} from './zarr/cached-loading/fetch-data.interface';
