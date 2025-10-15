@@ -1,6 +1,6 @@
 import { Box2D, type box2D, type CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
-import type { OmeZarrFileset } from '../zarr/omezarr-fileset';
-import type { OmeZarrLevel } from '../zarr/omezarr-level';
+import type { OmeZarrFileset } from '../zarr/fileset';
+import type { OmeZarrLevel } from '../zarr/level';
 import type { PlanarVoxelTile } from './types';
 
 /**

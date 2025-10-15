@@ -8,7 +8,7 @@ import {
 import { Box2D, type Interval, intervalToVec2, type OrthogonalCartesianAxes } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import { buildTileRenderer } from '../sliceview/tile-renderer';
-import type { OmeZarrFileset, ZarrDataRequest, ZarrSlice } from '../zarr/omezarr-fileset';
+import type { OmeZarrFileset, ZarrDataRequest, ZarrSlice } from '../zarr/fileset';
 import type { PlanarRenderSettings, PlanarRendererOptions, PlanarVoxelTile, PlanarVoxelTileImage } from './types';
 import { getVisibleOmeZarrTiles } from './visibility';
 import type { Chunk } from 'zarrita';

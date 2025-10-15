@@ -7,7 +7,7 @@ import type {
     vec2,
     vec3,
 } from '@alleninstitute/vis-geometry';
-import type { OmeZarrLevel } from '../zarr/omezarr-level';
+import type { OmeZarrLevel } from '../zarr/level';
 
 // represent a 2D slice of a volume
 export type PlanarVoxelTile = {

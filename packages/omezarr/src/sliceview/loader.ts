@@ -6,18 +6,16 @@ import {
     type OrthogonalCartesianAxes,
     type vec2,
 } from '@alleninstitute/vis-geometry';
-import type { Chunk } from 'zarrita';
-import type { ZarrRequest } from '../zarr/loading';
-import { indexOfRelativeSlice, loadSlice, pickBestScale, planeSizeInVoxels, sizeInUnits } from '../zarr/loading';
 import type { VoxelTileImage } from './slice-renderer';
-import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
+import type { OmeZarrLevel } from '../zarr/level';
+import type { LoadedOmeZarrSlice, OmeZarrFileset, ZarrDataRequest } from '../zarr/fileset';
 
 export type VoxelTile = {
     plane: OrthogonalCartesianAxes; // the plane in which the tile sits
     realBounds: box2D; // in the space given by the axis descriptions of the omezarr dataset
     bounds: box2D; // in voxels, in the plane
     orthoVal: number; // the value along the orthogonal axis to the plane (e.g. the slice index along Z relative to an XY plane)
-    level: OmeZarrShapedDataset; // the index in the resolution pyramid of the omezarr dataset
+    level: OmeZarrLevel; // the index in the resolution pyramid of the omezarr dataset
 };
 
 /**
@@ -51,12 +49,11 @@ function getVisibleTilesInLayer(
     },
     plane: CartesianPlane,
     orthoVal: number,
-    dataset: OmeZarrMetadata,
     tileSize: number,
-    level: OmeZarrShapedDataset,
+    level: OmeZarrLevel,
 ) {
-    const size = planeSizeInVoxels(plane, dataset.attrs.multiscales[0].axes, level);
-    const realSize = sizeInUnits(plane, dataset.attrs.multiscales[0].axes, level);
+    const size = level.planeSizeInVoxels(plane);
+    const realSize = level.sizeInUnits(plane);
     if (!size || !realSize) return [];
     const scale = Vec2.div(realSize, size);
     const vxlToReal = (vxl: box2D) => Box2D.scale(vxl, scale);
@@ -95,16 +92,16 @@ export function getVisibleTiles(
     },
     plane: CartesianPlane,
     planeLocation: number,
-    metadata: OmeZarrMetadata,
+    fileset: OmeZarrFileset,
     tileSize: number,
 ): VoxelTile[] {
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
-    const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
+    const level = fileset.pickBestScale(plane, camera.view, camera.screenSize);
     // figure out the index of the slice
 
-    const sliceIndex = indexOfRelativeSlice(layer, metadata.attrs.multiscales[0].axes, planeLocation, plane.ortho);
-    return getVisibleTilesInLayer(camera, plane, sliceIndex, metadata, tileSize, layer);
+    const sliceIndex = level.indexOfRelativeSlice(planeLocation, plane.ortho);
+    return getVisibleTilesInLayer(camera, plane, sliceIndex, tileSize, level);
 }
 
 /**
@@ -112,17 +109,16 @@ export function getVisibleTiles(
  * Note that omezarr decoding can be slow - consider wrapping this function in a web-worker (or a pool of them)
  * to improve performance (note also that the webworker message passing will need to itself be wrapped in promises)
  * @param metadata an omezarr object
- * @param r a slice request @see getSlice
+ * @param req a request for a specific slice of data @see getSlice
  * @param layerIndex an index into the LOD pyramid of the given ZarrDataset.
  * @returns the requested voxel information from the given layer of the given dataset.
  */
 export const defaultDecoder = (
-    metadata: OmeZarrMetadata,
-    r: ZarrRequest,
-    level: OmeZarrShapedDataset,
+    fileset: OmeZarrFileset,
+    req: ZarrDataRequest,
     signal?: AbortSignal,
 ): Promise<VoxelTileImage> => {
-    return loadSlice(metadata, r, level, signal).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
+    return fileset.loadSlice(req, signal).then((result: LoadedOmeZarrSlice<'float32'>) => {
         const { shape, buffer } = result;
         return { shape, data: new Float32Array(buffer.data) };
     });

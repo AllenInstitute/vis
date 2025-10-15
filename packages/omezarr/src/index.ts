@@ -39,21 +39,11 @@ export {
     OmeZarrOmeroChannelSchema,
     OmeZarrOmeroSchema,
     OmeZarrAttrsSchema,
-    OmeZarrMetadata,
     type DehydratedOmeZarrArray,
     type DehydratedOmeZarrMetadata,
 } from './zarr/types';
 export {
-    loadMetadata,
-    loadZarrArrayFile,
-    loadZarrAttrsFile,
-    pickBestScale,
-    loadSlice,
-    sizeInUnits,
-    sizeInVoxels,
-    nextSliceStep,
-    planeSizeInVoxels,
-    type ZarrRequest,
+    loadOmeZarrFileset
 } from './zarr/loading';
 
 export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
@@ -63,25 +53,23 @@ export {
     OmeZarrFileset,
     type ZarrDataRequest,
     type ZarrDimensionSelection,
-    type ZarrSelection,
     type ZarrSlice,
-    loadOmeZarrFileset,
-} from './zarr/omezarr-fileset';
-export { OmeZarrLevel } from './zarr/omezarr-level';
+} from './zarr/fileset';
+export { OmeZarrLevel } from './zarr/level';
 export {} from './zarr/omezarr-transforms';
-export type {
-    PlanarVoxelTile,
-    PlanarVoxelTileImage,
-    PlanarRenderSettings,
-    PlanarRenderSettingsChannel,
-    PlanarRenderSettingsChannels,
-} from './planar-view/types';
-export {
-    buildOmeZarrPlanarRenderer,
-    buildAsyncOmeZarrPlanarRenderer,
-    defaultPlanarDecoder,
-    type OmeZarrVoxelTileImageDecoder,
-} from './planar-view/renderer';
+// export type {
+//     PlanarVoxelTile,
+//     PlanarVoxelTileImage,
+//     PlanarRenderSettings,
+//     PlanarRenderSettingsChannel,
+//     PlanarRenderSettingsChannels,
+// } from './planar-view/types';
+// export {
+//     buildOmeZarrPlanarRenderer,
+//     buildAsyncOmeZarrPlanarRenderer,
+//     defaultPlanarDecoder,
+//     type OmeZarrVoxelTileImageDecoder,
+// } from './planar-view/renderer';
 export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';
 export {
     type TransferrableRequestInit,

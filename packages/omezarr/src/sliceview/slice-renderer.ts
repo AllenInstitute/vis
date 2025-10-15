@@ -16,10 +16,10 @@ import {
     logger,
 } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
-import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderer } from './tile-renderer';
-import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
+import type { OmeZarrFileset, ZarrDataRequest } from '../zarr/fileset';
+import type { OmeZarrLevel } from '../zarr/level';
 
 export type RenderSettingsChannel = {
     index: number;
@@ -46,14 +46,14 @@ export type RenderSettings = {
 // a slice of a volume (as voxels suitable for display)
 export type VoxelTileImage = {
     data: Float32Array;
-    shape: number[];
+    shape: readonly number[];
 };
 
 type ImageChannels = {
     [channelKey: string]: CachedTexture;
 };
 
-function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
+function toZarrDataRequest(tile: VoxelTile, channel: number): ZarrDataRequest {
     const { plane, orthoVal, bounds } = tile;
     const { minCorner: min, maxCorner: max } = bounds;
     const u = { min: min[0], max: max[0] };
@@ -61,27 +61,36 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     switch (plane) {
         case 'xy':
             return {
-                x: u,
-                y: v,
-                t: 0,
-                c: channel,
-                z: orthoVal,
+                level: tile.level,
+                slice: {
+                    x: u,
+                    y: v,
+                    t: 0,
+                    c: channel,
+                    z: orthoVal,
+                },
             };
         case 'xz':
             return {
-                x: u,
-                z: v,
-                t: 0,
-                c: channel,
-                y: orthoVal,
+                level: tile.level,
+                slice: {
+                    x: u,
+                    z: v,
+                    t: 0,
+                    c: channel,
+                    y: orthoVal,
+                },
             };
         case 'yz':
             return {
-                y: u,
-                z: v,
-                t: 0,
-                c: channel,
-                x: orthoVal,
+                level: tile.level,
+                slice: {
+                    y: u,
+                    z: v,
+                    t: 0,
+                    c: channel,
+                    x: orthoVal,
+                },
             };
     }
 }
@@ -98,9 +107,9 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
 }
 
 export type Decoder = (
-    dataset: OmeZarrMetadata,
-    req: ZarrRequest,
-    level: OmeZarrShapedDataset,
+    dataset: OmeZarrFileset,
+    req: ZarrDataRequest,
+    level: OmeZarrLevel,
     signal?: AbortSignal,
 ) => Promise<VoxelTileImage>;
 
@@ -115,7 +124,7 @@ export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
     decoder: Decoder,
     options?: OmeZarrSliceRendererOptions | undefined,
-): Renderer<OmeZarrMetadata, VoxelTile, RenderSettings, ImageChannels> {
+): Renderer<OmeZarrFileset, VoxelTile, RenderSettings, ImageChannels> {
     const numChannels = options?.numChannels ?? DEFAULT_NUM_CHANNELS;
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
         const { data, shape } = slice;
@@ -150,7 +159,7 @@ export function buildOmeZarrSliceRenderer(
             const contents: Record<string, (signal: AbortSignal) => Promise<CachedTexture>> = {};
             for (const key in settings.channels) {
                 contents[key] = (signal) =>
-                    decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level, signal).then(
+                    decoder(dataset, toZarrDataRequest(item, settings.channels[key].index), item.level, signal).then(
                         sliceAsTexture,
                     );
             }
@@ -163,10 +172,10 @@ export function buildOmeZarrSliceRenderer(
                 gamut: intervalToVec2(settings.channels[key].gamut),
                 rgb: settings.channels[key].rgb,
             }));
-            const layers = dataset.getNumLayers();
+            const levels = dataset.getNumLevels();
             // per the spec, the highest resolution layer should be first
             // we want that layer most in front, so:
-            const depth = item.level.datasetIndex / layers;
+            const depth = item.level.datasetIndex / levels;
             const { camera } = settings;
             cmd({
                 channels,
