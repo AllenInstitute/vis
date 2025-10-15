@@ -18,7 +18,7 @@ export function BasicOmeZarrDemo() {
     useEffect(() => {
         const connection = new CachedOmeZarrConnection(
             OMEZARR_FILESET_OPTIONS[0].res,
-            () => new Worker(new URL('../common/loaders/fetch.worker.ts', import.meta.url)),
+            () => new Worker(new URL('../../common/loaders/fetch.worker.ts', import.meta.url)),
         );
         setConnection(connection);
         connection.loadMetadata();

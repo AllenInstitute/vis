@@ -8,16 +8,16 @@ import {
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
 import { useId, useMemo, useState } from 'react';
-import { pan, zoom } from '../common/camera';
-import { RenderServerProvider } from '../common/react/render-server-provider';
+import { pan, zoom } from '../../common/camera';
+import { RenderServerProvider } from '../../common/react/render-server-provider';
 import { OmeZarrViewer } from './omezarr-viewer';
-import { OMEZARR_FILESET_OPTIONS } from '../common/filesets/omezarr/demo-filesets';
+import { OMEZARR_FILESET_OPTIONS } from '../../common/filesets/omezarr/demo-filesets';
 
 const screenSize: vec2 = [800, 800];
 
 const defaultGamut: Interval = { min: 0, max: 80 };
 
-const workerFactory = () => new Worker(new URL('./fetch.worker.ts', import.meta.url));
+const workerFactory = () => new Worker(new URL('../../common/loaders/omezarr/fetch.worker.ts', import.meta.url));
 
 export function OmezarrDemo() {
     const [customUrl, setCustomUrl] = useState<string>('');

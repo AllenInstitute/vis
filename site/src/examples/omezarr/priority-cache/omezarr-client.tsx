@@ -10,7 +10,7 @@ import {
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { zoom, pan } from '../../common/camera';
 import { SharedCacheContext } from '../../common/react/priority-cache-provider';
-import { buildConnectedRenderer } from '../render-utils';
+import { buildConnectedRenderer } from './render-utils';
 
 const defaultGamut: Interval = { min: 0, max: 80 };
 
@@ -19,7 +19,7 @@ type Props = {
     screenSize: vec2;
 };
 
-const workerFactory = () => new Worker(new URL('../omezarr-v3/fetch.worker.ts', import.meta.url));
+const workerFactory = () => new Worker(new URL('../../common/loaders/omezarr/fetch.worker.ts', import.meta.url));
 
 export function OmeZarrView(props: Props) {
     const { screenSize } = props;
