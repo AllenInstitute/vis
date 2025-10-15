@@ -227,3 +227,8 @@ export function convertFromOmeroChannelToColorChannel(omeroChannel: OmeZarrOmero
 
     return { rgb, rgba, window, range, active, label };
 }
+
+export interface OmeZarrData<T> {
+    shape: readonly number[];
+    buffer: T;
+}

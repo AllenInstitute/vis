@@ -1,21 +1,10 @@
 import { logger } from '@alleninstitute/vis-core';
-import {
-    Box2D,
-    type box2D,
-    type CartesianPlane,
-    type Interval,
-    limit,
-    Vec2,
-    type vec2,
-} from '@alleninstitute/vis-geometry';
-import * as zarr from 'zarrita';
+import { Box2D, type box2D, type CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError } from '../errors';
-import type { ZarrFetchStore } from './cached-loading/store';
 import { OmeZarrLevel } from './level';
 import {
     convertFromOmeroToColorChannels,
     type OmeZarrArray,
-    type OmeZarrAxis,
     type OmeZarrColorChannel,
     type OmeZarrDataset,
     type OmeZarrGroup,
@@ -23,45 +12,6 @@ import {
     type OmeZarrMultiscale,
     type ZarrDimension,
 } from './types';
-
-export type ZarrDimensionSelection = number | Interval | null;
-
-export type ZarrSlice = Record<ZarrDimension, ZarrDimensionSelection>;
-
-type ZarritaSelection = (number | zarr.Slice | null)[];
-
-export type LoadedOmeZarrSlice<T extends zarr.DataType> = {
-    shape: readonly number[];
-    buffer: zarr.Chunk<T>;
-}
-
-export type ZarrDataRequest = {
-    level: OmeZarrLevelSpecifier;
-    slice: ZarrSlice;
-};
-
-const buildSliceQuery = (
-    r: Readonly<ZarrSlice>,
-    axes: readonly OmeZarrAxis[],
-    shape: readonly number[],
-): ZarritaSelection => {
-    const ordered = axes.map((a) => r[a.name as ZarrDimension]);
-
-    if (ordered.some((a) => a === undefined)) {
-        throw new VisZarrDataError('requested slice does not match specified dimensions of OME-Zarr dataset');
-    }
-
-    return ordered.map((d, i) => {
-        const bounds = { min: 0, max: shape[i] };
-        if (d === null) {
-            return d;
-        }
-        if (typeof d === 'number') {
-            return limit(bounds, d);
-        }
-        return zarr.slice(limit(bounds, d.min), limit(bounds, d.max));
-    });
-};
 
 export type OmeZarrMultiscaleSpecifier =
     | {
@@ -82,36 +32,37 @@ export type OmeZarrLevelSpecifier = {
       }
 );
 
+/**
+ * An `OmeZarrFileset` represents the metadata describing a full fileset for a given OME-Zarr.
+ * It provides access to all of the metadata information available about that fileset, and
+ * makes it easy to access a particular level-of-detail's full contextual information 
+ * (provided as instances of the `OmeZarrLevel` class).
+ * 
+ * `OmeZarrFileset`s are possible to construct given raw data, but they are generally produced
+ * via the `loadMetadata` function of the `OmeZarrConnection` type. Connections have a close
+ * relationship with the Fileset objects, and are able to load both metadata and the associated
+ * data for a given OME-Zarr.
+ * 
+ * @see OmeZarrLevel
+ * @see OmeZarrConnection
+ */
 export class OmeZarrFileset {
-    #store: ZarrFetchStore;
-    #root: zarr.Location<ZarrFetchStore>;
+    #url: URL;
     #rootGroup: OmeZarrGroup;
-    #arrays: Map<string, OmeZarrArray>;
-    #zarritaGroups: Map<string, zarr.Group<zarr.FetchStore>>;
-    #zarritaArrays: Map<string, zarr.Array<zarr.DataType, zarr.FetchStore>>;
+    #arrays: Record<string, OmeZarrArray>;
 
-    constructor(
-        store: ZarrFetchStore,
-        root: zarr.Location<ZarrFetchStore>,
-        rootGroup: OmeZarrGroup,
-        arrays: Map<string, OmeZarrArray>,
-        zarritaGroups: Map<string, zarr.Group<zarr.FetchStore>>,
-        zarritaArrays: Map<string, zarr.Array<zarr.DataType, zarr.FetchStore>>,
-    ) {
-        this.#store = store;
-        this.#root = root;
+    constructor(url: URL, rootGroup: OmeZarrGroup, arrays: Record<string, OmeZarrArray>) {
+        this.#url = url;
         this.#rootGroup = rootGroup;
         this.#arrays = arrays;
-        this.#zarritaGroups = zarritaGroups;
-        this.#zarritaArrays = zarritaArrays;
     }
 
-    get url(): string | URL {
-        return this.#store.url;
+    get url(): URL {
+        return this.#url;
     }
 
-    get attrs(): OmeZarrGroupAttributes | undefined {
-        return this.#rootGroup?.attributes;
+    get attrs(): OmeZarrGroupAttributes {
+        return this.#rootGroup.attributes;
     }
 
     getMultiscale(specifier: OmeZarrMultiscaleSpecifier | undefined): OmeZarrMultiscale | undefined {
@@ -136,7 +87,6 @@ export class OmeZarrFileset {
 
         if ('index' in specifier) {
             const i = specifier.index;
-            // matching = selectedMultiscales.map((m) => {
             if (i < 0 || i >= multiscale.datasets.length) {
                 const message = `cannot get matching dataset and array for ${targetDesc}: index out of bounds`;
                 logger.error(message);
@@ -162,7 +112,7 @@ export class OmeZarrFileset {
         }
 
         const { path, dataset, datasetIndex } = matching;
-        const array = this.#arrays.get(`/${path}`); // TODO this is a short-term fix, a more ideal fix would calculate the path from the array's group
+        const array = this.#arrays[`/${path}`]; // TODO this is a short-term fix, a more ideal fix would calculate the path from the array's group
         if (array === undefined) {
             const message = `cannot get matching dataset and array for ${targetDesc}: no matching array found`;
             logger.error(message);
@@ -180,7 +130,7 @@ export class OmeZarrFileset {
             let i = 0;
             for (const dataset of multiscale.datasets) {
                 const path = dataset.path;
-                const array = arrays.get(`/${path}`);
+                const array = arrays[`/${path}`];
                 if (array === undefined) {
                     const message = 'cannot get list of levels: mismatched array and dataset';
                     logger.error(message);
@@ -204,10 +154,24 @@ export class OmeZarrFileset {
     }
 
     toJSON() {
-        const rootGroup = this.#zarritaGroups.get(this.#root.path);
-        return rootGroup ? { url: this.#root.path, ready: true, rootGroup } : { url: this.#root.path, ready: false };
+        return {
+            url: this.#url,
+            root: this.#rootGroup,
+            arrays: this.#arrays,
+        };
     }
 
+    /**
+     * Given a region of a volume to view at a certain output resolution, find the level-of-detail (LOD) in the ome-zarr
+     * fileset which is most appropriate - that is to say, as close to 1:1 relation between voxels and display pixels as possible.
+     * @param plane a plane in the volume - the dimensions of this plane will be matched to the displayResolution
+     * when choosing an appropriate LOD layer
+     * @param relativeView a region of the selected plane which is the "screen" - the screen has resolution `displayResolution`.
+     * An example relative view of `[0, 0], [1, 1]` would suggest we're trying to view the entire slice at the given resolution.
+     * @param displayResolution
+     * @param multiscaleSpec an optional specification of which multiscale to pick within (will default to the first defined)
+     * @returns an LOD level from the given dataset, that is appropriate for viewing at the given displayResolution.
+     */
     pickBestScale(
         plane: CartesianPlane,
         relativeView: box2D, // a box in data-unit-space
@@ -286,7 +250,7 @@ export class OmeZarrFileset {
             throw new VisZarrDataError(message);
         }
 
-        const arrays = multiscale.datasets.map((d) => this.#arrays.get(d.path));
+        const arrays = multiscale.datasets.map((d) => this.#arrays[d.path]);
         const dimIdx = this.#getDimensionIndex(dim, multiscaleSpec);
         if (dimIdx === undefined) {
             const message = `cannot get maximum ${dim}: '${dim}' is not a valid dimension for this multiscale`;
@@ -298,9 +262,9 @@ export class OmeZarrFileset {
     }
 
     /**
-     * Given a specific @param multiscaleIdent representation of the Zarr data, finds the
-     * largest X shape component among the shapes of the different dataset arrays.
-     * @param multiscaleIdent the index or path of a specific multiscale representation (defaults to 0)
+     * Given a specific multiscale representation of the Zarr data, finds the largest X shape component 
+     * among the shapes of the different dataset arrays.
+     * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
     maxX(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
@@ -308,9 +272,9 @@ export class OmeZarrFileset {
     }
 
     /**
-     * Given a specific @param multiscale representation of the Zarr data, finds the
-     * largest Y shape component among the shapes of the different dataset arrays.
-     * @param multiscale the index or path of a specific multiscale representation (defaults to 0)
+     * Given a specific multiscale representation of the Zarr data, finds the largest Y shape component 
+     * among the shapes of the different dataset arrays.
+     * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
     maxY(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
@@ -318,15 +282,22 @@ export class OmeZarrFileset {
     }
 
     /**
-     * Given a specific @param multiscale representation of the Zarr data, finds the
-     * largest Z shape component among the shapes of the different dataset arrays.
-     * @param multiscale the index or path of a specific multiscale representation (defaults to 0)
+     * Given a specific multiscale representation of the Zarr data, finds the largest Z shape component 
+     * among the shapes of the different dataset arrays.
+     * @param multiscaleSpec the index or path of a specific multiscale representation (defaults to 0)
      * @returns the largest Z scale for the specified multiscale representation
      */
     maxZ(multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
         return this.#getMaximumForDimension('z', multiscaleSpec);
     }
 
+    /**
+     * Given a specific plane and multiscale, determines the maximum value of the orthogonal axis to 
+     * that plane within that multiscale.
+     * @param plane a cartesian plane
+     * @param multiscaleSpec identifies the multiscale to operate within
+     * @returns the maximum value of the axis orthogonal to `plane`
+     */
     maxOrthogonal(plane: CartesianPlane, multiscaleSpec: OmeZarrMultiscaleSpecifier): number {
         if (plane.ortho === 'x') {
             return this.maxX(multiscaleSpec);
@@ -338,46 +309,5 @@ export class OmeZarrFileset {
             return this.maxZ(multiscaleSpec);
         }
         throw new VisZarrDataError(`invalid plane: ortho set to '${plane.ortho}'`);
-    }
-
-    /**
-     * Loads and returns any voxel data from this OME-Zarr that matches the requested segment of the overall fileset,
-     * as defined by a multiscale, a dataset, and a chunk slice.
-     * @see https://zarrita.dev/slicing.html for more details on how slicing is handled.
-     * @param r The data request, specifying the coordinates within the OME-Zarr's data from which to source voxel data
-     * @param signal An optional abort signal with which to cancel this request if necessary
-     * @returns the loaded slice data
-     */
-    async loadSlice<T extends zarr.DataType>(r: ZarrDataRequest, signal?: AbortSignal | undefined): Promise<LoadedOmeZarrSlice<T>> {
-        const axes = this.getMultiscale(r.level.multiscale)?.axes;
-        if (axes === undefined) {
-            const message = 'invalid Zarr data: no axes found for specified multiscale';
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
-        const path = this.getLevel(r.level)?.path;
-        if (path === undefined) {
-            const message = 'invalid Zarr data: no path found for specified dataset';
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
-        const arr = this.#zarritaArrays.get(`/${path}`);
-        if (arr === undefined) {
-            const message = 'invalid Zarr data: no array found for specified dataset';
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
-        const shape = arr.shape;
-        const query = buildSliceQuery(r.slice, axes, shape);
-        const result = await zarr.get(arr, query, { opts: { signal: signal ?? null } });
-        if (typeof result === 'number') {
-            const message = "could not fetch Zarr slice: parsed slice data's shape was undefined";
-            logger.error(message);
-            throw new VisZarrDataError(message);
-        }
-        return {
-            shape: result.shape,
-            buffer: result,
-        };
     }
 }

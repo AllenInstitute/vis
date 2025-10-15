@@ -30,6 +30,12 @@ export class OmeZarrLevel {
         return this.multiscale.axes;
     }
 
+    /**
+     * For a given dimension (e.g. 'x', 'y', 'z'), retrieves the index of that dimension within
+     * this level's multiscale axes.
+     * @param dim The dimension to find the index for
+     * @returns the 0-based index of the given dimension, or -1 if the dimension was not found
+     */
     indexFor(dim: ZarrDimension) {
         const axes = this.multiscale.axes;
         return axes.findIndex((axis) => axis.name === dim);
@@ -68,7 +74,8 @@ export class OmeZarrLevel {
     }
 
     /**
-     * get the size in voxels of a layer of an omezarr on a given dimension
+     * Get the size in voxels of the given dimension within this level.
+     * @see `planeSizeInVoxels` for sizing of a plane rather than a dimension
      * @param dim the dimension to measure
      * @param axes the axes metadata for the zarr dataset
      * @param shape the dimensional extents of the target dataset
@@ -83,8 +90,8 @@ export class OmeZarrLevel {
     }
 
     /**
-     * Get the size of a plane of within this level's volume, in voxels
-     * see @function sizeInVoxels
+     * Get the size in voxels of a plane within the volume of this level.
+     * @see `sizeInVoxels` for sizing of a dimension rather than a plane
      * @param plane the plane to measure (eg. 'xy')
      * @returns a vec2 containing the requested sizes, or undefined if the requested plane is malformed, or not present in the dataset
      */
@@ -104,7 +111,10 @@ export class OmeZarrLevel {
     }
 
     /**
-     *
+     * Determines the integer index within the given dimensional for the specified parametric value.
+     * 
+     * For example, if the Z dimension has a depth of 100 and the parameter is given as 0.5, this will return
+     * an index of 49 (halfway from 0 to 99).
      * @param parameter a value from [0:1] indicating a parameter of the volume, along the given dimension @param dim,
      * @param dim the dimension (axis) along which @param parameter refers
      * @returns a valid index (between [0, level.shape[axis]]) from the volume, suitable for

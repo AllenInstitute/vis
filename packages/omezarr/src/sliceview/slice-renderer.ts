@@ -1,25 +1,25 @@
 import {
-    Box2D,
-    type CartesianPlane,
-    type Interval,
-    type box2D,
-    type vec2,
-    type vec3,
-    intervalToVec2,
-} from '@alleninstitute/vis-geometry';
-import {
+    buildAsyncRenderer,
     type CachedTexture,
+    logger,
     type QueueOptions,
     type ReglCacheEntry,
     type Renderer,
-    buildAsyncRenderer,
-    logger,
 } from '@alleninstitute/vis-core';
+import {
+    Box2D,
+    type box2D,
+    type CartesianPlane,
+    type Interval,
+    intervalToVec2,
+    type vec2,
+    type vec3,
+} from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
-import { type VoxelTile, getVisibleTiles } from './loader';
+import { getVisibleTiles, type VoxelTile } from './loader';
 import { buildTileRenderer } from './tile-renderer';
-import type { OmeZarrFileset, ZarrDataRequest } from '../zarr/fileset';
-import type { OmeZarrLevel } from '../zarr/level';
+import type { OmeZarrFileset } from '../zarr/fileset';
+import type { OmeZarrConnection, ZarrDataSpecifier } from '../zarr/loading';
 
 export type RenderSettingsChannel = {
     index: number;
@@ -53,7 +53,7 @@ type ImageChannels = {
     [channelKey: string]: CachedTexture;
 };
 
-function toZarrDataRequest(tile: VoxelTile, channel: number): ZarrDataRequest {
+function toZarrDataSpecifier(tile: VoxelTile, channel: number): ZarrDataSpecifier {
     const { plane, orthoVal, bounds } = tile;
     const { minCorner: min, maxCorner: max } = bounds;
     const u = { min: min[0], max: max[0] };
@@ -107,9 +107,8 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
 }
 
 export type Decoder = (
-    dataset: OmeZarrFileset,
-    req: ZarrDataRequest,
-    level: OmeZarrLevel,
+    connection: OmeZarrConnection,
+    req: ZarrDataSpecifier,
     signal?: AbortSignal,
 ) => Promise<VoxelTileImage>;
 
@@ -122,6 +121,7 @@ const DEFAULT_NUM_CHANNELS = 3;
 
 export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
+    connection: OmeZarrConnection,
     decoder: Decoder,
     options?: OmeZarrSliceRendererOptions | undefined,
 ): Renderer<OmeZarrFileset, VoxelTile, RenderSettings, ImageChannels> {
@@ -155,11 +155,11 @@ export function buildOmeZarrSliceRenderer(
             const { camera, plane, planeLocation, tileSize } = settings;
             return getVisibleTiles(camera, plane, planeLocation, dataset, tileSize);
         },
-        fetchItemContent: (item, dataset, settings): Record<string, (sig: AbortSignal) => Promise<CachedTexture>> => {
+        fetchItemContent: (item, _dataset, settings): Record<string, (sig: AbortSignal) => Promise<CachedTexture>> => {
             const contents: Record<string, (signal: AbortSignal) => Promise<CachedTexture>> = {};
             for (const key in settings.channels) {
                 contents[key] = (signal) =>
-                    decoder(dataset, toZarrDataRequest(item, settings.channels[key].index), item.level, signal).then(
+                    decoder(connection, toZarrDataSpecifier(item, settings.channels[key].index), signal).then(
                         sliceAsTexture,
                     );
             }
@@ -188,6 +188,11 @@ export function buildOmeZarrSliceRenderer(
     };
 }
 
-export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder, options?: OmeZarrSliceRendererOptions) {
-    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder, options), options?.queueOptions);
+export function buildAsyncOmezarrRenderer(
+    regl: REGL.Regl,
+    connection: OmeZarrConnection,
+    decoder: Decoder,
+    options?: OmeZarrSliceRendererOptions,
+) {
+    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, connection, decoder, options), options?.queueOptions);
 }

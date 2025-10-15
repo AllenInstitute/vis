@@ -1,14 +1,15 @@
 import {
     Box2D,
-    type CartesianPlane,
-    Vec2,
     type box2D,
+    type CartesianPlane,
     type OrthogonalCartesianAxes,
+    Vec2,
     type vec2,
 } from '@alleninstitute/vis-geometry';
-import type { VoxelTileImage } from './slice-renderer';
+import type { Decoder, VoxelTileImage } from './slice-renderer';
+import type { OmeZarrFileset } from '../zarr/fileset';
 import type { OmeZarrLevel } from '../zarr/level';
-import type { LoadedOmeZarrSlice, OmeZarrFileset, ZarrDataRequest } from '../zarr/fileset';
+import type { OmeZarrConnection, ZarritaOmeZarrData, ZarrDataSpecifier } from '../zarr/loading';
 
 export type VoxelTile = {
     plane: OrthogonalCartesianAxes; // the plane in which the tile sits
@@ -113,12 +114,12 @@ export function getVisibleTiles(
  * @param layerIndex an index into the LOD pyramid of the given ZarrDataset.
  * @returns the requested voxel information from the given layer of the given dataset.
  */
-export const defaultDecoder = (
-    fileset: OmeZarrFileset,
-    req: ZarrDataRequest,
+export const defaultDecoder: Decoder = async (
+    connection: OmeZarrConnection,
+    req: ZarrDataSpecifier,
     signal?: AbortSignal,
 ): Promise<VoxelTileImage> => {
-    return fileset.loadSlice(req, signal).then((result: LoadedOmeZarrSlice<'float32'>) => {
+    return connection.loadData(req, signal).then((result: ZarritaOmeZarrData<'float32'>) => {
         const { shape, buffer } = result;
         return { shape, data: new Float32Array(buffer.data) };
     });

@@ -1,14 +1,19 @@
 import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
-import {
-    type OmeZarrGroup,
-    type OmeZarrArray,
-    OmeZarrGroupTransform,
-    OmeZarrArrayTransform,
-} from './types';
+import { limit, type Interval } from '@alleninstitute/vis-geometry';
 import * as zarr from 'zarrita';
-import { ZarrFetchStore } from './cached-loading/store';
-import { OmeZarrFileset } from './fileset';
 import { z } from 'zod';
+import { ZarrFetchStore } from './cached-loading/store';
+import { OmeZarrFileset, type OmeZarrLevelSpecifier } from './fileset';
+import {
+    type OmeZarrArray,
+    OmeZarrArrayTransform,
+    type OmeZarrAxis,
+    type OmeZarrData,
+    type OmeZarrGroup,
+    OmeZarrGroupTransform,
+    type ZarrDimension,
+} from './types';
+import { VisZarrDataError } from '../errors';
 
 // Documentation for OME-Zarr datasets (from which these types are built)
 // can be found here:
@@ -26,7 +31,6 @@ type OmeZarrArrayLoadSet<T extends zarr.FetchStore> = {
     transformed: OmeZarrArray;
 };
 
-
 const loadGroup = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZarrGroupLoadSet<ZarrFetchStore>> => {
     const group = await zarr.open(location, { kind: 'group' });
     try {
@@ -37,46 +41,7 @@ const loadGroup = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZa
         }
         throw e;
     }
-}
-
-// type OmeZarrArrayMetadataLoad = {
-//     metadata: OmeZarrArrayMetadata;
-//     raw: zarr.Array<zarr.DataType, zarr.FetchStore>;
-// };
-
-// export async function loadZarrArrayFile(
-//     res: WebResource,
-//     path: string,
-//     version = 2,
-//     loadV2Attrs = true,
-// ): Promise<OmeZarrArrayMetadata> {
-//     const url = getResourceUrl(res);
-//     const store = new zarr.FetchStore(url);
-//     const result = await loadZarrArrayFileFromStore(store, path, version, loadV2Attrs);
-//     return result.metadata;
-// }
-
-// export async function loadZarrArrayFileFromStore(
-//     store: zarr.FetchStore,
-//     path: string,
-//     version = 2,
-//     loadV2Attrs = true,
-// ): Promise<OmeZarrArrayMetadataLoad> {
-//     const root = zarr.root(store);
-//     let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
-//     if (version === 3) {
-//         array = await zarr.open.v3(root.resolve(path), { kind: 'array' });
-//     } else if (version === 2) {
-//         array = await zarr.open.v2(root.resolve(path), { kind: 'array', attrs: loadV2Attrs });
-//     } else {
-//         const message = `unsupported Zarr format version specified: ${version}`;
-//         logger.error(message);
-//         throw new VisZarrDataError(message);
-//     }
-//     const { shape, attrs } = array;
-//     try {
-//         return { metadata: { path, shape, attrs }, raw: array };
-// };
+};
 
 const loadArray = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZarrArrayLoadSet<ZarrFetchStore>> => {
     const array = await zarr.open(location, { kind: 'array' });
@@ -90,288 +55,153 @@ const loadArray = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZa
     }
 };
 
+export type ZarrDimensionSelection = number | Interval | null;
+
+export type ZarrSlice = Record<ZarrDimension, ZarrDimensionSelection>;
+
+type ZarritaSelection = (number | zarr.Slice | null)[];
+
+export interface ZarritaOmeZarrData<T extends zarr.DataType> extends OmeZarrData<zarr.Chunk<T>> {
+    buffer: zarr.Chunk<T>;
+};
+
+export type ZarrDataSpecifier = {
+    level: OmeZarrLevelSpecifier;
+    slice: ZarrSlice;
+};
+
+const buildSliceQuery = (
+    r: Readonly<ZarrSlice>,
+    axes: readonly OmeZarrAxis[],
+    shape: readonly number[],
+): ZarritaSelection => {
+    const ordered = axes.map((a) => r[a.name as ZarrDimension]);
+
+    if (ordered.some((a) => a === undefined)) {
+        throw new VisZarrDataError('requested slice does not match specified dimensions of OME-Zarr dataset');
+    }
+
+    return ordered.map((d, i) => {
+        const bounds = { min: 0, max: shape[i] };
+        if (d === null) {
+            return d;
+        }
+        if (typeof d === 'number') {
+            return limit(bounds, d);
+        }
+        return zarr.slice(limit(bounds, d.min), limit(bounds, d.max));
+    });
+};
+
 export type LoadOmeZarrMetadataOptions = {
     numWorkers?: number | undefined;
 };
 
-export async function loadOmeZarrFileset(
-    res: WebResource,
-    workerModule: URL,
-    options?: LoadOmeZarrMetadataOptions | undefined,
-): Promise<OmeZarrFileset> {
-    const url = getResourceUrl(res);
-    const store = new ZarrFetchStore(url, workerModule, { numWorkers: options?.numWorkers });
-    const root = zarr.root(store);
-
-    const zarritaGroups = new Map<string, zarr.Group<ZarrFetchStore>>();
-    const zarritaArrays = new Map<string, zarr.Array<zarr.DataType, ZarrFetchStore>>();
-
-    const { raw: rawRootGroup, transformed: rootGroup } = await loadGroup(root);
-    zarritaGroups.set('/', rawRootGroup);
-
-    const arrayResults = await Promise.all(
-        rootGroup.attributes.multiscales
-            .map((multiscale) =>
-                multiscale.datasets?.map(async (dataset) => {
-                    return await loadArray(root.resolve(dataset.path));
-                }),
-            )
-            .reduce((prev, curr) => prev.concat(curr))
-            .filter((arr) => arr !== undefined),
-    );
-
-    const arrays = new Map<string, OmeZarrArray>();
-
-    arrayResults.forEach(({ raw, transformed }) => {
-        arrays.set(transformed.path, transformed);
-        zarritaArrays.set(raw.path, raw);
-    });
-
-    return new OmeZarrFileset(store, root, rootGroup, arrays, zarritaGroups, zarritaArrays);
+export interface OmeZarrConnection {
+    url: URL;
+    loadMetadata: () => Promise<OmeZarrFileset>;
+    loadData: <T extends zarr.DataType>(
+        spec: ZarrDataSpecifier,
+        signal?: AbortSignal | undefined,
+    ) => Promise<ZarritaOmeZarrData<T>>;
 }
 
-// export type ZarrRequest = Record<ZarrDimension, number | Interval | null>;
+export class CachedOmeZarrConnection implements OmeZarrConnection {
+    #res: WebResource;
+    #store: ZarrFetchStore;
+    #root: zarr.Location<ZarrFetchStore>;
+    #zarritaGroups: Map<string, zarr.Group<zarr.FetchStore>>;
+    #zarritaArrays: Map<string, zarr.Array<zarr.DataType, zarr.FetchStore>>;
+    #fileset: OmeZarrFileset | null;
 
-/**
- * given a region of a volume to view at a certain output resolution, find the layer in the ome-zarr dataset which
- * is most appropriate - that is to say, as close to 1:1 relation between voxels and display pixels as possible.
- * @param zarr an object representing an omezarr file - see @function loadMetadata
- * @param plane a plane in the volume - the dimensions of this plane will be matched to the displayResolution
- * when choosing an appropriate LOD layer
- * @param relativeView a region of the selected plane which is the "screen" - the screen has resolution @param displayResolution.
- * an example relative view of [0,0],[1,1] would suggest we're trying to view the entire slice at the given resolution.
- * @param displayResolution
- * @returns an LOD (level-of-detail) layer from the given dataset, that is appropriate for viewing at the given
- * displayResolution.
- */
-// export function pickBestScale(
-//     zarr: OmeZarrMetadata,
-//     plane: CartesianPlane,
-//     relativeView: box2D, // a box in data-unit-space
-//     displayResolution: vec2, // in the plane given above
-// ): OmeZarrShapedDataset {
-//     const datasets = zarr.getAllShapedDatasets(0);
-//     const axes = zarr.attrs.multiscales[0].axes;
-//     const firstDataset = datasets[0];
-//     if (!firstDataset) {
-//         const message = 'invalid Zarr data: no datasets found';
-//         logger.error(message);
-//         throw new VisZarrDataError(message);
-//     }
-//     const realSize = sizeInUnits(plane, axes, firstDataset);
-//     if (!realSize) {
-//         const message = 'invalid Zarr data: could not determine the size of the plane in the given units';
-//         logger.error(message);
-//         throw new VisZarrDataError(message);
-//     }
+    constructor(res: WebResource, workerModule: URL, options?: LoadOmeZarrMetadataOptions | undefined) {
+        this.#res = res;
+        const url = getResourceUrl(res);
+        this.#store = new ZarrFetchStore(url, workerModule, { numWorkers: options?.numWorkers });
+        this.#root = zarr.root(this.#store);
+        this.#zarritaGroups = new Map<string, zarr.Group<ZarrFetchStore>>();
+        this.#zarritaArrays = new Map<string, zarr.Array<zarr.DataType, ZarrFetchStore>>();
+        this.#fileset = null;
+    }
 
-//     const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
-//     // size, in dataspace, of a pixel 1/res
-//     const pxPitch = Vec2.div(Box2D.size(relativeView), displayResolution);
-//     const dstToDesired = (a: vec2, goal: vec2) => {
-//         const diff = Vec2.sub(a, goal);
-//         if (diff[0] * diff[1] > 0) {
-//             // the res (a) is higher than our goal -
-//             // weight this heavily to prefer smaller than the goal
-//             return 1000 * Vec2.length(Vec2.sub(a, goal));
-//         }
-//         return Vec2.length(Vec2.sub(a, goal));
-//     };
-//     // we assume the datasets are ordered... hmmm TODO
-//     const choice = datasets.reduce((bestSoFar, cur) => {
-//         const planeSizeBest = planeSizeInVoxels(plane, axes, bestSoFar);
-//         const planeSizeCur = planeSizeInVoxels(plane, axes, cur);
-//         if (!planeSizeBest || !planeSizeCur) {
-//             return bestSoFar;
-//         }
-//         return dstToDesired(vxlPitch(planeSizeBest), pxPitch) > dstToDesired(vxlPitch(planeSizeCur), pxPitch)
-//             ? cur
-//             : bestSoFar;
-//     }, datasets[0]);
-//     return choice ?? datasets[datasets.length - 1];
-// }
-// TODO this is a duplicate of indexOfDimension... delete one of them!
-// function indexFor(dim: ZarrDimension, axes: readonly OmeZarrAxis[]) {
-//     return axes.findIndex((axis) => axis.name === dim);
-// }
-/**
- *
- * @param layer a shaped layer from within the omezarr dataset
- * @param axes the axes describing this omezarr dataset
- * @param parameter a value from [0:1] indicating a parameter of the volume, along the given dimension @param dim,
- * @param dim the dimension (axis) along which @param parameter refers
- * @returns a valid index (between [0,layer.shape[axis] ]) from the volume, suitable for
- */
-// export function indexOfRelativeSlice(
-//     layer: OmeZarrShapedDataset,
-//     axes: readonly OmeZarrAxis[],
-//     parameter: number,
-//     dim: ZarrDimension,
-// ): number {
-//     const dimIndex = indexFor(dim, axes);
-//     return Math.floor(layer.shape[dimIndex] * Math.max(0, Math.min(1, parameter)));
-// }
-/**
- * @param zarr
- * @param plane
- * @param relativeView
- * @param displayResolution
- * @returns
- */
-// export function nextSliceStep(
-//     zarr: OmeZarrMetadata,
-//     plane: CartesianPlane,
-//     relativeView: box2D, // a box in data-unit-space
-//     displayResolution: vec2, // in the plane given above
-// ) {
-//     // figure out what layer we'd be viewing
-//     const layer = pickBestScale(zarr, plane, relativeView, displayResolution);
-//     const axes = zarr.attrs.multiscales[0].axes;
-//     const slices = sizeInVoxels(plane.ortho, axes, layer);
-//     return slices === undefined ? undefined : 1 / slices;
-// }
+    get url(): URL {
+        return new URL(getResourceUrl(this.#res));
+    }
 
-/**
- * determine the size of a slice of the volume, in the units specified by the axes metadata
- * as described in the ome-zarr spec (https://ngff.openmicroscopy.org/latest/#axes-md)
- * NOTE that only scale transformations (https://ngff.openmicroscopy.org/latest/#trafo-md) are supported at present - other types will be ignored.
- * @param plane the plane to measure (eg. CartesianPlane('xy'))
- * @param axes the axes metadata from the omezarr file in question
- * @param dataset one of the "datasets" in the omezarr layer pyramid (https://ngff.openmicroscopy.org/latest/#multiscale-md)
- * @returns the size, with respect to the coordinateTransformations present on the given dataset, of the requested plane.
- * @example imagine a layer that is 29998 voxels wide in the X dimension, and a scale transformation of 0.00035 for that dimension.
- * this function would return (29998*0.00035 = 10.4993) for the size of that dimension, which you would interpret to be in whatever unit
- * is given by the axes metadata for that dimension (eg. millimeters)
- */
-// export function sizeInUnits(
-//     plane: CartesianPlane,
-//     axes: readonly OmeZarrAxis[],
-//     dataset: OmeZarrShapedDataset,
-// ): vec2 | undefined {
-//     const vxls = planeSizeInVoxels(plane, axes, dataset);
+    get fileset(): OmeZarrFileset | null {
+        return this.#fileset;
+    }
 
-//     if (vxls === undefined) return undefined;
+    async loadMetadata(): Promise<OmeZarrFileset> {
+        const { raw: rawRootGroup, transformed: rootGroup } = await loadGroup(this.#root);
+        this.#zarritaGroups.set('/', rawRootGroup);
 
-//     let size: vec2 = vxls;
+        const arrayResults = await Promise.all(
+            rootGroup.attributes.multiscales
+                .map((multiscale) =>
+                    multiscale.datasets?.map(async (dataset) => {
+                        return await loadArray(this.#root.resolve(dataset.path));
+                    }),
+                )
+                .reduce((prev, curr) => prev.concat(curr))
+                .filter((arr) => arr !== undefined),
+        );
 
-//     // now, just apply the correct transforms, if they exist...
-//     for (const trn of dataset.coordinateTransformations) {
-//         if (trn.type === 'scale') {
-//             // try to apply it!
-//             const uIndex = indexFor(plane.u, axes);
-//             const vIndex = indexFor(plane.v, axes);
-//             size = Vec2.mul(size, [trn.scale[uIndex], trn.scale[vIndex]]);
-//         }
-//     }
-//     return size;
-// }
-/**
- * get the size in voxels of a layer of an omezarr on a given dimension
- * @param dim the dimension to measure
- * @param axes the axes metadata for the zarr dataset
- * @param dataset an entry in the datasets list in the multiscales list in a ZarrDataset object
- * @returns the size, in voxels, of the given dimension of the given layer
- * @example (pseudocode of course) return omezarr.multiscales[0].datasets[LAYER].shape[DIMENSION]
- */
-// export function sizeInVoxels(dim: ZarrDimension, axes: readonly OmeZarrAxis[], dataset: OmeZarrShapedDataset) {
-//     const uI = indexFor(dim, axes);
-//     if (uI === -1) return undefined;
+        const arrays: Record<string, OmeZarrArray> = {};
 
-//     return dataset.shape[uI];
-// }
+        arrayResults.forEach(({ raw, transformed }) => {
+            arrays[transformed.path] = transformed;
+            this.#zarritaArrays.set(raw.path, raw);
+        });
 
-// TODO move into ZarrMetadata object
-/**
- * get the size of a plane of a volume (given a specific layer) in voxels
- * see @function sizeInVoxels
- * @param plane the plane to measure (eg. 'xy')
- * @param axes the axes metadata of an omezarr object
- * @param dataset a layer of the ome-zarr resolution pyramid
- * @returns a vec2 containing the requested sizes, or undefined if the requested plane is malformed, or not present in the dataset
- */
-// export function planeSizeInVoxels(
-//     plane: CartesianPlane,
-//     axes: readonly OmeZarrAxis[],
-//     dataset: OmeZarrShapedDataset,
-// ): vec2 | undefined {
-//     // first - u&v must not refer to the same dimension,
-//     // and both should exist in the axes...
-//     if (!plane.isValid()) {
-//         return undefined;
-//     }
-//     const uI = indexFor(plane.u, axes);
-//     const vI = indexFor(plane.v, axes);
-//     if (uI === -1 || vI === -1) {
-//         return undefined;
-//     }
+        this.#fileset = new OmeZarrFileset(this.url, rootGroup, arrays);
+        return this.#fileset;
+    }
 
-    // return [dataset.shape[uI], dataset.shape[vI]] as const;
-// }
-
-// feel free to freak out if the request is over or under determined or whatever
-// export function buildQuery(r: Readonly<ZarrRequest>, axes: readonly OmeZarrAxis[], shape: readonly number[]) {
-//     const ordered = axes.map((a) => r[a.name as ZarrDimension]);
-//     // if any are undefined, throw up
-//     if (ordered.some((a) => a === undefined)) {
-//         throw new VisZarrDataError('request does not match expected dimensions of OME-Zarr dataset');
-//     }
-
-//     return ordered.map((d, i) => {
-//         const bounds = { min: 0, max: shape[i] };
-//         if (d === null) {
-//             return d;
-//         }
-//         if (typeof d === 'number') {
-//             return limit(bounds, d);
-//         }
-//         return zarr.slice(limit(bounds, d.min), limit(bounds, d.max));
-//     });
-// }
-
-// export async function explain(z: OmeZarrMetadata) {
-//     logger.dir(z);
-// }
-
-// /**
-//  * get voxels / pixels from a region of a layer of an omezarr dataset
-//  * @param metadata a ZarrMetadata from which to request a slice of voxels
-//  * @param r a slice object, describing the requested region of data - note that it is quite possible to request
-//  * data that is not "just" a slice. The semantics of this slice object should match up with conventions in numpy or other multidimensional array tools:
-//  * @see https://zarrita.dev/slicing.html
-//  * @param level the layer within the LOD pyramid of the OME-Zarr dataset.
-//  * @returns the requested chunk of image data from the given layer of the omezarr LOD pyramid. Note that if the given layerIndex is invalid, it will be treated as though it is the highest index possible.
-//  * @throws an error if the request results in anything of lower-or-equal dimensionality than a single value
-//  */
-// export async function loadSlice(
-//     metadata: OmeZarrMetadata,
-//     r: ZarrRequest,
-//     level: OmeZarrShapedDataset,
-//     signal?: AbortSignal,
-// ) {
-//     // put the request in native order
-//     const store = new zarr.FetchStore(metadata.url);
-//     const scene = metadata.attrs.multiscales[0];
-//     const { axes } = scene;
-//     if (!level) {
-//         const message = 'invalid Zarr data: no datasets found';
-//         logger.error(message);
-//         throw new VisZarrDataError(message);
-//     }
-//     const arr = metadata.arrays.find((a) => a.path === level.path);
-//     if (!arr) {
-//         const message = `cannot load slice: no array found for path [${level.path}]`;
-//         logger.error(message);
-//         throw new VisZarrDataError(message);
-//     }
-//     const { raw } = await loadZarrArrayFileFromStore(store, arr.path, metadata.zarrVersion, false);
-//     const result = await zarr.get(raw, buildQuery(r, axes, level.shape), { opts: { signal: signal ?? null } });
-//     if (typeof result === 'number') {
-//         throw new Error('oh noes, slice came back all weird');
-//     }
-//     return {
-//         shape: result.shape,
-//         buffer: result,
-//     };
-// }
-// //     return [dataset.shape[uI], dataset.shape[vI]] as const;
-// // }
+    /**
+     * Loads and returns any voxel data from this OME-Zarr that matches the requested segment of the overall fileset,
+     * as defined by a multiscale, a dataset, and a chunk slice.
+     * @see https://zarrita.dev/slicing.html for more details on how slicing is handled.
+     * @param spec The data request, specifying the coordinates within the OME-Zarr's data from which to source voxel data
+     * @param signal An optional abort signal with which to cancel this request if necessary
+     * @returns the loaded slice data
+     */
+    async loadData(
+        spec: ZarrDataSpecifier,
+        signal?: AbortSignal | undefined,
+    ): Promise<ZarritaOmeZarrData<zarr.DataType>> {
+        if (this.#fileset === null) {
+            throw new VisZarrDataError('cannot load array data until metadata has been loaded; please call loadMetadata() first');
+        }
+        const axes = this.#fileset.getMultiscale(spec.level.multiscale)?.axes;
+        if (axes === undefined) {
+            const message = 'invalid Zarr data: no axes found for specified multiscale';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+        const path = this.#fileset.getLevel(spec.level)?.path;
+        if (path === undefined) {
+            const message = 'invalid Zarr data: no path found for specified dataset';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+        const arr = this.#zarritaArrays.get(`/${path}`);
+        if (arr === undefined) {
+            const message = 'invalid Zarr data: no array found for specified dataset';
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+        const shape = arr.shape;
+        const query = buildSliceQuery(spec.slice, axes, shape);
+        const result = await zarr.get(arr, query, { opts: { signal: signal ?? null } });
+        if (typeof result === 'number') {
+            const message = "could not fetch Zarr slice: parsed slice data's shape was undefined";
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+        return {
+            shape: result.shape,
+            buffer: result,
+        };
+    }
+}
