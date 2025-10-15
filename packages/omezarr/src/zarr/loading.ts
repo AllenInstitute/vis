@@ -37,7 +37,46 @@ const loadGroup = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZa
         }
         throw e;
     }
-};
+}
+
+// type OmeZarrArrayMetadataLoad = {
+//     metadata: OmeZarrArrayMetadata;
+//     raw: zarr.Array<zarr.DataType, zarr.FetchStore>;
+// };
+
+// export async function loadZarrArrayFile(
+//     res: WebResource,
+//     path: string,
+//     version = 2,
+//     loadV2Attrs = true,
+// ): Promise<OmeZarrArrayMetadata> {
+//     const url = getResourceUrl(res);
+//     const store = new zarr.FetchStore(url);
+//     const result = await loadZarrArrayFileFromStore(store, path, version, loadV2Attrs);
+//     return result.metadata;
+// }
+
+// export async function loadZarrArrayFileFromStore(
+//     store: zarr.FetchStore,
+//     path: string,
+//     version = 2,
+//     loadV2Attrs = true,
+// ): Promise<OmeZarrArrayMetadataLoad> {
+//     const root = zarr.root(store);
+//     let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
+//     if (version === 3) {
+//         array = await zarr.open.v3(root.resolve(path), { kind: 'array' });
+//     } else if (version === 2) {
+//         array = await zarr.open.v2(root.resolve(path), { kind: 'array', attrs: loadV2Attrs });
+//     } else {
+//         const message = `unsupported Zarr format version specified: ${version}`;
+//         logger.error(message);
+//         throw new VisZarrDataError(message);
+//     }
+//     const { shape, attrs } = array;
+//     try {
+//         return { metadata: { path, shape, attrs }, raw: array };
+// };
 
 const loadArray = async (location: zarr.Location<ZarrFetchStore>): Promise<OmeZarrArrayLoadSet<ZarrFetchStore>> => {
     const array = await zarr.open(location, { kind: 'array' });
@@ -266,5 +305,73 @@ export async function loadOmeZarrFileset(
 //         return undefined;
 //     }
 
-//     return [dataset.shape[uI], dataset.shape[vI]] as const;
+    // return [dataset.shape[uI], dataset.shape[vI]] as const;
 // }
+
+// feel free to freak out if the request is over or under determined or whatever
+// export function buildQuery(r: Readonly<ZarrRequest>, axes: readonly OmeZarrAxis[], shape: readonly number[]) {
+//     const ordered = axes.map((a) => r[a.name as ZarrDimension]);
+//     // if any are undefined, throw up
+//     if (ordered.some((a) => a === undefined)) {
+//         throw new VisZarrDataError('request does not match expected dimensions of OME-Zarr dataset');
+//     }
+
+//     return ordered.map((d, i) => {
+//         const bounds = { min: 0, max: shape[i] };
+//         if (d === null) {
+//             return d;
+//         }
+//         if (typeof d === 'number') {
+//             return limit(bounds, d);
+//         }
+//         return zarr.slice(limit(bounds, d.min), limit(bounds, d.max));
+//     });
+// }
+
+// export async function explain(z: OmeZarrMetadata) {
+//     logger.dir(z);
+// }
+
+// /**
+//  * get voxels / pixels from a region of a layer of an omezarr dataset
+//  * @param metadata a ZarrMetadata from which to request a slice of voxels
+//  * @param r a slice object, describing the requested region of data - note that it is quite possible to request
+//  * data that is not "just" a slice. The semantics of this slice object should match up with conventions in numpy or other multidimensional array tools:
+//  * @see https://zarrita.dev/slicing.html
+//  * @param level the layer within the LOD pyramid of the OME-Zarr dataset.
+//  * @returns the requested chunk of image data from the given layer of the omezarr LOD pyramid. Note that if the given layerIndex is invalid, it will be treated as though it is the highest index possible.
+//  * @throws an error if the request results in anything of lower-or-equal dimensionality than a single value
+//  */
+// export async function loadSlice(
+//     metadata: OmeZarrMetadata,
+//     r: ZarrRequest,
+//     level: OmeZarrShapedDataset,
+//     signal?: AbortSignal,
+// ) {
+//     // put the request in native order
+//     const store = new zarr.FetchStore(metadata.url);
+//     const scene = metadata.attrs.multiscales[0];
+//     const { axes } = scene;
+//     if (!level) {
+//         const message = 'invalid Zarr data: no datasets found';
+//         logger.error(message);
+//         throw new VisZarrDataError(message);
+//     }
+//     const arr = metadata.arrays.find((a) => a.path === level.path);
+//     if (!arr) {
+//         const message = `cannot load slice: no array found for path [${level.path}]`;
+//         logger.error(message);
+//         throw new VisZarrDataError(message);
+//     }
+//     const { raw } = await loadZarrArrayFileFromStore(store, arr.path, metadata.zarrVersion, false);
+//     const result = await zarr.get(raw, buildQuery(r, axes, level.shape), { opts: { signal: signal ?? null } });
+//     if (typeof result === 'number') {
+//         throw new Error('oh noes, slice came back all weird');
+//     }
+//     return {
+//         shape: result.shape,
+//         buffer: result,
+//     };
+// }
+// //     return [dataset.shape[uI], dataset.shape[vI]] as const;
+// // }

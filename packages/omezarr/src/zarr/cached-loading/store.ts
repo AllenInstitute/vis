@@ -1,4 +1,4 @@
-import { type Cacheable, logger, PriorityCache, WorkerPool } from '@alleninstitute/vis-core';
+import { type Cacheable, logger, PriorityCache, type WorkerInit, WorkerPool } from '@alleninstitute/vis-core';
 import * as zarr from 'zarrita';
 import { FETCH_MESSAGE_TYPE, type FetchResponseMessage, isFetchResponseMessage } from './fetch-data.interface';
 
@@ -102,6 +102,7 @@ export interface RequestHandler<RequestType, ResponseType> {
         transfers: Transferable[],
         signal?: AbortSignal | undefined,
     ): Promise<ResponseType>;
+    destroy: () => void;
 }
 
 export class CachingMultithreadedFetchStore extends zarr.FetchStore {
@@ -163,7 +164,19 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         this.#pendingRequests = new Map();
         this.#pendingRequestKeyCounts = new Map();
     }
-
+    /**
+     * Warning - nothing in this class should be considered useable after
+     * calling this method - any/all methods called should be expected to be
+     * completely unreliable. dont call me unless you're about to dispose of all references to this object
+     */
+    destroy() {
+        // release all the web-workers!
+        this.#workerPool.destroy();
+        // todo: reject all promises
+        this.#pendingRequests.forEach((p) => {
+            p.reject('cancelled');
+        });
+    }
     protected score(key: CacheKey): number {
         return this.#priorityByTimestamp.get(key) ?? 0;
     }
@@ -297,8 +310,9 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         return this.#doFetch(key, range, workerOptions, abort);
     }
 }
+
 export class ZarrFetchStore extends CachingMultithreadedFetchStore {
-    constructor(url: string | URL, workerModule: URL, options?: CachingMultithreadedFetchStoreOptions) {
+    constructor(url: string | URL, workerModule: WorkerInit, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, new WorkerPool(options?.numWorkers ?? DEFAULT_NUM_WORKERS, workerModule), options);
     }
 }

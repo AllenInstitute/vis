@@ -70,6 +70,7 @@ export {} from './zarr/omezarr-transforms';
 //     defaultPlanarDecoder,
 //     type OmeZarrVoxelTileImageDecoder,
 // } from './planar-view/renderer';
+export { decoderFactory } from './zarr/cache-lower';
 export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';
 export {
     type TransferrableRequestInit,
