@@ -44,8 +44,6 @@ export {
     type OmeZarrConnection,
 } from './zarr/loading';
 
-export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
-
 export {
     type OmeZarrLevelSpecifier,
     type OmeZarrMultiscaleSpecifier,
