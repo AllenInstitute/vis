@@ -89,4 +89,33 @@ export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
             url: 's3://public-development-802451596237-us-west-2/tissuecyte/478097069/ome_zarr_conversion/478097069.zarr/',
         },
     },
+    {
+        value: 'opt10',
+        label: 'Tissuecyte #823818122',
+        zarrVersion: 2,
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
+        },
+    },
+    {
+        value: 'opt11',
+        label: 'Tissuecyte #1196424284',
+        zarrVersion: 2,
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://allen-genetic-tools/tissuecyte/1196424284/ome_zarr_conversion/1196424284.zarr/',
+        },
+    },
+    {
+        value: 'opt12',
+        label: 'Neuroglancer Prototype VERSA #0500408166',
+        zarrVersion: 2,
+        res: {
+            type: 'https',
+            url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
+        }
+    }
 ];

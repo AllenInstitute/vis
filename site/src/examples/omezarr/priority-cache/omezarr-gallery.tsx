@@ -2,21 +2,11 @@ import type { WebResource } from '@alleninstitute/vis-core';
 import { SharedCacheProvider } from '../../common/react/priority-cache-provider';
 import { OmeZarrView } from './omezarr-client';
 import type { vec2 } from '@alleninstitute/vis-geometry';
+import { OMEZARR_FILESET_OPTIONS } from 'src/examples/common/filesets/omezarr/demo-filesets';
 
-const tissuecyte_1: WebResource = {
-    type: 's3',
-    region: 'us-west-2',
-    url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
-};
-const tissuecyte_2: WebResource = {
-    type: 's3',
-    region: 'us-west-2',
-    url: 's3://allen-genetic-tools/tissuecyte/1196424284/ome_zarr_conversion/1196424284.zarr/',
-};
-const versa: WebResource = {
-    type: 'https',
-    url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
-};
+const tissuecyte_1: WebResource = OMEZARR_FILESET_OPTIONS[11].res;
+const tissuecyte_2: WebResource = OMEZARR_FILESET_OPTIONS[12].res;
+const versa: WebResource = OMEZARR_FILESET_OPTIONS[13].res;
 
 const screenSize: vec2 = [300, 300];
 export function OmezarrGalleryDemo() {
