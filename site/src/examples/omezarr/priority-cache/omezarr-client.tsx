@@ -24,7 +24,7 @@ const workerFactory = () => new Worker(new URL('../omezarr-v3/fetch.worker.ts', 
 export function OmeZarrView(props: Props) {
     const { screenSize } = props;
     const server = useContext(SharedCacheContext);
-    const [omeZarr, setOmeZarr] = useState<OmeZarrConnection | null>(null);
+    const [omezarr, setOmezarr] = useState<OmeZarrConnection | null>(null);
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeParam, setPlaneParam] = useState(0.5);
     const [dragging, setDragging] = useState(false);
@@ -35,7 +35,7 @@ export function OmeZarrView(props: Props) {
     const load = (res: WebResource) => {
         const newOmeZarr = new CachedOmeZarrConnection(res, workerFactory);
         newOmeZarr.loadMetadata().then((v) => {
-            setOmeZarr(newOmeZarr);
+            setOmezarr(newOmeZarr);
             setPlaneParam(0.5);
             const level = v.getLevel({ index: 0 });
             if (!level) {
@@ -51,8 +51,8 @@ export function OmeZarrView(props: Props) {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handleScrollSlice = (next: 1 | -1) => {
-        if (omeZarr?.metadata) {
-            const step = omeZarr.metadata.nextSliceStep(PLANE_XY, view, screenSize);
+        if (omezarr?.metadata) {
+            const step = omezarr.metadata.nextSliceStep(PLANE_XY, view, screenSize);
             setPlaneParam((prev) => Math.max(0, Math.min(prev + next * (step ?? 1), 1)));
         }
     };
@@ -92,25 +92,25 @@ export function OmeZarrView(props: Props) {
                 });
             });
             setRenderer(renderer);
-            if (omeZarr) {
-                omeZarr.close(); // VERY IMPORTANT! Cleans up soon-to-be-unused workers
+            if (omezarr) {
+                omezarr.close(); // VERY IMPORTANT! Cleans up soon-to-be-unused workers
             }
             load(props.res);
         }
     }, [cnvs.current, props.res]);
 
     useEffect(() => {
-        if (omeZarr?.metadata && omeZarr.metadata !== null && cnvs.current && renderer) {
-            const settings = makeRenderSettings(omeZarr?.metadata, screenSize, view, planeParam, defaultGamut);
+        if (omezarr?.metadata && omezarr.metadata !== null && cnvs.current && renderer) {
+            const settings = makeRenderSettings(omezarr?.metadata, screenSize, view, planeParam, defaultGamut);
             const ctx = cnvs.current.getContext('2d');
             if (ctx) {
-                renderer?.render(omeZarr.metadata, settings);
+                renderer?.render(omezarr.metadata, settings);
                 requestAnimationFrame(() => {
                     renderer?.copyPixels(ctx);
                 });
             }
         }
-    }, [omeZarr, planeParam, view, tick]);
+    }, [omezarr, planeParam, view, tick]);
 
     useEffect(() => {
         if (cnvs?.current) {

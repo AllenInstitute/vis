@@ -22,8 +22,8 @@ const workerFactory = () => new Worker(new URL('./fetch.worker.ts', import.meta.
 export function OmezarrDemo() {
     const [customUrl, setCustomUrl] = useState<string>('');
     const [selectedDemoOptionValue, setSelectedDemoOptionValue] = useState<string>('');
-    const [omeZarr, setOmeZarr] = useState<OmeZarrConnection | null>(null);
-    const [omeZarrJson, setOmeZarrJson] = useState<string>('');
+    const [omezarr, setOmezarr] = useState<OmeZarrConnection | null>(null);
+    const [omezarrJson, setOmezarrJson] = useState<string>('');
     const [view, setView] = useState(Box2D.create([0, 0], [1, 1]));
     const [planeIndex, setPlaneParam] = useState(0);
     const [dragging, setDragging] = useState(false);
@@ -34,17 +34,17 @@ export function OmezarrDemo() {
 
     const settings: RenderSettings | undefined = useMemo(
         () =>
-            omeZarr?.metadata
-                ? makeRenderSettings(omeZarr.metadata, screenSize, view, planeIndex, defaultGamut)
+            omezarr?.metadata
+                ? makeRenderSettings(omezarr.metadata, screenSize, view, planeIndex, defaultGamut)
                 : undefined,
-        [omeZarr, view, planeIndex],
+        [omezarr, view, planeIndex],
     );
 
     const load = async (res: WebResource) => {
         const newOmezarr = new CachedOmeZarrConnection(res, workerFactory);
         newOmezarr.loadMetadata().then((metadata) => {
-            setOmeZarr(newOmezarr);
-            setOmeZarrJson(JSON.stringify(metadata, undefined, 4));
+            setOmezarr(newOmezarr);
+            setOmezarrJson(JSON.stringify(metadata, undefined, 4));
             const level = metadata.getLevel({ index: 0 });
             if (!level) {
                 throw new Error('dataset 0 does not exist!');
@@ -59,10 +59,10 @@ export function OmezarrDemo() {
 
     const handleOptionSelected = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedValue = e.target.value;
-        if (omeZarr !== null) {
-            omeZarr.close(); // VERY IMPORTANT! Cleans up web workers that won't be used anymore
+        if (omezarr !== null) {
+            omezarr.close(); // VERY IMPORTANT! Cleans up web workers that won't be used anymore
         }
-        setOmeZarr(null);
+        setOmezarr(null);
         setSelectedDemoOptionValue(selectedValue);
         if (selectedValue && selectedValue !== 'custom') {
             const option = OMEZARR_FILESET_OPTIONS.find((v) => v.value === selectedValue);
@@ -87,8 +87,8 @@ export function OmezarrDemo() {
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handlePlaneIndex = (next: 1 | -1) => {
-        if (omeZarr?.metadata) {
-            const step = omeZarr.metadata.nextSliceStep(PLANE_XY, view, screenSize);
+        if (omezarr?.metadata) {
+            const step = omezarr.metadata.nextSliceStep(PLANE_XY, view, screenSize);
             setPlaneParam((prev) => Math.max(0, Math.min(prev + next * (step ?? 1), 1)));
         }
     };
@@ -167,9 +167,9 @@ export function OmezarrDemo() {
                                     backgroundColor: '#777',
                                 }}
                             >
-                                {omeZarr && settings && (
+                                {omezarr && settings && (
                                     <OmeZarrViewer
-                                        omezarr={omeZarr}
+                                        omezarr={omezarr}
                                         id={omezarrId}
                                         screenSize={screenSize}
                                         settings={settings}
@@ -189,11 +189,11 @@ export function OmezarrDemo() {
                                     justifyContent: 'space-between',
                                 }}
                             >
-                                {(omeZarr && (
+                                {(omezarr && (
                                     <span>
                                         Slide{' '}
-                                        {Math.floor(planeIndex * (omeZarr.metadata?.maxOrthogonal(PLANE_XY) ?? 1))} of{' '}
-                                        {omeZarr.metadata?.maxOrthogonal(PLANE_XY) ?? 0}
+                                        {Math.floor(planeIndex * (omezarr.metadata?.maxOrthogonal(PLANE_XY) ?? 1))} of{' '}
+                                        {omezarr.metadata?.maxOrthogonal(PLANE_XY) ?? 0}
                                     </span>
                                 )) || <span>No image loaded</span>}
                                 <div style={{}}>
@@ -216,7 +216,7 @@ export function OmezarrDemo() {
                         cols={100}
                         rows={36}
                         style={{ resize: 'none' }}
-                        value={omeZarrJson}
+                        value={omezarrJson}
                     />
                 </div>
             </div>
