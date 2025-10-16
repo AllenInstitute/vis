@@ -27,7 +27,6 @@ type Thing = {
     dataset: OmeZarrMetadata;
     settings: RenderSettings;
 };
-
 function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): { [k in keyof T]: R } {
     return (Object.keys(obj) as (keyof T)[]).reduce(
         // typecast is annoyingly necessary in this case to avoid a linting warning
