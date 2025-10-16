@@ -116,6 +116,6 @@ export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
         res: {
             type: 'https',
             url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
-        }
-    }
+        },
+    },
 ];
