@@ -1,4 +1,4 @@
-import { OmeZarrMetadata } from "../zarr/metadata";
+import { OmeZarrMetadata } from '../zarr/metadata';
 
 export const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
     new URL('https://allen-genetic-tools.s3.us-west-2.amazonaws.com/tissuecyte/1263343692/ome-zarr/'),
