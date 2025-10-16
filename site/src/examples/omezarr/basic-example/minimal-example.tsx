@@ -1,9 +1,9 @@
-import { RenderServerProvider } from "src/examples/common/react/render-server-provider";
-import { SliceView } from "./sliceview";
-import { useEffect, useState } from "react";
-import { loadMetadata, type OmeZarrMetadata } from "@alleninstitute/vis-omezarr";
-import { logger } from "@alleninstitute/vis-core";
-import { OMEZARR_DEMO_FILESETS } from "src/examples/common/filesets/omezarr";
+import { RenderServerProvider } from 'src/examples/common/react/render-server-provider';
+import { SliceView } from './sliceview';
+import { useEffect, useState } from 'react';
+import { loadMetadata, type OmeZarrMetadata } from '@alleninstitute/vis-omezarr';
+import { logger } from '@alleninstitute/vis-core';
+import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
 
 /**
  * HEY!!!

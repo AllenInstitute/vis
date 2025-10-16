@@ -1,4 +1,4 @@
-import type { WebResource } from "@alleninstitute/vis-core";
+import type { WebResource } from '@alleninstitute/vis-core';
 
 export type OmeZarrDemoFileset = { value: string; label: string; res: WebResource };
 
@@ -78,6 +78,6 @@ export const OMEZARR_DEMO_FILESETS: OmeZarrDemoFileset[] = [
             type: 's3',
             region: 'us-west-2',
             url: 's3://allen-genetic-tools/tissuecyte/1196424284/ome_zarr_conversion/1196424284.zarr/',
-        }
+        },
     },
 ];
