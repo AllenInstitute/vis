@@ -3,6 +3,7 @@ export {
     buildAsyncOmezarrRenderer,
     makeRGBColorChannels,
     makeRenderSettings,
+    toZarrDataSpecifier,
     type Decoder,
     type VoxelTileImage,
     type RenderSettings,
@@ -44,6 +45,7 @@ export {
 export {
     CachedOmeZarrConnection,
     type OmeZarrConnection,
+    type ZarrDataSpecifier,
 } from './zarr/connection';
 
 export {

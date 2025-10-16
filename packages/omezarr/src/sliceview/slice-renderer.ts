@@ -89,7 +89,7 @@ export function makeRenderSettings(
     };
 }
 
-function toZarrDataSpecifier(tile: VoxelTile, channel: number): ZarrDataSpecifier {
+export function toZarrDataSpecifier(tile: VoxelTile, channel: number): ZarrDataSpecifier {
     const { plane, orthoVal, bounds } = tile;
     const { minCorner: min, maxCorner: max } = bounds;
     const u = { min: min[0], max: max[0] };
