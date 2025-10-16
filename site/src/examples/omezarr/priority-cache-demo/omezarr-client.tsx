@@ -10,10 +10,11 @@ import {
     nextSliceStep,
 } from '@alleninstitute/vis-omezarr';
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
-import { zoom, pan } from '../common/camera';
+import { zoom, pan } from '../../common/camera';
 import { decoderFactory } from '@alleninstitute/vis-omezarr';
-import { SharedCacheContext } from '../common/react/priority-cache-provider';
+import { SharedCacheContext } from '../../common/react/priority-cache-provider';
 import { buildConnectedRenderer } from './render-utils';
+
 const defaultInterval: Interval = { min: 0, max: 80 };
 
 function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
@@ -45,7 +46,9 @@ type Props = {
     res: WebResource;
     screenSize: vec2;
 };
-const WORKERS = new URL('../omezarr-v3/fetch.worker.ts', import.meta.url);
+
+const WORKERS = new URL('../../common/loaders/ome-zarr/fetch.worker.ts', import.meta.url);
+
 // const WORKERS = new URL('../common/loaders/ome-zarr/fetch-slice.worker', import.meta.url);
 export function OmeZarrView(props: Props) {
     const { screenSize } = props;

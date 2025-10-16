@@ -1,12 +1,8 @@
-/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <explanation> */
-/** biome-ignore-all lint/performance/noAccumulatingSpread: <explanation> */
-import type { vec2 } from '@alleninstitute/vis-geometry';
-import type { WebResource } from '@alleninstitute/vis-core';
-import { SharedCacheProvider } from '../common/react/priority-cache-provider';
-import { OmeZarrView } from './omezarr-client';
-type DemoOption = { value: string; label: string; res: WebResource };
+import type { WebResource } from "@alleninstitute/vis-core";
 
-const demoOptions: DemoOption[] = [
+export type OmeZarrDemoFileset = { value: string; label: string; res: WebResource };
+
+export const OMEZARR_DEMO_FILESETS: OmeZarrDemoFileset[] = [
     {
         value: 'opt1',
         label: 'VERSA OME-Zarr Example (HTTPS) (color channels: [R, G, B])',
@@ -41,6 +37,15 @@ const demoOptions: DemoOption[] = [
     },
     {
         value: 'opt5',
+        label: 'Smart-SPIM (experimental)',
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://aind-open-data/SmartSPIM_787715_2025-04-08_18-33-36_stitched_2025-04-09_22-42-59/image_tile_fusing/OMEZarr/Ex_445_Em_469.zarr',
+        },
+    },
+    {
+        value: 'opt6',
         label: 'SmartSpim Lightsheet',
         res: {
             type: 's3',
@@ -49,7 +54,16 @@ const demoOptions: DemoOption[] = [
         },
     },
     {
-        value: 'opt6',
+        value: 'opt7',
+        label: 'V3 Zarr Example Image (S3) (color channels: [R, G, B])',
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://h301-scanning-802451596237-us-west-2/2402091625/ome_zarr_conversion/1458501514.zarr/',
+        },
+    },
+    {
+        value: 'opt8',
         label: 'STPT V3 example',
         res: {
             type: 's3',
@@ -57,14 +71,13 @@ const demoOptions: DemoOption[] = [
             url: 's3://public-development-802451596237-us-west-2/tissuecyte/478097069/ome_zarr_conversion/478097069.zarr/',
         },
     },
+    {
+        value: 'opt9',
+        label: 'Tissuecyte #1196424284',
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://allen-genetic-tools/tissuecyte/1196424284/ome_zarr_conversion/1196424284.zarr/',
+        }
+    },
 ];
-
-const screenSize: vec2 = [800, 800];
-
-export function OmezarrDemo() {
-    return (
-        <SharedCacheProvider>
-            <OmeZarrView res={demoOptions[5].res} screenSize={screenSize} />
-        </SharedCacheProvider>
-    );
-}
