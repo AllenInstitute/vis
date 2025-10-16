@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <this is a demo, but not a demo of correct react-hook useage!> */
+/** biome-ignore-all lint/correctness/useExhaustiveDependencies: this is a demo, but not a demo of correct react-hook useage! */
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import { Box2D, PLANE_XY, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
 import {
@@ -11,7 +11,6 @@ import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { zoom, pan } from '../../common/camera';
 import { SharedCacheContext } from '../../common/react/priority-cache-provider';
 import { buildConnectedRenderer } from './render-utils';
-
 const defaultGamut: Interval = { min: 0, max: 80 };
 
 type Props = {

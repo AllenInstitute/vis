@@ -1,8 +1,8 @@
 import type { WebResource } from '@alleninstitute/vis-core';
 
-export type OmeZarrFilesetOption = { value: string; label: string; zarrVersion: number; res: WebResource };
+export type OmeZarrDemoFileset = { value: string; label: string; zarrVersion: number; res: WebResource };
 
-export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
+export const OMEZARR_DEMO_FILESETS: OmeZarrDemoFileset[] = [
     {
         value: 'opt1',
         label: 'VERSA OME-Zarr Example (HTTPS) (color channels: [R, G, B])',
@@ -51,6 +51,16 @@ export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
     },
     {
         value: 'opt6',
+        label: 'SmartSPIM Lightsheet',
+        zarrVersion: 2,
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://allen-genetic-tools/lightsheet/SmartSPIM_741764_2024-07-25_19-33-17_stitched_2024-07-26_16-49-41/OMEZarr/sagittal_MIP.zarr/',
+        },
+    },
+    {
+        value: 'opt7',
         label: 'VS200 Brightfield #1458501514 (Zarr v3)',
         zarrVersion: 3,
         res: {
@@ -60,27 +70,7 @@ export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
         },
     },
     {
-        value: 'opt7',
-        label: 'VS200 Epifluorescence #1161134570 (Zarr v3)',
-        zarrVersion: 3,
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://cortex-aav-toolbox-802451596237-us-west-2/epifluorescence/1161134570/ome_zarr_conversion/1161134570.zarr',
-        },
-    },
-    {
         value: 'opt8',
-        label: 'VERSA Epifluorescence #1161864579 (Zarr v3)',
-        zarrVersion: 3,
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://cortex-aav-toolbox-802451596237-us-west-2/epifluorescence/1161864579/ome_zarr_conversion/1161864579.zarr',
-        },
-    },
-    {
-        value: 'opt9',
         label: 'STPT #802451596237 (Zarr v3)',
         zarrVersion: 3,
         res: {
@@ -90,17 +80,7 @@ export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
         },
     },
     {
-        value: 'opt10',
-        label: 'Tissuecyte #823818122',
-        zarrVersion: 2,
-        res: {
-            type: 's3',
-            region: 'us-west-2',
-            url: 's3://allen-genetic-tools/tissuecyte/823818122/ome_zarr_conversion/823818122.zarr/',
-        },
-    },
-    {
-        value: 'opt11',
+        value: 'opt9',
         label: 'Tissuecyte #1196424284',
         zarrVersion: 2,
         res: {
@@ -110,12 +90,23 @@ export const OMEZARR_FILESET_OPTIONS: OmeZarrFilesetOption[] = [
         },
     },
     {
-        value: 'opt12',
-        label: 'Neuroglancer Prototype VERSA #0500408166',
-        zarrVersion: 2,
+        value: 'opt10',
+        label: 'VS200 Epifluorescence #1161134570 (Zarr v3)',
+        zarrVersion: 3,
         res: {
-            type: 'https',
-            url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/',
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://cortex-aav-toolbox-802451596237-us-west-2/epifluorescence/1161134570/ome_zarr_conversion/1161134570.zarr',
+        },
+    },
+    {
+        value: 'opt11',
+        label: 'VERSA Epifluorescence #1161864579 (Zarr v3)',
+        zarrVersion: 3,
+        res: {
+            type: 's3',
+            region: 'us-west-2',
+            url: 's3://cortex-aav-toolbox-802451596237-us-west-2/epifluorescence/1161864579/ome_zarr_conversion/1161864579.zarr',
         },
     },
 ];

@@ -1,7 +1,7 @@
 import { CachedOmeZarrConnection, type OmeZarrConnection } from '@alleninstitute/vis-omezarr';
 import { useEffect, useState } from 'react';
 import { SliceView } from './sliceview';
-import { OMEZARR_FILESET_OPTIONS } from '../../common/filesets/omezarr/demo-filesets';
+import { OMEZARR_DEMO_FILESETS } from '../../common/filesets/omezarr';
 import { RenderServerProvider } from '../../common/react/render-server-provider';
 
 /**
@@ -17,7 +17,7 @@ export function BasicOmeZarrDemo() {
 
     useEffect(() => {
         const connection = new CachedOmeZarrConnection(
-            OMEZARR_FILESET_OPTIONS[0].res,
+            OMEZARR_DEMO_FILESETS[0].res,
             () => new Worker(new URL('../../common/loaders/fetch.worker.ts', import.meta.url)),
         );
         setConnection(connection);

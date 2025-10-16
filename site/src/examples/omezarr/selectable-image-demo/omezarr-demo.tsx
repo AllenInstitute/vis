@@ -11,7 +11,7 @@ import { useId, useMemo, useState } from 'react';
 import { pan, zoom } from '../../common/camera';
 import { RenderServerProvider } from '../../common/react/render-server-provider';
 import { OmeZarrViewer } from './omezarr-viewer';
-import { OMEZARR_FILESET_OPTIONS } from '../../common/filesets/omezarr/demo-filesets';
+import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
 
 const screenSize: vec2 = [800, 800];
 
@@ -65,7 +65,7 @@ export function OmezarrDemo() {
         setOmezarr(null);
         setSelectedDemoOptionValue(selectedValue);
         if (selectedValue && selectedValue !== 'custom') {
-            const option = OMEZARR_FILESET_OPTIONS.find((v) => v.value === selectedValue);
+            const option = OMEZARR_DEMO_FILESETS.find((v) => v.value === selectedValue);
             if (option) {
                 load(option.res);
             }
@@ -125,7 +125,7 @@ export function OmezarrDemo() {
                             <option value="" key="default">
                                 -- Please select an option --
                             </option>
-                            {OMEZARR_FILESET_OPTIONS.map((opt) => (
+                            {OMEZARR_DEMO_FILESETS.map((opt) => (
                                 <option value={opt.value} key={opt.value}>
                                     {opt.label}
                                 </option>
