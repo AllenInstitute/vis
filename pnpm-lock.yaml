@@ -84,8 +84,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zarrita:
-        specifier: 0.5.3
-        version: 0.5.3
+        specifier: 0.5.4
+        version: 0.5.4
       zod:
         specifier: 4.1.12
         version: 4.1.12
@@ -4394,8 +4394,8 @@ packages:
   zarrita@0.5.1:
     resolution: {integrity: sha512-cyujP70BOl5DiXuLtM+0j9nq/pAov4SKXRYIQQOVnk2TfBg/jopX+FXLbqkq3ULOxFLB5AwkPbSp5KvZXoJrbQ==}
 
-  zarrita@0.5.3:
-    resolution: {integrity: sha512-to2JRq9nHwYdhWEwJwytHYdMYC6I0f2vKUAQfYkgrwwy8OjShhwmv4sH9drzyV3sLzdy7XS9N1ipdMA/Qjspow==}
+  zarrita@0.5.4:
+    resolution: {integrity: sha512-i88iN2+HqIQ+uiCEWLfhjbYNXAJD7IrM4h3lFwFclfqEOOhxp10amRWtqmgN5jbuy3+h0LwdyLVVzk4y9rTLgg==}
 
   zod-to-json-schema@3.24.6:
     resolution: {integrity: sha512-h/z3PKvcTcTetyjl1fkj79MHNEjm+HpD6NXheWjzOekY7kV+lwDYnHw+ivHkijnCSMz1yJaWBD9vu/Fcmk+vEg==}
@@ -9389,7 +9389,7 @@ snapshots:
       '@zarrita/storage': 0.1.3
       numcodecs: 0.3.2
 
-  zarrita@0.5.3:
+  zarrita@0.5.4:
     dependencies:
       '@zarrita/storage': 0.1.3
       numcodecs: 0.3.2
