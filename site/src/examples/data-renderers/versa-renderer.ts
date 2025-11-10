@@ -8,18 +8,17 @@ import {
     type vec4,
 } from '@alleninstitute/vis-geometry';
 import {
+    type OmeZarrConnection,
     type OmeZarrMetadata,
-    type ZarrRequest,
-    pickBestScale,
-    planeSizeInVoxels,
-    sizeInUnits,
+    type ZarrDataSpecifier,
+    toZarrDataSpecifier,
+    type VoxelTile,
 } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-core';
 import omit from 'lodash/omit';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 import type { Camera } from '../common/camera';
-import { getSlicePool } from '../common/loaders/ome-zarr/sliceWorkerPool';
 
 const TILE_SIZE = 256;
 
@@ -163,75 +162,44 @@ type Bfr = { type: 'texture2D'; data: REGL.Texture2D };
 
 export type VoxelSliceRenderSettings = {
     regl: REGL.Regl;
-    metadata: OmeZarrMetadata;
+    connection: OmeZarrConnection;
     view: box2D;
     rotation: number;
     gamut: Record<'R' | 'G' | 'B', { gamut: Interval; index: number }>;
     viewport: REGL.BoundingBox;
     target: REGL.Framebuffer2D | null;
 };
-export type AxisAlignedPlane = 'xy' | 'yz' | 'xz';
-export type VoxelTile = {
-    plane: CartesianPlane;
-    realBounds: box2D;
-    bounds: box2D; // in voxels, in the plane
-    planeIndex: number;
-    layerIndex: number;
-    // time and channel are always = 0, for now
-};
 
-function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
-    const { plane, planeIndex, bounds } = tile;
-    const { minCorner: min, maxCorner: max } = bounds;
-    const u = { min: min[0], max: max[0] };
-    const v = { min: min[1], max: max[1] };
-    switch (plane.axes) {
-        case 'xy':
-            return {
-                x: u,
-                y: v,
-                t: 0,
-                c: channel,
-                z: planeIndex,
-            };
-        case 'xz':
-            return {
-                x: u,
-                z: v,
-                t: 0,
-                c: channel,
-                y: planeIndex,
-            };
-        case 'yz':
-            return {
-                y: u,
-                z: v,
-                t: 0,
-                c: channel,
-                x: planeIndex,
-            };
-    }
-}
+// export type VoxelTile = {
+//     plane: CartesianPlane;
+//     realBounds: box2D;
+//     bounds: box2D; // in voxels, in the plane
+//     planeIndex: number;
+//     layerIndex: number;
+//     // time and channel are always = 0, for now
+// };
+
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-    return `${settings.metadata.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${
+    return `${settings.connection.url}_${JSON.stringify(omit(item, 'desiredResolution'))}_ch=${
         settings.gamut[col as 'R' | 'G' | 'B'].index
     }`;
 }
 
-function reqSlice(dataset: OmeZarrMetadata, req: ZarrRequest, layerIndex: number) {
-    const layer = dataset.getShapedDataset(layerIndex, 0);
+function reqSlice(connection: OmeZarrConnection, spec: ZarrDataSpecifier, layerIndex: number) {
+    const layer = connection.metadata?.getLevel({ index: layerIndex, multiscale: { index: 0 } });
     if (!layer) {
         return Promise.reject('no such layer');
     }
-    return getSlicePool().requestSlice(dataset, req, layer);
+    return connection.loadData<'float32'>(spec);
 }
+
 const LUMINANCE = 'luminance';
 export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, _signal?: AbortSignal) {
-    const { metadata, regl } = settings;
+    const { connection, regl } = settings;
     const handleResponse = (vxl: Awaited<ReturnType<typeof reqSlice>>) => {
-        const { shape, data } = vxl;
+        const { shape, buffer } = vxl;
         const r = regl.texture({
-            data,
+            data: new Float32Array(buffer.data),
             width: shape[1],
             height: shape[0], // TODO this swap is sus
             format: LUMINANCE,
@@ -241,15 +209,27 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
     // lets hope the browser caches our 3x repeat calls to teh same data...
     return {
         R: async () => {
-            const vxl = await reqSlice(metadata, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
+            const vxl = await reqSlice(
+                connection,
+                toZarrDataSpecifier(tile, settings.gamut.R.index),
+                tile.level.datasetIndex,
+            );
             return { type: 'texture2D', data: handleResponse(vxl) };
         },
         G: async () => {
-            const vxl = await reqSlice(metadata, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
+            const vxl = await reqSlice(
+                connection,
+                toZarrDataSpecifier(tile, settings.gamut.G.index),
+                tile.level.datasetIndex,
+            );
             return { type: 'texture2D', data: handleResponse(vxl) };
         },
         B: async () => {
-            const vxl = await reqSlice(metadata, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
+            const vxl = await reqSlice(
+                connection,
+                toZarrDataSpecifier(tile, settings.gamut.B.index),
+                tile.level.datasetIndex,
+            );
             return { type: 'texture2D', data: handleResponse(vxl) };
         },
     };
@@ -274,12 +254,12 @@ export function getVisibleTiles(
     metadata: OmeZarrMetadata,
     offset?: vec2,
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
-    const layer = pickBestScale(metadata, plane, camera.view, camera.screen);
+    const level = metadata.pickBestScale(plane, camera.view, camera.screen);
     // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
-    const layerIndex = metadata.attrs.multiscales[0].datasets.findIndex((ds) => ds.path === layer.path);
+    const layerIndex = metadata.attrs.multiscales[0].datasets.findIndex((ds) => ds.path === level.path);
 
-    const size = planeSizeInVoxels(plane, metadata.attrs.multiscales[0].axes, layer);
-    const realSize = sizeInUnits(plane, metadata.attrs.multiscales[0].axes, layer);
+    const size = level.planeSizeInVoxels(plane);
+    const realSize = level.sizeInUnits(plane);
     if (!size || !realSize) return { layer: layerIndex, view: Box2D.create([0, 0], [1, 1]), tiles: [] };
     const scale = Vec2.div(realSize, size);
     // to go from a voxel-box to a real-box (easier than you think, as both have an origin at 0,0, because we only support scale...)
@@ -294,10 +274,11 @@ export function getVisibleTiles(
         layer: layerIndex,
         view: camera.view,
         tiles: inView.map((uv) => ({
-            plane,
+            plane: plane.axes,
             realBounds: vxlToReal(uv),
             bounds: uv,
-            planeIndex,
+            orthoVal: planeIndex,
+            level,
             layerIndex,
         })),
     };
