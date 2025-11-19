@@ -70,7 +70,23 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
 
-  packages/geometry: {}
+  packages/geometry:
+    devDependencies:
+      '@parcel/packager-ts':
+        specifier: 2.15.4
+        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/transformer-typescript-types':
+        specifier: 2.15.4
+        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.9.3)
+      parcel:
+        specifier: 2.15.4
+        version: 2.15.4(@swc/helpers@0.5.17)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.6
+        version: 4.0.6(@types/debug@4.1.12)(lightningcss@1.30.2)(yaml@2.8.1)
 
   packages/omezarr:
     dependencies:
@@ -89,6 +105,37 @@ importers:
       zod:
         specifier: 4.1.12
         version: 4.1.12
+
+  packages/scatterbrain:
+    dependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../core
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
+      regl:
+        specifier: 2.1.0
+        version: 2.1.0
+      ts-pattern:
+        specifier: 5.9.0
+        version: 5.9.0
+    devDependencies:
+      '@parcel/packager-ts':
+        specifier: 2.15.4
+        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))
+      '@parcel/transformer-typescript-types':
+        specifier: 2.15.4
+        version: 2.15.4(@parcel/core@2.15.4(@swc/helpers@0.5.17))(typescript@5.9.3)
+      parcel:
+        specifier: 2.15.4
+        version: 2.15.4(@swc/helpers@0.5.17)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.6
+        version: 4.0.6(@types/debug@4.1.12)(lightningcss@1.30.2)(yaml@2.8.1)
 
   site:
     dependencies:
@@ -3887,6 +3934,9 @@ packages:
 
   trough@2.2.0:
     resolution: {integrity: sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw==}
+
+  ts-pattern@5.9.0:
+    resolution: {integrity: sha512-6s5V71mX8qBUmlgbrfL33xDUwO0fq48rxAu2LBE11WBeGdpCPOsXksQbZJHvHwhrd3QjUusd3mAOM5Gg0mFBLg==}
 
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
@@ -8974,6 +9024,8 @@ snapshots:
   trim-lines@3.0.1: {}
 
   trough@2.2.0: {}
+
+  ts-pattern@5.9.0: {}
 
   tsconfck@3.1.6(typescript@5.8.3):
     optionalDependencies:

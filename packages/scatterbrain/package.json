@@ -1,6 +1,6 @@
 {
-    "name": "@alleninstitute/vis-geometry",
-    "version": "0.0.7",
+    "name": "@alleninstitute/vis-scatterbrain",
+    "version": "0.0.1",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -54,6 +54,12 @@
         "parcel": "2.15.4",
         "typescript": "5.9.3",
         "vitest": "4.0.6"
+    },
+    "dependencies": {
+        "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "regl": "2.1.0",
+        "ts-pattern": "5.9.0"
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/AllenInstitute"
