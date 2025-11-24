@@ -6,7 +6,7 @@ import { WebGLSafeBasicType } from './typed-array';
 // there are 2 variants, slideview and regular - they are distinguished at runtime 
 // by checking the parsed metadata for the 'slides' field
 
-type volumeBound = {
+export type volumeBound = {
     lx: number;
     ly: number;
     lz: number;
@@ -22,7 +22,7 @@ type PointAttribute = {
     type: WebGLSafeBasicType;
     description: string;
 };
-type TreeNode = {
+export type TreeNode = {
     file: string;
     numSpecimens: number;
     children: undefined | TreeNode[];
