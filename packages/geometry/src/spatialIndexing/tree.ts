@@ -30,3 +30,24 @@ export function visitBFS<Tree>(
         }
     }
 }
+export function visitBFSMaybe<Tree>(
+    tree: Tree,
+    children: (t: Tree) => ReadonlyArray<Tree>,
+    visitor: (tree: Tree) => boolean,
+): void {
+    const frontier: Tree[] = [tree];
+    while (frontier.length > 0) {
+        const cur = frontier.shift();
+        if (cur === undefined) {
+            // TODO: Consider logging a warning or error here, as this should never happen,
+            // but this package doesn't depend on the package where our logger lives
+            continue;
+        }
+        if (visitor(cur)) {
+            for (const c of children(cur)) {
+                frontier.push(c);
+            }
+        }
+
+    }
+}
