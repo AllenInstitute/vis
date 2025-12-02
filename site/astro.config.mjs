@@ -2,8 +2,8 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import starlight from '@astrojs/starlight';
-
 import react from '@astrojs/react';
+import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc'
 
 // https://astro.build/config
 export default defineConfig({
@@ -32,7 +32,32 @@ export default defineConfig({
                     label: 'Developers',
                     autogenerate: { directory: 'developers' },
                 },
+                typeDocSidebarGroup,
             ],
+            plugins: [
+                starlightTypeDoc({
+                    entryPoints: [
+                        '../packages/core/src/index.ts',
+                        '../packages/dzi/src/index.ts',
+                        '../packages/geometry/src/index.ts',
+                        '../packages/omezarr/src/index.ts',
+                    ],
+                    tsconfig: '../tsconfig.base.json',
+                    typeDoc: {
+                        entryPointStrategy: 'expand',
+                        exclude: [
+                            '**/node_modules/**',
+                            '**/dist/**',
+                            '**/*.test.ts',
+                            '**/test/**',
+                            '**/tests/**',
+                            '../site/**',
+                            '../**/*.config.ts',
+                        ],
+                        skipErrorChecking: true,
+                    }
+                }),
+            ]
         }),
         mdx(),
         react(),
