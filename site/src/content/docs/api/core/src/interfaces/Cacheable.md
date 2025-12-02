@@ -5,7 +5,7 @@ prev: false
 title: "Cacheable"
 ---
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:5](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L5)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:5](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L5)
 
 ## Properties
 
@@ -13,7 +13,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:5](https:
 
 > `optional` **destroy**: () => `void`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:6](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L6)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:6](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L6)
 
 #### Returns
 
@@ -25,7 +25,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:6](https:
 
 > **sizeInBytes**: () => `number`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:7](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L7)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:7](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L7)
 
 #### Returns
 

@@ -5,7 +5,7 @@ prev: false
 title: "AsyncDataCache"
 ---
 
-Defined in: [packages/core/src/dataset-cache.ts:60](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/dataset-cache.ts#L60)
+Defined in: [packages/core/src/dataset-cache.ts:60](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/dataset-cache.ts#L60)
 
 `AsyncDataCache` asynchronous data cache, useful for minimizing network requests by caching the results of
 a network request and returning the cached result if the request has already been made previously
@@ -45,7 +45,7 @@ myCache.cache('myKey', getMyData).then((data)=>{console.log('its here now (and w
 
 > **new AsyncDataCache**\<`SemanticKey`, `CacheKey`, `D`\>(`destroy`, `size`, `cacheLimit`): `AsyncDataCache`\<`SemanticKey`, `CacheKey`, `D`\>
 
-Defined in: [packages/core/src/dataset-cache.ts:79](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/dataset-cache.ts#L79)
+Defined in: [packages/core/src/dataset-cache.ts:79](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/dataset-cache.ts#L79)
 
 the intended use of this cache is to store resources used for rendering. Because the specific contents are generic, a simple interface must be provided
 to support LRU cache eviction
@@ -83,7 +83,7 @@ a reasonable implementation may simply return 1 for size, and a desired occupanc
 
 > **areKeysAllCached**(`cacheKeys`): `boolean`
 
-Defined in: [packages/core/src/dataset-cache.ts:159](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/dataset-cache.ts#L159)
+Defined in: [packages/core/src/dataset-cache.ts:159](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/dataset-cache.ts#L159)
 
 `areKeysAllCached` checks if all the keys provided are in the cache with resolved promises.
 
@@ -109,7 +109,7 @@ True if all keys are cached, false if any are not in the cache
 
 > **cacheAndUse**(`workingSet`, `use`, `toCacheKey`, `taskFinished?`): `cancelFn` \| `undefined`
 
-Defined in: [packages/core/src/dataset-cache.ts:241](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/dataset-cache.ts#L241)
+Defined in: [packages/core/src/dataset-cache.ts:241](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/dataset-cache.ts#L241)
 
 #### Parameters
 
@@ -143,7 +143,7 @@ Defined in: [packages/core/src/dataset-cache.ts:241](https://github.com/AllenIns
 
 > **getCachedUNSAFE**(`key`): `D` \| `undefined`
 
-Defined in: [packages/core/src/dataset-cache.ts:184](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/dataset-cache.ts#L184)
+Defined in: [packages/core/src/dataset-cache.ts:184](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/dataset-cache.ts#L184)
 
 :::caution[Deprecated]
 to alert (external) users to avoid calling this!
@@ -192,7 +192,7 @@ cache.cacheAndUse({...}, (...args)=>doSomethingCool(otherStuff, ..args), ...)
 
 > **getNumPendingTasks**(): `number`
 
-Defined in: [packages/core/src/dataset-cache.ts:191](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/dataset-cache.ts#L191)
+Defined in: [packages/core/src/dataset-cache.ts:191](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/dataset-cache.ts#L191)
 
 #### Returns
 
@@ -204,7 +204,7 @@ Defined in: [packages/core/src/dataset-cache.ts:191](https://github.com/AllenIns
 
 > **isCached**(`key`): `boolean`
 
-Defined in: [packages/core/src/dataset-cache.ts:146](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/dataset-cache.ts#L146)
+Defined in: [packages/core/src/dataset-cache.ts:146](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/dataset-cache.ts#L146)
 
 `isCached` checks if the entry is in the cache with a resolved promise.
 

@@ -7,7 +7,7 @@ title: "HttpsResource"
 
 > **HttpsResource** = `object`
 
-Defined in: [packages/core/src/resources.ts:6](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/resources.ts#L6)
+Defined in: [packages/core/src/resources.ts:6](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/resources.ts#L6)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/core/src/resources.ts:6](https://github.com/AllenInstitute
 
 > **type**: *typeof* `RESOURCE_TYPE_HTTPS`
 
-Defined in: [packages/core/src/resources.ts:7](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/resources.ts#L7)
+Defined in: [packages/core/src/resources.ts:7](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/resources.ts#L7)
 
 ***
 
@@ -23,4 +23,4 @@ Defined in: [packages/core/src/resources.ts:7](https://github.com/AllenInstitute
 
 > **url**: `string`
 
-Defined in: [packages/core/src/resources.ts:8](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/resources.ts#L8)
+Defined in: [packages/core/src/resources.ts:8](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/resources.ts#L8)

@@ -5,7 +5,7 @@ prev: false
 title: "CartesianPlane"
 ---
 
-Defined in: [packages/geometry/src/plane.ts:15](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L15)
+Defined in: [packages/geometry/src/plane.ts:15](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L15)
 
 ## Constructors
 
@@ -13,7 +13,7 @@ Defined in: [packages/geometry/src/plane.ts:15](https://github.com/AllenInstitut
 
 > **new CartesianPlane**(`plane`): `CartesianPlane`
 
-Defined in: [packages/geometry/src/plane.ts:32](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L32)
+Defined in: [packages/geometry/src/plane.ts:32](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L32)
 
 #### Parameters
 
@@ -31,7 +31,7 @@ Defined in: [packages/geometry/src/plane.ts:32](https://github.com/AllenInstitut
 
 > `static` **orthogonalAxisTable**: [`OrthogonalAxisMapping`](/vis/api/geometry/src/type-aliases/orthogonalaxismapping/)
 
-Defined in: [packages/geometry/src/plane.ts:26](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L26)
+Defined in: [packages/geometry/src/plane.ts:26](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L26)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [packages/geometry/src/plane.ts:26](https://github.com/AllenInstitut
 
 > `static` **uvTable**: [`UVAxisMapping`](/vis/api/geometry/src/type-aliases/uvaxismapping/)
 
-Defined in: [packages/geometry/src/plane.ts:20](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L20)
+Defined in: [packages/geometry/src/plane.ts:20](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L20)
 
 ## Accessors
 
@@ -49,7 +49,7 @@ Defined in: [packages/geometry/src/plane.ts:20](https://github.com/AllenInstitut
 
 > **get** **axes**(): [`OrthogonalCartesianAxes`](/vis/api/geometry/src/type-aliases/orthogonalcartesianaxes/)
 
-Defined in: [packages/geometry/src/plane.ts:38](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L38)
+Defined in: [packages/geometry/src/plane.ts:38](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L38)
 
 ##### Returns
 
@@ -63,7 +63,7 @@ Defined in: [packages/geometry/src/plane.ts:38](https://github.com/AllenInstitut
 
 > **get** **ortho**(): [`CartesianAxis`](/vis/api/geometry/src/type-aliases/cartesianaxis/)
 
-Defined in: [packages/geometry/src/plane.ts:54](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L54)
+Defined in: [packages/geometry/src/plane.ts:54](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L54)
 
 ##### Returns
 
@@ -77,7 +77,7 @@ Defined in: [packages/geometry/src/plane.ts:54](https://github.com/AllenInstitut
 
 > **get** **u**(): [`CartesianAxis`](/vis/api/geometry/src/type-aliases/cartesianaxis/)
 
-Defined in: [packages/geometry/src/plane.ts:42](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L42)
+Defined in: [packages/geometry/src/plane.ts:42](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L42)
 
 ##### Returns
 
@@ -91,7 +91,7 @@ Defined in: [packages/geometry/src/plane.ts:42](https://github.com/AllenInstitut
 
 > **get** **uv**(): [`UVAxes`](/vis/api/geometry/src/type-aliases/uvaxes/)
 
-Defined in: [packages/geometry/src/plane.ts:50](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L50)
+Defined in: [packages/geometry/src/plane.ts:50](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L50)
 
 ##### Returns
 
@@ -105,7 +105,7 @@ Defined in: [packages/geometry/src/plane.ts:50](https://github.com/AllenInstitut
 
 > **get** **v**(): [`CartesianAxis`](/vis/api/geometry/src/type-aliases/cartesianaxis/)
 
-Defined in: [packages/geometry/src/plane.ts:46](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L46)
+Defined in: [packages/geometry/src/plane.ts:46](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L46)
 
 ##### Returns
 
@@ -117,7 +117,7 @@ Defined in: [packages/geometry/src/plane.ts:46](https://github.com/AllenInstitut
 
 > **isValid**(): `boolean`
 
-Defined in: [packages/geometry/src/plane.ts:58](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/geometry/src/plane.ts#L58)
+Defined in: [packages/geometry/src/plane.ts:58](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/geometry/src/plane.ts#L58)
 
 #### Returns
 

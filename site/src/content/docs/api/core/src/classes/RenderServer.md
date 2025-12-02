@@ -5,7 +5,7 @@ prev: false
 title: "RenderServer"
 ---
 
-Defined in: [packages/core/src/abstract/render-server.ts:48](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/render-server.ts#L48)
+Defined in: [packages/core/src/abstract/render-server.ts:48](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/render-server.ts#L48)
 
 ## Constructors
 
@@ -13,7 +13,7 @@ Defined in: [packages/core/src/abstract/render-server.ts:48](https://github.com/
 
 > **new RenderServer**(`maxSize`, `extensions`, `cacheByteLimit`): `RenderServer`
 
-Defined in: [packages/core/src/abstract/render-server.ts:55](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/render-server.ts#L55)
+Defined in: [packages/core/src/abstract/render-server.ts:55](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/render-server.ts#L55)
 
 #### Parameters
 
@@ -39,7 +39,7 @@ Defined in: [packages/core/src/abstract/render-server.ts:55](https://github.com/
 
 > **cache**: [`AsyncDataCache`](/vis/api/core/src/classes/asyncdatacache/)\<`string`, `string`, [`ReglCacheEntry`](/vis/api/core/src/type-aliases/reglcacheentry/)\>
 
-Defined in: [packages/core/src/abstract/render-server.ts:52](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/render-server.ts#L52)
+Defined in: [packages/core/src/abstract/render-server.ts:52](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/render-server.ts#L52)
 
 ***
 
@@ -47,7 +47,7 @@ Defined in: [packages/core/src/abstract/render-server.ts:52](https://github.com/
 
 > **regl**: `Regl`
 
-Defined in: [packages/core/src/abstract/render-server.ts:51](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/render-server.ts#L51)
+Defined in: [packages/core/src/abstract/render-server.ts:51](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/render-server.ts#L51)
 
 ## Methods
 
@@ -55,7 +55,7 @@ Defined in: [packages/core/src/abstract/render-server.ts:51](https://github.com/
 
 > **beginRendering**\<`D`, `I`\>(`renderFn`, `callback`, `client`): `void`
 
-Defined in: [packages/core/src/abstract/render-server.ts:167](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/render-server.ts#L167)
+Defined in: [packages/core/src/abstract/render-server.ts:167](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/render-server.ts#L167)
 
 #### Type Parameters
 
@@ -91,7 +91,7 @@ Defined in: [packages/core/src/abstract/render-server.ts:167](https://github.com
 
 > **destroyClient**(`client`): `void`
 
-Defined in: [packages/core/src/abstract/render-server.ts:141](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/render-server.ts#L141)
+Defined in: [packages/core/src/abstract/render-server.ts:141](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/render-server.ts#L141)
 
 #### Parameters
 

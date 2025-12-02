@@ -7,7 +7,7 @@ title: "ZarrSliceRequest"
 
 > **ZarrSliceRequest** = `object`
 
-Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:6](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/worker-loader.ts#L6)
+Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:6](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/worker-loader.ts#L6)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:6](https://github.c
 
 > **id**: `string`
 
-Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:7](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/worker-loader.ts#L7)
+Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:7](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/worker-loader.ts#L7)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:7](https://github.c
 
 > **level**: [`OmeZarrShapedDataset`](/vis/api/omezarr/src/type-aliases/omezarrshapeddataset/)
 
-Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:11](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/worker-loader.ts#L11)
+Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:11](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/worker-loader.ts#L11)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:11](https://github.
 
 > **metadata**: [`DehydratedOmeZarrMetadata`](/vis/api/omezarr/src/type-aliases/dehydratedomezarrmetadata/)
 
-Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:9](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/worker-loader.ts#L9)
+Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:9](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/worker-loader.ts#L9)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:9](https://github.c
 
 > **req**: [`ZarrRequest`](/vis/api/omezarr/src/type-aliases/zarrrequest/)
 
-Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:10](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/worker-loader.ts#L10)
+Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:10](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/worker-loader.ts#L10)
 
 ***
 
@@ -47,4 +47,4 @@ Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:10](https://github.
 
 > **type**: `"ZarrSliceRequest"`
 
-Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:8](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/worker-loader.ts#L8)
+Defined in: [packages/omezarr/src/sliceview/worker-loader.ts:8](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/worker-loader.ts#L8)

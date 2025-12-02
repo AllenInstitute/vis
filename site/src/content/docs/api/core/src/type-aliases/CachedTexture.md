@@ -7,7 +7,7 @@ title: "CachedTexture"
 
 > **CachedTexture** = `object`
 
-Defined in: [packages/core/src/abstract/types.ts:3](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L3)
+Defined in: [packages/core/src/abstract/types.ts:3](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L3)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/core/src/abstract/types.ts:3](https://github.com/AllenInst
 
 > **bytes**: `number`
 
-Defined in: [packages/core/src/abstract/types.ts:5](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L5)
+Defined in: [packages/core/src/abstract/types.ts:5](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L5)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/core/src/abstract/types.ts:5](https://github.com/AllenInst
 
 > **texture**: `REGL.Texture2D`
 
-Defined in: [packages/core/src/abstract/types.ts:4](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L4)
+Defined in: [packages/core/src/abstract/types.ts:4](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L4)
 
 ***
 
@@ -31,4 +31,4 @@ Defined in: [packages/core/src/abstract/types.ts:4](https://github.com/AllenInst
 
 > **type**: `"texture"`
 
-Defined in: [packages/core/src/abstract/types.ts:6](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L6)
+Defined in: [packages/core/src/abstract/types.ts:6](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L6)

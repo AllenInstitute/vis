@@ -7,7 +7,7 @@ title: "CachedVertexBuffer"
 
 > **CachedVertexBuffer** = `object`
 
-Defined in: [packages/core/src/abstract/types.ts:8](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L8)
+Defined in: [packages/core/src/abstract/types.ts:8](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L8)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/core/src/abstract/types.ts:8](https://github.com/AllenInst
 
 > **buffer**: `REGL.Buffer`
 
-Defined in: [packages/core/src/abstract/types.ts:9](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L9)
+Defined in: [packages/core/src/abstract/types.ts:9](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L9)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/core/src/abstract/types.ts:9](https://github.com/AllenInst
 
 > **bytes**: `number`
 
-Defined in: [packages/core/src/abstract/types.ts:10](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L10)
+Defined in: [packages/core/src/abstract/types.ts:10](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L10)
 
 ***
 
@@ -31,4 +31,4 @@ Defined in: [packages/core/src/abstract/types.ts:10](https://github.com/AllenIns
 
 > **type**: `"buffer"`
 
-Defined in: [packages/core/src/abstract/types.ts:11](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L11)
+Defined in: [packages/core/src/abstract/types.ts:11](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L11)

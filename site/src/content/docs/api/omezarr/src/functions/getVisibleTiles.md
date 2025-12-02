@@ -7,7 +7,7 @@ title: "getVisibleTiles"
 
 > **getVisibleTiles**(`camera`, `plane`, `planeLocation`, `metadata`, `tileSize`): [`VoxelTile`](/vis/api/omezarr/src/type-aliases/voxeltile/)[]
 
-Defined in: [packages/omezarr/src/sliceview/loader.ts:91](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/loader.ts#L91)
+Defined in: [packages/omezarr/src/sliceview/loader.ts:91](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/loader.ts#L91)
 
 Gets the list of tiles of the given OME-Zarr image which are visible (i.e. they intersect with
 

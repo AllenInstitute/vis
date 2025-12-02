@@ -7,7 +7,7 @@ title: "RenderSettingsChannel"
 
 > **RenderSettingsChannel** = `object`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:24](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L24)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:24](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L24)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:24](https://github
 
 > **gamut**: `Interval`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:26](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L26)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:26](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L26)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:26](https://github
 
 > **index**: `number`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:25](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L25)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:25](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L25)
 
 ***
 
@@ -31,4 +31,4 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:25](https://github
 
 > **rgb**: `vec3`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:27](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L27)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:27](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L27)

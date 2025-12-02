@@ -5,7 +5,7 @@ prev: false
 title: "ReglLayer2D"
 ---
 
-Defined in: [packages/core/src/layers/layer-2D.ts:11](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/layers/layer-2D.ts#L11)
+Defined in: [packages/core/src/layers/layer-2D.ts:11](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/layers/layer-2D.ts#L11)
 
 ## Type Parameters
 
@@ -23,7 +23,7 @@ Defined in: [packages/core/src/layers/layer-2D.ts:11](https://github.com/AllenIn
 
 > **new ReglLayer2D**\<`Renderable`, `RenderSettings`\>(`regl`, `imgRenderer`, `renderFn`, `resolution`): `ReglLayer2D`\<`Renderable`, `RenderSettings`\>
 
-Defined in: [packages/core/src/layers/layer-2D.ts:17](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/layers/layer-2D.ts#L17)
+Defined in: [packages/core/src/layers/layer-2D.ts:17](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/layers/layer-2D.ts#L17)
 
 #### Parameters
 
@@ -53,7 +53,7 @@ Defined in: [packages/core/src/layers/layer-2D.ts:17](https://github.com/AllenIn
 
 > **destroy**(): `void`
 
-Defined in: [packages/core/src/layers/layer-2D.ts:40](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/layers/layer-2D.ts#L40)
+Defined in: [packages/core/src/layers/layer-2D.ts:40](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/layers/layer-2D.ts#L40)
 
 #### Returns
 
@@ -65,7 +65,7 @@ Defined in: [packages/core/src/layers/layer-2D.ts:40](https://github.com/AllenIn
 
 > **getRenderResults**(`stage`): `Image`
 
-Defined in: [packages/core/src/layers/layer-2D.ts:49](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/layers/layer-2D.ts#L49)
+Defined in: [packages/core/src/layers/layer-2D.ts:49](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/layers/layer-2D.ts#L49)
 
 #### Parameters
 
@@ -83,7 +83,7 @@ Defined in: [packages/core/src/layers/layer-2D.ts:49](https://github.com/AllenIn
 
 > **onChange**(`props`, `cancel`): `void`
 
-Defined in: [packages/core/src/layers/layer-2D.ts:52](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/layers/layer-2D.ts#L52)
+Defined in: [packages/core/src/layers/layer-2D.ts:52](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/layers/layer-2D.ts#L52)
 
 #### Parameters
 
@@ -111,7 +111,7 @@ Defined in: [packages/core/src/layers/layer-2D.ts:52](https://github.com/AllenIn
 
 > **renderingInProgress**(): `boolean`
 
-Defined in: [packages/core/src/layers/layer-2D.ts:45](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/layers/layer-2D.ts#L45)
+Defined in: [packages/core/src/layers/layer-2D.ts:45](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/layers/layer-2D.ts#L45)
 
 #### Returns
 

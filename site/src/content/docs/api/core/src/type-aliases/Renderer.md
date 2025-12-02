@@ -7,7 +7,7 @@ title: "Renderer"
 
 > **Renderer**\<`Dataset`, `Item`, `Settings`, `GpuData`\> = `object`
 
-Defined in: [packages/core/src/abstract/types.ts:15](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L15)
+Defined in: [packages/core/src/abstract/types.ts:15](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L15)
 
 ## Type Parameters
 
@@ -33,7 +33,7 @@ Defined in: [packages/core/src/abstract/types.ts:15](https://github.com/AllenIns
 
 > **cacheKey**: (`item`, `requestKey`, `data`, `settings`) => `string`
 
-Defined in: [packages/core/src/abstract/types.ts:70](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L70)
+Defined in: [packages/core/src/abstract/types.ts:70](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L70)
 
 compute a unique (but please not random!) string that the cache system can use to identify the content
 associated with this {item, settings, data}
@@ -76,7 +76,7 @@ a string, suitable for use in a cache
 
 > **destroy**: (`regl`) => `void`
 
-Defined in: [packages/core/src/abstract/types.ts:77](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L77)
+Defined in: [packages/core/src/abstract/types.ts:77](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L77)
 
 in some cases, rendering may rely on non-item-specific rendering resources (lookup tables, buffers, etc)
 this function is the place to release those
@@ -99,7 +99,7 @@ the regl context (the same that was used to create this renderer)
 
 > **fetchItemContent**: (`item`, `dataset`, `settings`) => `Record`\<`string`, (`signal`) => `Promise`\<[`ReglCacheEntry`](/vis/api/core/src/type-aliases/reglcacheentry/)\>\>
 
-Defined in: [packages/core/src/abstract/types.ts:34](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L34)
+Defined in: [packages/core/src/abstract/types.ts:34](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L34)
 
 fetch raw, expensive-to-load content (an "Item" is a placeholder for that content)
 
@@ -135,7 +135,7 @@ that is to say, DONT mutate them (make them Readonly if possible)
 
 > **getVisibleItems**: (`data`, `settings`) => `Item`[]
 
-Defined in: [packages/core/src/abstract/types.ts:23](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L23)
+Defined in: [packages/core/src/abstract/types.ts:23](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L23)
 
 a function which returns items from the given dataset - this is the place to express spatial indexing
 or any other filtering that may be appropriate
@@ -166,7 +166,7 @@ a list of the requested items, whatever they may be
 
 > **isPrepared**: (`cacheData`) => `cacheData is GpuData`
 
-Defined in: [packages/core/src/abstract/types.ts:44](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L44)
+Defined in: [packages/core/src/abstract/types.ts:44](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L44)
 
 #### Parameters
 
@@ -188,7 +188,7 @@ true if the content matches the expectations of our rendering function
 
 > **renderItem**: (`target`, `item`, `data`, `settings`, `gpuData`) => `void`
 
-Defined in: [packages/core/src/abstract/types.ts:54](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/abstract/types.ts#L54)
+Defined in: [packages/core/src/abstract/types.ts:54](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/abstract/types.ts#L54)
 
 actually render the content of an item
 

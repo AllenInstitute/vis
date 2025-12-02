@@ -7,7 +7,7 @@ title: "beginLongRunningFrame"
 
 > **beginLongRunningFrame**\<`Column`, `Item`, `Settings`\>(`maximumInflightAsyncTasks`, `queueProcessingIntervalMS`, `items`, `mutableCache`, `settings`, `requestsForItem`, `render`, `lifecycleCallback`, `cacheKeyForRequest`, `queueTimeBudgetMS`): `FrameLifecycle`
 
-Defined in: [packages/core/src/render-queue.ts:54](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/render-queue.ts#L54)
+Defined in: [packages/core/src/render-queue.ts:54](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/render-queue.ts#L54)
 
 `beingLongRunningFrame` starts a long-running frame that will render a list of items asynchronously based on
 the provided data, settings, and rendering functions.

@@ -7,7 +7,7 @@ title: "DehydratedOmeZarrMetadata"
 
 > **DehydratedOmeZarrMetadata** = `object`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:191](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L191)
+Defined in: [packages/omezarr/src/zarr/types.ts:191](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L191)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:191](https://github.com/AllenIns
 
 > **arrays**: [`OmeZarrArrayMetadata`](/vis/api/omezarr/src/type-aliases/omezarrarraymetadata/)[]
 
-Defined in: [packages/omezarr/src/zarr/types.ts:194](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L194)
+Defined in: [packages/omezarr/src/zarr/types.ts:194](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L194)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:194](https://github.com/AllenIns
 
 > **attrs**: [`OmeZarrAttrs`](/vis/api/omezarr/src/type-aliases/omezarrattrs/)
 
-Defined in: [packages/omezarr/src/zarr/types.ts:193](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L193)
+Defined in: [packages/omezarr/src/zarr/types.ts:193](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L193)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:193](https://github.com/AllenIns
 
 > **url**: `string`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:192](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L192)
+Defined in: [packages/omezarr/src/zarr/types.ts:192](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L192)
 
 ***
 
@@ -39,4 +39,4 @@ Defined in: [packages/omezarr/src/zarr/types.ts:192](https://github.com/AllenIns
 
 > **zarrVersion**: `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:195](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L195)
+Defined in: [packages/omezarr/src/zarr/types.ts:195](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L195)

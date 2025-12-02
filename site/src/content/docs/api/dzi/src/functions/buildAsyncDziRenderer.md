@@ -7,7 +7,7 @@ title: "buildAsyncDziRenderer"
 
 > **buildAsyncDziRenderer**(`regl`): (`data`, `settings`, `callback`, `target`, `cache`) => `_FrameLifecycle1`
 
-Defined in: [packages/dzi/src/renderer.ts:89](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/renderer.ts#L89)
+Defined in: [packages/dzi/src/renderer.ts:89](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/renderer.ts#L89)
 
 ## Parameters
 

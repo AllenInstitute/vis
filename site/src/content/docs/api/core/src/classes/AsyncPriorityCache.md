@@ -5,7 +5,7 @@ prev: false
 title: "AsyncPriorityCache"
 ---
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:122](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L122)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:122](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L122)
 
 ## Extends
 
@@ -23,7 +23,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:122](http
 
 > **new AsyncPriorityCache**\<`T`\>(`store`, `score`, `limitInBytes`, `maxFetches`, `onDataArrived?`): `AsyncPriorityCache`\<`T`\>
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:129](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L129)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:129](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L129)
 
 #### Parameters
 
@@ -61,7 +61,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:129](http
 
 > **cached**(`key`): `boolean`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:90](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L90)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:90](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L90)
 
 #### Parameters
 
@@ -83,7 +83,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:90](https
 
 > **cachedOrPending**(`key`): `boolean`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:208](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L208)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:208](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L208)
 
 #### Parameters
 
@@ -101,7 +101,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:208](http
 
 > **enqueue**(`key`, `fetcher`): `boolean`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:144](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L144)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:144](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L144)
 
 #### Parameters
 
@@ -123,7 +123,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:144](http
 
 > **get**(`key`): `T` \| `undefined`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:82](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L82)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:82](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L82)
 
 #### Parameters
 
@@ -145,7 +145,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:82](https
 
 > **has**(`key`): `boolean`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:86](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L86)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:86](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L86)
 
 #### Parameters
 
@@ -167,7 +167,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:86](https
 
 > **isFull**(): `boolean`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:94](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L94)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:94](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L94)
 
 #### Returns
 
@@ -183,7 +183,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:94](https
 
 > **pending**(`key`): `boolean`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:204](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L204)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:204](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L204)
 
 #### Parameters
 
@@ -201,7 +201,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:204](http
 
 > **put**(`key`, `item`): `boolean`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:55](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L55)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:55](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L55)
 
 #### Parameters
 
@@ -227,7 +227,7 @@ Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:55](https
 
 > **reprioritize**(`score?`): `void`
 
-Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:192](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/shared-priority-cache/priority-cache.ts#L192)
+Defined in: [packages/core/src/shared-priority-cache/priority-cache.ts:192](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/shared-priority-cache/priority-cache.ts#L192)
 
 #### Parameters
 

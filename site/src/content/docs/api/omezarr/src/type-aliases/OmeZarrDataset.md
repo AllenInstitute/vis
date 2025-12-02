@@ -7,7 +7,7 @@ title: "OmeZarrDataset"
 
 > **OmeZarrDataset** = `object`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:62](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L62)
+Defined in: [packages/omezarr/src/zarr/types.ts:62](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L62)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:62](https://github.com/AllenInst
 
 > **coordinateTransformations**: [`OmeZarrCoordinateTransform`](/vis/api/omezarr/src/type-aliases/omezarrcoordinatetransform/)[]
 
-Defined in: [packages/omezarr/src/zarr/types.ts:63](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L63)
+Defined in: [packages/omezarr/src/zarr/types.ts:63](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L63)
 
 ***
 
@@ -23,4 +23,4 @@ Defined in: [packages/omezarr/src/zarr/types.ts:63](https://github.com/AllenInst
 
 > **path**: `string`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:64](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L64)
+Defined in: [packages/omezarr/src/zarr/types.ts:64](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L64)

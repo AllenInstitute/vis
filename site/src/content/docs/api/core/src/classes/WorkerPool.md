@@ -5,7 +5,7 @@ prev: false
 title: "WorkerPool"
 ---
 
-Defined in: [packages/core/src/workers/worker-pool.ts:31](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/workers/worker-pool.ts#L31)
+Defined in: [packages/core/src/workers/worker-pool.ts:31](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/workers/worker-pool.ts#L31)
 
 ## Constructors
 
@@ -13,7 +13,7 @@ Defined in: [packages/core/src/workers/worker-pool.ts:31](https://github.com/All
 
 > **new WorkerPool**(`size`, `workerInit`): `WorkerPool`
 
-Defined in: [packages/core/src/workers/worker-pool.ts:37](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/workers/worker-pool.ts#L37)
+Defined in: [packages/core/src/workers/worker-pool.ts:37](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/workers/worker-pool.ts#L37)
 
 #### Parameters
 
@@ -35,7 +35,7 @@ Defined in: [packages/core/src/workers/worker-pool.ts:37](https://github.com/All
 
 > **destroy**(): `void`
 
-Defined in: [packages/core/src/workers/worker-pool.ts:57](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/workers/worker-pool.ts#L57)
+Defined in: [packages/core/src/workers/worker-pool.ts:57](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/workers/worker-pool.ts#L57)
 
 Warning - nothing in this class should be considered useable after
 calling this method - any/all methods called should be expected to be
@@ -51,7 +51,7 @@ completely unreliable. dont call me unless you're about to dispose of all refere
 
 > **getStatus**(`workerIndex`): `WorkerStatus`
 
-Defined in: [packages/core/src/workers/worker-pool.ts:149](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/workers/worker-pool.ts#L149)
+Defined in: [packages/core/src/workers/worker-pool.ts:149](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/workers/worker-pool.ts#L149)
 
 #### Parameters
 
@@ -69,7 +69,7 @@ Defined in: [packages/core/src/workers/worker-pool.ts:149](https://github.com/Al
 
 > **getStatuses**(): `ReadonlyMap`\<`number`, `WorkerStatus`\>
 
-Defined in: [packages/core/src/workers/worker-pool.ts:164](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/workers/worker-pool.ts#L164)
+Defined in: [packages/core/src/workers/worker-pool.ts:164](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/workers/worker-pool.ts#L164)
 
 #### Returns
 
@@ -81,7 +81,7 @@ Defined in: [packages/core/src/workers/worker-pool.ts:164](https://github.com/Al
 
 > **submitRequest**(`message`, `responseValidator`, `transfers`, `signal?`): `Promise`\<[`WorkerMessageWithId`](/vis/api/core/src/type-aliases/workermessagewithid/)\>
 
-Defined in: [packages/core/src/workers/worker-pool.ts:96](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/workers/worker-pool.ts#L96)
+Defined in: [packages/core/src/workers/worker-pool.ts:96](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/workers/worker-pool.ts#L96)
 
 #### Parameters
 

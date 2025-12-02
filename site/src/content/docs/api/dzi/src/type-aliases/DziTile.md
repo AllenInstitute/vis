@@ -7,7 +7,7 @@ title: "DziTile"
 
 > **DziTile** = `object`
 
-Defined in: [packages/dzi/src/loader.ts:28](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L28)
+Defined in: [packages/dzi/src/loader.ts:28](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L28)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/dzi/src/loader.ts:28](https://github.com/AllenInstitute/vi
 
 > **index**: `TileIndex`
 
-Defined in: [packages/dzi/src/loader.ts:30](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L30)
+Defined in: [packages/dzi/src/loader.ts:30](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L30)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/dzi/src/loader.ts:30](https://github.com/AllenInstitute/vi
 
 > **layer**: `number`
 
-Defined in: [packages/dzi/src/loader.ts:32](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L32)
+Defined in: [packages/dzi/src/loader.ts:32](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L32)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/dzi/src/loader.ts:32](https://github.com/AllenInstitute/vi
 
 > **relativeLocation**: `box2D`
 
-Defined in: [packages/dzi/src/loader.ts:31](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L31)
+Defined in: [packages/dzi/src/loader.ts:31](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L31)
 
 ***
 
@@ -39,4 +39,4 @@ Defined in: [packages/dzi/src/loader.ts:31](https://github.com/AllenInstitute/vi
 
 > **url**: `string`
 
-Defined in: [packages/dzi/src/loader.ts:29](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L29)
+Defined in: [packages/dzi/src/loader.ts:29](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L29)

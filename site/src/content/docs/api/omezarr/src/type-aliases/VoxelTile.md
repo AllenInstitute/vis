@@ -7,7 +7,7 @@ title: "VoxelTile"
 
 > **VoxelTile** = `object`
 
-Defined in: [packages/omezarr/src/sliceview/loader.ts:15](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/loader.ts#L15)
+Defined in: [packages/omezarr/src/sliceview/loader.ts:15](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/loader.ts#L15)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/sliceview/loader.ts:15](https://github.com/All
 
 > **bounds**: `box2D`
 
-Defined in: [packages/omezarr/src/sliceview/loader.ts:18](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/loader.ts#L18)
+Defined in: [packages/omezarr/src/sliceview/loader.ts:18](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/loader.ts#L18)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/omezarr/src/sliceview/loader.ts:18](https://github.com/All
 
 > **level**: [`OmeZarrShapedDataset`](/vis/api/omezarr/src/type-aliases/omezarrshapeddataset/)
 
-Defined in: [packages/omezarr/src/sliceview/loader.ts:20](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/loader.ts#L20)
+Defined in: [packages/omezarr/src/sliceview/loader.ts:20](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/loader.ts#L20)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/omezarr/src/sliceview/loader.ts:20](https://github.com/All
 
 > **orthoVal**: `number`
 
-Defined in: [packages/omezarr/src/sliceview/loader.ts:19](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/loader.ts#L19)
+Defined in: [packages/omezarr/src/sliceview/loader.ts:19](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/loader.ts#L19)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [packages/omezarr/src/sliceview/loader.ts:19](https://github.com/All
 
 > **plane**: `OrthogonalCartesianAxes`
 
-Defined in: [packages/omezarr/src/sliceview/loader.ts:16](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/loader.ts#L16)
+Defined in: [packages/omezarr/src/sliceview/loader.ts:16](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/loader.ts#L16)
 
 ***
 
@@ -47,4 +47,4 @@ Defined in: [packages/omezarr/src/sliceview/loader.ts:16](https://github.com/All
 
 > **realBounds**: `box2D`
 
-Defined in: [packages/omezarr/src/sliceview/loader.ts:17](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/loader.ts#L17)
+Defined in: [packages/omezarr/src/sliceview/loader.ts:17](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/loader.ts#L17)

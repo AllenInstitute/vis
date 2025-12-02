@@ -7,7 +7,7 @@ title: "DziImage"
 
 > **DziImage** = `object`
 
-Defined in: [packages/dzi/src/loader.ts:10](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L10)
+Defined in: [packages/dzi/src/loader.ts:10](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L10)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/dzi/src/loader.ts:10](https://github.com/AllenInstitute/vi
 
 > **format**: `DziFormat`
 
-Defined in: [packages/dzi/src/loader.ts:15](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L15)
+Defined in: [packages/dzi/src/loader.ts:15](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L15)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/dzi/src/loader.ts:15](https://github.com/AllenInstitute/vi
 
 > **imagesUrl**: `DziTilesRoot`
 
-Defined in: [packages/dzi/src/loader.ts:11](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L11)
+Defined in: [packages/dzi/src/loader.ts:11](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L11)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/dzi/src/loader.ts:11](https://github.com/AllenInstitute/vi
 
 > **overlap**: `number`
 
-Defined in: [packages/dzi/src/loader.ts:16](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L16)
+Defined in: [packages/dzi/src/loader.ts:16](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L16)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [packages/dzi/src/loader.ts:16](https://github.com/AllenInstitute/vi
 
 > **size**: `object`
 
-Defined in: [packages/dzi/src/loader.ts:19](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L19)
+Defined in: [packages/dzi/src/loader.ts:19](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L19)
 
 #### height
 
@@ -55,4 +55,4 @@ Defined in: [packages/dzi/src/loader.ts:19](https://github.com/AllenInstitute/vi
 
 > **tileSize**: `number`
 
-Defined in: [packages/dzi/src/loader.ts:18](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/dzi/src/loader.ts#L18)
+Defined in: [packages/dzi/src/loader.ts:18](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/dzi/src/loader.ts#L18)

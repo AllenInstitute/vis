@@ -7,7 +7,7 @@ title: "RenderSettings"
 
 > **RenderSettings** = `object`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:33](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L33)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:33](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L33)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:33](https://github
 
 > **camera**: `object`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:34](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L34)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:34](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L34)
 
 #### screenSize
 
@@ -31,7 +31,7 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:34](https://github
 
 > **channels**: [`RenderSettingsChannels`](/vis/api/omezarr/src/type-aliases/rendersettingschannels/)
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:41](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L41)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:41](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L41)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:41](https://github
 
 > **plane**: `CartesianPlane`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:40](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L40)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:40](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L40)
 
 ***
 
@@ -47,7 +47,7 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:40](https://github
 
 > **planeLocation**: `number`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:38](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L38)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:38](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L38)
 
 ***
 
@@ -55,4 +55,4 @@ Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:38](https://github
 
 > **tileSize**: `number`
 
-Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:39](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/sliceview/slice-renderer.ts#L39)
+Defined in: [packages/omezarr/src/sliceview/slice-renderer.ts:39](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/sliceview/slice-renderer.ts#L39)

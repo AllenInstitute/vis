@@ -5,7 +5,7 @@ prev: false
 title: "OmeZarrMetadata"
 ---
 
-Defined in: [packages/omezarr/src/zarr/types.ts:226](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L226)
+Defined in: [packages/omezarr/src/zarr/types.ts:226](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L226)
 
 ## Constructors
 
@@ -13,7 +13,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:226](https://github.com/AllenIns
 
 > **new OmeZarrMetadata**(`url`, `attrs`, `arrays`, `zarrVersion`): `OmeZarrMetadata`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:232](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L232)
+Defined in: [packages/omezarr/src/zarr/types.ts:232](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L232)
 
 #### Parameters
 
@@ -45,7 +45,7 @@ readonly [`OmeZarrArrayMetadata`](/vis/api/omezarr/src/type-aliases/omezarrarray
 
 > **get** **arrays**(): readonly [`OmeZarrArrayMetadata`](/vis/api/omezarr/src/type-aliases/omezarrarraymetadata/)[]
 
-Defined in: [packages/omezarr/src/zarr/types.ts:247](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L247)
+Defined in: [packages/omezarr/src/zarr/types.ts:247](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L247)
 
 ##### Returns
 
@@ -59,7 +59,7 @@ readonly [`OmeZarrArrayMetadata`](/vis/api/omezarr/src/type-aliases/omezarrarray
 
 > **get** **attrs**(): [`OmeZarrAttrs`](/vis/api/omezarr/src/type-aliases/omezarrattrs/)
 
-Defined in: [packages/omezarr/src/zarr/types.ts:243](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L243)
+Defined in: [packages/omezarr/src/zarr/types.ts:243](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L243)
 
 ##### Returns
 
@@ -73,7 +73,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:243](https://github.com/AllenIns
 
 > **get** **blueChannel**(): `OmeZarrColorChannel` \| `undefined`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:537](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L537)
+Defined in: [packages/omezarr/src/zarr/types.ts:537](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L537)
 
 ##### Returns
 
@@ -87,7 +87,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:537](https://github.com/AllenIns
 
 > **get** **colorChannels**(): `OmeZarrColorChannel`[]
 
-Defined in: [packages/omezarr/src/zarr/types.ts:525](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L525)
+Defined in: [packages/omezarr/src/zarr/types.ts:525](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L525)
 
 ##### Returns
 
@@ -101,7 +101,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:525](https://github.com/AllenIns
 
 > **get** **greenChannel**(): `OmeZarrColorChannel` \| `undefined`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:533](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L533)
+Defined in: [packages/omezarr/src/zarr/types.ts:533](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L533)
 
 ##### Returns
 
@@ -115,7 +115,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:533](https://github.com/AllenIns
 
 > **get** **redChannel**(): `OmeZarrColorChannel` \| `undefined`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:529](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L529)
+Defined in: [packages/omezarr/src/zarr/types.ts:529](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L529)
 
 ##### Returns
 
@@ -129,7 +129,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:529](https://github.com/AllenIns
 
 > **get** **url**(): `string`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:239](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L239)
+Defined in: [packages/omezarr/src/zarr/types.ts:239](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L239)
 
 ##### Returns
 
@@ -143,7 +143,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:239](https://github.com/AllenIns
 
 > **get** **zarrVersion**(): `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:251](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L251)
+Defined in: [packages/omezarr/src/zarr/types.ts:251](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L251)
 
 ##### Returns
 
@@ -155,7 +155,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:251](https://github.com/AllenIns
 
 > **dehydrate**(): [`DehydratedOmeZarrMetadata`](/vis/api/omezarr/src/type-aliases/dehydratedomezarrmetadata/)
 
-Defined in: [packages/omezarr/src/zarr/types.ts:503](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L503)
+Defined in: [packages/omezarr/src/zarr/types.ts:503](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L503)
 
 #### Returns
 
@@ -167,7 +167,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:503](https://github.com/AllenIns
 
 > **getAllShapedDatasets**(`multiscale`): [`OmeZarrShapedDataset`](/vis/api/omezarr/src/type-aliases/omezarrshapeddataset/)[]
 
-Defined in: [packages/omezarr/src/zarr/types.ts:497](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L497)
+Defined in: [packages/omezarr/src/zarr/types.ts:497](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L497)
 
 #### Parameters
 
@@ -185,7 +185,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:497](https://github.com/AllenIns
 
 > **getFirstShapedDataset**(`multiscale`): [`OmeZarrShapedDataset`](/vis/api/omezarr/src/type-aliases/omezarrshapeddataset/) \| `undefined`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:463](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L463)
+Defined in: [packages/omezarr/src/zarr/types.ts:463](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L463)
 
 #### Parameters
 
@@ -203,7 +203,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:463](https://github.com/AllenIns
 
 > **getLastShapedDataset**(`multiscale`): [`OmeZarrShapedDataset`](/vis/api/omezarr/src/type-aliases/omezarrshapeddataset/) \| `undefined`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:478](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L478)
+Defined in: [packages/omezarr/src/zarr/types.ts:478](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L478)
 
 #### Parameters
 
@@ -221,7 +221,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:478](https://github.com/AllenIns
 
 > **getNumLayers**(`multiscale`): `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:493](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L493)
+Defined in: [packages/omezarr/src/zarr/types.ts:493](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L493)
 
 #### Parameters
 
@@ -239,7 +239,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:493](https://github.com/AllenIns
 
 > **getShapedDataset**(`indexOrPath`, `multiscale`): [`OmeZarrShapedDataset`](/vis/api/omezarr/src/type-aliases/omezarrshapeddataset/) \| `undefined`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:448](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L448)
+Defined in: [packages/omezarr/src/zarr/types.ts:448](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L448)
 
 #### Parameters
 
@@ -261,7 +261,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:448](https://github.com/AllenIns
 
 > **maxOrthogonal**(`plane`, `multiscale`): `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:420](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L420)
+Defined in: [packages/omezarr/src/zarr/types.ts:420](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L420)
 
 #### Parameters
 
@@ -283,7 +283,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:420](https://github.com/AllenIns
 
 > **maxX**(`multiscale`): `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:396](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L396)
+Defined in: [packages/omezarr/src/zarr/types.ts:396](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L396)
 
 Given a specific
 
@@ -308,7 +308,7 @@ the largest Z scale for the specified multiscale representation
 
 > **maxY**(`multiscale`): `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:406](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L406)
+Defined in: [packages/omezarr/src/zarr/types.ts:406](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L406)
 
 Given a specific
 
@@ -333,7 +333,7 @@ the largest Z scale for the specified multiscale representation
 
 > **maxZ**(`multiscale`): `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:416](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L416)
+Defined in: [packages/omezarr/src/zarr/types.ts:416](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L416)
 
 Given a specific
 
@@ -358,7 +358,7 @@ the largest Z scale for the specified multiscale representation
 
 > **toJSON**(): `OmeZarrMetadataFlattened`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:255](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L255)
+Defined in: [packages/omezarr/src/zarr/types.ts:255](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L255)
 
 #### Returns
 
@@ -370,7 +370,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:255](https://github.com/AllenIns
 
 > `static` **rehydrate**(`dehydrated`): `Promise`\<`OmeZarrMetadata`\>
 
-Defined in: [packages/omezarr/src/zarr/types.ts:507](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L507)
+Defined in: [packages/omezarr/src/zarr/types.ts:507](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L507)
 
 #### Parameters
 

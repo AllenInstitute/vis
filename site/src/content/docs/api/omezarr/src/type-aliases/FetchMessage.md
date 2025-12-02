@@ -7,7 +7,7 @@ title: "FetchMessage"
 
 > **FetchMessage** = `object`
 
-Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:20](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L20)
+Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:20](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L20)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:20
 
 > **id**: `string`
 
-Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:22](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L22)
+Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:22](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L22)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:22
 
 > **payload**: [`FetchMessagePayload`](/vis/api/omezarr/src/type-aliases/fetchmessagepayload/)
 
-Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:23](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L23)
+Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:23](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L23)
 
 ***
 
@@ -31,4 +31,4 @@ Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:23
 
 > **type**: *typeof* `FETCH_MESSAGE_TYPE`
 
-Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:21](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L21)
+Defined in: [packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts:21](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/cached-loading/fetch-data.interface.ts#L21)

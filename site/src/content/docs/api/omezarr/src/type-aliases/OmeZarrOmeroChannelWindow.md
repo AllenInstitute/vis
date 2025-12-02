@@ -7,7 +7,7 @@ title: "OmeZarrOmeroChannelWindow"
 
 > **OmeZarrOmeroChannelWindow** = `object`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:94](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L94)
+Defined in: [packages/omezarr/src/zarr/types.ts:94](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L94)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:94](https://github.com/AllenInst
 
 > **end**: `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:97](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L97)
+Defined in: [packages/omezarr/src/zarr/types.ts:97](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L97)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:97](https://github.com/AllenInst
 
 > **max**: `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:98](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L98)
+Defined in: [packages/omezarr/src/zarr/types.ts:98](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L98)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/omezarr/src/zarr/types.ts:98](https://github.com/AllenInst
 
 > **min**: `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:95](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L95)
+Defined in: [packages/omezarr/src/zarr/types.ts:95](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L95)
 
 ***
 
@@ -39,4 +39,4 @@ Defined in: [packages/omezarr/src/zarr/types.ts:95](https://github.com/AllenInst
 
 > **start**: `number`
 
-Defined in: [packages/omezarr/src/zarr/types.ts:96](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/omezarr/src/zarr/types.ts#L96)
+Defined in: [packages/omezarr/src/zarr/types.ts:96](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/omezarr/src/zarr/types.ts#L96)

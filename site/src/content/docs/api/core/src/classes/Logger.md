@@ -5,7 +5,7 @@ prev: false
 title: "Logger"
 ---
 
-Defined in: [packages/core/src/logger.ts:3](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L3)
+Defined in: [packages/core/src/logger.ts:3](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L3)
 
 ## Constructors
 
@@ -13,7 +13,7 @@ Defined in: [packages/core/src/logger.ts:3](https://github.com/AllenInstitute/vi
 
 > **new Logger**(`name`, `level`): `Logger`
 
-Defined in: [packages/core/src/logger.ts:7](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L7)
+Defined in: [packages/core/src/logger.ts:7](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L7)
 
 #### Parameters
 
@@ -35,7 +35,7 @@ Defined in: [packages/core/src/logger.ts:7](https://github.com/AllenInstitute/vi
 
 > **debug**(`message`, ...`optionalParams`): `void`
 
-Defined in: [packages/core/src/logger.ts:26](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L26)
+Defined in: [packages/core/src/logger.ts:26](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L26)
 
 #### Parameters
 
@@ -57,7 +57,7 @@ Defined in: [packages/core/src/logger.ts:26](https://github.com/AllenInstitute/v
 
 > **dir**(`obj`, ...`optionalParams`): `void`
 
-Defined in: [packages/core/src/logger.ts:33](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L33)
+Defined in: [packages/core/src/logger.ts:33](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L33)
 
 #### Parameters
 
@@ -79,7 +79,7 @@ Defined in: [packages/core/src/logger.ts:33](https://github.com/AllenInstitute/v
 
 > **error**(`message`, ...`optionalParams`): `void`
 
-Defined in: [packages/core/src/logger.ts:56](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L56)
+Defined in: [packages/core/src/logger.ts:56](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L56)
 
 #### Parameters
 
@@ -101,7 +101,7 @@ Defined in: [packages/core/src/logger.ts:56](https://github.com/AllenInstitute/v
 
 > **info**(`message`, ...`optionalParams`): `void`
 
-Defined in: [packages/core/src/logger.ts:42](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L42)
+Defined in: [packages/core/src/logger.ts:42](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L42)
 
 #### Parameters
 
@@ -123,7 +123,7 @@ Defined in: [packages/core/src/logger.ts:42](https://github.com/AllenInstitute/v
 
 > **setLevel**(`level`): `void`
 
-Defined in: [packages/core/src/logger.ts:12](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L12)
+Defined in: [packages/core/src/logger.ts:12](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L12)
 
 #### Parameters
 
@@ -141,7 +141,7 @@ Defined in: [packages/core/src/logger.ts:12](https://github.com/AllenInstitute/v
 
 > **warn**(`message`, ...`optionalParams`): `void`
 
-Defined in: [packages/core/src/logger.ts:49](https://github.com/AllenInstitute/vis/blob/cc93f342c456067cf88635c1dd3e1db92c5fef01/packages/core/src/logger.ts#L49)
+Defined in: [packages/core/src/logger.ts:49](https://github.com/AllenInstitute/vis/blob/7fbd4e84795d9f6d20552d268d9b60cdd55c5e79/packages/core/src/logger.ts#L49)
 
 #### Parameters
 
