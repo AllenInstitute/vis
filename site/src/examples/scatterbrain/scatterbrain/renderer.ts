@@ -4,8 +4,11 @@ import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, 
 import type { box2D } from '@alleninstitute/vis-geometry';
 import { MakeTaggedBufferView } from 'src/examples/common/typed-array';
 import { reduce } from 'lodash';
+import { assign, defMain, output, program, uniform, input, vec4, defn, V4, V2, sym, mul, float, ret, type Vec2Sym, type FloatSym } from "@thi.ng/shader-ast";
+import { GLSLVersion, targetGLSL } from "@thi.ng/shader-ast-glsl";
+// import * as glsl from '@thi.ng/shader-ast-glsl'
 // import type { ColumnRequest } from 'src/examples/common/loaders/scatterplot/scatterbrain-loader';
-
+import { defShader } from "@thi.ng/webgl";
 type Item = Readonly<{
     dataset: SlideviewScatterbrainDataset | ScatterbrainDataset
     node: TreeNode
@@ -79,3 +82,40 @@ export function buildScatterbrainCacheClient(regl: REGL.Regl, cache: SharedPrior
 perhaps the issue is not that we generate the shaders, but the very verbose string-building way in which we generate the shaders
 there are alternatives, use.gpu style, or even how thi.ng/umbrella does it with a custom DSL...
 */
+
+function whatever(ctx: WebGLRenderingContext) {
+    const glsl = targetGLSL({ version: GLSLVersion.GLES_100 })
+    const x = program([defn(V4, 'neat', [V2, V2], (what, who) => {
+        let uv: FloatSym
+        return [
+            (uv = sym(mul(float(2), float(3)))),
+            ret(vec4(uv, uv, uv, float(10)))
+        ]
+    })])
+    // I feel confident that the above is actually less comprehensible than some GLSL template literals...
+
+
+    const wtf = glsl(x) // ok this is the way to actually compile it to a string...
+    const hey = defShader(ctx, {
+        vs: (gl, unis, attribs) => [
+            defMain(() =>
+                [assign(gl.gl_Position, vec4(1, 2, 3, 0))]
+            )
+        ],
+        fs: (gl, unis, wat, outs) => [
+            defMain(() =>
+                [assign(
+                    outs.fragColor,
+                    vec4(1, 2, 3, 1)
+                ),]
+            )
+        ],
+        attribs: {
+
+        },
+        uniforms: {
+
+        }
+    })
+    hey.program
+}
