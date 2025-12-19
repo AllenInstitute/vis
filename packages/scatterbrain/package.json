@@ -39,6 +39,7 @@
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
         "dev": "parcel watch --port 1237",
+        "demo": "vite",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
@@ -51,13 +52,16 @@
     "devDependencies": {
         "@parcel/packager-ts": "2.15.4",
         "@parcel/transformer-typescript-types": "2.15.4",
+        "@types/lodash": "4.17.21",
         "parcel": "2.15.4",
         "typescript": "5.9.3",
+        "vite": "7.3.0",
         "vitest": "4.0.6"
     },
     "dependencies": {
         "@alleninstitute/vis-core": "workspace:*",
         "@alleninstitute/vis-geometry": "workspace:*",
+        "lodash": "4.17.21",
         "regl": "2.1.0",
         "ts-pattern": "5.9.0"
     },
