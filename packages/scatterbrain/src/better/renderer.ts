@@ -4,7 +4,7 @@ import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, 
 import type { box2D, Interval, vec2 } from '@alleninstitute/vis-geometry';
 import { MakeTaggedBufferView } from '../typed-array';
 import { isEqual, keys, map, omit, reduce } from 'lodash'
-import { getVisibleItems } from './dataset';
+import { getVisibleItems, type NodeWithBounds } from './dataset';
 import { buildScatterbrainRenderCommand, buildShaders, type Config, configureShader, type ShaderSettings, VBO } from './shader';
 export type Item = Readonly<{
     dataset: SlideviewScatterbrainDataset | ScatterbrainDataset
@@ -74,6 +74,21 @@ type State = ShaderSettings & {
 
 
 // }
+function columnsForItem<T extends object>(config: Config, col2shader: Record<string, string>, dataset: ScatterbrainDataset | SlideviewScatterbrainDataset) {
+    const columns: Record<string, ColumnRequest> = {}
+    const s2c = reduce(keys(col2shader), (acc, col) => ({ ...acc, [col2shader[col]]: col }), {} as Record<string, string>)
+
+    for (const c of config.categoricalColumns) {
+        columns[c] = { type: 'METADATA', name: s2c[c] }
+    }
+    for (const m of config.quantitativeColumns) {
+        columns[m] = { type: 'QUANTITATIVE', name: s2c[m] }
+    }
+    columns[config.positionColumn] = { type: 'METADATA', name: dataset.metadata.spatialColumn }
+    return (item: T,) => {
+        return { ...item, dataset, columns }
+    }
+}
 export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriorityCache, canvas: HTMLCanvasElement) {
     let draw: ReturnType<typeof buildScatterbrainRenderCommand> | undefined;
     const client = buildScatterbrainCacheClient(regl, cache, () => {
@@ -93,18 +108,20 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
     }
     const gradient = regl.texture({ width: 256, height: 1, format: 'rgba', data: gradientData })
     let prevSettings: State | undefined;
+    let augment: ((node: NodeWithBounds) => Item) | undefined
     const render = (state: State) => {
+        const { camera, dataset } = state;
         if (!draw || !isEqual(prevSettings, omit(state, 'camera'))) {
             const { config, columnNameToShaderName } = configureShader(state);
+            augment = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
             draw = buildScatterbrainRenderCommand(config, regl);
         }
-        const { camera, dataset } = state;
         if (draw !== undefined) {
             const visible = getVisibleItems(dataset, camera)
             // TODO: use the columnNameToShaderName (in reverse) to build
             // the set of columns to request (an Item is a request)
             // the key will be the shaderName, the value will be a columnRequest that will satisfy that shader attribute.
-            const items: Item[] = map(visible, (node) => ({ ...node, dataset, columns: { 'position': { type: 'METADATA', name: dataset.metadata.spatialColumn } } }))
+            const items: Item[] = map(visible, augment!)
             client.setPriorities(items, []);
 
             for (const item of items) {
@@ -118,7 +135,7 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
                             categoricalLookupTable: lookup,
                             gradient,
                             offset: [0, 0],
-                            quantitativeRangeFilters: {}, // TODO fill me in - shader names are the keys here
+                            quantitativeRangeFilters: { COLOR_BY_MEASURE: [0, 10] }, // TODO fill me in - shader names are the keys here
                             item: {
                                 columnData: gpuData,
                                 count: item.node.numSpecimens,

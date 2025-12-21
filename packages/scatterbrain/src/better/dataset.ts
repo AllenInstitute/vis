@@ -5,7 +5,7 @@ import { reduce } from "lodash";
 type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset
 // figure out that path through the tree, given a TreeNode name
 // these names are structured data - so it should always be possible
-type NodeWithBounds = { node: TreeNode, bounds: box2D }
+export type NodeWithBounds = { node: TreeNode, bounds: box2D }
 
 // adapted from Potree createChildAABB
 // note that if you do not do indexing in precisely the same order

@@ -4,7 +4,7 @@
 
 import REGL from "regl";
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from "./types";
-import { keys, mapValues, reduce } from "lodash";
+import { filter, keys, mapValues, reduce } from "lodash";
 import { Box2D, type box2D, type Interval, type vec2 } from "@alleninstitute/vis-geometry";
 import { type Cacheable, type CachedVertexBuffer } from "@alleninstitute/vis-core";
 
@@ -159,10 +159,11 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
         }
     }) => {
         const { target, gradient, camera, offset, quantitativeRangeFilters, categoricalLookupTable, item } = props
+        const filterRanges = reduce(keys(quantitativeRangeFilters), (acc, cur) => ({ ...acc, [rangeFor(cur)]: quantitativeRangeFilters[cur] }), {})
         const { view, screenResolution } = camera
         const { count, columnData } = item;
         const rawBuffers = mapValues(columnData, (vbo) => vbo.buffer.buffer)
-        cmd({ target, gradient, categoricalLookupTable, offset, count, view: Box2D.toFlatArray(view), screenSize: screenResolution, ...quantitativeRangeFilters, ...rawBuffers })
+        cmd({ target, gradient, categoricalLookupTable, offset, count, view: Box2D.toFlatArray(view), screenSize: screenResolution, ...filterRanges, ...rawBuffers })
     }
 }
 
