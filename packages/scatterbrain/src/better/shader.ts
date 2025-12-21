@@ -167,9 +167,22 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
     }
 }
 
+function rangeFilterExpression(qColumns: readonly string[]) {
+    return qColumns.map(attrib =>/*glsl*/`within(${attrib},${rangeFor(attrib)})`).join(' * ')
+}
+function categoricalFilterExpression(cColumns: readonly string[], tableSize: vec2, tableName: string) {
+    // categorical columns are in order - this array will have the same order as the col in the texture
+    const [w, h] = tableSize;
+    return cColumns.map((attr, i) =>
+        /*glsl*/`texture2D(${tableName},vec2(${i.toFixed(0)}.5,${attr}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a`)
+        .join(' * ')
+}
+
 export function generate(config: Config): ScatterbrainShaderUtils {
     const { mode, quantitativeColumns, categoricalColumns, categoricalTable, gradientTable, positionColumn, colorByColumn } = config;
 
+    const catFilter = categoricalFilterExpression(categoricalColumns, [10, 10], categoricalTable)
+    const rangeFilter = rangeFilterExpression(quantitativeColumns)
     const uniforms = /*glsl*/`
     uniform vec4 view;
     uniform vec2 screenSize;
@@ -195,10 +208,13 @@ export function generate(config: Config): ScatterbrainShaderUtils {
     float rangeParameter(float v, vec2 range){
         return (v-range.x)/(range.y-range.x);
     }
+    float within(float v, vec2 range){
+        return step(range.x,v)*step(v,range.y);
+    }
     `
 
     const isHovered = /*glsl*/`return 0.0;` // todo hovering
-    const isFilteredIn = /*glsl*/`return 1.0;` // todo filtering! 
+    const isFilteredIn = /*glsl*/`return ${catFilter.length > 0 ? catFilter : '1.0'}*${rangeFilter.length > 0 ? rangeFilter : '1.0'};`
 
     const getDataPosition = /*glsl*/`return vec3(${positionColumn}+offset,0.0);`
     const getClipPosition = /*glsl*/`return applyCamera(getDataPosition());`

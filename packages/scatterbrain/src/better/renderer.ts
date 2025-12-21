@@ -160,6 +160,7 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
 * color by (cat / quant)
 * hover -> data out
 * highlight color-by value
+* NaN / Null value handling
 * categorical filtering
 * range filtering
 * slide view offsets
