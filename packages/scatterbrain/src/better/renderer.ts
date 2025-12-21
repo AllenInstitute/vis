@@ -109,21 +109,24 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
     const gradient = regl.texture({ width: 256, height: 1, format: 'rgba', data: gradientData })
     let prevSettings: State | undefined;
     let augment: ((node: NodeWithBounds) => Item) | undefined
+    let c2s: Record<string, string> = {}
+    let configuration: Config | undefined // todo I hate all this fix it
     const render = (state: State) => {
         const { camera, dataset } = state;
         if (!draw || !isEqual(prevSettings, omit(state, 'camera'))) {
             const { config, columnNameToShaderName } = configureShader(state);
+            configuration = config;
+            c2s = columnNameToShaderName
             augment = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
             draw = buildScatterbrainRenderCommand(config, regl);
         }
         if (draw !== undefined) {
             const visible = getVisibleItems(dataset, camera)
-            // TODO: use the columnNameToShaderName (in reverse) to build
-            // the set of columns to request (an Item is a request)
-            // the key will be the shaderName, the value will be a columnRequest that will satisfy that shader attribute.
             const items: Item[] = map(visible, augment!)
             client.setPriorities(items, []);
-
+            const filterRanges: Record<string, vec2> = reduce(keys(state.quantitativeFilters),
+                (acc, col) => ({ ...acc, [c2s[col]]: [state.quantitativeFilters[col].min, state.quantitativeFilters[col].max] }),
+                state.colorBy.kind === 'quantitative' ? { [configuration!.colorByColumn]: [state.colorBy.range.min, state.colorBy.range.max] } : {})
             for (const item of items) {
                 if (client.has(item)) {
                     const gpuData = client.get(item)
@@ -135,7 +138,7 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
                             categoricalLookupTable: lookup,
                             gradient,
                             offset: [0, 0],
-                            quantitativeRangeFilters: { COLOR_BY_MEASURE: [0, 10] }, // TODO fill me in - shader names are the keys here
+                            quantitativeRangeFilters: filterRanges,
                             item: {
                                 columnData: gpuData,
                                 count: item.node.numSpecimens,
@@ -152,3 +155,14 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
 
     return render
 }
+
+/*      TODO features:
+* color by (cat / quant)
+* hover -> data out
+* highlight color-by value
+* categorical filtering
+* range filtering
+* slide view offsets
+* configurable depth settings (quantitative, node-depth, constant)
+* filter-out color (constant / transparant)
+*/

@@ -34,7 +34,7 @@ async function begin() {
     console.log('yay data!', yay)
     const render = buildScatterbrainRenderer(regl, cache, canvas)
     render({
-        camera: { view: { minCorner: [0, 0], maxCorner: [10, 10] }, screenResolution: [800, 800] },
+        camera: { view: { minCorner: [-17, -17], maxCorner: [26, 26] }, screenResolution: [800, 800] },
         categoricalFilters: {},
         colorBy: { kind: 'quantitative', column: '27683', gradient: 'viridis', range: { min: 0, max: 10 } },
         dataset: yay,
