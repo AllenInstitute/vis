@@ -52,7 +52,7 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "regl": "2.1.0",
         "zarrita": "0.5.4",
-        "zod": "4.1.13"
+        "zod": "4.3.5"
     },
     "packageManager": "pnpm@9.14.2"
 }
