@@ -62,7 +62,8 @@ export function buildScatterbrainCacheClient(regl: REGL.Regl, cache: SharedPrior
 
 // }
 type State = ShaderSettings & {
-    camera: { view: box2D, screenResolution: vec2 }
+    camera: { view: box2D, screenResolution: vec2 },
+    filterBox: box2D,
 }
 
 // function buildRenderCommand(state: State, regl: REGL.Regl) {
@@ -112,7 +113,7 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
     let c2s: Record<string, string> = {}
     let configuration: Config | undefined // todo I hate all this fix it
     const render = (state: State) => {
-        const { camera, dataset } = state;
+        const { camera, dataset, filterBox } = state;
         if (!draw || !isEqual(prevSettings, omit(state, 'camera'))) {
             const { config, columnNameToShaderName } = configureShader(state);
             configuration = config;
@@ -137,7 +138,9 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
                             camera,
                             categoricalLookupTable: lookup,
                             gradient,
+                            spatialFilterBox: filterBox,
                             offset: [0, 0],
+                            filteredOutColor: [.3, .3, .3, 1],
                             quantitativeRangeFilters: filterRanges,
                             item: {
                                 columnData: gpuData,
@@ -157,13 +160,14 @@ export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriority
 }
 
 /*      TODO features:
-* color by (cat / quant)
+[x] color by (cat / quant)
 * hover -> data out
 * highlight color-by value
 * NaN / Null value handling
-* categorical filtering
-* range filtering
+[x] categorical filtering
+[x] range filtering // should work... test it though
+[x] spatial-box filtering
 * slide view offsets
 * configurable depth settings (quantitative, node-depth, constant)
-* filter-out color (constant / transparant)
+[x] filtered-out color (constant / transparant)
 */

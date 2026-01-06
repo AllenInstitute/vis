@@ -39,6 +39,7 @@ async function begin() {
         colorBy: { kind: 'quantitative', column: '27683', gradient: 'viridis', range: { min: 0, max: 10 } },
         dataset: yay,
         quantitativeFilters: {},
+        filterBox: { minCorner: [-17, -17], maxCorner: [0, 0] }
     })
 }
 
