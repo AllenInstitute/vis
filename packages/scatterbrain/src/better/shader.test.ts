@@ -418,6 +418,7 @@ describe('configure', () => {
         const { config, columnNameToShaderName } = configureShader({
             dataset: tenx,
             categoricalFilters: {},
+            mode: 'color',
             colorBy: { kind: 'quantitative', column: '123', gradient: 'viridis', range: { min: 0, max: 10 } },
             quantitativeFilters: {},
         })
@@ -429,6 +430,7 @@ describe('configure', () => {
             colorByColumn: 'COLOR_BY_MEASURE',
             gradientTable: 'gradient',
             mode: 'color',
+            tableSize: [1, 1],
             quantitativeColumns: ['COLOR_BY_MEASURE'],
             positionColumn: 'position',
         }

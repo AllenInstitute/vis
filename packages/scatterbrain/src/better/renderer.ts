@@ -1,11 +1,11 @@
 import type { Cacheable, CachedVertexBuffer, SharedPriorityCache } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from './types';
-import type { box2D, Interval, vec2 } from '@alleninstitute/vis-geometry';
+import type { box2D, Interval, vec2, vec4 } from '@alleninstitute/vis-geometry';
 import { MakeTaggedBufferView } from '../typed-array';
-import { isEqual, keys, map, omit, reduce } from 'lodash'
+import { filter, isEqual, keys, map, omit, reduce } from 'lodash'
 import { getVisibleItems, type NodeWithBounds } from './dataset';
-import { buildScatterbrainRenderCommand, buildShaders, type Config, configureShader, type ShaderSettings, VBO } from './shader';
+import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';
 export type Item = Readonly<{
     dataset: SlideviewScatterbrainDataset | ScatterbrainDataset
     node: TreeNode
@@ -55,26 +55,12 @@ export function buildScatterbrainCacheClient(regl: REGL.Regl, cache: SharedPrior
     return client;
 }
 
-// export function stuff(client: ReturnType<typeof buildScatterbrainCacheClient>, dataset: SlideviewScatterbrainDataset | ScatterbrainDataset, camera: { view: box2D, screenResolution: vec2 }) {
-//     const visible = getVisibleItems(dataset, camera)
-//     const items: Item[] = map(visible, (node) => ({ ...node, dataset, columns: { 'position': { type: 'METADATA', name: dataset.metadata.spatialColumn } } }))
-//     client.setPriorities(items, []);
-
-// }
 type State = ShaderSettings & {
     camera: { view: box2D, screenResolution: vec2 },
     filterBox: box2D,
 }
 
-// function buildRenderCommand(state: State, regl: REGL.Regl) {
-//     const { dataset } = state;
-//     const { config, columnNameToShaderName } = configureShader(state);
-//     const renderer = buildScatterbrainRenderCommand(config, regl)
 
-//     // lets use a fake set of textures for now 
-
-
-// }
 function columnsForItem<T extends object>(config: Config, col2shader: Record<string, string>, dataset: ScatterbrainDataset | SlideviewScatterbrainDataset) {
     const columns: Record<string, ColumnRequest> = {}
     const s2c = reduce(keys(col2shader), (acc, col) => ({ ...acc, [col2shader[col]]: col }), {} as Record<string, string>)
@@ -90,79 +76,107 @@ function columnsForItem<T extends object>(config: Config, col2shader: Record<str
         return { ...item, dataset, columns }
     }
 }
-export function buildScatterbrainRenderer(regl: REGL.Regl, cache: SharedPriorityCache, canvas: HTMLCanvasElement) {
-    let draw: ReturnType<typeof buildScatterbrainRenderCommand> | undefined;
-    const client = buildScatterbrainCacheClient(regl, cache, () => {
-        // mega hack for now - if new data shows up, try to just directly invoke the renderer with a stashed copy of the settings...
-        if (prevSettings) {
-            render(prevSettings)
-        }
-    });
 
-    const lookup = regl.texture({ width: 10, height: 10, format: 'rgba' })
-    const gradientData = new Uint8Array(256 * 4);
-    for (let i = 0; i < 256; i += 4) {
-        gradientData[i * 4 + 0] = i;
-        gradientData[i * 4 + 1] = i;
-        gradientData[i * 4 + 2] = i;
-        gradientData[i * 4 + 3] = 255;
+function buildHelperThingy(regl: REGL.Regl, state: ShaderSettings) {
+    const { dataset } = state;
+    const { config, columnNameToShaderName } = configureShader(state);
+    const prepareQtCell = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
+    const drawQtCell = buildScatterbrainRenderCommand(config, regl);
+    return { drawQtCell, prepareQtCell };
+}
+
+/**
+ * a helper function that MUTATES ALL the values in the given @param texture
+ * to set them to the color and filter status as given in the categories record
+ * note that the texture's maping to categories is based on a lexical sorting of the names of the
+ * categories
+ * @param categories 
+ * @param regl 
+ * @param texture 
+ */
+export function setCategoricalLookupTableValues(categories: Record<string, Record<number, { color: vec4, filteredIn: boolean }>>,
+    texture: REGL.Texture2D
+) {
+    const categoryKeys = keys(categories).toSorted()
+    const columns = categoryKeys.length;
+    const rows = reduce(categoryKeys, (highest, category) => Math.max(highest, keys(categories[category]).length), 1);
+    const data = new Uint8Array(columns * rows * 4);
+    let rgbf = [0, 0, 0, 0]
+    const empty = [0, 0, 0, 0] as const;
+    // write the rgb of the color, and encode the filter boolean into the alpha channel
+    for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {
+        const category = categories[categoryKeys[columnIndex]]
+        const nRows = keys(category).length;
+        for (let rowIndex = 0; rowIndex < nRows; rowIndex += 1) {
+            const color = category[rowIndex]?.color ?? empty
+            const filtered = category[rowIndex]?.filteredIn ?? false;
+            rgbf[0] = color[0] * 255
+            rgbf[1] = color[1] * 255
+            rgbf[2] = color[2] * 255
+            rgbf[3] = filtered ? 255 : 0
+            data.set(rgbf, (rowIndex * columns * 4) + columnIndex * 4)
+        }
     }
-    const gradient = regl.texture({ width: 256, height: 1, format: 'rgba', data: gradientData })
-    let prevSettings: State | undefined;
-    let augment: ((node: NodeWithBounds) => Item) | undefined
-    let c2s: Record<string, string> = {}
-    let configuration: Config | undefined // todo I hate all this fix it
-    const render = (state: State) => {
-        const { camera, dataset, filterBox } = state;
-        if (!draw || !isEqual(prevSettings, omit(state, 'camera'))) {
-            const { config, columnNameToShaderName } = configureShader(state);
-            configuration = config;
-            c2s = columnNameToShaderName
-            augment = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
-            draw = buildScatterbrainRenderCommand(config, regl);
-        }
-        if (draw !== undefined) {
-            const visible = getVisibleItems(dataset, camera)
-            const items: Item[] = map(visible, augment!)
-            client.setPriorities(items, []);
-            const filterRanges: Record<string, vec2> = reduce(keys(state.quantitativeFilters),
-                (acc, col) => ({ ...acc, [c2s[col]]: [state.quantitativeFilters[col].min, state.quantitativeFilters[col].max] }),
-                state.colorBy.kind === 'quantitative' ? { [configuration!.colorByColumn]: [state.colorBy.range.min, state.colorBy.range.max] } : {})
-            for (const item of items) {
-                if (client.has(item)) {
-                    const gpuData = client.get(item)
-                    if (gpuData) {
-                        // draw it now
-                        draw({
-                            target: null,
-                            camera,
-                            categoricalLookupTable: lookup,
-                            gradient,
-                            spatialFilterBox: filterBox,
-                            offset: [0, 0],
-                            filteredOutColor: [.3, .3, .3, 1],
-                            quantitativeRangeFilters: filterRanges,
-                            item: {
-                                columnData: gpuData,
-                                count: item.node.numSpecimens,
-                            },
+    // calling a texture as a function is REGL shorthand for total re-init of this texture, capable of resizing if needed
+    // warning - this is not likely to be fast
+    texture({ data, width: columns, height: rows });
+}
+/**
+ * same as setCategoricalLookupTableValues, except it only writes a single value update to the texture.
+ * note that the list of categories given must match those used to construct the texture, and are needed here
+ * due to the lexical sorting order determining the column order of the @param texture
+ * @param categories 
+ * @param update 
+ * @param regl 
+ * @param texture 
+ */
+export function updateCategoricalValue(categories: readonly string[],
+    update: { category: string, row: number, color: vec4, filteredIn: boolean },
+    texture: REGL.Texture2D
+) {
+    const { category, row, color, filteredIn } = update;
+    const col = categories.toSorted().indexOf(category)
+    if (texture.width <= col || texture.height <= row || row < 0 || col < 0) {
+        // todo - it might be better to let regl throw the same error... think about it
+        throw new Error(`attempted to update metadata lookup table with invalid coordinates: row=${row},col=${col} is not within ${texture.width}, ${texture.height}`)
+    }
+    const data = new Uint8Array(4);
+    data[0] = color[0] * 255
+    data[1] = color[1] * 255
+    data[2] = color[2] * 255
+    data[3] = filteredIn ? 255 : 0
+    texture.subimage(data, col, row)
+}
 
-                        })
-                    }
+type Props = Omit<Parameters<ReturnType<typeof buildScatterbrainRenderCommand>>[0], 'item'> & { dataset: ScatterbrainDataset | SlideviewScatterbrainDataset, client: ReturnType<typeof buildScatterbrainCacheClient> }
+export function buildRenderFrameFn(regl: REGL.Regl, state: ShaderSettings) {
+    const { drawQtCell, prepareQtCell } = buildHelperThingy(regl, state)
+    return function render(props: Props) {
+        const { camera, dataset, client } = props
+        const visibleQtNodes = getVisibleItems(dataset, camera).map(prepareQtCell)
+        client.setPriorities(visibleQtNodes, [])
+        for (const node of visibleQtNodes) {
+            if (client.has(node)) {
+                const drawable = client.get(node)
+                if (drawable) {
+                    drawQtCell({
+                        ...props,
+                        item: {
+                            columnData: drawable,
+                            count: node.node.numSpecimens,
+                        },
+                    })
                 }
-
             }
         }
-        prevSettings = state
     }
-
-    return render
 }
 
 /*      TODO features:
 [x] color by (cat / quant)
-* hover -> data out
-* highlight color-by value
+[x] hover (cat / quant) -> data out
+[x] highlight color-by value
+   - highlight overrides filtering
 * NaN / Null value handling
 [x] categorical filtering
 [x] range filtering // should work... test it though

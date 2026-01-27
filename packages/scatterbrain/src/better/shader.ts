@@ -121,10 +121,24 @@ export type Config = {
 function rangeFor(col: string) {
     return `${col}_range`;
 }
-
+export type RenderProps = {
+    target: REGL.Framebuffer2D | null,
+    categoricalLookupTable: REGL.Texture2D,
+    gradient: REGL.Texture2D,
+    camera: { view: box2D, screenResolution: vec2 },
+    offset: vec2,
+    filteredOutColor: vec4,
+    spatialFilterBox: box2D,
+    quantitativeRangeFilters: Record<string, vec2>,
+    hoveredValue: number,
+    item: {
+        count: number,
+        columnData: Record<string, VBO>
+    }
+}
 export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) {
     const prop = (p: string) => regl.prop<any, string>(p)
-    const { mode, quantitativeColumns, categoricalColumns, categoricalTable, gradientTable, positionColumn } = config;
+    const { quantitativeColumns, categoricalColumns, categoricalTable, gradientTable, positionColumn } = config;
     const ranges = reduce(quantitativeColumns, (unis, col) => ({ ...unis, [rangeFor(col)]: prop(rangeFor(col)) }), {} as Record<string, REGL.DynamicVariable<any>>);
     const { vs, fs } = buildShaders(config);
     const uniforms = {
@@ -134,6 +148,7 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
         spatialFilterBox: prop('spatialFilterBox'),
         filteredOutColor: prop('filteredOutColor'),
         view: prop('view'),
+        hoveredValue: prop('hoveredValue'),
         screenSize: prop('screenSize'),
         offset: prop('offset'),
     }
@@ -150,26 +165,13 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
         count: prop('count')
     });
     // 
-    return (props: {
-        target: REGL.Framebuffer2D | null,
-        categoricalLookupTable: REGL.Texture2D,
-        gradient: REGL.Texture2D,
-        camera: { view: box2D, screenResolution: vec2 },
-        offset: vec2,
-        filteredOutColor: vec4,
-        spatialFilterBox: box2D,
-        quantitativeRangeFilters: Record<string, vec2>,
-        item: {
-            count: number,
-            columnData: Record<string, VBO>
-        }
-    }) => {
-        const { target, spatialFilterBox, filteredOutColor, gradient, camera, offset, quantitativeRangeFilters, categoricalLookupTable, item } = props
+    return (props: RenderProps) => {
+        const { target, hoveredValue, spatialFilterBox, filteredOutColor, gradient, camera, offset, quantitativeRangeFilters, categoricalLookupTable, item } = props
         const filterRanges = reduce(keys(quantitativeRangeFilters), (acc, cur) => ({ ...acc, [rangeFor(cur)]: quantitativeRangeFilters[cur] }), {})
         const { view, screenResolution } = camera
         const { count, columnData } = item;
         const rawBuffers = mapValues(columnData, (vbo) => vbo.buffer.buffer)
-        cmd({ target, gradient, filteredOutColor, spatialFilterBox: Box2D.toFlatArray(spatialFilterBox), categoricalLookupTable, offset, count, view: Box2D.toFlatArray(view), screenSize: screenResolution, ...filterRanges, ...rawBuffers })
+        cmd({ target, gradient, hoveredValue, filteredOutColor, spatialFilterBox: Box2D.toFlatArray(spatialFilterBox), categoricalLookupTable, offset, count, view: Box2D.toFlatArray(view), screenSize: screenResolution, ...filterRanges, ...rawBuffers })
     }
 }
 
@@ -179,15 +181,17 @@ function rangeFilterExpression(qColumns: readonly string[]) {
 function categoricalFilterExpression(cColumns: readonly string[], tableSize: vec2, tableName: string) {
     // categorical columns are in order - this array will have the same order as the col in the texture
     const [w, h] = tableSize;
+    // return /*glsl*/`step(0.01,texture2D(${tableName},vec2(0.5,${cColumns[0]}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a)`
     return cColumns.map((attrib, i) =>
-        /*glsl*/`texture2D(${tableName},vec2(${i.toFixed(0)}.5,${attrib}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a`)
+        /*glsl*/`step(0.01,texture2D(${tableName},vec2(${i.toFixed(0)}.5,${attrib}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a)`)
         .join(' * ')
 }
 
 export function generate(config: Config): ScatterbrainShaderUtils {
     const { mode, quantitativeColumns, categoricalColumns, categoricalTable, tableSize, gradientTable, positionColumn, colorByColumn } = config;
-
+    console.log('tableSize: ', tableSize)
     const catFilter = categoricalFilterExpression(categoricalColumns, tableSize, categoricalTable)
+    console.log('cat filter: ', catFilter)
     const rangeFilter = rangeFilterExpression(quantitativeColumns)
     const uniforms = /*glsl*/`
     uniform vec4 view;
@@ -195,6 +199,7 @@ export function generate(config: Config): ScatterbrainShaderUtils {
     uniform vec2 offset;
     uniform vec4 spatialFilterBox;
     uniform vec4 filteredOutColor;
+    uniform float hoveredValue;
 
     uniform sampler2D ${gradientTable};
     uniform sampler2D ${categoricalTable};
@@ -221,8 +226,11 @@ export function generate(config: Config): ScatterbrainShaderUtils {
         return step(range.x,v)*step(v,range.y);
     }
     `
-
-    const isHovered = /*glsl*/`return 0.0;` // todo hovering
+    const categoryColumnIndex = categoricalColumns.indexOf(colorByColumn);
+    const isCategoricalColor = categoryColumnIndex > -1
+    const hoverCategoryExpr = /*glsl*/`1.0-step(0.1,abs(${colorByColumn}-hoveredValue))`
+    const isHovered = /*glsl*/`
+        return ${isCategoricalColor ? hoverCategoryExpr : '0.0'};`
     const isFilteredIn = /*glsl*/`
     vec3 p = getDataPosition();
     return within(p.x,spatialFilterBox.xz)*within(p.y,spatialFilterBox.yw)
@@ -232,23 +240,32 @@ export function generate(config: Config): ScatterbrainShaderUtils {
 
     const getDataPosition = /*glsl*/`return vec3(${positionColumn}+offset,0.0);`
     const getClipPosition = /*glsl*/`return applyCamera(getDataPosition());`
-    const getPointSize = /*glsl*/`return 2.0;` // todo!
+    const getPointSize = /*glsl*/`return mix(2.0,6.0,isHovered());` // todo!
     // todo - use config options!
     // if the colorByColumn is a categorical column, generate that
     // else, use a range-colorby
-    const categoryColumnIndex = categoricalColumns.indexOf(colorByColumn);
     const [w, h] = tableSize;
     const colorByCategorical = /*glsl*/`
-    texture2D(${categoricalTable},vec2(${categoryColumnIndex.toFixed(0)}.5,${colorByColumn}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).rgb`
+    vec4(texture2D(${categoricalTable},vec2(${categoryColumnIndex.toFixed(0)}.5,${colorByColumn}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).rgb,1.0)`
 
     const colorByQuantitative = /*glsl*/`
     texture2D(${gradientTable},vec2(rangeParameter(${colorByColumn},${rangeFor(colorByColumn)}),0.5))
     `
     const colorize = categoryColumnIndex != -1 ? colorByCategorical : colorByQuantitative
-    const getColor = /*glsl*/`
-        return mix(filteredOutColor,${colorize},isFilteredIn());
-    `
 
+    const colorByCategoricalId = /*glsl*/` 
+        float G = mod(${colorByColumn},256.0);
+        float R = mod(${colorByColumn}/256.0,256.0);
+        return vec4(R/255.0,G/255.0,0,1);
+    `
+    const colorByQuantitativeValue = /*glsl*/` 
+        return vec4(0,rangeParameter(${colorByColumn},${rangeFor(colorByColumn)}),0,1);
+    `
+    const getColor = mode === 'color' ? /*glsl*/`
+        return mix(filteredOutColor,${colorize},isFilteredIn());
+    ` :
+        (categoryColumnIndex === -1 ? colorByQuantitativeValue : colorByCategoricalId)
+    console.log(getColor)
     return {
         attributes,
         uniforms,
@@ -267,8 +284,9 @@ export function generate(config: Config): ScatterbrainShaderUtils {
 // that means changing them may require re-building the renderer (and the shader beneath it)
 export type ShaderSettings = {
     dataset: ScatterbrainDataset | SlideviewScatterbrainDataset
-    categoricalFilters: Record<string, Record<number, boolean>> // category-->{value : filteredIn}
-    quantitativeFilters: Record<string, Interval>
+    categoricalFilters: Record<string, number> // category name -> maximum # of distinct values in that category
+    quantitativeFilters: readonly string[] // the names of quantitative variables
+    mode: 'color' | 'info',
     colorBy: { kind: 'metadata', column: string } | { kind: 'quantitative', column: string, gradient: 'viridis' | 'inferno', range: Interval }
 }
 
@@ -278,13 +296,15 @@ export function configureShader(settings: ShaderSettings): { config: Config, col
     // given settings that make sense to a caller (stuff about the data we want to visualize)
     // produce an object that can be used to set up some internal config of the shader that would
     // do the visualization
-    const { dataset, categoricalFilters, quantitativeFilters, colorBy } = settings;
+    const { dataset, categoricalFilters, quantitativeFilters, colorBy, mode } = settings;
+    console.log('cat filters...', categoricalFilters)
     // figure out the columns we care about
     // assign them names that are safe to use in the shader (A,B,C, whatever)
-    const numCategories = keys(categoricalFilters).length;
-    const longest = reduce(keys(categoricalFilters), (highest, cur) => Math.max(highest, keys(categoricalFilters[cur]).length), 0)
-    const qAttrs = reduce(keys(quantitativeFilters).toSorted(), (acc, cur, i) => ({ ...acc, [cur]: `MEASURE_${i.toFixed(0)}` }), colorBy.kind === 'metadata' ? {} : { [colorBy.column]: 'COLOR_BY_MEASURE' } as Record<string, string>);
-    const cAttrs = reduce(keys(categoricalFilters).toSorted(), (acc, cur, i) => ({ ...acc, [cur]: `CATEGORY_${i.toFixed(0)}` }), colorBy.kind === 'metadata' ? { [colorBy.column]: 'COLOR_BY_CATEGORY' } : {} as Record<string, string>);
+    const categories = keys(categoricalFilters).toSorted()
+    const numCategories = categories.length;
+    const longest = reduce(keys(categoricalFilters), (highest, cur) => Math.max(highest, categoricalFilters[cur]), 0)
+    const qAttrs = reduce(quantitativeFilters.toSorted(), (acc, cur, i) => ({ ...acc, [cur]: `MEASURE_${i.toFixed(0)}` }), colorBy.kind === 'metadata' ? {} : { [colorBy.column]: 'COLOR_BY_MEASURE' } as Record<string, string>);
+    const cAttrs = reduce(categories, (acc, cur, i) => ({ ...acc, [cur]: `CATEGORY_${i.toFixed(0)}` }), colorBy.kind === 'metadata' ? { [colorBy.column]: 'COLOR_BY_CATEGORY' } : {} as Record<string, string>);
     const colToAttribute = { ...qAttrs, ...cAttrs, [dataset.metadata.spatialColumn]: 'position' };
 
     const config: Config = {
@@ -293,7 +313,7 @@ export function configureShader(settings: ShaderSettings): { config: Config, col
         categoricalTable: 'lookup',
         gradientTable: 'gradient',
         colorByColumn: colToAttribute[colorBy.column],
-        mode: 'color',
+        mode,
         positionColumn: 'position',
         tableSize: [Math.max(numCategories, 1), Math.max(1, longest)]
     }
