@@ -2,7 +2,7 @@ import type { Cacheable, CachedVertexBuffer, SharedPriorityCache } from '@alleni
 import type REGL from 'regl';
 import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from './types';
 import type { box2D, Interval, vec2, vec4 } from '@alleninstitute/vis-geometry';
-import { MakeTaggedBufferView } from '../typed-array';
+import { MakeTaggedBufferView } from './typed-array';
 import { filter, isEqual, keys, map, omit, reduce } from 'lodash'
 import { getVisibleItems, type NodeWithBounds } from './dataset';
 import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';

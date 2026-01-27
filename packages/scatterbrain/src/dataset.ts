@@ -1,5 +1,5 @@
 import { Box2D, type box2D, type box3D, Box3D, Vec2, type vec2, type vec3, Vec3 } from "@alleninstitute/vis-geometry";
-import type { ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from "./types";
+import type { ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from "./better/types";
 import { reduce } from "lodash";
 
 type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset

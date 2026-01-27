@@ -1,9 +1,9 @@
 import REGL from "regl";
-import { buildRenderFrameFn, buildScatterbrainCacheClient, buildScatterbrainRenderer, setCategoricalLookupTableValues } from "./src/better/renderer";
+import { buildRenderFrameFn, buildScatterbrainCacheClient, buildScatterbrainRenderer, setCategoricalLookupTableValues } from "./src/renderer";
 import { SharedPriorityCache } from '@alleninstitute/vis-core';
-import { type ScatterbrainDataset } from "./src/better/types";
-import { getVisibleItems, loadDataset } from "./src/better/dataset";
-import { ShaderSettings } from "./src/better/shader";
+import { type ScatterbrainDataset } from "./src/types";
+import { getVisibleItems, loadDataset } from "./src/dataset";
+import { ShaderSettings } from "./src/shader";
 import { vec4 } from "@alleninstitute/vis-geometry";
 
 const twoGB = 1024 * 1024 * 2000;
