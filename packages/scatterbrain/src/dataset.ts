@@ -1,6 +1,6 @@
 import { Box2D, type box2D, type box3D, Box3D, Vec2, type vec2, type vec3, Vec3, visitBFSMaybe } from "@alleninstitute/vis-geometry";
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from "./types";
-import { reduce } from "lodash";
+import reduce from "lodash/reduce";
 
 type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset
 // figure out that path through the tree, given a TreeNode name

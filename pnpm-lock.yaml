@@ -160,6 +160,9 @@ importers:
       '@alleninstitute/vis-omezarr':
         specifier: workspace:*
         version: link:../packages/omezarr
+      '@alleninstitute/vis-scatterbrain':
+        specifier: workspace:*
+        version: link:../packages/scatterbrain
       '@astrojs/check':
         specifier: 0.9.4
         version: 0.9.4(typescript@5.8.3)

@@ -4,7 +4,8 @@
 
 import REGL from "regl";
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from "./types";
-import { filter, keys, mapValues, reduce } from "lodash";
+import * as lodash from "lodash";
+const { filter, keys, mapValues, reduce } = lodash // ugh
 import { Box2D, type vec4, type box2D, type Interval, type vec2 } from "@alleninstitute/vis-geometry";
 import { type Cacheable, type CachedVertexBuffer } from "@alleninstitute/vis-core";
 
