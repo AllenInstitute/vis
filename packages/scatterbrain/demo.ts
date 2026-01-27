@@ -57,6 +57,7 @@ async function begin() {
     const settings: ShaderSettings = {
         categoricalFilters: { '4MV7HA5DG2XJZ3UD8G9': 40, 'FS00DXV0T9R1X9FJ4QE': 40, },
         colorBy: { kind: 'metadata', column: "FS00DXV0T9R1X9FJ4QE" },
+        // an alternative color-by setting, swap it to see quantitative coloring
         // colorBy: { kind: 'quantitative', column: '27683', gradient: 'viridis', range: { min: 0, max: 10 } },
         dataset: yay,
         mode: 'color',
