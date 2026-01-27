@@ -1,8 +1,8 @@
 import REGL from "regl";
-import { buildRenderFrameFn, buildScatterbrainCacheClient, buildScatterbrainRenderer, setCategoricalLookupTableValues } from "./src/renderer";
+import { buildRenderFrameFn, buildScatterbrainCacheClient, setCategoricalLookupTableValues } from "./src/renderer";
 import { SharedPriorityCache } from '@alleninstitute/vis-core';
 import { type ScatterbrainDataset } from "./src/types";
-import { getVisibleItems, loadDataset } from "./src/dataset";
+import { loadDataset } from "./src/dataset";
 import { ShaderSettings } from "./src/shader";
 import { vec4 } from "@alleninstitute/vis-geometry";
 

@@ -1,5 +1,5 @@
-import { Box2D, type box2D, type box3D, Box3D, Vec2, type vec2, type vec3, Vec3 } from "@alleninstitute/vis-geometry";
-import type { ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from "./better/types";
+import { Box2D, type box2D, type box3D, Box3D, Vec2, type vec2, type vec3, Vec3, visitBFSMaybe } from "@alleninstitute/vis-geometry";
+import type { ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from "./types";
 import { reduce } from "lodash";
 
 type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset
@@ -45,28 +45,7 @@ function dropZ(box: box3D) {
         maxCorner: Vec3.xy(box.maxCorner),
     };
 }
-// todo move me to vis-geometry
-export function visitBFSMaybe<Tree>(
-    tree: Tree,
-    children: (t: Tree) => ReadonlyArray<Tree>,
-    visitor: (tree: Tree) => boolean,
-): void {
-    const frontier: Tree[] = [tree];
-    while (frontier.length > 0) {
-        const cur = frontier.shift();
-        if (cur === undefined) {
-            // TODO: Consider logging a warning or error here, as this should never happen,
-            // but this package doesn't depend on the package where our logger lives
-            continue;
-        }
-        if (visitor(cur)) {
-            for (const c of children(cur)) {
-                frontier.push(c);
-            }
-        }
 
-    }
-}
 
 function getVisibleItemsInTree(dataset: { root: TreeNode, boundingBox: volumeBound }, camera: { view: box2D, screenResolution: vec2 }, limit: number) {
     const { root, boundingBox } = dataset
@@ -84,7 +63,7 @@ function getVisibleItemsInTree(dataset: { root: TreeNode, boundingBox: volumeBou
     return hits;
 }
 
-export function getVisibleItems(dataset: SlideviewScatterbrainDataset | ScatterbrainDataset, camera: { view: box2D, screenResolution: vec2, layout?: Record<string, vec2> }) {
+export function getVisibleItems(dataset: Dataset, camera: { view: box2D, screenResolution: vec2, layout?: Record<string, vec2> }) {
     if (dataset.type === 'normal') {
         return getVisibleItemsInTree(dataset.metadata, camera, 5);
     }
@@ -108,7 +87,7 @@ export function getVisibleItems(dataset: SlideviewScatterbrainDataset | Scatterb
 
 }
 
-export function loadDataset(raw: any): SlideviewScatterbrainDataset | ScatterbrainDataset | undefined {
+export function loadDataset(raw: any): Dataset | undefined {
     // index point attrs by name - its an array
     // TODO zod validation first!
     if (raw['pointAttributes']) {
