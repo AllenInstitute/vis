@@ -24,8 +24,8 @@ importers:
         specifier: 6.0.0
         version: 6.0.0
       git-cliff:
-        specifier: 2.11.0
-        version: 2.11.0
+        specifier: 2.12.0
+        version: 2.12.0
       parcel:
         specifier: 2.15.4
         version: 2.15.4(@swc/helpers@0.5.17)
@@ -2755,38 +2755,38 @@ packages:
     resolution: {integrity: sha512-kVCxPF3vQM/N0B1PmoqVUqgHP+EeVjmZSQn+1oCRPxd2P21P2F19lIgbR3HBosbB1PUhOAoctJnfEn2GbN2eZA==}
     engines: {node: '>=18'}
 
-  git-cliff-darwin-arm64@2.11.0:
-    resolution: {integrity: sha512-/DTHr4lbHSm8i+2lTQTO+2pwssFFRwtKCN6CWhf+TVLFtymyvAfum3CVBsDIbTKst1zNhpWRJr9QFGIJe+lcwA==}
+  git-cliff-darwin-arm64@2.12.0:
+    resolution: {integrity: sha512-k3jzFDmkjc+6MjpnqvRenzMWRbZN5J+w3iQ8WNt9pSmPewNJIm92O/G6AbAxQaCbSfzQapeZ0e+5wSacVc62GA==}
     cpu: [arm64]
     os: [darwin]
 
-  git-cliff-darwin-x64@2.11.0:
-    resolution: {integrity: sha512-CYx29B2vaarwwIkcGhnZYHyxGIWFxt3D6MyjmwbNpaqja3kf1UvkcV9j/qoj+S2k3R2Z8wM2Ets5JALr109x4Q==}
+  git-cliff-darwin-x64@2.12.0:
+    resolution: {integrity: sha512-Kkoe+nfmXM/WMcZuC+OaIGA5vj847Ima6NEaaHnyb7Xsri+OAJryPXlABV7q6UeGfiiN2MlL8UsoHgnIEIQLqQ==}
     cpu: [x64]
     os: [darwin]
 
-  git-cliff-linux-arm64@2.11.0:
-    resolution: {integrity: sha512-E2G+MNU/AmIiLOqtba5XkzwCaWSLKeX28Ghu9KYTbhgHxoz7w3Tq7wS4qwfaZBrRcBjNQ/xb58OEKtUCx8F2yA==}
+  git-cliff-linux-arm64@2.12.0:
+    resolution: {integrity: sha512-eTp2gZjV4LmfzdlhFsYFYuWf5mojALU03X/37r3VmnpuabaijuTEQo/zm/0BKP8gPiLKLR4ofdUvE1OSisCE1A==}
     cpu: [arm64]
     os: [linux]
 
-  git-cliff-linux-x64@2.11.0:
-    resolution: {integrity: sha512-g3Dv1L5RQn8RLI8gEXtePqixQ436KQjjRgV6yCGP9d5GxLVK34pZ9DepoRJU6vt4oJNT96MaTRnp07/VjFEe6w==}
+  git-cliff-linux-x64@2.12.0:
+    resolution: {integrity: sha512-abidFG6dH2N5hPUF245/kRYdwViP11Pz7ZwIW/a86CJLZ/WSE7dJt0f2cUIkxTcFSsp11OwuLc5k1hAbwmiIRw==}
     cpu: [x64]
     os: [linux]
 
-  git-cliff-windows-arm64@2.11.0:
-    resolution: {integrity: sha512-2bDR8N7H5wsb2p8f8YONTblHwtAv+wbFKwkvEw3bFItXL9PpByiRi7se2oVUSEXzEuakQFCbEmwaemts5U5MGQ==}
+  git-cliff-windows-arm64@2.12.0:
+    resolution: {integrity: sha512-rFuI+D/3Yq3jqafazZw5E68HsXEvcwI/B/5IPDIZD+QqZh8vETf4IXs7wVxYWWtHQJDC+G9ZrR3vE5648mdG3A==}
     cpu: [arm64]
     os: [win32]
 
-  git-cliff-windows-x64@2.11.0:
-    resolution: {integrity: sha512-HN4tbKjHSTuaur3A5I0u+OnqMdDsc/oqGMMnITWTwxnI0hUFTdbbVWA3/GtyY8T9OYUFYugUXYovX1i4VUv7/w==}
+  git-cliff-windows-x64@2.12.0:
+    resolution: {integrity: sha512-jskb3nyVGr4dekHSCDM/J6iho45t37wnmMGkPNq42kOoUp04JS96yMBrNRdXfXV9ViZsaZq3NaNu1e3QkhFlyA==}
     cpu: [x64]
     os: [win32]
 
-  git-cliff@2.11.0:
-    resolution: {integrity: sha512-BTr0THAxuPvYXmlCvQs7s6tNBo+1ruZVTM+ub2Rs80EeqhQeIX7Fa0legm4CMvv6h65E9nvD23K/QhneXumLaQ==}
+  git-cliff@2.12.0:
+    resolution: {integrity: sha512-kjTm5439LsvMs/xRxndWBUetrA4aQfLE8DTbR/ER5H7fGn7ioeFG9YNAK1V7dpTtNi6k2uKYY4f3EvT8J1d+1Q==}
     engines: {node: '>=18.19 || >=20.6 || >=21'}
     hasBin: true
 
@@ -7338,34 +7338,34 @@ snapshots:
       '@sec-ant/readable-stream': 0.4.1
       is-stream: 4.0.1
 
-  git-cliff-darwin-arm64@2.11.0:
+  git-cliff-darwin-arm64@2.12.0:
     optional: true
 
-  git-cliff-darwin-x64@2.11.0:
+  git-cliff-darwin-x64@2.12.0:
     optional: true
 
-  git-cliff-linux-arm64@2.11.0:
+  git-cliff-linux-arm64@2.12.0:
     optional: true
 
-  git-cliff-linux-x64@2.11.0:
+  git-cliff-linux-x64@2.12.0:
     optional: true
 
-  git-cliff-windows-arm64@2.11.0:
+  git-cliff-windows-arm64@2.12.0:
     optional: true
 
-  git-cliff-windows-x64@2.11.0:
+  git-cliff-windows-x64@2.12.0:
     optional: true
 
-  git-cliff@2.11.0:
+  git-cliff@2.12.0:
     dependencies:
       execa: 9.6.1
     optionalDependencies:
-      git-cliff-darwin-arm64: 2.11.0
-      git-cliff-darwin-x64: 2.11.0
-      git-cliff-linux-arm64: 2.11.0
-      git-cliff-linux-x64: 2.11.0
-      git-cliff-windows-arm64: 2.11.0
-      git-cliff-windows-x64: 2.11.0
+      git-cliff-darwin-arm64: 2.12.0
+      git-cliff-darwin-x64: 2.12.0
+      git-cliff-linux-arm64: 2.12.0
+      git-cliff-linux-x64: 2.12.0
+      git-cliff-windows-arm64: 2.12.0
+      git-cliff-windows-x64: 2.12.0
 
   github-slugger@2.0.0: {}
 
