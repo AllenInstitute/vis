@@ -165,7 +165,7 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
         framebuffer: prop('target'),
         count: prop('count')
     });
-    // 
+
     return (props: RenderProps) => {
         const { target, hoveredValue, spatialFilterBox, filteredOutColor, gradient, camera, offset, quantitativeRangeFilters, categoricalLookupTable, item } = props
         const filterRanges = reduce(keys(quantitativeRangeFilters), (acc, cur) => ({ ...acc, [rangeFor(cur)]: quantitativeRangeFilters[cur] }), {})
@@ -176,14 +176,13 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
     }
 }
 
-function rangeFilterExpression(qColumns: readonly string[]) {
-    return qColumns.map(attrib =>/*glsl*/`within(${attrib},${rangeFor(attrib)})`).join(' * ')
+function rangeFilterExpression(quantitativeColumns: readonly string[]) {
+    return quantitativeColumns.map(attrib =>/*glsl*/`within(${attrib},${rangeFor(attrib)})`).join(' * ')
 }
-function categoricalFilterExpression(cColumns: readonly string[], tableSize: vec2, tableName: string) {
+function categoricalFilterExpression(categoricalColumns: readonly string[], tableSize: vec2, tableName: string) {
     // categorical columns are in order - this array will have the same order as the col in the texture
     const [w, h] = tableSize;
-    // return /*glsl*/`step(0.01,texture2D(${tableName},vec2(0.5,${cColumns[0]}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a)`
-    return cColumns.map((attrib, i) =>
+    return categoricalColumns.map((attrib, i) =>
         /*glsl*/`step(0.01,texture2D(${tableName},vec2(${i.toFixed(0)}.5,${attrib}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a)`)
         .join(' * ')
 }
@@ -296,15 +295,23 @@ export function configureShader(settings: ShaderSettings): { config: Config, col
     // produce an object that can be used to set up some internal config of the shader that would
     // do the visualization
     const { dataset, categoricalFilters, quantitativeFilters, colorBy, mode } = settings;
-    console.log('cat filters...', categoricalFilters)
     // figure out the columns we care about
     // assign them names that are safe to use in the shader (A,B,C, whatever)
     const categories = keys(categoricalFilters).toSorted()
     const numCategories = categories.length;
-    const longest = reduce(keys(categoricalFilters), (highest, cur) => Math.max(highest, categoricalFilters[cur]), 0)
-    const qAttrs = reduce(quantitativeFilters.toSorted(), (acc, cur, i) => ({ ...acc, [cur]: `MEASURE_${i.toFixed(0)}` }), colorBy.kind === 'metadata' ? {} : { [colorBy.column]: 'COLOR_BY_MEASURE' } as Record<string, string>);
-    const cAttrs = reduce(categories, (acc, cur, i) => ({ ...acc, [cur]: `CATEGORY_${i.toFixed(0)}` }), colorBy.kind === 'metadata' ? { [colorBy.column]: 'COLOR_BY_CATEGORY' } : {} as Record<string, string>);
+    const longestCategory = reduce(keys(categoricalFilters), (highest, cur) => Math.max(highest, categoricalFilters[cur]), 0)
+
+    // the goal here is to associate column names with shader-safe names
+    const initialQuantitativeAttrs: Record<string, string> = colorBy.kind === 'metadata' ? {} : { [colorBy.column]: 'COLOR_BY_MEASURE' }
+    const initialCategoricalAttrs: Record<string, string> = colorBy.kind === 'metadata' ? { [colorBy.column]: 'COLOR_BY_CATEGORY' } : {}
+    // we map each quantitative filter name to the shader-safe attribute name: MEASURE_{i}
+    const qAttrs = reduce(quantitativeFilters.toSorted(), (quantAttrs, quantFilter, i) => ({ ...quantAttrs, [quantFilter]: `MEASURE_${i.toFixed(0)}` }), initialQuantitativeAttrs);
+    // we map each categorical filter's name to the shader-safe attribute name: CATEGORY_{i}
+    const cAttrs = reduce(categories, (catAttrs, categoricalFilter, i) => ({ ...catAttrs, [categoricalFilter]: `CATEGORY_${i.toFixed(0)}` }), initialCategoricalAttrs);
+
     const colToAttribute = { ...qAttrs, ...cAttrs, [dataset.metadata.spatialColumn]: 'position' };
+
+
 
     const config: Config = {
         categoricalColumns: keys(cAttrs).map(columnName => colToAttribute[columnName]),
@@ -314,7 +321,7 @@ export function configureShader(settings: ShaderSettings): { config: Config, col
         colorByColumn: colToAttribute[colorBy.column],
         mode,
         positionColumn: 'position',
-        tableSize: [Math.max(numCategories, 1), Math.max(1, longest)]
+        tableSize: [Math.max(numCategories, 1), Math.max(1, longestCategory)]
     }
     return { config, columnNameToShaderName: colToAttribute }
 }
