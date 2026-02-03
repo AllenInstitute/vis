@@ -16,8 +16,7 @@ export function visitBFS<Tree>(
     while (frontier.length > 0) {
         const cur = frontier.shift();
         if (cur === undefined) {
-            // TODO: Consider logging a warning or error here, as this should never happen,
-            // but this package doesn't depend on the package where our logger lives
+            // this case is pretty clearly dead-code - but ts cant tell
             continue;
         }
         visitor(cur);

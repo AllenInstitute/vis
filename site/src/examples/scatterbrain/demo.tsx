@@ -68,7 +68,11 @@ function Demo(props:Props) {
             // make up random colors for the coloring, and add random filtering
 
             setCategoricalLookupTableValues(categories, lookup)
-            const render = buildScatterbrainRenderFn(regl as any, {...settings,dataset});
+            
+            const render = buildScatterbrainRenderFn(
+                // @ts-expect-error we'll deal with this later
+                regl,
+                {...settings,dataset});
             // this ts error is bogus, dont know why
             const renderOneFrame = ()=>{
                 render({
@@ -88,7 +92,10 @@ function Demo(props:Props) {
                 const img = new ImageData(new Uint8ClampedArray(bytes),screenSize[0],screenSize[1]);
                 ctx!.putImageData(img, 0, 0);
             }
-            const client = buildScatterbrainCacheClient(regl as any,cache,()=>{
+            const client = buildScatterbrainCacheClient(
+                // @ts-expect-error we'll deal with this later
+                regl,
+                cache,()=>{
                 requestAnimationFrame(renderOneFrame);
             })
             renderOneFrame();
