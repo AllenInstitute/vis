@@ -190,9 +190,7 @@ function categoricalFilterExpression(cColumns: readonly string[], tableSize: vec
 
 export function generate(config: Config): ScatterbrainShaderUtils {
     const { mode, quantitativeColumns, categoricalColumns, categoricalTable, tableSize, gradientTable, positionColumn, colorByColumn } = config;
-    console.log('tableSize: ', tableSize)
     const catFilter = categoricalFilterExpression(categoricalColumns, tableSize, categoricalTable)
-    console.log('cat filter: ', catFilter)
     const rangeFilter = rangeFilterExpression(quantitativeColumns)
     const uniforms = /*glsl*/`
     uniform vec4 view;

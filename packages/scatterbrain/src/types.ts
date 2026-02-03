@@ -1,6 +1,3 @@
-// lets get a renderer up and rolling
-// then add features from there...
-
 /// Types describing the metadata that gets loaded from scatterbrain.json files ///
 // there are 2 variants, slideview and regular - they are distinguished at runtime 
 // by checking the parsed metadata for the 'slides' field

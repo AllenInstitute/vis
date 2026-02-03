@@ -78,14 +78,6 @@ function columnsForItem<T extends object>(config: Config, col2shader: Record<str
     }
 }
 
-function buildHelperThingy(regl: REGL.Regl, state: ShaderSettings) {
-    const { dataset } = state;
-    const { config, columnNameToShaderName } = configureShader(state);
-    const prepareQtCell = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
-    const drawQtCell = buildScatterbrainRenderCommand(config, regl);
-    return { drawQtCell, prepareQtCell };
-}
-
 /**
  * a helper function that MUTATES ALL the values in the given @param texture
  * to set them to the color and filter status as given in the categories record
@@ -151,7 +143,12 @@ export function updateCategoricalValue(categories: readonly string[],
 
 type Props = Omit<Parameters<ReturnType<typeof buildScatterbrainRenderCommand>>[0], 'item'> & { dataset: ScatterbrainDataset | SlideviewScatterbrainDataset, client: ReturnType<typeof buildScatterbrainCacheClient> }
 export function buildRenderFrameFn(regl: REGL.Regl, state: ShaderSettings) {
-    const { drawQtCell, prepareQtCell } = buildHelperThingy(regl, state)
+
+    const { dataset } = state;
+    const { config, columnNameToShaderName } = configureShader(state);
+    const prepareQtCell = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
+    const drawQtCell = buildScatterbrainRenderCommand(config, regl);
+
     return function render(props: Props) {
         const { camera, dataset, client } = props
         const visibleQtNodes = getVisibleItems(dataset, camera).map(prepareQtCell)
@@ -173,16 +170,3 @@ export function buildRenderFrameFn(regl: REGL.Regl, state: ShaderSettings) {
     }
 }
 
-/*      TODO features:
-[x] color by (cat / quant)
-[x] hover (cat / quant) -> data out
-[x] highlight color-by value
-   - highlight overrides filtering
-* NaN / Null value handling
-[x] categorical filtering
-[x] range filtering // should work... test it though
-[x] spatial-box filtering
-* slide view offsets
-* configurable depth settings (quantitative, node-depth, constant)
-[x] filtered-out color (constant / transparant)
-*/
