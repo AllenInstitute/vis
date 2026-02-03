@@ -59,5 +59,8 @@
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/AllenInstitute"
     },
-    "packageManager": "pnpm@9.14.2"
+    "packageManager": "pnpm@9.14.2",
+    "devDependencies": {
+        "@types/lodash": "4.17.23"
+    }
 }
