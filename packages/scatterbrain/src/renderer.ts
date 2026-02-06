@@ -16,7 +16,7 @@ export type Item = Readonly<{
 type Content = Record<string, VBO>
 
 
-export function buildScatterbrainCacheClient(regl: REGL.Regl, cache: SharedPriorityCache, onDataArrived: () => void) {
+export function buildScatterbrainCacheClient(allNeededColumns: readonly string[], regl: REGL.Regl, cache: SharedPriorityCache, onDataArrived: () => void) {
     const client = cache.registerClient<Item, Content>({
         cacheKeys: (item) => {
             const { dataset, node, columns } = item;
@@ -46,21 +46,17 @@ export function buildScatterbrainCacheClient(regl: REGL.Regl, cache: SharedPrior
             return proms;
         },
         isValue: (v): v is Content => {
-            // TODO
-            // figure out the set of columns that would be required given our settings
-            // check if all those keys are in v, and each one is defined and instanceof VBO
+            for (const column of allNeededColumns) {
+                if (!(column in v)) {
+                    return false;
+                }
+            }
             return true;
         },
         onDataArrived
     })
     return client;
 }
-
-type State = ShaderSettings & {
-    camera: { view: box2D, screenResolution: vec2 },
-    filterBox: box2D,
-}
-
 
 function columnsForItem<T extends object>(config: Config, col2shader: Record<string, string>, dataset: ScatterbrainDataset | SlideviewScatterbrainDataset) {
     const columns: Record<string, ColumnRequest> = {}
@@ -141,15 +137,24 @@ export function updateCategoricalValue(categories: readonly string[],
     texture.subimage(data, col, row)
 }
 
-type Props = Omit<Parameters<ReturnType<typeof buildScatterbrainRenderCommand>>[0], 'item'> & { dataset: ScatterbrainDataset | SlideviewScatterbrainDataset, client: ReturnType<typeof buildScatterbrainCacheClient> }
-export function buildRenderFrameFn(regl: REGL.Regl, state: ShaderSettings) {
+type ScatterbrainRenderProps = Omit<Parameters<ReturnType<typeof buildScatterbrainRenderCommand>>[0], 'item'> & { dataset: ScatterbrainDataset | SlideviewScatterbrainDataset, client: ReturnType<typeof buildScatterbrainCacheClient> }
+/**
+ * 
+ * @param regl a regl context
+ * @param settings settings describing the data and how it should be rendered
+ * @returns a pair of functions: 
+ *  render: when called with renderable data, will determine the set of visible data, request that data from the client, and then draw all currently available data
+ * connectToCache - called to produce a cacheClient, which must be passed to the render function
+ */
+export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
 
-    const { dataset } = state;
-    const { config, columnNameToShaderName } = configureShader(state);
+    const { dataset } = settings;
+    const { config, columnNameToShaderName } = configureShader(settings);
+
     const prepareQtCell = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
     const drawQtCell = buildScatterbrainRenderCommand(config, regl);
 
-    return function render(props: Props) {
+    const render = (props: ScatterbrainRenderProps) => {
         const { camera, dataset, client } = props
         const visibleQtNodes = getVisibleItems(dataset, camera).map(prepareQtCell)
         client.setPriorities(visibleQtNodes, [])
@@ -168,5 +173,11 @@ export function buildRenderFrameFn(regl: REGL.Regl, state: ShaderSettings) {
             }
         }
     }
+    const connectToCache = (cache: SharedPriorityCache, onDataArrived: () => void) => {
+        const allColumns = [...config.categoricalColumns, ...config.quantitativeColumns, config.positionColumn]
+        const client = buildScatterbrainCacheClient(allColumns, regl, cache, onDataArrived)
+        return client;
+    }
+    return { render, connectToCache }
 }
 

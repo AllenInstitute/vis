@@ -69,7 +69,7 @@ function Demo(props:Props) {
 
             setCategoricalLookupTableValues(categories, lookup)
             
-            const render = buildScatterbrainRenderFn(
+            const {render,connectToCache} = buildScatterbrainRenderFn(
                 // @ts-expect-error we'll deal with this later
                 regl,
                 {...settings,dataset});
@@ -92,12 +92,7 @@ function Demo(props:Props) {
                 const img = new ImageData(new Uint8ClampedArray(bytes),screenSize[0],screenSize[1]);
                 ctx!.putImageData(img, 0, 0);
             }
-            const client = buildScatterbrainCacheClient(
-                // @ts-expect-error we'll deal with this later
-                regl,
-                cache,()=>{
-                requestAnimationFrame(renderOneFrame);
-            })
+            const client = connectToCache(cache,renderOneFrame);
             renderOneFrame();
         }
 
