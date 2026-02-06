@@ -1,6 +1,6 @@
 {
-    "name": "@alleninstitute/vis-geometry",
-    "version": "0.0.7",
+    "name": "@alleninstitute/vis-scatterbrain",
+    "version": "0.0.1",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -38,7 +38,8 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
-        "dev": "parcel watch --port 1237",
+        "dev": "parcel watch --port 1239",
+        "demo": "vite",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
@@ -48,8 +49,18 @@
         "type": "git",
         "url": "https://github.com/AllenInstitute/vis.git"
     },
+    "dependencies": {
+        "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "lodash": "4.17.21",
+        "regl": "2.1.0",
+        "ts-pattern": "5.9.0"
+    },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/AllenInstitute"
     },
-    "packageManager": "pnpm@9.14.2"
+    "packageManager": "pnpm@9.14.2",
+    "devDependencies": {
+        "@types/lodash": "4.17.23"
+    }
 }

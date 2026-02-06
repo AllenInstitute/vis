@@ -37,4 +37,4 @@ export {
     PLANE_XZ,
     PLANE_YZ,
 } from './plane';
-export { type SpatialTreeInterface, visitBFS } from './spatialIndexing/tree';
+export { type SpatialTreeInterface, visitBFS, visitBFSMaybe } from './spatialIndexing/tree';
