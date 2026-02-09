@@ -63,9 +63,10 @@ function getVisibleItemsInTree(dataset: { root: TreeNode, boundingBox: volumeBou
     return hits;
 }
 
-export function getVisibleItems(dataset: Dataset, camera: { view: box2D, screenResolution: vec2, layout?: Record<string, vec2> }) {
+export function getVisibleItems(dataset: Dataset, camera: { view: box2D, screenResolution: vec2, layout?: Record<string, vec2> }, visibilitySizeThreshold: number) {
+    // determine 
     if (dataset.type === 'normal') {
-        return getVisibleItemsInTree(dataset.metadata, camera, 5);
+        return getVisibleItemsInTree(dataset.metadata, camera, visibilitySizeThreshold);
     }
     // by default, if we pass NO layout info
     const size: vec2 = [dataset.metadata.spatialUnit.maxX - dataset.metadata.spatialUnit.minX, dataset.metadata.spatialUnit.maxY - dataset.metadata.spatialUnit.minY]
@@ -81,7 +82,7 @@ export function getVisibleItems(dataset: Dataset, camera: { view: box2D, screenR
 
         const offset = Vec2.mul(grid, size)
         // offset the camera by the opposite of the offset
-        hits.push(...getVisibleItemsInTree(slide.tree, { ...camera, view: Box2D.translate(camera.view, offset) }, 5))
+        hits.push(...getVisibleItemsInTree(slide.tree, { ...camera, view: Box2D.translate(camera.view, offset) }, visibilitySizeThreshold))
     }
     return hits;
 

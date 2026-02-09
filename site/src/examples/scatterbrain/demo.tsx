@@ -77,6 +77,7 @@ function Demo(props:Props) {
             const renderOneFrame = ()=>{
                 render({
                     client,
+                    visibilityThresholdPx:10,
                     camera: { view: { minCorner: [-17, -17], maxCorner: [26, 26] }, screenResolution: [800, 800] },
                     categoricalLookupTable: lookup,
                     dataset,

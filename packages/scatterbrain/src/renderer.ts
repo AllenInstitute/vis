@@ -1,7 +1,7 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from './types';
-import type { box2D, vec2, vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import { MakeTaggedBufferView } from './typed-array';
 import keys from 'lodash/keys'
 import reduce from 'lodash/reduce'
@@ -137,7 +137,7 @@ export function updateCategoricalValue(categories: readonly string[],
     texture.subimage(data, col, row)
 }
 
-type ScatterbrainRenderProps = Omit<Parameters<ReturnType<typeof buildScatterbrainRenderCommand>>[0], 'item'> & { dataset: ScatterbrainDataset | SlideviewScatterbrainDataset, client: ReturnType<typeof buildScatterbrainCacheClient> }
+type ScatterbrainRenderProps = Omit<Parameters<ReturnType<typeof buildScatterbrainRenderCommand>>[0], 'item'> & { visibilityThresholdPx: number, dataset: ScatterbrainDataset | SlideviewScatterbrainDataset, client: ReturnType<typeof buildScatterbrainCacheClient> }
 /**
  * 
  * @param regl a regl context
@@ -155,8 +155,10 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
     const drawQtCell = buildScatterbrainRenderCommand(config, regl);
 
     const render = (props: ScatterbrainRenderProps) => {
-        const { camera, dataset, client } = props
-        const visibleQtNodes = getVisibleItems(dataset, camera).map(prepareQtCell)
+        const { camera, dataset, client, visibilityThresholdPx } = props
+        // compute the size of a screen pixel in data-space units
+        const visibilityThreshold = visibilityThresholdPx * Box2D.size(camera.view)[0] / camera.screenResolution[0] // (units*pixel)/pixel ==> units
+        const visibleQtNodes = getVisibleItems(dataset, camera, visibilityThreshold).map(prepareQtCell)
         client.setPriorities(visibleQtNodes, [])
         for (const node of visibleQtNodes) {
             if (client.has(node)) {
