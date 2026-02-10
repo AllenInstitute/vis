@@ -11,7 +11,7 @@ export type volumeBound = {
     uy: number;
     uz: number;
 };
-type PointAttribute = {
+export type PointAttribute = {
     name: string;
     size: number; // elements * elementSize - todo ask Peter to remove
     elements: number; // values per point (so a vector xy would have 2)

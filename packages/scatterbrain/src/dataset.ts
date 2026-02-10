@@ -1,6 +1,7 @@
 import { Box2D, type box2D, type box3D, Box3D, Vec2, type vec2, type vec3, Vec3, visitBFSMaybe } from "@alleninstitute/vis-geometry";
-import type { ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from "./types";
+import type { PointAttribute, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from "./types";
 import reduce from "lodash/reduce";
+import * as z from "zod";
 
 type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset
 // figure out that path through the tree, given a TreeNode name
@@ -87,16 +88,86 @@ export function getVisibleItems(dataset: Dataset, camera: { view: box2D, screenR
     return hits;
 
 }
-
-export function loadDataset(raw: any): Dataset | undefined {
-    // index point attrs by name - its an array
-    // TODO zod validation first!
-    if (raw['pointAttributes']) {
-        raw = { ...raw, pointAttributes: reduce(raw.pointAttributes as { name: string }[], (acc, attr) => ({ ...acc, [attr.name]: attr }), {}) }
+const pointAttrSchema = z.object({
+    name: z.string(),
+    size: z.number(),
+    elements: z.number(), // values per point (so a vector xy would have 2)
+    elementSize: z.number(), // size of an element, given in bytes (for example float would have 4)
+    type: z.union([
+        z.literal('uint8'),
+        z.literal('uint16'),
+        z.literal('uint32'),
+        z.literal('int8'),
+        z.literal('int16'),
+        z.literal('int32'),
+        z.literal('float'),
+    ]),
+    description: z.string()
+})
+const commonMetadataSchema = z.object({
+    geneFileEndpoint: z.string(),
+    metadataFileEndpoint: z.string(),
+    visualizationReferenceId: z.string(),
+    spatialColumn: z.string(),
+    pointAttributes: z.array(pointAttrSchema).transform((attrs) => {
+        return reduce<PointAttribute, Record<string, PointAttribute>>(attrs, (acc, attr) => ({ ...acc, [attr.name]: attr }), {})
+    })
+})
+const bbSchema = z.object({
+    lx: z.number(),
+    ly: z.number(),
+    lz: z.number(),
+    ux: z.number(),
+    uy: z.number(),
+    uz: z.number(),
+})
+const treeNodeSchema = z.object({
+    file: z.string(),
+    numSpecimens: z.number(),
+    get children() {
+        return z.union([z.undefined(), z.array(treeNodeSchema)])
     }
+})
+const treeSchema = z.object({
+    points: z.number(),
+    boundingBox: bbSchema,
+    tightBoundingBox: bbSchema,
+    root: treeNodeSchema
+})
+const scatterbrainMetadataSchema = z.object({
+    ...treeSchema.shape,
+    ...commonMetadataSchema.shape
+})
+// commonMetadataSchema.extend(treeSchema)
+type wtf = z.infer<typeof scatterbrainMetadataSchema>
+const slideSchema = z.object({
+    featureTypeValueReferenceId: z.string(),
+    tree: treeSchema
+})
+const spatialRefFrameSchema = z.object({
+    anatomicalOrigin: z.string(),
+    direction: z.string(),
+    unit: z.string(),
+    minX: z.number(),
+    maxX: z.number(),
+    minY: z.number(),
+    maxY: z.number(),
+})
+const slideviewMetadataSchema = z.object({
+    ...commonMetadataSchema.shape,
+    slides: z.array(slideSchema),
+    spatialUnit: spatialRefFrameSchema
+})
+// const scatterbrainDatasetSchema = z.discriminatedUnion('type', [
+//     z.object({ type: z.literal('normal'), metadata: scatterbrainMetadataSchema }),
+//     z.object({ type: z.literal('slideview'), metadata: slideviewMetadataSchema }),
+// ])
+export function loadDataset(raw: any): Dataset | undefined {
     if (raw['slides']) {
-        return { type: 'slideview', metadata: raw }
+        const metadata = slideviewMetadataSchema.safeParse(raw)
+        return metadata.success ? { type: 'slideview', metadata: metadata.data } : undefined
     } else {
-        return { type: 'normal', metadata: raw }
+        const metadata = scatterbrainMetadataSchema.safeParse(raw)
+        return metadata.success ? { type: 'normal', metadata: metadata.data } : undefined
     }
 }

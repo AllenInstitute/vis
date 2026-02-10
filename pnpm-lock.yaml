@@ -107,6 +107,9 @@ importers:
       ts-pattern:
         specifier: 5.9.0
         version: 5.9.0
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/lodash':
         specifier: 4.17.23

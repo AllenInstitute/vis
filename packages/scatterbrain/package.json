@@ -54,7 +54,8 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "lodash": "4.17.21",
         "regl": "2.1.0",
-        "ts-pattern": "5.9.0"
+        "ts-pattern": "5.9.0",
+        "zod": "4.3.6"
     },
     "publishConfig": {
         "registry": "https://npm.pkg.github.com/AllenInstitute"
