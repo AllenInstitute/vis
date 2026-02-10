@@ -138,8 +138,6 @@ const scatterbrainMetadataSchema = z.object({
     ...treeSchema.shape,
     ...commonMetadataSchema.shape
 })
-// commonMetadataSchema.extend(treeSchema)
-type wtf = z.infer<typeof scatterbrainMetadataSchema>
 const slideSchema = z.object({
     featureTypeValueReferenceId: z.string(),
     tree: treeSchema
@@ -158,10 +156,7 @@ const slideviewMetadataSchema = z.object({
     slides: z.array(slideSchema),
     spatialUnit: spatialRefFrameSchema
 })
-// const scatterbrainDatasetSchema = z.discriminatedUnion('type', [
-//     z.object({ type: z.literal('normal'), metadata: scatterbrainMetadataSchema }),
-//     z.object({ type: z.literal('slideview'), metadata: slideviewMetadataSchema }),
-// ])
+
 export function loadDataset(raw: any): Dataset | undefined {
     if (raw['slides']) {
         const metadata = slideviewMetadataSchema.safeParse(raw)

@@ -263,7 +263,6 @@ export function generate(config: Config): ScatterbrainShaderUtils {
         return mix(filteredOutColor,${colorize},isFilteredIn());
     ` :
         (categoryColumnIndex === -1 ? colorByQuantitativeValue : colorByCategoricalId)
-    console.log(getColor)
     return {
         attributes,
         uniforms,

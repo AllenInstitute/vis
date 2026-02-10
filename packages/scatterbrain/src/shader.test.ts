@@ -420,7 +420,7 @@ describe('configure', () => {
             categoricalFilters: {},
             mode: 'color',
             colorBy: { kind: 'quantitative', column: '123', gradient: 'viridis', range: { min: 0, max: 10 } },
-            quantitativeFilters: {},
+            quantitativeFilters: []
         })
         const shaders = buildShaders(config);
 
@@ -435,6 +435,7 @@ describe('configure', () => {
             positionColumn: 'position',
         }
         const expectedShader = /*glsl*/`
+        precision highp float;
     // attribs //
 
     attribute vec2 position;
@@ -446,6 +447,10 @@ describe('configure', () => {
     uniform vec4 view;
     uniform vec2 screenSize;
     uniform vec2 offset;
+    uniform vec4 spatialFilterBox;
+    uniform vec4 filteredOutColor;
+    uniform float hoveredValue;
+
     uniform sampler2D gradient;
     uniform sampler2D lookup;
     // quantitative columns each need a range value - its the min,max in a vec2
@@ -456,35 +461,46 @@ describe('configure', () => {
 
     vec4 applyCamera(vec3 dataPos){
         vec2 size = view.zw-view.xy;
-        vec2 unit = (data.xy-view.xy)/size;
+        vec2 unit = (dataPos.xy-view.xy)/size;
         return vec4((unit*2.0)-1.0,0.0,1.0);
     }
     float rangeParameter(float v, vec2 range){
         return (v-range.x)/(range.y-range.x);
     }
+    float within(float v, vec2 range){
+        return step(range.x,v)*step(v,range.y);
+    }
 
 
     // per-point interface functions //
-    float isFilteredIn(){
-        return 1.0;
-    }
+
     float isHovered(){
+
         return 0.0;
     }
     vec3 getDataPosition(){
         return vec3(position+offset,0.0);
+    }
+    float isFilteredIn(){
+
+    vec3 p = getDataPosition();
+    return within(p.x,spatialFilterBox.xz)*within(p.y,spatialFilterBox.yw)
+    * 1.0
+    * within(COLOR_BY_MEASURE,COLOR_BY_MEASURE_range);
+
     }
     // the primary per-point functions, called directly //
     vec4 getClipPosition(){
         return applyCamera(getDataPosition());
     }
     float getPointSize(){
-        return 2.0;
+        return mix(2.0,6.0,isHovered());
     }
     vec4 getColor(){
 
-    float p = rangeParameter(COLOR_BY_MEASURE,COLOR_BY_MEASURE_range);
-    return texture2D(gradient,vec2(p,0.5));
+        return mix(filteredOutColor,
+    texture2D(gradient,vec2(rangeParameter(COLOR_BY_MEASURE,COLOR_BY_MEASURE_range),0.5))
+    ,isFilteredIn());
 
     }
     varying vec4 color;
@@ -494,6 +510,9 @@ describe('configure', () => {
         gl_Position = getClipPosition();
     }`
         expect(config).toEqual(expectedConfig)
+        console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+        console.log(shaders.vs)
+        console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~')
         expect(shaders.vs.replace(/\s/g, "")).toEqual(expectedShader.replace(/\s/g, ""))
         expect(columnNameToShaderName).toEqual({
             '123': 'COLOR_BY_MEASURE',
