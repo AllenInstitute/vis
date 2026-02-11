@@ -1,4 +1,3 @@
-import { InputSlider } from '@czi-sds/components';
 import type { Demo } from '../layers';
 export function AnnotationGrid(props: { demo: Demo }) {
     const { demo } = props;
@@ -6,13 +5,14 @@ export function AnnotationGrid(props: { demo: Demo }) {
     const l = demo.layers[demo.selectedLayer];
     if (l && l.type === 'annotationGrid') {
         return (
-            <InputSlider
+            <input
+                type="range"
                 min={0}
                 max={1}
                 step={0.001}
                 value={l.data.fill.opacity}
-                onChange={(_e, value) => {
-                    demo.setOpacity('fill', value as number);
+                onChange={(e) => {
+                    demo.setOpacity('fill', Number(e.target.value));
                 }}
             />
         );

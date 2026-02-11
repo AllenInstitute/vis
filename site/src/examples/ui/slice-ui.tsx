@@ -1,4 +1,3 @@
-import { Button, InputSlider } from '@czi-sds/components';
 import type { Demo } from '../layers';
 export function SliceViewLayer(props: { demo: Demo }) {
     const { demo } = props;
@@ -8,51 +7,93 @@ export function SliceViewLayer(props: { demo: Demo }) {
         return (
             <div>
                 <label htmlFor="rgb">RGB </label>
-                <InputSlider
-                    name="rgb"
-                    min={0}
-                    max={1000}
-                    value={[l.data.gamut.R.gamut.min, l.data.gamut.R.gamut.max]}
-                    onChange={(_e, value) => {
-                        demo.setGamutChannel('R', value as number[]);
-                    }}
-                />
-                <InputSlider
-                    min={0}
-                    max={1000}
-                    value={[l.data.gamut.G.gamut.min, l.data.gamut.G.gamut.max]}
-                    onChange={(_e, value) => {
-                        demo.setGamutChannel('G', value as number[]);
-                    }}
-                />
-                <InputSlider
-                    min={0}
-                    max={1000}
-                    value={[l.data.gamut.B.gamut.min, l.data.gamut.B.gamut.max]}
-                    onChange={(_e, value) => {
-                        demo.setGamutChannel('B', value as number[]);
-                    }}
-                />
+                <div>
+                    <label>R min: </label>
+                    <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        value={l.data.gamut.R.gamut.min}
+                        onChange={(e) => {
+                            demo.setGamutChannel('R', [Number(e.target.value), l.data.gamut.R.gamut.max]);
+                        }}
+                    />
+                    <label>R max: </label>
+                    <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        value={l.data.gamut.R.gamut.max}
+                        onChange={(e) => {
+                            demo.setGamutChannel('R', [l.data.gamut.R.gamut.min, Number(e.target.value)]);
+                        }}
+                    />
+                </div>
+                <div>
+                    <label>G min: </label>
+                    <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        value={l.data.gamut.G.gamut.min}
+                        onChange={(e) => {
+                            demo.setGamutChannel('G', [Number(e.target.value), l.data.gamut.G.gamut.max]);
+                        }}
+                    />
+                    <label>G max: </label>
+                    <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        value={l.data.gamut.G.gamut.max}
+                        onChange={(e) => {
+                            demo.setGamutChannel('G', [l.data.gamut.G.gamut.min, Number(e.target.value)]);
+                        }}
+                    />
+                </div>
+                <div>
+                    <label>B min: </label>
+                    <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        value={l.data.gamut.B.gamut.min}
+                        onChange={(e) => {
+                            demo.setGamutChannel('B', [Number(e.target.value), l.data.gamut.B.gamut.max]);
+                        }}
+                    />
+                    <label>B max: </label>
+                    <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        value={l.data.gamut.B.gamut.max}
+                        onChange={(e) => {
+                            demo.setGamutChannel('B', [l.data.gamut.B.gamut.min, Number(e.target.value)]);
+                        }}
+                    />
+                </div>
                 <label htmlFor="slice">Slice </label>
-                <InputSlider
+                <input
                     name="slice"
+                    type="range"
                     min={0}
                     max={1}
                     step={0.001}
                     value={l.data.planeParameter}
-                    onChange={(_e, value) => {
-                        demo.setSlice(value as number);
+                    onChange={(e) => {
+                        demo.setSlice(Number(e.target.value));
                     }}
                 />
-                <Button key={'xy'} onClick={() => demo.setPlane('xy')}>
+                <button key={'xy'} onClick={() => demo.setPlane('xy')}>
                     xy
-                </Button>
-                <Button key={'yz'} onClick={() => demo.setPlane('yz')}>
+                </button>
+                <button key={'yz'} onClick={() => demo.setPlane('yz')}>
                     yz
-                </Button>
-                <Button key={'xz'} onClick={() => demo.setPlane('xz')}>
+                </button>
+                <button key={'xz'} onClick={() => demo.setPlane('xz')}>
                     xz
-                </Button>
+                </button>
             </div>
         );
     }
