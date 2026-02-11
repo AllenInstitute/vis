@@ -15,7 +15,7 @@ const tenx =
 export function scatterBrainDemo() {
     return (
         <SharedCacheProvider>
-            <Demo screenSize={screenSize}></Demo>
+            <Demo screenSize={screenSize} />
         </SharedCacheProvider>
     );
 }

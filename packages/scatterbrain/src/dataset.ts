@@ -189,12 +189,14 @@ const slideviewMetadataSchema = z.object({
     spatialUnit: spatialRefFrameSchema,
 });
 
+// biome-ignore lint/suspicious/noExplicitAny: this fn is intended to accept the return value of JSON.parse() - any is appropriate here
 export function loadDataset(raw: any): Dataset | undefined {
-    if (raw['slides']) {
+    if (typeof raw !== 'object' || !raw) return undefined
+
+    if (raw.slides) {
         const metadata = slideviewMetadataSchema.safeParse(raw);
         return metadata.success ? { type: 'slideview', metadata: metadata.data } : undefined;
-    } else {
-        const metadata = scatterbrainMetadataSchema.safeParse(raw);
-        return metadata.success ? { type: 'normal', metadata: metadata.data } : undefined;
     }
+    const metadata = scatterbrainMetadataSchema.safeParse(raw);
+    return metadata.success ? { type: 'normal', metadata: metadata.data } : undefined;
 }

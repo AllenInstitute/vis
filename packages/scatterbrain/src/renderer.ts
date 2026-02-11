@@ -122,7 +122,7 @@ export function setCategoricalLookupTableValues(
     const columns = categoryKeys.length;
     const rows = reduce(categoryKeys, (highest, category) => Math.max(highest, keys(categories[category]).length), 1);
     const data = new Uint8Array(columns * rows * 4);
-    let rgbf = [0, 0, 0, 0];
+    const rgbf = [0, 0, 0, 0];
     const empty = [0, 0, 0, 0] as const;
     // write the rgb of the color, and encode the filter boolean into the alpha channel
     for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {

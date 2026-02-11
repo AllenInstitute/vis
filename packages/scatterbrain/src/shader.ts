@@ -1,12 +1,12 @@
-// we have to generate a shader, due to the runtime-variable way in which columns of data
-// are used for filtering (some in a range, some via a lookup table)
+/** biome-ignore-all lint/style/noUnusedTemplateLiteral: not at all helpful*/
 
-import REGL from 'regl';
+import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
+import type { Cacheable, CachedVertexBuffer } from '@alleninstitute/vis-core';
+import { Box2D, type box2D, type Interval, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import * as lodash from 'lodash';
-const { filter, keys, mapValues, reduce } = lodash; // ugh
-import { Box2D, type vec4, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
-import { type Cacheable, type CachedVertexBuffer } from '@alleninstitute/vis-core';
+const { keys, mapValues, reduce } = lodash;
+
 
 // the set of columns and what to do with them can vary
 // there might be 3 categorical columns and 2 range columns
@@ -294,7 +294,7 @@ export function generate(config: Config): ScatterbrainShaderUtils {
     const colorByQuantitative = /*glsl*/ `
     texture2D(${gradientTable},vec2(rangeParameter(${colorByColumn},${rangeFor(colorByColumn)}),0.5))
     `;
-    const colorize = categoryColumnIndex != -1 ? colorByCategorical : colorByQuantitative;
+    const colorize = categoryColumnIndex !== -1 ? colorByCategorical : colorByQuantitative;
 
     const colorByCategoricalId = /*glsl*/ ` 
         float G = mod(${colorByColumn},256.0);
@@ -310,8 +310,8 @@ export function generate(config: Config): ScatterbrainShaderUtils {
         return mix(filteredOutColor,${colorize},isFilteredIn());
     `
             : categoryColumnIndex === -1
-              ? colorByQuantitativeValue
-              : colorByCategoricalId;
+                ? colorByQuantitativeValue
+                : colorByCategoricalId;
     return {
         attributes,
         uniforms,
@@ -333,8 +333,8 @@ export type ShaderSettings = {
     quantitativeFilters: readonly string[]; // the names of quantitative variables
     mode: 'color' | 'info';
     colorBy:
-        | { kind: 'metadata'; column: string }
-        | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
+    | { kind: 'metadata'; column: string }
+    | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
 };
 
 export function configureShader(settings: ShaderSettings): {
