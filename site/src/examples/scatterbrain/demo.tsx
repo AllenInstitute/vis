@@ -1,11 +1,11 @@
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
 import { SharedCacheContext, SharedCacheProvider } from '../common/react/priority-cache-provider';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { buildScatterbrainRenderFn, buildScatterbrainCacheClient, loadScatterbrainDataset, setCategoricalLookupTableValues, type Dataset, type ShaderSettings } from '@alleninstitute/vis-scatterbrain';
+import { buildScatterbrainRenderFn, loadScatterbrainDataset, setCategoricalLookupTableValues, type Dataset, type ShaderSettings } from '@alleninstitute/vis-scatterbrain';
 
 const screenSize: vec2 = [800, 800];
 const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json'
-export function ScatterBrainDemo() {
+export function scatterBrainDemo() {
     return (
         <SharedCacheProvider>
             <Demo screenSize={screenSize}></Demo>
