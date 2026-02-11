@@ -58,7 +58,6 @@ export function OmezarrViewer({
                 numChannels,
                 queueOptions: { maximumInflightAsyncTasks: 2 },
             });
-            // @ts-expect-error we'll deal with this later
             imgRenderer.current = buildImageRenderer(server.regl);
         }
         return () => {

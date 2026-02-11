@@ -45,7 +45,6 @@ export function buildConnectedRenderer(
     decoder: Decoder,
     onData: () => void,
 ) {
-    //@ts-expect-error
     const renderer = buildOmeZarrSliceRenderer(regl, decoder);
     const client = cache.registerClient<Thing, Record<string, Tex>>({
         cacheKeys: (item) => {

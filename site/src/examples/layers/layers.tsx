@@ -9,6 +9,7 @@ export function AppUi(props: { demo: Demo }) {
     return (
         <div>
             <button
+                type="button"
                 onClick={() => {
                     demo.requestSnapshot(3000);
                 }}
@@ -17,6 +18,7 @@ export function AppUi(props: { demo: Demo }) {
             </button>
             <label htmlFor="layer">{`Layer ${demo.selectedLayer}`}</label>
             <button
+                type="button"
                 name="layer"
                 onClick={() => {
                     demo.selectLayer(demo.selectedLayer - 1);
@@ -25,6 +27,7 @@ export function AppUi(props: { demo: Demo }) {
                 {'<-'}
             </button>
             <button
+                type="button"
                 onClick={() => {
                     demo.selectLayer(demo.selectedLayer + 1);
                 }}
