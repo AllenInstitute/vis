@@ -511,9 +511,6 @@ describe('configure', () => {
         gl_Position = getClipPosition();
     }`;
         expect(config).toEqual(expectedConfig);
-        console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~');
-        console.log(shaders.vs);
-        console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~');
         expect(shaders.vs.replace(/\s/g, '')).toEqual(expectedShader.replace(/\s/g, ''));
         expect(columnNameToShaderName).toEqual({
             '123': 'COLOR_BY_MEASURE',

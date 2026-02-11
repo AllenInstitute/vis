@@ -1,7 +1,7 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
 import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from './types';
-import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, type box2D, type vec4 } from '@alleninstitute/vis-geometry';
 import { MakeTaggedBufferView } from './typed-array';
 import keys from 'lodash/keys';
 import reduce from 'lodash/reduce';

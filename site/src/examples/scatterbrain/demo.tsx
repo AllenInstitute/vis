@@ -104,6 +104,6 @@ function Demo(props: Props) {
             const client = connectToCache(cache, renderOneFrame);
             renderOneFrame();
         }
-    }, [cnvs.current, dataset, server]);
+    }, [dataset, server, screenSize]);
     return <canvas ref={cnvs} width={screenSize[0]} height={screenSize[1]} />;
 }
