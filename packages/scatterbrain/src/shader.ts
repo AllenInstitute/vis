@@ -7,7 +7,6 @@ import { Box2D, type box2D, type Interval, type vec2, type vec4 } from '@allenin
 import * as lodash from 'lodash';
 const { keys, mapValues, reduce } = lodash;
 
-
 // the set of columns and what to do with them can vary
 // there might be 3 categorical columns and 2 range columns
 // each range column (a vertex attrib) uses a uniform vec2 as its filter range
@@ -310,8 +309,8 @@ export function generate(config: Config): ScatterbrainShaderUtils {
         return mix(filteredOutColor,${colorize},isFilteredIn());
     `
             : categoryColumnIndex === -1
-                ? colorByQuantitativeValue
-                : colorByCategoricalId;
+              ? colorByQuantitativeValue
+              : colorByCategoricalId;
     return {
         attributes,
         uniforms,
@@ -333,8 +332,8 @@ export type ShaderSettings = {
     quantitativeFilters: readonly string[]; // the names of quantitative variables
     mode: 'color' | 'info';
     colorBy:
-    | { kind: 'metadata'; column: string }
-    | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
+        | { kind: 'metadata'; column: string }
+        | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
 };
 
 export function configureShader(settings: ShaderSettings): {
