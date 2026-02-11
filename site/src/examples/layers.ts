@@ -53,7 +53,7 @@ import type { OptionalTransform } from './data-sources/types';
 import { AppUi } from './layers/layers';
 import type { AnnotationLayer, CacheEntry, Layer } from './types';
 const KB = 1000;
-const MB = 1000 * KB;
+const _MB = 1000 * KB;
 
 declare global {
     interface Window {
@@ -77,7 +77,7 @@ function destroyer(item: CacheEntry) {
             break;
     }
 }
-function sizeOf(item: CacheEntry) {
+function sizeOf(_item: CacheEntry) {
     return 1;
 }
 function appendPoint(layer: AnnotationLayer, p: vec2) {
@@ -201,7 +201,6 @@ export class Demo {
             if (data) {
                 const [w, h] = this.camera.screen;
                 const layer = new ReglLayer2D<DynamicGrid & OptionalTransform, SlideRenderSettings<CacheEntry>>(
-                    // @ts-expect-error we'll deal with this later
                     this.regl,
                     this.imgRenderer,
                     renderDynamicGrid<CacheEntry>,
@@ -258,7 +257,6 @@ export class Demo {
             type: 'annotationLayer',
             data,
             render: new ReglLayer2D<SimpleAnnotation, AnnotationRenderSettings>(
-                // @ts-expect-error we'll deal with this later
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
@@ -275,7 +273,6 @@ export class Demo {
                 paths: [],
             },
             render: new ReglLayer2D<SimpleAnnotation, AnnotationRenderSettings>(
-                // @ts-expect-error we'll deal with this later
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
@@ -289,7 +286,6 @@ export class Demo {
             if (data) {
                 const [w, h] = this.camera.screen;
                 const layer = new ReglLayer2D<DynamicGridSlide & OptionalTransform, SlideRenderSettings<CacheEntry>>(
-                    // @ts-expect-error we'll deal with this later
                     this.regl,
                     this.imgRenderer,
                     renderSlide<CacheEntry>,
@@ -311,13 +307,7 @@ export class Demo {
             const layer = new ReglLayer2D<
                 AxisAlignedZarrSlice & OptionalTransform,
                 Omit<SliceRenderSettings<CacheEntry>, 'target'>
-            >(
-                // @ts-expect-error we'll deal with this later
-                this.regl,
-                this.imgRenderer,
-                renderSlice<CacheEntry>,
-                [w, h],
-            );
+            >(this.regl, this.imgRenderer, renderSlice<CacheEntry>, [w, h]);
             this.layers.push({
                 type: 'volumeSlice',
                 data,
@@ -361,7 +351,6 @@ export class Demo {
                     type: 'annotationGrid',
                     data: grid,
                     render: new ReglLayer2D<AnnotationGrid, Omit<AnnotationGridRenderSettings<CacheEntry>, 'target'>>(
-                        // @ts-expect-error we'll deal with this later
                         this.regl,
                         this.imgRenderer,
                         renderAnnotationGrid,
@@ -378,7 +367,6 @@ export class Demo {
         const [w, h] = this.camera.screen;
         return createZarrSliceGrid(config).then((data) => {
             const layer = new ReglLayer2D<AxisAlignedZarrSliceGrid, Omit<SliceRenderSettings<CacheEntry>, 'target'>>(
-                // @ts-expect-error we'll deal with this later
                 this.regl,
                 this.imgRenderer,
                 renderGrid<CacheEntry>,
@@ -411,7 +399,7 @@ export class Demo {
         );
         // create an offscreen canvas...
         const cnvs = new OffscreenCanvas(w, h);
-        const imgData = new ImageData(new Uint8ClampedArray(pixels.buffer), w, h);
+        const imgData = new ImageData(new Uint8ClampedArray(pixels), w, h);
         const ctx = cnvs.getContext('2d');
         ctx?.putImageData(imgData, 0, 0);
         const blob = await cnvs.convertToBlob();
@@ -813,14 +801,14 @@ function setupExampleData() {
 }
 const slide32 = 'MQ1B9QBZFIPXQO6PETJ';
 const colorByGene: ColumnRequest = { name: '88', type: 'QUANTITATIVE' };
-const merfish =
+const _merfish =
     'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_slide_view_02142024-20240223021524/DTVLE1YGNTJQMWVMKEU/ScatterBrain.json';
-const ccf = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/mouse3/230524_transposed_1501/avg_template/';
-const tissuecyte = 'https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/';
-const tenx =
+const _ccf = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/mouse3/230524_transposed_1501/avg_template/';
+const _tissuecyte = 'https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/';
+const _tenx =
     'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/488I12FURRB8ZY5KJ8T/ScatterBrain.json';
 const scottpoc = 'https://tissuecyte-ome-zarr-poc.s3.amazonaws.com/40_128_128/1145081396';
-const pretend = { min: 0, max: 500 };
+const _pretend = { min: 0, max: 500 };
 const reconstructed: ScatterplotGridConfig = {
     colorBy: colorByGene,
     type: 'ScatterPlotGridConfig',

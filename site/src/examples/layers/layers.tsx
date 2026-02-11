@@ -1,4 +1,3 @@
-import { Button } from '@czi-sds/components';
 import { AnnotationGrid } from '../ui/annotation-grid';
 import { ContactSheetUI } from '../ui/contact-sheet';
 import { ScatterplotUI } from '../ui/scatterplot-ui';
@@ -9,29 +8,32 @@ export function AppUi(props: { demo: Demo }) {
     const { demo } = props;
     return (
         <div>
-            <Button
+            <button
+                type="button"
                 onClick={() => {
                     demo.requestSnapshot(3000);
                 }}
             >
                 {'📷'}
-            </Button>
+            </button>
             <label htmlFor="layer">{`Layer ${demo.selectedLayer}`}</label>
-            <Button
+            <button
+                type="button"
                 name="layer"
                 onClick={() => {
                     demo.selectLayer(demo.selectedLayer - 1);
                 }}
             >
                 {'<-'}
-            </Button>
-            <Button
+            </button>
+            <button
+                type="button"
                 onClick={() => {
                     demo.selectLayer(demo.selectedLayer + 1);
                 }}
             >
                 {'->'}
-            </Button>
+            </button>
             <LayerUi demo={demo} />
         </div>
     );
