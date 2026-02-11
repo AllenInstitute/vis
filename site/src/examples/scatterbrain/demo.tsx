@@ -8,7 +8,7 @@ const tenx = 'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_0117
 export function ScatterBrainDemo() {
     return (
         <SharedCacheProvider>
-            <Demo screenSize={screenSize}></Demo>
+            <Demo screenSize={screenSize} />
         </SharedCacheProvider>
     );
 }
