@@ -1,4 +1,3 @@
-
 // lets help the compiler to know that these two types are related:
 export type TaggedFloat32Array = {
     type: 'float';
@@ -39,7 +38,7 @@ export type TaggedTypedArray =
     | TaggedInt16Array
     | TaggedUint8Array
     | TaggedInt8Array;
-export type WebGLSafeBasicType = TaggedTypedArray['type']
+export type WebGLSafeBasicType = TaggedTypedArray['type'];
 
 export const BufferConstructors = {
     uint8: Uint8Array,

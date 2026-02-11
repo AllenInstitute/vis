@@ -39,6 +39,5 @@ export function visitBFSMaybe<Tree>(
                 frontier.push(c);
             }
         }
-
     }
 }

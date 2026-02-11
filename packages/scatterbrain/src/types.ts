@@ -1,5 +1,5 @@
 /// Types describing the metadata that gets loaded from scatterbrain.json files ///
-// there are 2 variants, slideview and regular - they are distinguished at runtime 
+// there are 2 variants, slideview and regular - they are distinguished at runtime
 // by checking the parsed metadata for the 'slides' field
 export type WebGLSafeBasicType = 'uint8' | 'uint16' | 'int8' | 'int16' | 'uint32' | 'int32' | 'float';
 
@@ -40,7 +40,7 @@ type CommonMetadata = {
     visualizationReferenceId: string;
     spatialColumn: string;
     pointAttributes: Record<string, PointAttribute>;
-}
+};
 // scatterbrain distinguishes 2 kinds of datasets - those arranged at the topmost level into slides
 // and 'regular' - which is just a simple, 2D point cloud
 export type ScatterbrainMetadata = CommonMetadata & {
@@ -80,6 +80,5 @@ export type SlideviewMetadata = CommonMetadata & {
 // a Dataset is the top level entity
 // an Item is a chunk of that dataset - esentially a singular, loadable, thing
 
-
-export type SlideviewScatterbrainDataset = { type: 'slideview', metadata: SlideviewMetadata }
-export type ScatterbrainDataset = { type: 'normal', metadata: ScatterbrainMetadata }
+export type SlideviewScatterbrainDataset = { type: 'slideview'; metadata: SlideviewMetadata };
+export type ScatterbrainDataset = { type: 'normal'; metadata: ScatterbrainMetadata };
