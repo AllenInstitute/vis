@@ -7,12 +7,12 @@ hero:
   image:
     file: ../../assets/umap.png
   actions:
+    - text: Get Started
+      link: /vis/getting-started/packages
+      variant: primary
     - text: Examples
       link: /vis/examples/omezarr1
-      icon: right-arrow
-    - text: Read the docs
-      link: /vis/getting-started/packages/
-      variant: minimal
+      variant: secondary
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
@@ -22,7 +22,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 <CardGrid stagger>
 	<Card title="ABC Atlas" icon="rocket">
 		The [Allen Brain Cell Atlas (ABC Atlas)](https://knowledge.brain-map.org/abcatlas)
-        uses `@alleninstitue/vis-core` to visualize millions of points of data in the browser.
+        uses `@alleninstitute/vis-core` to visualize millions of points of data in the browser.
 	</Card>
 	<Card title="GTA" icon="magnifier">
 		The [Genetic Tools Atlas (GTA)](https://knowledge.brain-map.org/data/7CVKSF7QGAKIQ8LM5LC/specimens/HTS03VQD4BBB67I3BAP)
