@@ -7,13 +7,7 @@
     },
     "files": {
         "ignoreUnknown": false,
-        "includes": [
-            "**",
-            "!**/dist/**/*",
-            "!**/coverage/**/*",
-            "!**/.astro/**/*",
-            "!**/*.astro"
-        ]
+        "includes": ["**", "!**/dist/**/*", "!**/coverage/**/*", "!**/.astro/**/*", "!**/*.astro"]
     },
     "formatter": {
         "enabled": true,
