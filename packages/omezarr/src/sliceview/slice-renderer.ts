@@ -1,25 +1,26 @@
 import {
-    Box2D,
-    type CartesianPlane,
-    type Interval,
-    type box2D,
-    type vec2,
-    type vec3,
-    intervalToVec2,
-} from '@alleninstitute/vis-geometry';
-import {
+    buildAsyncRenderer,
     type CachedTexture,
+    logger,
     type QueueOptions,
     type ReglCacheEntry,
     type Renderer,
-    buildAsyncRenderer,
-    logger,
 } from '@alleninstitute/vis-core';
+import {
+    Box2D,
+    type box2D,
+    type CartesianPlane,
+    type Interval,
+    intervalToVec2,
+    PLANE_XY,
+    type vec2,
+    type vec3,
+} from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
-import type { ZarrRequest } from '../zarr/loading';
+import type { OmeZarrMetadata } from '../zarr/metadata';
+import type { OmeZarrConnection, ZarrDataSpecifier } from '../zarr/connection';
 import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderCommand } from './tile-renderer';
-import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
 export type RenderSettingsChannel = {
     index: number;
@@ -46,14 +47,49 @@ export type RenderSettings = {
 // a slice of a volume (as voxels suitable for display)
 export type VoxelTileImage = {
     data: Float32Array;
-    shape: number[];
+    shape: readonly number[];
 };
 
 type ImageChannels = {
     [channelKey: string]: CachedTexture;
 };
 
-function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
+export const makeRGBColorChannels = (gamut: Interval): RenderSettingsChannels => ({
+    R: { rgb: [1.0, 0, 0], gamut, index: 0 },
+    G: { rgb: [0, 1.0, 0], gamut, index: 1 },
+    B: { rgb: [0, 0, 1.0], gamut, index: 2 },
+});
+
+export function makeRenderSettings(
+    fileset: OmeZarrMetadata,
+    screenSize: vec2,
+    view: box2D,
+    param: number,
+    defaultGamut: Interval,
+    tileSize = 256,
+    plane = PLANE_XY,
+) {
+    const omezarrChannels = fileset.getColorChannels().reduce((acc, val, index) => {
+        acc[val.label ?? `${index}`] = {
+            rgb: val.rgb,
+            gamut: val.range,
+            index,
+        };
+        return acc;
+    }, {} as RenderSettingsChannels);
+
+    const fallbackChannels = makeRGBColorChannels(defaultGamut);
+
+    return {
+        camera: { screenSize, view },
+        planeLocation: param,
+        plane,
+        tileSize,
+        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
+    };
+}
+
+export function toZarrDataSpecifier(tile: VoxelTile, channel: number): ZarrDataSpecifier {
     const { plane, orthoVal, bounds } = tile;
     const { minCorner: min, maxCorner: max } = bounds;
     const u = { min: min[0], max: max[0] };
@@ -61,27 +97,36 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     switch (plane) {
         case 'xy':
             return {
-                x: u,
-                y: v,
-                t: 0,
-                c: channel,
-                z: orthoVal,
+                level: tile.level,
+                slice: {
+                    x: u,
+                    y: v,
+                    t: 0,
+                    c: channel,
+                    z: orthoVal,
+                },
             };
         case 'xz':
             return {
-                x: u,
-                z: v,
-                t: 0,
-                c: channel,
-                y: orthoVal,
+                level: tile.level,
+                slice: {
+                    x: u,
+                    z: v,
+                    t: 0,
+                    c: channel,
+                    y: orthoVal,
+                },
             };
         case 'yz':
             return {
-                y: u,
-                z: v,
-                t: 0,
-                c: channel,
-                x: orthoVal,
+                level: tile.level,
+                slice: {
+                    y: u,
+                    z: v,
+                    t: 0,
+                    c: channel,
+                    x: orthoVal,
+                },
             };
     }
 }
@@ -97,10 +142,9 @@ function isPrepared(cacheData: Record<string, ReglCacheEntry | undefined>): cach
     return keys.every((key) => cacheData[key]?.type === 'texture');
 }
 
-type Decoder = (
-    dataset: OmeZarrMetadata,
-    req: ZarrRequest,
-    level: OmeZarrShapedDataset,
+export type Decoder = (
+    connection: OmeZarrConnection,
+    req: ZarrDataSpecifier,
     signal?: AbortSignal,
 ) => Promise<VoxelTileImage>;
 
@@ -113,6 +157,7 @@ const DEFAULT_NUM_CHANNELS = 3;
 
 export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
+    connection: OmeZarrConnection,
     decoder: Decoder,
     options?: OmeZarrSliceRendererOptions | undefined,
 ): Renderer<OmeZarrMetadata, VoxelTile, RenderSettings, ImageChannels> {
@@ -146,11 +191,11 @@ export function buildOmeZarrSliceRenderer(
             const { camera, plane, planeLocation, tileSize } = settings;
             return getVisibleTiles(camera, plane, planeLocation, dataset, tileSize);
         },
-        fetchItemContent: (item, dataset, settings): Record<string, (sig: AbortSignal) => Promise<CachedTexture>> => {
+        fetchItemContent: (item, _dataset, settings): Record<string, (sig: AbortSignal) => Promise<CachedTexture>> => {
             const contents: Record<string, (signal: AbortSignal) => Promise<CachedTexture>> = {};
             for (const key in settings.channels) {
                 contents[key] = (signal) =>
-                    decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level, signal).then(
+                    decoder(connection, toZarrDataSpecifier(item, settings.channels[key].index), signal).then(
                         sliceAsTexture,
                     );
             }
@@ -163,10 +208,10 @@ export function buildOmeZarrSliceRenderer(
                 gamut: intervalToVec2(settings.channels[key].gamut),
                 rgb: settings.channels[key].rgb,
             }));
-            const layers = dataset.getNumLayers();
+            const levels = dataset.getNumLevels();
             // per the spec, the highest resolution layer should be first
             // we want that layer most in front, so:
-            const depth = item.level.datasetIndex / layers;
+            const depth = item.level.datasetIndex / levels;
             const { camera } = settings;
             cmd({
                 channels,
@@ -179,6 +224,11 @@ export function buildOmeZarrSliceRenderer(
     };
 }
 
-export function buildAsyncOmezarrRenderer(regl: REGL.Regl, decoder: Decoder, options?: OmeZarrSliceRendererOptions) {
-    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, decoder, options), options?.queueOptions);
+export function buildAsyncOmezarrRenderer(
+    regl: REGL.Regl,
+    connection: OmeZarrConnection,
+    decoder: Decoder,
+    options?: OmeZarrSliceRendererOptions,
+) {
+    return buildAsyncRenderer(buildOmeZarrSliceRenderer(regl, connection, decoder, options), options?.queueOptions);
 }

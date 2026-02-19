@@ -4,16 +4,17 @@ import {
     type VoxelTile,
     type OmeZarrMetadata,
     buildAsyncOmezarrRenderer,
+    type OmeZarrConnection,
+    defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
 import type REGL from 'regl';
 
 import { renderServerContext } from '../../common/react/render-server-provider';
-import { multithreadedDecoder } from '../../common/loaders/ome-zarr/sliceWorkerPool';
 import { buildImageRenderer } from '../../common/image-renderer';
 interface OmezarrViewerProps {
-    omezarr: OmeZarrMetadata;
+    omezarr: OmeZarrConnection | null;
     id: string;
     screenSize: vec2;
     settings: RenderSettings;
@@ -32,7 +33,7 @@ type StashedView = {
     image: REGL.Framebuffer2D;
 };
 
-export function OmezarrViewer({
+export function OmeZarrViewer({
     omezarr,
     id,
     settings,
@@ -52,9 +53,9 @@ export function OmezarrViewer({
     useEffect(() => {
         const c = canvas?.current;
 
-        if (server?.regl && omezarr) {
-            const numChannels = omezarr.colorChannels.length || 3;
-            renderer.current = buildAsyncOmezarrRenderer(server.regl, multithreadedDecoder, {
+        if (server?.regl && omezarr?.metadata) {
+            const numChannels = omezarr.metadata.getColorChannels().length || 3;
+            renderer.current = buildAsyncOmezarrRenderer(server.regl, omezarr, defaultDecoder, {
                 numChannels,
                 queueOptions: { maximumInflightAsyncTasks: 2 },
             });
@@ -127,12 +128,19 @@ export function OmezarrViewer({
                 stash.current.camera = { ...settings.camera };
             }
         };
-        if (server && renderer.current && canvas.current && omezarr) {
+        if (
+            server &&
+            renderer.current &&
+            canvas.current &&
+            omezarr?.metadata !== undefined &&
+            omezarr.metadata !== null
+        ) {
+            const metadata = omezarr.metadata;
             const renderFrame: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     // if we had a stashed buffer of the previous frame...
                     // we could pre-load it into target, right here!
-                    return renderer.current(omezarr, settings, callback, target, cache);
+                    return renderer.current(metadata, settings, callback, target, cache);
                 }
                 return null;
             };
@@ -141,7 +149,7 @@ export function OmezarrViewer({
                     // if we had a stashed buffer of the previous frame...
                     // we could pre-load it into target, right here!
                     return renderer.current(
-                        omezarr,
+                        metadata,
                         { ...settings, camera: { view: settings.camera.view, screenSize: [1, 1] } },
                         callback,
                         target,
