@@ -2,7 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
-## [alleninstitute/core@0.0.4] - 2025-07-14
+## [unreleased]
+
+### 🚀 Features
+
+- Package tag changelog generation
+
+### 🐛 Bug Fixes
+
+- Allow Workers to be instantiated directly via callback ([#206](https://github.com/AllenInstitute/vis/pull/206))
+
+### 💼 Other
+
+- Don't filter out unconvenctional commits so we can see everything!
+- Merge branch 'main' into lane/package-tag-changelogs
+- Merge branch 'main' into lane/package-tag-changelogs
+- Merge branch 'main' into lane/package-tag-changelogs
+
+### ⚙️ Miscellaneous Tasks
+
+- *(deps)* Bump @types/lodash from 4.17.19 to 4.17.20 ([#185](https://github.com/AllenInstitute/vis/pull/185))
+- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- Create standalone Priority Cache without fetching ([#199](https://github.com/AllenInstitute/vis/pull/199))
+- Adding "type: module" to all packages ([#201](https://github.com/AllenInstitute/vis/pull/201))
+- Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
+- Chore -cached loading (V3 omezarr support) step one ([#205](https://github.com/AllenInstitute/vis/pull/205))
+- *(deps)* Bump @types/lodash from 4.17.20 to 4.17.21 ([#215](https://github.com/AllenInstitute/vis/pull/215))
+- *(deps)* Bump lodash and @types/lodash ([#224](https://github.com/AllenInstitute/vis/pull/224))
+- Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
+
+## [0.0.4] - 2025-07-14
 
 ### 🚀 Features
 
@@ -28,13 +57,13 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - *(deps)* Bump @types/lodash from 4.17.17 to 4.17.19 ([#177](https://github.com/AllenInstitute/vis/pull/177))
 - *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
 
-## [alleninstitute/core@0.0.3] - 2025-04-23
+## [0.0.3] - 2025-04-23
 
 ### 💼 Other
 
 - Noah/webworker decoders ([#126](https://github.com/AllenInstitute/vis/pull/126))
 
-## [alleninstitute/core@0.0.2] - 2025-04-08
+## [0.0.2] - 2025-04-08
 
 ### 🚀 Features
 
@@ -44,7 +73,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
 - Updates to package versions for Core, Geometry, OmeZarr + examples [DC-530] ([#124](https://github.com/AllenInstitute/vis/pull/124))
 
-## [alleninstitute/core@0.0.1] - 2025-04-04
+## [0.0.1] - 2025-04-04
 
 ### ⚙️ Miscellaneous Tasks
 

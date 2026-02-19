@@ -4,11 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Package tag changelog generation
+
+### 💼 Other
+
+- Don't filter out unconvenctional commits so we can see everything!
+- Added support for Zarr V3 ([#191](https://github.com/AllenInstitute/vis/pull/191))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+- Merge branch 'main' into lane/package-tag-changelogs
+- Allow slices from planes by % rather than slice index - as the number of slices is not constant at all scales in most volumes ([#187](https://github.com/AllenInstitute/vis/pull/187))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+- Scatterbrain rendering in vis, including shader generation ([#223](https://github.com/AllenInstitute/vis/pull/223))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+- Merge branch 'main' into lane/package-tag-changelogs
+
 ### ⚙️ Miscellaneous Tasks
 
 - Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
+- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- Create standalone Priority Cache without fetching ([#199](https://github.com/AllenInstitute/vis/pull/199))
+- Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
+- Chore -cached loading (V3 omezarr support) step one ([#205](https://github.com/AllenInstitute/vis/pull/205))
+- Cleanup & reorganization of Examples in Vis Docs ([#209](https://github.com/AllenInstitute/vis/pull/209))
+- Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
 
-## [alleninstitute/core@0.0.4] - 2025-07-14
+## [0.0.4] - 2025-07-14
 
 ### 🚀 Features
 

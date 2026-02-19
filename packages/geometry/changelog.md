@@ -4,9 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Package tag changelog generation
+
 ### 💼 Other
 
 - Basic 3D Math utils ([#170](https://github.com/AllenInstitute/vis/pull/170))
+- Don't filter out unconvenctional commits so we can see everything!
+- Merge branch 'main' into lane/package-tag-changelogs
+- Merge branch 'main' into lane/package-tag-changelogs
+- Scatterbrain rendering in vis, including shader generation ([#223](https://github.com/AllenInstitute/vis/pull/223))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+- Merge branch 'main' into lane/package-tag-changelogs
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -14,8 +25,14 @@ All notable changes to this project will be documented in this file.
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
 - *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
 - Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
+- Update release numbers for release ([#180](https://github.com/AllenInstitute/vis/pull/180))
+- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- Adding "type: module" to all packages ([#201](https://github.com/AllenInstitute/vis/pull/201))
+- Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
+- Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
+- Quick version bump (which I forgot) ([#231](https://github.com/AllenInstitute/vis/pull/231))
 
-## [alleninstitute/geometry@0.0.6] - 2025-04-08
+## [0.0.6] - 2025-04-08
 
 ### 🚀 Features
 
@@ -26,7 +43,7 @@ All notable changes to this project will be documented in this file.
 - Test coverage tooling ([#95](https://github.com/AllenInstitute/vis/pull/95))
 - Updates to package versions for Core, Geometry, OmeZarr + examples [DC-530] ([#124](https://github.com/AllenInstitute/vis/pull/124))
 
-## [alleninstitute/geometry@0.0.5] - 2025-03-28
+## [0.0.5] - 2025-03-28
 
 ### 🐛 Bug Fixes
 
@@ -36,7 +53,7 @@ All notable changes to this project will be documented in this file.
 
 - Update Vis OME-Zarr package to load the full set of metadata available in Zarr files [DT-7615] ([#103](https://github.com/AllenInstitute/vis/pull/103))
 
-## [alleninstitute/geometry@0.0.4] - 2025-03-14
+## [0.0.4] - 2025-03-14
 
 ### 🐛 Bug Fixes
 
@@ -54,7 +71,7 @@ All notable changes to this project will be documented in this file.
 - Clean up dependencies [DT-7060] ([#55](https://github.com/AllenInstitute/vis/pull/55))
 - Fix all but non-null assertion lints ([#96](https://github.com/AllenInstitute/vis/pull/96))
 
-## [alleninstitute/geometry@0.0.3] - 2025-02-03
+## [0.0.3] - 2025-02-03
 
 ### 🚀 Features
 
@@ -130,7 +147,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
 - Version bumps for only-allow removal release ([#51](https://github.com/AllenInstitute/vis/pull/51))
 
-## [alleninstitute/geometry@0.0.2] - 2024-04-02
+## [0.0.2] - 2024-04-02
 
 ### 🐛 Bug Fixes
 
@@ -159,7 +176,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
 - Use Parcel to produce libraries ([#9](https://github.com/AllenInstitute/vis/pull/9))
 
-## [alleninstitute/geometry@0.0.1] - 2024-02-13
+## [0.0.1] - 2024-02-13
 
 ### 🚀 Features
 
