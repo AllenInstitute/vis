@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-core",
-    "version": "0.0.4",
+    "version": "0.0.6",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -30,8 +30,8 @@
     "license": "BSD-3-Clause",
     "source": "src/index.ts",
     "main": "dist/main.js",
-    "module": "dist/module.js",
     "types": "dist/types.d.ts",
+    "type": "module",
     "files": [
         "dist"
     ],
@@ -52,12 +52,13 @@
         "registry": "https://npm.pkg.github.com/AllenInstitute"
     },
     "devDependencies": {
-        "@types/lodash": "4.17.20"
+        "@types/lodash": "4.17.23"
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
-        "lodash": "4.17.21",
-        "regl": "2.1.0"
+        "lodash": "4.17.23",
+        "regl": "2.1.1",
+        "uuid": "13.0.0"
     },
     "packageManager": "pnpm@9.14.2"
 }

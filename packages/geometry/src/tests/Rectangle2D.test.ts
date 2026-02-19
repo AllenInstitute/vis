@@ -6,7 +6,7 @@ import { Vec2, type vec2 } from '../vec2';
 function nearlyEqual(a: vec2, b: vec2, epsilon: number) {
     return Vec2.maxComponent(Vec2.map(Vec2.sub(a, b), Math.abs)) < epsilon;
 }
-function boxesVeryClose(a: box2D, b: box2D, epsilon: number) {
+function _boxesVeryClose(a: box2D, b: box2D, epsilon: number) {
     return nearlyEqual(a.minCorner, b.minCorner, epsilon) && nearlyEqual(a.maxCorner, b.maxCorner, epsilon);
 }
 describe('scaleFromPoint', () => {

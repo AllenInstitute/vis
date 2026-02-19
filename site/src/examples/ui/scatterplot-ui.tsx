@@ -1,4 +1,3 @@
-import { InputSlider } from '@czi-sds/components';
 import type { Demo } from '../layers';
 export function ScatterplotUI(props: { demo: Demo }) {
     const { demo } = props;
@@ -9,25 +8,27 @@ export function ScatterplotUI(props: { demo: Demo }) {
         return (
             <div>
                 <label htmlFor="point-size">point size</label>
-                <InputSlider
+                <input
                     name="point-size"
+                    type="range"
                     min={0.5}
                     max={20}
                     step={0.001}
                     value={l.data.pointSize}
-                    onChange={(_e, value) => {
-                        demo.setPointSize(value as number);
+                    onChange={(e) => {
+                        demo.setPointSize(Number(e.target.value));
                     }}
                 />
                 <label htmlFor="color-by">{`Color By Gene (by index: ${l.data.colorBy.name})`}</label>
-                <InputSlider
+                <input
                     name="color-by"
+                    type="range"
                     min={0}
                     max={400}
                     step={1}
                     value={Number(l.data.colorBy.name)}
-                    onChange={(_e, value) => {
-                        demo.setColorByIndex(value as number);
+                    onChange={(e) => {
+                        demo.setColorByIndex(Number(e.target.value));
                     }}
                 />
             </div>

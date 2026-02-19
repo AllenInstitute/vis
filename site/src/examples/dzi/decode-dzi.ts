@@ -9,7 +9,7 @@ import type { DziImage } from '@alleninstitute/vis-dzi';
  * @param url location of the .dzi file
  * @returns formatted dzi image data
  */
-function decodeDziXml(s: string, url: string): DziImage | undefined {
+function _decodeDziXml(s: string, url: string): DziImage | undefined {
     const parser = new DOMParser();
     const doc = parser.parseFromString(s, 'text/xml');
     // catch any errors if the xml is malformed

@@ -26,8 +26,8 @@
     "license": "BSD-3-Clause",
     "source": "src/index.ts",
     "main": "dist/main.js",
-    "module": "dist/module.js",
     "types": "dist/types.d.ts",
+    "type": "module",
     "files": [
         "dist"
     ],
@@ -50,7 +50,7 @@
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-core": "workspace:*",
-        "regl": "2.1.0"
+        "regl": "2.1.1"
     },
     "packageManager": "pnpm@9.14.2"
 }

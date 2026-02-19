@@ -1,0 +1,67 @@
+{
+    "name": "@alleninstitute/vis-scatterbrain",
+    "version": "0.0.1",
+    "contributors": [
+        {
+            "name": "Lane Sawyer",
+            "email": "lane.sawyer@alleninstitute.org"
+        },
+        {
+            "name": "James Gerstenberger",
+            "email": "james.gerstenberger@alleninstitute.org"
+        },
+        {
+            "name": "Noah Shepard",
+            "email": "noah.shepard@alleninstitute.org"
+        },
+        {
+            "name": "Skyler Moosman",
+            "email": "skyler.moosman@alleninstitute.org"
+        },
+        {
+            "name": "Su Li",
+            "email": "su.li@alleninstitute.org"
+        },
+        {
+            "name": "Joel Arbuckle",
+            "email": "joel.arbuckle@alleninstitute.org"
+        }
+    ],
+    "license": "BSD-3-Clause",
+    "source": "src/index.ts",
+    "main": "dist/main.js",
+    "types": "dist/types.d.ts",
+    "type": "module",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "build": "parcel build --no-cache",
+        "dev": "parcel watch --port 1239",
+        "demo": "vite",
+        "test": "vitest --watch",
+        "test:ci": "vitest run",
+        "coverage": "vitest run --coverage",
+        "changelog": "git-cliff -o changelog.md"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AllenInstitute/vis.git"
+    },
+    "dependencies": {
+        "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "lodash": "4.17.21",
+        "regl": "2.1.0",
+        "ts-pattern": "5.9.0",
+        "zod": "4.3.6"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/AllenInstitute"
+    },
+    "packageManager": "pnpm@9.14.2",
+    "devDependencies": {
+        "@types/lodash": "4.17.23"
+    }
+}

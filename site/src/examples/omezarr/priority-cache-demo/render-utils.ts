@@ -1,4 +1,4 @@
-import type { SharedPriorityCache, CachedTexture, Resource } from '@alleninstitute/vis-core';
+import type { SharedPriorityCache, CachedTexture, Cacheable } from '@alleninstitute/vis-core';
 import type { vec2 } from '@alleninstitute/vis-geometry';
 import {
     buildOmeZarrSliceRenderer,
@@ -9,7 +9,7 @@ import {
 } from '@alleninstitute/vis-omezarr';
 import type REGL from 'regl';
 
-class Tex implements Resource {
+class Tex implements Cacheable {
     texture: CachedTexture;
     constructor(tx: CachedTexture) {
         this.texture = tx;
@@ -28,9 +28,11 @@ type Thing = {
     settings: RenderSettings;
 };
 function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): { [k in keyof T]: R } {
-    return Object.keys(obj).reduce(
+    return (Object.keys(obj) as (keyof T)[]).reduce(
+        // typecast is annoyingly necessary in this case to avoid a linting warning
         (acc, k) => {
-            return { ...acc, [k]: fn(obj[k]) };
+            acc[k] = fn(obj[k]);
+            return acc;
         },
         {} as { [k in keyof T]: R },
     );
@@ -43,13 +45,13 @@ export function buildConnectedRenderer(
     decoder: Decoder,
     onData: () => void,
 ) {
-    //@ts-expect-error
     const renderer = buildOmeZarrSliceRenderer(regl, decoder);
     const client = cache.registerClient<Thing, Record<string, Tex>>({
         cacheKeys: (item) => {
             const channelKeys = Object.keys(item.settings.channels);
-            return channelKeys.reduce((chans, key) => {
-                return { ...chans, [key]: renderer.cacheKey(item.tile, key, item.dataset, item.settings) };
+            return channelKeys.reduce<Record<string, string>>((chans, key) => {
+                chans[key] = renderer.cacheKey(item.tile, key, item.dataset, item.settings);
+                return chans;
             }, {});
         },
         fetch: (item) => {
@@ -65,7 +67,7 @@ export function buildConnectedRenderer(
         },
         isValue: (v): v is Record<string, Tex> =>
             renderer.isPrepared(
-                mapValues(v, (tx: Resource | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined)),
+                mapValues(v, (tx: Cacheable | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined)),
             ),
         onDataArrived: onData,
     });

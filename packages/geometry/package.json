@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-geometry",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -30,8 +30,8 @@
     "license": "BSD-3-Clause",
     "source": "src/index.ts",
     "main": "dist/main.js",
-    "module": "dist/module.js",
     "types": "dist/types.d.ts",
+    "type": "module",
     "files": [
         "dist"
     ],
