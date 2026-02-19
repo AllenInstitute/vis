@@ -10,7 +10,7 @@ import type { RenderFrameFn } from '@alleninstitute/vis-core';
 import { useCallback, useState } from 'react';
 import { useContext, useEffect, useRef } from 'react';
 
-import { renderServerContext } from '../common/react/render-server-provider';
+import { renderServerContext } from '../../common/react/render-server-provider';
 type Props = {
     omezarr: OmeZarrMetadata | undefined;
 };
@@ -36,7 +36,7 @@ const settings: RenderSettings = {
         },
     },
     plane: PLANE_XY,
-    orthoVal: 3,
+    planeLocation: 0.5,
     camera: {
         // the omezarr renderer expects a box in whatever space is given by the omezarr file itself in its
         // axes metadata = for example, millimeters. if you load a volume that says its 30mm X 30mm X 10mm,

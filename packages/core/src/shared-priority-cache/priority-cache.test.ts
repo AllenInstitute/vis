@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noConsole: <its tests> */
 import { beforeEach, describe, expect, test } from 'vitest';
-import { PriorityCache, type Resource } from './priority-cache';
-import { FakeStore, PayloadFactory, PromiseFarm } from './test-utils';
+import { AsyncPriorityCache, type Cacheable } from './priority-cache';
+import { FakeStore, type Payload, PayloadFactory, PromiseFarm } from './test-utils';
 
 let factory = new PayloadFactory();
 
@@ -15,7 +15,7 @@ function setupTestEnv(limit: number, fetchLimit: number) {
     };
     factory = new PayloadFactory();
     const fakeStore: FakeStore = new FakeStore();
-    const cache: PriorityCache = new PriorityCache(fakeStore, () => 0, limit, fetchLimit);
+    const cache: AsyncPriorityCache<Payload> = new AsyncPriorityCache(fakeStore, () => 0, limit, fetchLimit);
     return { cache, resolveFetches, fakeFetchItem, fetchSpies, fakeStore, promises };
 }
 describe('basics', () => {
@@ -35,7 +35,7 @@ describe('basics', () => {
         });
     });
     test('when evicting and fetching, priority is respected', async () => {
-        const score = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 };
+        const score: Record<string, number> = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 };
         env = setupTestEnv(5, 1);
         const { cache, resolveFetches, fakeFetchItem } = env;
         const resolveAndRequestNext = async () => {
@@ -86,7 +86,7 @@ describe.skip('throughput', () => {
         const fakeStore: FakeStore = new FakeStore();
         const priorities: Record<string, number> = {};
         let numEvicted = 0;
-        const cache: PriorityCache = new PriorityCache(
+        const cache: AsyncPriorityCache<Cacheable> = new AsyncPriorityCache<Cacheable>(
             fakeStore,
             (item) => {
                 return priorities[item] ?? 0;
@@ -94,7 +94,7 @@ describe.skip('throughput', () => {
             1000,
             20,
         );
-        const newItem = (ID: string): Resource => {
+        const newItem = (ID: string): Cacheable => {
             priorities[ID] = Math.random() * 100;
             return {
                 sizeInBytes: () => 1,
@@ -129,8 +129,8 @@ describe.skip('throughput', () => {
             const priorities: Record<string, number> = {};
             let numEvicted = 0;
             const score = (k: string) => priorities[k] ?? 0;
-            const cache: PriorityCache = new PriorityCache(fakeStore, score, 1000, 20);
-            const newItem = (ID: string): Resource => {
+            const cache: AsyncPriorityCache<Cacheable> = new AsyncPriorityCache<Cacheable>(fakeStore, score, 1000, 20);
+            const newItem = (ID: string): Cacheable => {
                 priorities[ID] = Math.random() * 100;
                 return {
                     sizeInBytes: () => 1,
@@ -180,7 +180,7 @@ describe.skip('throughput', () => {
         factory = new PayloadFactory();
         const priorities: Record<string, number> = {};
         const score = (k: string) => priorities[k] ?? 0;
-        const cache: PriorityCache = new PriorityCache(fakeStore, score, 1000, 20);
+        const cache: AsyncPriorityCache<Cacheable> = new AsyncPriorityCache<Cacheable>(fakeStore, score, 1000, 20);
 
         const onehundo_k = 100_000;
         const begin = performance.now();

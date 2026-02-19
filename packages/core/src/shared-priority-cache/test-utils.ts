@@ -1,4 +1,4 @@
-import type { Resource, Store } from './priority-cache';
+import type { Cacheable, Store } from './priority-cache';
 import { uniqueId } from 'lodash';
 
 export class PayloadFactory {
@@ -22,7 +22,7 @@ export class PayloadFactory {
     }
 }
 
-export class Payload implements Resource {
+export class Payload implements Cacheable {
     data: number;
     id: string;
     private factory: PayloadFactory;

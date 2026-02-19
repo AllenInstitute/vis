@@ -18,7 +18,7 @@ import {
 import type REGL from 'regl';
 import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
-import { buildTileRenderer } from './tile-renderer';
+import { buildTileRenderCommand } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
 export type RenderSettingsChannel = {
@@ -30,13 +30,12 @@ export type RenderSettingsChannel = {
 export type RenderSettingsChannels = {
     [key: string]: RenderSettingsChannel;
 };
-
 export type RenderSettings = {
     camera: {
         view: box2D;
         screenSize: vec2;
     };
-    orthoVal: number; // the value of the orthogonal axis, e.g. Z value relative to an XY plane
+    planeLocation: number;
     tileSize: number;
     plane: CartesianPlane;
     channels: RenderSettingsChannels;
@@ -131,7 +130,7 @@ export function buildOmeZarrSliceRenderer(
             type: 'texture',
         };
     }
-    const cmd = buildTileRenderer(regl, numChannels);
+    const cmd = buildTileRenderCommand(regl, numChannels);
     return {
         cacheKey: (item, requestKey, dataset, settings) => {
             const channelKeys = Object.keys(settings.channels);
@@ -144,8 +143,8 @@ export function buildOmeZarrSliceRenderer(
         },
         destroy: () => {},
         getVisibleItems: (dataset, settings) => {
-            const { camera, plane, orthoVal, tileSize } = settings;
-            return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
+            const { camera, plane, planeLocation, tileSize } = settings;
+            return getVisibleTiles(camera, plane, planeLocation, dataset, tileSize);
         },
         fetchItemContent: (item, dataset, settings): Record<string, (sig: AbortSignal) => Promise<CachedTexture>> => {
             const contents: Record<string, (signal: AbortSignal) => Promise<CachedTexture>> = {};

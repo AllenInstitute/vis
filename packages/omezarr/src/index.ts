@@ -12,7 +12,7 @@ export {
     defaultDecoder,
     getVisibleTiles,
 } from './sliceview/loader';
-export { buildTileRenderer, buildRGBTileRenderer } from './sliceview/tile-renderer';
+export { buildTileRenderCommand, buildRGBTileRenderCommand } from './sliceview/tile-renderer';
 export {
     type ZarrDimension,
     type OmeZarrAxis,
@@ -49,8 +49,22 @@ export {
     loadSlice,
     sizeInUnits,
     sizeInVoxels,
+    nextSliceStep,
     planeSizeInVoxels,
     type ZarrRequest,
 } from './zarr/loading';
 
 export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
+export { decoderFactory } from './zarr/cache-lower';
+export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';
+export {
+    type TransferrableRequestInit,
+    type FetchMessagePayload,
+    type FetchMessage,
+    type FetchResponseMessage,
+    type CancelMessage,
+    isFetchMessage,
+    isFetchResponseMessage,
+    isCancelMessage,
+    isCancellationError,
+} from './zarr/cached-loading/fetch-data.interface';

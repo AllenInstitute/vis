@@ -8,7 +8,7 @@ import {
 } from '@alleninstitute/vis-geometry';
 import type { Chunk } from 'zarrita';
 import type { ZarrRequest } from '../zarr/loading';
-import { loadSlice, pickBestScale, planeSizeInVoxels, sizeInUnits } from '../zarr/loading';
+import { indexOfRelativeSlice, loadSlice, pickBestScale, planeSizeInVoxels, sizeInUnits } from '../zarr/loading';
 import type { VoxelTileImage } from './slice-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
 
@@ -94,15 +94,19 @@ export function getVisibleTiles(
         screenSize: vec2;
     },
     plane: CartesianPlane,
-    orthoVal: number,
+    planeLocation: number,
     metadata: OmeZarrMetadata,
     tileSize: number,
 ): VoxelTile[] {
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
     const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
-    return getVisibleTilesInLayer(camera, plane, orthoVal, metadata, tileSize, layer);
+    // figure out the index of the slice
+
+    const sliceIndex = indexOfRelativeSlice(layer, metadata.attrs.multiscales[0].axes, planeLocation, plane.ortho);
+    return getVisibleTilesInLayer(camera, plane, sliceIndex, metadata, tileSize, layer);
 }
+
 /**
  * a function which returns a promise of float32 data from the requested region of an omezarr dataset.
  * Note that omezarr decoding can be slow - consider wrapping this function in a web-worker (or a pool of them)

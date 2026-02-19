@@ -9,9 +9,9 @@ import type { RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
 import { useContext, useEffect, useRef } from 'react';
 import type REGL from 'regl';
 
-import { renderServerContext } from '../common/react/render-server-provider';
-import { multithreadedDecoder } from '../common/loaders/ome-zarr/sliceWorkerPool';
-import { buildImageRenderer } from '../common/image-renderer';
+import { renderServerContext } from '../../common/react/render-server-provider';
+import { multithreadedDecoder } from '../../common/loaders/ome-zarr/sliceWorkerPool';
+import { buildImageRenderer } from '../../common/image-renderer';
 interface OmezarrViewerProps {
     omezarr: OmeZarrMetadata;
     id: string;
@@ -58,7 +58,6 @@ export function OmezarrViewer({
                 numChannels,
                 queueOptions: { maximumInflightAsyncTasks: 2 },
             });
-            // @ts-expect-error we'll deal with this later
             imgRenderer.current = buildImageRenderer(server.regl);
         }
         return () => {
@@ -102,13 +101,13 @@ export function OmezarrViewer({
         };
     }, [server, settings.camera.screenSize]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: We want to refresh when the orthoVal changes
+    // biome-ignore lint/correctness/useExhaustiveDependencies: I want to run an effect when I want to run an effect
     useEffect(() => {
         // when the user changes the slide (orthoVal?), erase our stashed copy of the rendered image
         if (server && stash.current) {
             server.regl.clear({ framebuffer: stash.current.image, color: [0, 0, 0, 0], depth: 1 });
         }
-    }, [server, settings.orthoVal]);
+    }, [server, settings.planeLocation]);
     // render frames
     useEffect(() => {
         const stashProgress = (server: RenderServer, target: REGL.Framebuffer2D) => {
