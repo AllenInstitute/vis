@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🐛 Bug Fixes
+
+- Fix version display on changelogs and tweak scatterbrain package command
+
+### 💼 Other
+
+- Merge branch 'main' into lane/package-tag-changelogs
+- Fmt
+
+## [0.0.1] - 2026-02-11
+
 ### 🚀 Features
 
 - Publishing documentation and config changes ([#3](https://github.com/AllenInstitute/vis/pull/3))
@@ -263,7 +274,6 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Scatterbrain rendering in vis, including shader generation ([#223](https://github.com/AllenInstitute/vis/pull/223))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
-- Merge branch 'main' into lane/package-tag-changelogs
 
 ### 🚜 Refactor
 

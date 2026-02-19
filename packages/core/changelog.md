@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Allow Workers to be instantiated directly via callback ([#206](https://github.com/AllenInstitute/vis/pull/206))
+- Fix version display on changelogs and tweak scatterbrain package command
 
 ### 💼 Other
 

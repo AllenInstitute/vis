@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 - Package tag changelog generation
 
+### 🐛 Bug Fixes
+
+- Fix version display on changelogs and tweak scatterbrain package command
+
 ### 💼 Other
 
 - Basic 3D Math utils ([#170](https://github.com/AllenInstitute/vis/pull/170))

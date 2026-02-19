@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 - DZI fetch function ([#162](https://github.com/AllenInstitute/vis/pull/162))
 - Package tag changelog generation
 
+### 🐛 Bug Fixes
+
+- Fix version display on changelogs and tweak scatterbrain package command
+
 ### 💼 Other
 
 - Don't filter out unconvenctional commits so we can see everything!
