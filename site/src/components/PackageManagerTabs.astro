@@ -1,0 +1,23 @@
+---
+import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
+
+interface Props {
+    npm: string;
+    pnpm: string;
+    yarn: string;
+}
+
+const { npm, pnpm, yarn } = Astro.props;
+---
+
+<Tabs syncKey="pkg">
+    <TabItem label="npm">
+        <Code code={npm} lang="bash" />
+    </TabItem>
+    <TabItem label="pnpm">
+        <Code code={pnpm} lang="bash" />
+    </TabItem>
+    <TabItem label="yarn">
+        <Code code={yarn} lang="bash" />
+    </TabItem>
+</Tabs>
