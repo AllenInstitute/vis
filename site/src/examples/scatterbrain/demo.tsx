@@ -1,13 +1,13 @@
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
-import { SharedCacheContext, SharedCacheProvider } from '../common/react/priority-cache-provider';
-import { useContext, useEffect, useRef, useState } from 'react';
 import {
     buildScatterbrainRenderFn,
-    loadScatterbrainDataset,
-    setCategoricalLookupTableValues,
     type Dataset,
+    loadScatterbrainDataset,
     type ShaderSettings,
+    setCategoricalLookupTableValues,
 } from '@alleninstitute/vis-scatterbrain';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { SharedCacheContext, SharedCacheProvider } from '../common/react/priority-cache-provider';
 
 const screenSize: vec2 = [800, 800];
 const tenx =
