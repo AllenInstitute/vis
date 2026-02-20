@@ -41,7 +41,8 @@
         "dev": "parcel watch --port 1235",
         "test": "vitest --watch",
         "test:ci": "vitest run",
-        "coverage": "vitest run --coverage"
+        "coverage": "vitest run --coverage",
+        "changelog": "git-cliff -o changelog.md --tag-pattern @alleninstitute/vis-core@*"
     },
     "repository": {
         "type": "git",

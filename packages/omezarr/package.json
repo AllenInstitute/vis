@@ -38,7 +38,7 @@
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
-        "changelog": "git-cliff -o changelog.md"
+        "changelog": "git-cliff -o changelog.md --tag-pattern @alleninstitute/vis-omezarr@*"
     },
     "repository": {
         "type": "git",
