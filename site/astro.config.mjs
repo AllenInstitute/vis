@@ -1,9 +1,9 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
-import mdx from '@astrojs/mdx';
-import starlight from '@astrojs/starlight';
 
+import mdx from '@astrojs/mdx';
 import react from '@astrojs/react';
+import starlight from '@astrojs/starlight';
+import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
@@ -29,7 +29,7 @@ export default defineConfig({
                     autogenerate: { directory: 'packages' },
                 },
                 {
-                    label: 'Developers',
+                    label: 'Vis Package Developers',
                     autogenerate: { directory: 'developers' },
                 },
             ],
