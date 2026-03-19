@@ -611,7 +611,7 @@ export function buildConnectedRenderer(regl: REGL.Regl, mapSize: vec2, cache: Sh
         } else {
             // ok but what if we did want to support it... lets put all the slides in a stack, and then render the stack, but with a spinning animation, why not?
             const { slides } = metadata
-            const order = idsInOrder();//Object.keys(slides).sort();
+            const order = idsInOrder(dataset.metadata.visualizationReferenceId);//Object.keys(slides).sort();
             const visible = order.map((slideId) => visibleInTree(slides[slideId].tree, 30));
             const toAccumulate = order.map((slideId) => visibleInTree(slides[slideId].tree, 1));
 

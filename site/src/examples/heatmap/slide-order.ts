@@ -267,6 +267,212 @@ export const slideData = [
     }
 ]
 
-export function idsInOrder() {
+const qm24Slides = [
+    {
+        "id": "72EAE0266A49897DB9",
+        "value": "45_01",
+        "priorityOrder": 2
+    },
+    {
+        "id": "ADC7F79A2E05B6DF38",
+        "value": "45_03",
+        "priorityOrder": 3
+    },
+    {
+        "id": "1E62F8559BAE9562DD",
+        "value": "45_05",
+        "priorityOrder": 4
+    },
+    {
+        "id": "51CA5FE6D0125B5943",
+        "value": "46_01",
+        "priorityOrder": 5
+    },
+    {
+        "id": "572993AABCE87E3CD6",
+        "value": "46_03",
+        "priorityOrder": 6
+    },
+    {
+        "id": "6CC34D00CC6C337B5B",
+        "value": "46_05",
+        "priorityOrder": 7
+    },
+    {
+        "id": "B1B2A54CF58B5F995C",
+        "value": "47_01",
+        "priorityOrder": 8
+    },
+    {
+        "id": "FFB15D0869A07AAF0E",
+        "value": "47_02",
+        "priorityOrder": 9
+    },
+    {
+        "id": "1362F1D96C14FF38F9",
+        "value": "47_03",
+        "priorityOrder": 10
+    },
+    {
+        "id": "E019430C66057FE2D3",
+        "value": "47_04",
+        "priorityOrder": 11
+    },
+    {
+        "id": "FAFFEAB18BAD68069E",
+        "value": "47_05",
+        "priorityOrder": 12
+    },
+    {
+        "id": "D676D6052721D576AC",
+        "value": "48_01",
+        "priorityOrder": 13
+    },
+    {
+        "id": "F838F3481CBDB18AF6",
+        "value": "48_02",
+        "priorityOrder": 14
+    },
+    {
+        "id": "4F0573E7354C609002",
+        "value": "48_03",
+        "priorityOrder": 15
+    },
+    {
+        "id": "58065B61DC2DA56EA3",
+        "value": "48_04",
+        "priorityOrder": 16
+    },
+    {
+        "id": "C76D17C951ACDCC73E",
+        "value": "48_05",
+        "priorityOrder": 17
+    },
+    {
+        "id": "332F9382191A8A8F8A",
+        "value": "49_01",
+        "priorityOrder": 18
+    },
+    {
+        "id": "7782FAB2BA73510FCA",
+        "value": "49_02",
+        "priorityOrder": 19
+    },
+    {
+        "id": "27B12740BB58C99DBC",
+        "value": "49_03",
+        "priorityOrder": 20
+    },
+    {
+        "id": "80DFC5AC81CA378C64",
+        "value": "49_04",
+        "priorityOrder": 21
+    },
+    {
+        "id": "4335DCC721CA99EECA",
+        "value": "49_05",
+        "priorityOrder": 22
+    },
+    {
+        "id": "2CE2CACAD02E345F4C",
+        "value": "49_06",
+        "priorityOrder": 23
+    },
+    {
+        "id": "29DC3A3ED3DDBE1A30",
+        "value": "50_01",
+        "priorityOrder": 24
+    },
+    {
+        "id": "DB83855E6B7EEA350F",
+        "value": "50_02",
+        "priorityOrder": 25
+    },
+    {
+        "id": "8DEFCE157868942360",
+        "value": "50_03",
+        "priorityOrder": 26
+    },
+    {
+        "id": "12ABD9A85DF58F55FA",
+        "value": "50_04",
+        "priorityOrder": 27
+    },
+    {
+        "id": "336AAD3A39BB2E2D03",
+        "value": "50_05",
+        "priorityOrder": 28
+    },
+    {
+        "id": "2827E2079FE0D2D2FD",
+        "value": "51_01",
+        "priorityOrder": 29
+    },
+    {
+        "id": "A8559827262B5F451F",
+        "value": "51_02",
+        "priorityOrder": 30
+    },
+    {
+        "id": "D4F074858D664CB5D4",
+        "value": "51_03",
+        "priorityOrder": 31
+    },
+    {
+        "id": "44E2FCC0BF6E3EA841",
+        "value": "51_04",
+        "priorityOrder": 32
+    },
+    {
+        "id": "DEE34E648F19FD5AEB",
+        "value": "51_05",
+        "priorityOrder": 33
+    },
+    {
+        "id": "FFA13C528C26F0B7D3",
+        "value": "51_06",
+        "priorityOrder": 34
+    },
+    {
+        "id": "C749E65DA4EFD9FCD8",
+        "value": "51_07",
+        "priorityOrder": 35
+    },
+    {
+        "id": "C3B36FED14DCADC518",
+        "value": "52_01",
+        "priorityOrder": 36
+    },
+    {
+        "id": "1C18064C324FD992BD",
+        "value": "52_03",
+        "priorityOrder": 37
+    },
+    {
+        "id": "1EE573A6D105B4387E",
+        "value": "52_05",
+        "priorityOrder": 38
+    },
+    {
+        "id": "FE16B24C3F014EFBFF",
+        "value": "53_01",
+        "priorityOrder": 39
+    },
+    {
+        "id": "F62AE4808A52B5791E",
+        "value": "53_03",
+        "priorityOrder": 40
+    },
+    {
+        "id": "A22CA404511679EBD9",
+        "value": "53_05",
+        "priorityOrder": 41
+    }
+]
+
+export function idsInOrder(dataset: string) {
+    if (dataset === '6B13C16A81F6D34798') {
+        return qm24Slides.toSorted((a, b) => a.priorityOrder - b.priorityOrder).map(s => s.id)
+    }
     return slideData.toSorted((a, b) => a.priorityOrder - b.priorityOrder).map(s => s.id)
 }
