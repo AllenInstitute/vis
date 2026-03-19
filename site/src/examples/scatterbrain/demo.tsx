@@ -12,7 +12,7 @@ import {
 const screenSize: vec2 = [800, 800];
 const tenx =
     'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
-export function scatterBrainDemo() {
+export function ScatterBrainDemo() {
     return (
         <SharedCacheProvider>
             <Demo screenSize={screenSize} />

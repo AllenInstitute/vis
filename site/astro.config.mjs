@@ -29,7 +29,7 @@ export default defineConfig({
                     autogenerate: { directory: 'packages' },
                 },
                 {
-                    label: 'Developers',
+                    label: 'Vis Package Developers',
                     autogenerate: { directory: 'developers' },
                 },
             ],
