@@ -1,3 +1,4 @@
+import { useContext, useEffect, useRef } from 'react';
 import {
     type GpuProps as CachedPixels,
     type DziImage,
@@ -7,13 +8,13 @@ import {
 } from '@alleninstitute/vis-dzi';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import type { RenderFrameFn, buildAsyncRenderer } from '@alleninstitute/vis-core';
-import { useContext, useEffect, useRef } from 'react';
+
 import { renderServerContext } from '../common/react/render-server-provider';
 
 type Props = {
     id: string;
     dzi: DziImage;
-    svgOverlay: HTMLImageElement;
+    svgOverlay: HTMLImageElement | null;
     onWheel?: (e: WheelEvent) => void;
     onMouseDown?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseUp?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -21,10 +22,19 @@ type Props = {
     onMouseLeave?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 } & DziRenderSettings;
 
-export function DziViewer(props: Props) {
-    const { svgOverlay, camera, dzi, onWheel, id, onMouseDown, onMouseUp, onMouseMove, onMouseLeave } = props;
+export function DziViewer({
+    svgOverlay,
+    camera,
+    dzi,
+    onWheel,
+    id,
+    onMouseDown,
+    onMouseUp,
+    onMouseMove,
+    onMouseLeave,
+}: Props) {
     const server = useContext(renderServerContext);
-    const cnvs = useRef<HTMLCanvasElement>(null);
+    const canvas = useRef<HTMLCanvasElement>(null);
 
     // the renderer needs WebGL for us to create it, and WebGL needs a canvas to exist, and that canvas needs to be the same canvas forever
     // hence the awkwardness of refs + an effect to initialize the whole hting
@@ -34,12 +44,13 @@ export function DziViewer(props: Props) {
         >(undefined);
 
     useEffect(() => {
+        const el = canvas.current;
         if (server?.regl) {
             renderer.current = buildAsyncDziRenderer(server.regl);
         }
         return () => {
-            if (cnvs.current) {
-                server?.destroyClient(cnvs.current);
+            if (el) {
+                server?.destroyClient(el);
             }
         };
     }, [server]);
@@ -61,7 +72,7 @@ export function DziViewer(props: Props) {
             }
         };
 
-        if (server && renderer.current && cnvs.current) {
+        if (server && renderer.current && canvas.current) {
             const renderMyData: RenderFrameFn<DziImage, DziTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     // erase the frame before we start drawing on it
@@ -82,30 +93,32 @@ export function DziViewer(props: Props) {
                         e.server.copyToClient(compose);
                     }
                 },
-                cnvs.current,
+                canvas.current,
             );
         }
     }, [server, svgOverlay, dzi, camera]);
 
-    // we have to add the listener this way because onWheel is a passive listener by default
-    // that means we can't preventDefault to stop scrolling
+    // React registers onWheel as a passive listener, so we can't call preventDefault from it.
+    // Instead we register our own non-passive listener and forward to the prop.
     useEffect(() => {
-        const handleWheel = (e: WheelEvent) => onWheel?.(e);
-        const canvas = cnvs;
-        if (canvas?.current) {
-            canvas.current.addEventListener('wheel', handleWheel, { passive: false });
+        const el = canvas.current;
+        if (!el) {
+            return;
         }
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            onWheel?.(e);
+        };
+        el.addEventListener('wheel', handleWheel, { passive: false });
         return () => {
-            if (canvas?.current) {
-                canvas.current.removeEventListener('wheel', handleWheel);
-            }
+            el.removeEventListener('wheel', handleWheel);
         };
     }, [onWheel]);
 
     return (
         <canvas
             id={id}
-            ref={cnvs}
+            ref={canvas}
             width={camera.screenSize[0]}
             height={camera.screenSize[1]}
             onMouseDown={onMouseDown}
