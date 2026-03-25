@@ -45,7 +45,8 @@
         "url": "https://github.com/AllenInstitute/vis.git"
     },
     "publishConfig": {
-        "registry": "https://npm.pkg.github.com/AllenInstitute"
+        "registry": "https://registry.npmjs.org",
+        "access": "public"
     },
     "dependencies": {
         "@alleninstitute/vis-core": "workspace:*",
