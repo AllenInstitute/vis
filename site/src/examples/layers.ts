@@ -784,7 +784,7 @@ function demoTime(thing: HTMLCanvasElement) {
 
     window.demo = theDemo;
     setupExampleData();
-    uiroot.render(AppUi({ demo: theDemo }));
+    uiroot.render(AppUi({ demo: theDemo, examples: { reconstructed, structureAnnotation, tissuecyte396 } }));
 }
 function setupExampleData() {
     // add a bunch of pre-selected layers to the window object for selection during demo time

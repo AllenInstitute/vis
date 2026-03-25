@@ -3,37 +3,98 @@ import { ContactSheetUI } from '../ui/contact-sheet';
 import { ScatterplotUI } from '../ui/scatterplot-ui';
 import { SliceViewLayer } from '../ui/slice-ui';
 import type { Demo } from '../layers';
+import type { ScatterplotGridConfig } from '../data-sources/scatterplot/dynamic-grid';
+import type { ZarrSliceGridConfig } from '../data-sources/ome-zarr/slice-grid';
+import type { AnnotationGridConfig } from '../data-sources/annotation/annotation-grid';
 
-export function AppUi(props: { demo: Demo }) {
-    const { demo } = props;
+type ExampleLayerConfigs = {
+    reconstructed: ScatterplotGridConfig;
+    structureAnnotation: AnnotationGridConfig;
+    tissuecyte396: ZarrSliceGridConfig;
+};
+
+export function AppUi(props: { demo: Demo; examples?: ExampleLayerConfigs }) {
+    const { demo, examples } = props;
     return (
         <div>
-            <button
-                type="button"
-                onClick={() => {
-                    demo.requestSnapshot(3000);
-                }}
-            >
-                {'📷'}
-            </button>
-            <label htmlFor="layer">{`Layer ${demo.selectedLayer}`}</label>
-            <button
-                type="button"
-                name="layer"
-                onClick={() => {
-                    demo.selectLayer(demo.selectedLayer - 1);
-                }}
-            >
-                {'<-'}
-            </button>
-            <button
-                type="button"
-                onClick={() => {
-                    demo.selectLayer(demo.selectedLayer + 1);
-                }}
-            >
-                {'->'}
-            </button>
+            <div style={{ marginBottom: '8px' }}>
+                <button
+                    type="button"
+                    title="Quick snapshot"
+                    onClick={() => {
+                        demo.requestSnapshot(3000);
+                    }}
+                >
+                    {'📷'}
+                </button>
+                <button
+                    type="button"
+                    title="High-resolution snapshot (~80 MP, slow)"
+                    onClick={() => {
+                        demo.requestSnapshot(10000);
+                    }}
+                >
+                    {'📸 Hi-Res'}
+                </button>
+            </div>
+            {examples && (
+                <fieldset style={{ marginBottom: '8px' }}>
+                    <legend>Add Layer</legend>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            demo.addLayer(examples.reconstructed);
+                        }}
+                    >
+                        {'🔵 Scatter Plot Grid'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            demo.addLayer(examples.structureAnnotation);
+                        }}
+                    >
+                        {'🗺️ CCF Annotations'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            demo.addLayer(examples.tissuecyte396);
+                        }}
+                    >
+                        {'🔬 Volume Grid'}
+                    </button>
+                </fieldset>
+            )}
+            <div>
+                <label htmlFor="layer">{`Layer ${demo.selectedLayer}`}</label>
+                <button
+                    type="button"
+                    name="layer"
+                    onClick={() => {
+                        demo.selectLayer(demo.selectedLayer - 1);
+                    }}
+                >
+                    {'←'}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        demo.selectLayer(demo.selectedLayer + 1);
+                    }}
+                >
+                    {'→'}
+                </button>
+                <button
+                    type="button"
+                    title="Remove selected layer"
+                    onClick={() => {
+                        demo.deleteSelectedLayer();
+                    }}
+                >
+                    {'🗑️'}
+                </button>
+            </div>
             <LayerUi demo={demo} />
         </div>
     );
