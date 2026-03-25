@@ -1,13 +1,13 @@
-import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { type OmeZarrMetadata, loadMetadata, nextSliceStep, sizeInUnits } from '@alleninstitute/vis-omezarr';
-import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
+import { Box2D, type box2D, type Interval, PLANE_XY, type vec2 } from '@alleninstitute/vis-geometry';
+import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
+import { loadMetadata, nextSliceStep, type OmeZarrMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type React from 'react';
 import { useId, useMemo, useState } from 'react';
+import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
 import { pan, zoom } from '../../common/camera';
 import { RenderServerProvider } from '../../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
-import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
 
 const screenSize: vec2 = [800, 800];
 
