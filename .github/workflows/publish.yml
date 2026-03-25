@@ -1,0 +1,56 @@
+name: Publish to NPM
+
+on:
+    push:
+        tags:
+            - '*/v*.*.*'
+    workflow_dispatch:
+        inputs:
+            package:
+                description: 'Package to publish (core, dzi, geometry, omezarr, scatterbrain, or "all")'
+                required: true
+                default: 'all'
+                type: choice
+                options:
+                    - all
+                    - core
+                    - dzi
+                    - geometry
+                    - omezarr
+                    - scatterbrain
+
+jobs:
+    publish:
+        name: Publish packages to NPM
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            id-token: write # Required for npm OIDC provenance
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9.14.2
+
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  registry-url: 'https://registry.npmjs.org'
+                  scope: '@alleninstitute'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build
+              run: pnpm build
+
+            - name: Publish all packages
+              if: github.event_name == 'push' || inputs.package == 'all'
+              run: pnpm -r publish --no-git-checks --access public --provenance
+
+            - name: Publish single package
+              if: github.event_name == 'workflow_dispatch' && inputs.package != 'all'
+              run: pnpm --filter "@alleninstitute/vis-${{ inputs.package }}" publish --no-git-checks --access public --provenance
