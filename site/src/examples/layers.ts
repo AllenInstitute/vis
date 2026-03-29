@@ -1,5 +1,11 @@
-import { Box2D, CartesianPlane, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { sizeInUnits } from '@alleninstitute/vis-omezarr';
+import {
+    Box2D,
+    CartesianPlane,
+    Vec2,
+    type box2D,
+    type OrthogonalCartesianAxes,
+    type vec2,
+} from '@alleninstitute/vis-geometry';
 import { AsyncDataCache, type FrameLifecycle, logger, type NormalStatus, ReglLayer2D } from '@alleninstitute/vis-core';
 import pkg from 'file-saver';
 const { saveAs } = pkg;
@@ -28,7 +34,7 @@ import {
     renderAnnotationLayer,
 } from './data-renderers/simpleAnnotationRenderer';
 import type { ColorMapping, RenderCallback } from './data-renderers/types';
-import { type AxisAlignedPlane, buildVersaRenderer } from './data-renderers/versa-renderer';
+import { buildVersaRenderer } from './data-renderers/versa-renderer';
 import {
     type RenderSettings as SliceRenderSettings,
     renderGrid,
@@ -175,7 +181,7 @@ export class Demo {
             this.uiChange();
         }
     }
-    setPlane(param: AxisAlignedPlane) {
+    setPlane(param: OrthogonalCartesianAxes) {
         const layer = this.layers[this.selectedLayer];
         if (layer && (layer.type === 'volumeSlice' || layer.type === 'volumeGrid')) {
             layer.data.plane = new CartesianPlane(param);
@@ -303,25 +309,24 @@ export class Demo {
     }
     private addVolumeSlice(config: ZarrSliceConfig) {
         const [w, h] = this.camera.screen;
-        return createZarrSlice(config).then((data) => {
+        return createZarrSlice(config).then((zarrSlice) => {
             const layer = new ReglLayer2D<
                 AxisAlignedZarrSlice & OptionalTransform,
                 Omit<SliceRenderSettings<CacheEntry>, 'target'>
             >(this.regl, this.imgRenderer, renderSlice<CacheEntry>, [w, h]);
             this.layers.push({
                 type: 'volumeSlice',
-                data,
+                data: zarrSlice,
                 render: layer,
             });
-            const axes = data.metadata.attrs.multiscales[0].axes;
-            const dataset = data.metadata.getFirstShapedDataset(0);
-            if (!dataset) {
+            const level = zarrSlice.metadata.getLevel({ index: 0 });
+            if (!level) {
                 throw new Error('invalid Zarr data: dataset 0 not found!');
             }
-            const s = sizeInUnits(data.plane, axes, dataset);
+            const s = level.sizeInUnits(zarrSlice.plane);
 
             if (!s) {
-                logger.warn('no size for plane', data.plane, axes);
+                logger.warn('no size for plane', zarrSlice.plane, level.axes);
                 return;
             }
 
