@@ -2,3 +2,7 @@ packages:
     - 'packages/**'
     - 'site/**'
     - '!**test**'
+
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+    - '@alleninstitute/*'
