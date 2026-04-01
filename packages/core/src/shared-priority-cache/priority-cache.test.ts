@@ -119,58 +119,56 @@ describe.skip('throughput', () => {
         // a photon travels about 1000 feet in that time
         expect(numEvicted).toBe(999000);
     });
-    test(
-        'performs well under non-stop puts with random prioritization values, and intermittant re-prioritizations',
-        { timeout: 10000 },
-        () => {
-            // because puts get called as the result of a promise resolution, its hard to isolate the cost
-            // using a "realistic" example - lets just call put in a loop?
-            const fakeStore: FakeStore = new FakeStore();
-            const priorities: Record<string, number> = {};
-            let numEvicted = 0;
-            const score = (k: string) => priorities[k] ?? 0;
-            const cache: AsyncPriorityCache<Cacheable> = new AsyncPriorityCache<Cacheable>(fakeStore, score, 1000, 20);
-            const newItem = (ID: string): Cacheable => {
-                priorities[ID] = Math.random() * 100;
-                return {
-                    sizeInBytes: () => 1,
-                    destroy: () => {
-                        delete priorities[ID];
-                        numEvicted += 1;
-                    },
-                };
+    test('performs well under non-stop puts with random prioritization values, and intermittant re-prioritizations', {
+        timeout: 10000,
+    }, () => {
+        // because puts get called as the result of a promise resolution, its hard to isolate the cost
+        // using a "realistic" example - lets just call put in a loop?
+        const fakeStore: FakeStore = new FakeStore();
+        const priorities: Record<string, number> = {};
+        let numEvicted = 0;
+        const score = (k: string) => priorities[k] ?? 0;
+        const cache: AsyncPriorityCache<Cacheable> = new AsyncPriorityCache<Cacheable>(fakeStore, score, 1000, 20);
+        const newItem = (ID: string): Cacheable => {
+            priorities[ID] = Math.random() * 100;
+            return {
+                sizeInBytes: () => 1,
+                destroy: () => {
+                    delete priorities[ID];
+                    numEvicted += 1;
+                },
             };
-            let putOverheadMS = 0;
-            let rePrioritizeOverheadMS = 0;
-            let rePrioritizeEvents = 0;
-            const onemil = 1_000_000;
-            for (let i = 0; i < onemil; i++) {
-                const ID = `item_${i}`;
-                const item = newItem(ID);
-                const begin = performance.now();
-                cache.put(ID, item);
-                putOverheadMS += performance.now() - begin;
-                if (i % 100 === 0) {
-                    // this is the same score function, but we changed all the numbers... that is exactly what we want
-                    for (const k in priorities) {
-                        priorities[k] = Math.random() * 100;
-                    }
-                    rePrioritizeEvents += 1;
-                    const begin = performance.now();
-                    cache.reprioritize(score);
-                    rePrioritizeOverheadMS += performance.now() - begin;
+        };
+        let putOverheadMS = 0;
+        let rePrioritizeOverheadMS = 0;
+        let rePrioritizeEvents = 0;
+        const onemil = 1_000_000;
+        for (let i = 0; i < onemil; i++) {
+            const ID = `item_${i}`;
+            const item = newItem(ID);
+            const begin = performance.now();
+            cache.put(ID, item);
+            putOverheadMS += performance.now() - begin;
+            if (i % 100 === 0) {
+                // this is the same score function, but we changed all the numbers... that is exactly what we want
+                for (const k in priorities) {
+                    priorities[k] = Math.random() * 100;
                 }
+                rePrioritizeEvents += 1;
+                const begin = performance.now();
+                cache.reprioritize(score);
+                rePrioritizeOverheadMS += performance.now() - begin;
             }
-            console.log('1 million puts,', numEvicted, 'evictions,', putOverheadMS, 'ms total');
-            console.log('each put (avg ms): ', putOverheadMS / onemil);
-            console.log('avg ms to reprioritize 1000 items: ', rePrioritizeOverheadMS / rePrioritizeEvents);
-            expect(putOverheadMS / onemil).toBeLessThan(0.01); // yup, we are expecting this call to take less than 10 microseconds on average.
-            // a photon travels about 10,000 feet in that time
-            expect(numEvicted).toBe(999000);
-            expect(rePrioritizeEvents).toBe(onemil / 100);
-            expect(rePrioritizeOverheadMS / rePrioritizeEvents).toBeLessThan(0.1);
-        },
-    );
+        }
+        console.log('1 million puts,', numEvicted, 'evictions,', putOverheadMS, 'ms total');
+        console.log('each put (avg ms): ', putOverheadMS / onemil);
+        console.log('avg ms to reprioritize 1000 items: ', rePrioritizeOverheadMS / rePrioritizeEvents);
+        expect(putOverheadMS / onemil).toBeLessThan(0.01); // yup, we are expecting this call to take less than 10 microseconds on average.
+        // a photon travels about 10,000 feet in that time
+        expect(numEvicted).toBe(999000);
+        expect(rePrioritizeEvents).toBe(onemil / 100);
+        expect(rePrioritizeOverheadMS / rePrioritizeEvents).toBeLessThan(0.1);
+    });
     test('enqueue with instant fetching - overall speed', { timeout: 10000 }, async () => {
         const promises = new PromiseFarm();
         const fakeStore: FakeStore = new FakeStore();
