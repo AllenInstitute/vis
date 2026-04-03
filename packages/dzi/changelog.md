@@ -7,10 +7,54 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - DZI fetch function ([#162](https://github.com/AllenInstitute/vis/pull/162))
+- Package tag changelog generation
 
 ### 🐛 Bug Fixes
 
-- Dzi viewer would loop forever due to some faulty math ([#43](https://github.com/AllenInstitute/vis/pull/43))
+- Fix version display on changelogs and tweak scatterbrain package command
+
+### 💼 Other
+
+- Don't filter out unconvenctional commits so we can see everything!
+- Merge branch 'main' into lane/package-tag-changelogs
+- Merge branch 'main' into lane/package-tag-changelogs
+- Merge branch 'main' into lane/package-tag-changelogs
+
+### ⚙️ Miscellaneous Tasks
+
+- Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
+- Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
+- *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
+- Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
+- Update release numbers for release ([#180](https://github.com/AllenInstitute/vis/pull/180))
+- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- Adding "type: module" to all packages ([#201](https://github.com/AllenInstitute/vis/pull/201))
+- Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
+- Renaming render functions from "renderer" to "render command" ([#204](https://github.com/AllenInstitute/vis/pull/204))
+- Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
+
+## [0.0.11] - 2025-04-08
+
+### 💼 Other
+
+- Updating DZI package version (remove Scatterbrain dependency) ([#125](https://github.com/AllenInstitute/vis/pull/125))
+
+### ⚙️ Miscellaneous Tasks
+
+- Rename vis-scatterbrain package to vis-core ([#118](https://github.com/AllenInstitute/vis/pull/118))
+
+## [0.0.10] - 2025-03-31
+
+### ⚙️ Miscellaneous Tasks
+
+- Logger with log levels ([#97](https://github.com/AllenInstitute/vis/pull/97))
+- Test coverage tooling ([#95](https://github.com/AllenInstitute/vis/pull/95))
+- Updating vis-dzi and vis-omezarr to enable use of vis-scatterbrain 0.0.10 ([#112](https://github.com/AllenInstitute/vis/pull/112))
+
+## [0.0.9] - 2025-03-14
+
+### 🐛 Bug Fixes
+
 - CI tests weren't running [DT-7060] ([#87](https://github.com/AllenInstitute/vis/pull/87))
 
 ### 💼 Other
@@ -19,21 +63,44 @@ All notable changes to this project will be documented in this file.
 
 ### ⚙️ Miscellaneous Tasks
 
-- CI workflow [DT-5996] ([#25](https://github.com/AllenInstitute/vis/pull/25))
-- Update version ([#39](https://github.com/AllenInstitute/vis/pull/39))
-- Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
-- Version bumps for only-allow removal release ([#51](https://github.com/AllenInstitute/vis/pull/51))
 - Install Biome, fix formatting [DT-7060] ([#52](https://github.com/AllenInstitute/vis/pull/52))
 - Biome linting with auto-fixes [DT-7060] ([#53](https://github.com/AllenInstitute/vis/pull/53))
 - Dependency health configurations ([#17](https://github.com/AllenInstitute/vis/pull/17))
 - Clean up dependencies [DT-7060] ([#55](https://github.com/AllenInstitute/vis/pull/55))
 - Fix all but non-null assertion lints ([#96](https://github.com/AllenInstitute/vis/pull/96))
-- Logger with log levels ([#97](https://github.com/AllenInstitute/vis/pull/97))
-- Test coverage tooling ([#95](https://github.com/AllenInstitute/vis/pull/95))
-- Updating vis-dzi and vis-omezarr to enable use of vis-scatterbrain 0.0.10 ([#112](https://github.com/AllenInstitute/vis/pull/112))
-- Rename vis-scatterbrain package to vis-core ([#118](https://github.com/AllenInstitute/vis/pull/118))
-- Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
-- Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
-- *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
+
+## [0.0.7] - 2025-02-03
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
+- Version bumps for only-allow removal release ([#51](https://github.com/AllenInstitute/vis/pull/51))
+
+## [0.0.6] - 2024-12-04
+
+### 💼 Other
+
+- Noah/documentation ([#46](https://github.com/AllenInstitute/vis/pull/46))
+
+## [0.0.5] - 2024-11-21
+
+### 🐛 Bug Fixes
+
+- Dzi viewer would loop forever due to some faulty math ([#43](https://github.com/AllenInstitute/vis/pull/43))
+
+## [0.0.4] - 2024-11-13
+
+### ⚙️ Miscellaneous Tasks
+
+- CI workflow [DT-5996] ([#25](https://github.com/AllenInstitute/vis/pull/25))
+- Update version ([#39](https://github.com/AllenInstitute/vis/pull/39))
+
+## [0.0.3] - 2024-10-02
+
+### 💼 Other
+
+- DZI viewer component ([#29](https://github.com/AllenInstitute/vis/pull/29))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
 <!-- generated by git-cliff -->
