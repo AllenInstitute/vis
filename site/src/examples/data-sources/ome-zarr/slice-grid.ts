@@ -1,13 +1,15 @@
-import { type OmeZarrMetadata, loadMetadata } from '@alleninstitute/vis-omezarr';
-import type { AxisAlignedPlane } from '../../data-renderers/versa-renderer';
+import { type OmeZarrConnection, CachedOmeZarrConnection, type OmeZarrMetadata } from '@alleninstitute/vis-omezarr';
 import type { ColorMapping } from '../../data-renderers/types';
 import type { OptionalTransform, Simple2DTransform } from '../types';
 import type { WebResource } from '@alleninstitute/vis-core';
+import type { OrthogonalCartesianAxes } from '@alleninstitute/vis-geometry';
+
+const workerFactory = () => new Worker(new URL('../../common/loaders/omezarr/fetch.worker.ts', import.meta.url));
 
 export type ZarrSliceGridConfig = {
     type: 'ZarrSliceGridConfig';
     resource: WebResource;
-    plane: AxisAlignedPlane;
+    plane: OrthogonalCartesianAxes;
     slices: number; // divide this volume into this many slices, and arrange them in a grid.
     gamut: ColorMapping;
     rotation?: number;
@@ -15,18 +17,24 @@ export type ZarrSliceGridConfig = {
 };
 export type AxisAlignedZarrSliceGrid = {
     type: 'AxisAlignedZarrSliceGrid';
+    connection: OmeZarrConnection;
     metadata: OmeZarrMetadata;
-    plane: AxisAlignedPlane;
+    plane: OrthogonalCartesianAxes;
     slices: number;
     gamut: ColorMapping;
     rotation: number;
 } & OptionalTransform;
 
-function assembleZarrSliceGrid(config: ZarrSliceGridConfig, metadata: OmeZarrMetadata): AxisAlignedZarrSliceGrid {
+function assembleZarrSliceGrid(
+    config: ZarrSliceGridConfig,
+    connection: OmeZarrConnection,
+    metadata: OmeZarrMetadata,
+): AxisAlignedZarrSliceGrid {
     const { rotation, trn } = config;
     return {
         ...config,
         type: 'AxisAlignedZarrSliceGrid',
+        connection,
         metadata,
         toModelSpace: trn,
         rotation: rotation ?? 0,
@@ -34,7 +42,8 @@ function assembleZarrSliceGrid(config: ZarrSliceGridConfig, metadata: OmeZarrMet
 }
 export function createZarrSliceGrid(config: ZarrSliceGridConfig): Promise<AxisAlignedZarrSliceGrid> {
     const { resource } = config;
-    return loadMetadata(resource).then((metadata) => {
-        return assembleZarrSliceGrid(config, metadata);
+    const connection = new CachedOmeZarrConnection(resource, workerFactory);
+    return connection.loadMetadata().then((metadata) => {
+        return assembleZarrSliceGrid(config, connection, metadata);
     });
 }

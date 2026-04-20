@@ -3,19 +3,18 @@ import type REGL from 'regl';
 import type { RenderCallback } from './types';
 
 import { Box2D, CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
-import { pickBestScale, sizeInUnits, sizeInVoxels } from '@alleninstitute/vis-omezarr';
 import type { Camera } from '../common/camera';
 import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
 import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
 import { applyOptionalTrn } from './utils';
 import {
     type VoxelSliceRenderSettings,
-    type VoxelTile,
     type buildVersaRenderer,
     cacheKeyFactory,
     getVisibleTiles,
     requestsForTile,
 } from './versa-renderer';
+import type { VoxelTile } from '@alleninstitute/vis-omezarr';
 
 type Renderer = ReturnType<typeof buildVersaRenderer>;
 type CacheContentType = { type: 'texture2D'; data: REGL.Texture2D };
@@ -87,10 +86,11 @@ export function renderGrid<C extends CacheContentType | object>(
     const rowSize = Math.floor(Math.sqrt(slices));
     const allItems: VoxelTile[] = [];
     const smokeAndMirrors: VoxelTile[] = [];
-    const best = pickBestScale(metadata, plane, camera.view, camera.screen);
+    const bestLevel = metadata.pickBestScale(plane, camera.view, camera.screen);
 
     const renderSettings = {
         metadata,
+        connection: grid.connection,
         gamut,
         regl,
         rotation: grid.rotation,
@@ -118,11 +118,11 @@ export function renderGrid<C extends CacheContentType | object>(
             ...camera,
             view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
         };
-        const dim = sizeInVoxels(plane.ortho, axes, best);
-        const realSize = sizeInUnits(plane, axes, best);
+        const dim = bestLevel.sizeInVoxels(plane.ortho);
+        const realSize = bestLevel.sizeInUnits(plane);
 
         if (!realSize) {
-            logger.warn('no size for plane', plane, axes, best);
+            logger.warn('no size for plane', plane, axes, bestLevel);
             continue;
         }
 
@@ -172,9 +172,8 @@ export function renderSlice<C extends CacheContentType | object>(
         ...camera,
         view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
     };
-    const best = pickBestScale(metadata, plane, camera.view, desiredResolution);
-    const axes = metadata.attrs.multiscales[0].axes;
-    const dim = sizeInVoxels(plane.ortho, axes, best);
+    const best = metadata.pickBestScale(plane, camera.view, desiredResolution);
+    const dim = best.sizeInVoxels(plane.ortho);
     const orthoVal = Math.round(planeParameter * (dim ?? 0));
 
     const items = getVisibleTiles({ ...camera, screen: desiredResolution }, plane, orthoVal, metadata);
@@ -184,7 +183,7 @@ export function renderSlice<C extends CacheContentType | object>(
         items.tiles,
         cache,
         {
-            metadata,
+            connection: slice.connection,
             gamut,
             regl,
             rotation: slice.rotation,

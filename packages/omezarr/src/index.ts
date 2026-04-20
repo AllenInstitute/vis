@@ -1,6 +1,10 @@
 export {
     buildOmeZarrSliceRenderer,
     buildAsyncOmezarrRenderer,
+    makeRGBColorChannels,
+    makeRenderSettings,
+    toZarrDataSpecifier,
+    type Decoder,
     type VoxelTileImage,
     type RenderSettings,
     type RenderSettingsChannel,
@@ -25,37 +29,33 @@ export {
     type OmeZarrOmeroChannelWindow,
     type OmeZarrOmeroChannel,
     type OmeZarrOmero,
-    type OmeZarrAttrs,
-    type OmeZarrArrayMetadata,
+    type OmeZarrData,
+    OmeZarrArrayTransform,
     OmeZarrAxisSchema,
     OmeZarrCoordinateTranslationSchema,
     OmeZarrCoordinateScaleSchema,
     OmeZarrCoordinateTransformSchema,
     OmeZarrDatasetSchema,
+    OmeZarrGroupTransform,
     OmeZarrMultiscaleSchema,
     OmeZarrOmeroChannelWindowSchema,
     OmeZarrOmeroChannelSchema,
     OmeZarrOmeroSchema,
-    OmeZarrAttrsSchema,
-    OmeZarrMetadata,
-    type DehydratedOmeZarrArray,
-    type DehydratedOmeZarrMetadata,
 } from './zarr/types';
 export {
-    loadMetadata,
-    loadZarrArrayFile,
-    loadZarrAttrsFile,
-    pickBestScale,
-    loadSlice,
-    sizeInUnits,
-    sizeInVoxels,
-    nextSliceStep,
-    planeSizeInVoxels,
-    type ZarrRequest,
-} from './zarr/loading';
+    CachedOmeZarrConnection,
+    type OmeZarrConnection,
+    type ZarrDataSpecifier,
+} from './zarr/connection';
 
-export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
-export { decoderFactory } from './zarr/cache-lower';
+export {
+    type OmeZarrLevelSpecifier,
+    type OmeZarrMultiscaleSpecifier,
+    OmeZarrMetadata,
+} from './zarr/metadata';
+export { OmeZarrLevel } from './zarr/level';
+export {} from './zarr/omezarr-transforms';
+// export { decoderFactory } from './zarr/cache-lower';
 export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';
 export {
     type TransferrableRequestInit,
