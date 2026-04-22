@@ -1,5 +1,7 @@
 /// Types describing the metadata that gets loaded from scatterbrain.json files ///
 // there are 2 variants, slideview and regular - they are distinguished at runtime
+
+import type { box2D } from "@alleninstitute/vis-geometry";
 // by checking the parsed metadata for the 'slides' field
 export type WebGLSafeBasicType = 'uint8' | 'uint16' | 'int8' | 'int16' | 'uint32' | 'int32' | 'float';
 
@@ -82,3 +84,13 @@ export type SlideviewMetadata = CommonMetadata & {
 
 export type SlideviewScatterbrainDataset = { type: 'slideview'; metadata: SlideviewMetadata };
 export type ScatterbrainDataset = { type: 'normal'; metadata: ScatterbrainMetadata };
+
+
+// renderer-specific types:
+
+export type Item = Readonly<{
+    dataset: SlideviewScatterbrainDataset | ScatterbrainDataset;
+    node: TreeNode;
+    bounds: box2D;
+    columns: Record<string, ColumnRequest>;
+}>;

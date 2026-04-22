@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-scatterbrain",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -55,7 +55,8 @@
         "lodash": "4.17.23",
         "regl": "2.1.0",
         "ts-pattern": "5.9.0",
-        "zod": "4.3.6"
+        "zod": "4.3.6",
+        "webgpu-utils": "2.0.2"
     },
     "publishConfig": {
         "registry": "https://registry.npmjs.org",
@@ -63,6 +64,7 @@
     },
     "packageManager": "pnpm@9.14.2",
     "devDependencies": {
-        "@types/lodash": "4.17.24"
+        "@types/lodash": "4.17.24",
+        "@webgpu/types": "0.1.69"
     }
 }

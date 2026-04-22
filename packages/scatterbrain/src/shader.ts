@@ -2,7 +2,7 @@
 
 import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
-import type { Cacheable, CachedVertexBuffer } from '@alleninstitute/vis-core';
+import type { CachedVertexBuffer, Resource } from '@alleninstitute/vis-core';
 import { Box2D, type box2D, type Interval, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import * as lodash from 'lodash';
 const { keys, mapValues, reduce } = lodash;
@@ -27,7 +27,7 @@ const { keys, mapValues, reduce } = lodash;
 // patterns we've seen in our shaders so far! you could easily generate your own
 // totally custom shaders!
 
-type ScatterbrainShaderUtils = {
+export type ScatterbrainShaderUtils = {
     uniforms: string; // the GLSL declarations of the uniforms for this shader
     attributes: string; // the GLSL declarations of the vertex attributes for this shader
     commonUtilsGLSL: string; // prepend any GLSL to the final vertex shader
@@ -38,7 +38,7 @@ type ScatterbrainShaderUtils = {
     getClipPosition: string; // ()-> vec4 // the position of the point in clip space - (hint - apply the camera to data-space)
     getPointSize: string; // ()->float
 };
-export class VBO implements Cacheable {
+export class VBO implements Resource {
     buffer: CachedVertexBuffer;
     constructor(buffer: CachedVertexBuffer) {
         this.buffer = buffer;
@@ -309,8 +309,8 @@ export function generate(config: Config): ScatterbrainShaderUtils {
         return mix(filteredOutColor,${colorize},isFilteredIn());
     `
             : categoryColumnIndex === -1
-              ? colorByQuantitativeValue
-              : colorByCategoricalId;
+                ? colorByQuantitativeValue
+                : colorByCategoricalId;
     return {
         attributes,
         uniforms,
@@ -332,8 +332,8 @@ export type ShaderSettings = {
     quantitativeFilters: readonly string[]; // the names of quantitative variables
     mode: 'color' | 'info';
     colorBy:
-        | { kind: 'metadata'; column: string }
-        | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
+    | { kind: 'metadata'; column: string }
+    | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
 };
 
 export function configureShader(settings: ShaderSettings): {

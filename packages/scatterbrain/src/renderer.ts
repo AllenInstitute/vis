@@ -1,86 +1,13 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
-import type REGL from 'regl';
-import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from './types';
-import { Box2D, type box2D, type vec4 } from '@alleninstitute/vis-geometry';
-import { MakeTaggedBufferView } from './typed-array';
+import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
+import { Box2D, type vec4 } from '@alleninstitute/vis-geometry';
 import keys from 'lodash/keys';
 import reduce from 'lodash/reduce';
+import type REGL from 'regl'
 import { getVisibleItems, type NodeWithBounds } from './dataset';
 import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';
-export type Item = Readonly<{
-    dataset: SlideviewScatterbrainDataset | ScatterbrainDataset;
-    node: TreeNode;
-    bounds: box2D;
-    columns: Record<string, ColumnRequest>;
-}>;
-type Content = Record<string, VBO>;
-
-export function buildScatterbrainCacheClient(
-    allNeededColumns: readonly string[],
-    regl: REGL.Regl,
-    cache: SharedPriorityCache,
-    onDataArrived: () => void,
-) {
-    const client = cache.registerClient<Item, Content>({
-        cacheKeys: (item) => {
-            const { dataset, node, columns } = item;
-            return reduce<Record<string, ColumnRequest>, Record<string, string>>(
-                columns,
-                (acc, col, key) => ({
-                    ...acc,
-                    [key]: `${dataset.metadata.metadataFileEndpoint}/${node.file}/${col.name}`,
-                }),
-                {},
-            );
-        },
-        fetch: (item) => {
-            const { dataset, node, columns } = item;
-            const attrs = dataset.metadata.pointAttributes;
-            const getColumnUrl = (columnName: string) =>
-                `${dataset.metadata.metadataFileEndpoint}${columnName}/${dataset.metadata.visualizationReferenceId}/${node.file}`;
-            const getGeneUrl = (columnName: string) =>
-                `${dataset.metadata.geneFileEndpoint}${columnName}/${dataset.metadata.visualizationReferenceId}/${node.file}`;
-            const getColumnInfo = (col: ColumnRequest) =>
-                col.type === 'QUANTITATIVE'
-                    ? ({ url: getGeneUrl(col.name), elements: 1, type: 'float' } as const)
-                    : { url: getColumnUrl(col.name), elements: attrs[col.name].elements, type: attrs[col.name].type };
-
-            const proms = reduce<Record<string, ColumnRequest>, Record<string, (signal: AbortSignal) => Promise<VBO>>>(
-                columns,
-                (getters, col, key) => {
-                    const { url, type } = getColumnInfo(col);
-                    return {
-                        ...getters,
-                        [key]: (signal) =>
-                            fetch(url, { signal }).then((b) =>
-                                b.arrayBuffer().then((buff) => {
-                                    const typed = MakeTaggedBufferView(type, buff);
-                                    return new VBO({
-                                        buffer: regl.buffer({ type: type, data: typed.data }),
-                                        bytes: buff.byteLength,
-                                        type: 'buffer',
-                                    });
-                                }),
-                            ),
-                    };
-                },
-                {},
-            );
-            return proms;
-        },
-        isValue: (v): v is Content => {
-            for (const column of allNeededColumns) {
-                if (!(column in v)) {
-                    return false;
-                }
-            }
-            return true;
-        },
-        onDataArrived,
-    });
-    return client;
-}
-
+import { buildScatterbrainCacheClient } from './cache-client';
+import { MakeTaggedBufferView } from './typed-array'
 function columnsForItem<T extends object>(
     config: Config,
     col2shader: Record<string, string>,
@@ -175,7 +102,7 @@ export function updateCategoricalValue(
 type ScatterbrainRenderProps = Omit<Parameters<ReturnType<typeof buildScatterbrainRenderCommand>>[0], 'item'> & {
     visibilityThresholdPx: number;
     dataset: ScatterbrainDataset | SlideviewScatterbrainDataset;
-    client: ReturnType<typeof buildScatterbrainCacheClient>;
+    client: ReturnType<typeof buildScatterbrainCacheClient<VBO>>;
 };
 /**
  *
@@ -215,7 +142,16 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
     };
     const connectToCache = (cache: SharedPriorityCache, onDataArrived: () => void) => {
         const allColumns = [...config.categoricalColumns, ...config.quantitativeColumns, config.positionColumn];
-        const client = buildScatterbrainCacheClient(allColumns, regl, cache, onDataArrived);
+        const client = buildScatterbrainCacheClient<VBO>(allColumns, cache,
+            (buff, type) => {
+                const typed = MakeTaggedBufferView(type, buff);
+                return new VBO({
+                    buffer: regl.buffer({ type: type, data: typed.data }),
+                    bytes: buff.byteLength,
+                    type: 'buffer',
+                });
+            },
+            onDataArrived);
         return client;
     };
     return { render, connectToCache };
