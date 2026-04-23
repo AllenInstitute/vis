@@ -2,6 +2,7 @@ import type { Cacheable, SharedPriorityCache } from '@alleninstitute/vis-core';
 import type { ColumnRequest, Item, } from './types';
 import reduce from 'lodash/reduce';
 import type { WebGLSafeBasicType } from './typed-array';
+import { keys } from 'lodash';
 
 
 type Content<V extends Cacheable> = Record<string, V>
@@ -53,6 +54,8 @@ export function buildScatterbrainCacheClient<V extends Cacheable>(
             return proms;
         },
         isValue: (v): v is Content<V> => {
+            // console.log('looking for', allNeededColumns)
+            // console.log('in', keys(v))
             for (const column of allNeededColumns) {
                 if (!(column in v)) {
                     return false;
