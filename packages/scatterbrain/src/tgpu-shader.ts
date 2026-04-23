@@ -18,6 +18,8 @@ import type { WebGLSafeBasicType } from './typed-array';
 import { getVisibleItems, loadDataset, type NodeWithBounds } from './dataset';
 import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { pl } from 'zod/locales';
+import type { F32 } from 'typegpu/data';
+import { buildRenderFn as OldSchool, VBO } from './wgpu-shader';
 
 
 
@@ -90,16 +92,7 @@ export type SimpleSettings = {
     highlightBy: { kind: 'metadata', column: string }; // the name of a categorical feature by which to highlight
     colorBy: { kind: 'metadata', column: string }
 }
-class VBO implements Cacheable {
-    constructor(readonly buffer: GPUBuffer) {
-    }
-    destroy() {
-        this.buffer.destroy();
-    }
-    sizeInBytes() {
-        return this.buffer.size;
-    }
-}
+
 // const dType = {
 //     uint8: d.uint8,
 //     uint16: d.u16,
@@ -120,42 +113,48 @@ type RenderProps = {
 };
 
 export function buildScatterbrainTGPU(root: TgpuRoot, settings: SimpleSettings) {
-    const toGpuBuffer = (buffer: ArrayBuffer, _type: WebGLSafeBasicType) => {
+    const toGpuBuffer = (buffer: ArrayBuffer, type: WebGLSafeBasicType) => {
+        if (type === 'uint16') {
+            // seems like uint16 is cursed - vertex buffers have to have a stride of at least 4...
+            // this is probably why the typeGPU thing didnt work right either...
+            const B = root.device.createBuffer({ size: buffer.byteLength * 2, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX });
+            // now we have to copy the uint16 buffer and sorta kinda expand each value...
+            const u32 = new Uint32Array(new Uint16Array(buffer))
+            root.device.queue.writeBuffer(B, 0, u32.buffer);
+            return new VBO(B);
+        }
         const B = root.device.createBuffer({ size: buffer.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX });
-        root.device.queue.writeBuffer(B, 0, buffer);
+        root.device.queue.writeBuffer(B, 0, buffer, 0, buffer.byteLength);
         return new VBO(B);
     }
     const prepareQtCell = columnsForItem<NodeWithBounds>(settings);
     const drawQtCell = buildRenderFn(root);
+    const drawQtCells = OldSchool(root.device);
     const render = (props: RenderProps) => {
         const { camera, dataset, client, visibilityThresholdPx } = props;
         const visibilityThreshold = (visibilityThresholdPx * Box2D.size(camera.view)[0]) / camera.screenResolution[0]; // (units*pixel)/pixel ==> units
         const visibleQtNodes = getVisibleItems(dataset, camera, visibilityThreshold).map(prepareQtCell);
         client.setPriorities(visibleQtNodes, []);
-        console.log("visible: ", visibleQtNodes.length)
+        // console.log("visible: ", visibleQtNodes.length)
+        const blocks: Array<{ columns: Record<string, VBO>, count: number }> = []
         for (const node of visibleQtNodes) {
             if (client.has(node)) {
                 const drawable = client.get(node);
                 if (drawable) {
-                    console.log('draw it: ', node.node.file)
-                    drawQtCell({
-                        count: node.node.numSpecimens / 2, // todo this is bug, I cant figure out how to set the attrib layout correctly... I think
-                        columns: drawable,
-                        ctx: props.ctx,
-                        highlight: 22,
-                        radius: .05,
-                        view: props.camera.view,
-                    })
+                    // // console.log('draw it: ', node.node.file)
                     // drawQtCell({
-                    //     ...props,
-                    //     item: {
-                    //         columnData: drawable,
-                    //         count: node.node.numSpecimens,
-                    //     },
-                    // });
+                    //     count: node.node.numSpecimens,
+                    //     columns: drawable,
+                    //     ctx: props.ctx,
+                    //     highlight: 4,
+                    //     radius: .05,
+                    //     view: props.camera.view,
+                    // })
+                    blocks.push({ count: node.node.numSpecimens, columns: drawable })
                 }
             }
         }
+        drawQtCells({ ctx: props.ctx, highlight: 4, radius: 0.05, view: props.camera.view, blocks })
     }
 
     const connectToCache = (cache: SharedPriorityCache, onDataArrived: () => void) => {
@@ -180,6 +179,10 @@ function columnsForItem<T extends object>(
     };
 }
 
+// so this version has problems
+//  I cannot figure out for the life of me how to get uint16 buffer in as a vertex attribute....
+//  I think I'm gonna try (again) to just make the meat of the shader, then feed it to a template via resolveWithContext
+//  that will mean I'll roll the pipeline by hand, but honestly I dont see how else to make this work...
 function buildRenderFn(root: TgpuRoot) {
     // ok - heres where we do the thing, which is to create a pipeline
     // and return a function that invokes it...
@@ -192,6 +195,10 @@ function buildRenderFn(root: TgpuRoot) {
     // we have to hand-roll the layouts - do we need locations here?
     const pLayout = tgpu.vertexLayout(d.arrayOf(d.vec2f), 'instance')
     const hLayout = tgpu.vertexLayout(d.arrayOf(d.u32), 'instance')
+    // const hLayout: GPUVertexBufferLayout = {
+    //     ...wLayout,
+    //     arrayStride: 0,
+    // }
 
     const vmain = tgpu.vertexFn({
         in: Vertex,
@@ -241,7 +248,7 @@ function buildRenderFn(root: TgpuRoot) {
         //     depthCompare: 'less',
         // },
     })
-    console.log(root.unwrap(pipeline))
+    // console.log(root.unwrap(pipeline))
     return (props: { view: box2D, radius: number, highlight: number, count: number, ctx: GPUCanvasContext, columns: Record<string, VBO> }) => {
         // write the unis...
         const { position, highlightBy } = props.columns;
@@ -250,6 +257,7 @@ function buildRenderFn(root: TgpuRoot) {
         radius.patch(props.radius);
         pipeline
             .with(bg)
+
             .withColorAttachment({ view: props.ctx, loadOp: 'load', })
             .with(pLayout, position.buffer)
             .with(hLayout, highlightBy.buffer)
@@ -268,6 +276,7 @@ async function loadRawJson() {
 
 export async function whatever() {
     const root = await tgpu.init()
+    // const r = buildRenderFn(root.device);
     // const r = buildRenderFn(root)
     const dataset = await loadDataset(await loadRawJson())
     if (!dataset) {
@@ -294,9 +303,10 @@ export async function whatever() {
     const view = Box2D.create([bound.lx, bound.ly], [bound.ux, bound.uy]);
     const client = connectToCache(cache, () => {
         // redraw?
-        console.log('new data arrived...')
+        // console.log('new data arrived...')
         requestAnimationFrame(() => {
-            console.log('re render!')
+            // console.log('re render!')
+
             render({ camera: { view, screenResolution: [1500, 1500] }, client, ctx: ctx!, dataset, visibilityThresholdPx: 10 })
         })
     })
