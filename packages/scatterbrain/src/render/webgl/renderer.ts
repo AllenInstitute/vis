@@ -1,13 +1,13 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
-import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
+import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset } from '../../types';
 import { Box2D, type vec4 } from '@alleninstitute/vis-geometry';
 import keys from 'lodash/keys';
 import reduce from 'lodash/reduce';
 import type REGL from 'regl'
-import { getVisibleItems, type NodeWithBounds } from './dataset';
+import { getVisibleItems, type NodeWithBounds } from '../../dataset';
 import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';
-import { buildScatterbrainCacheClient } from './cache-client';
-import { MakeTaggedBufferView } from './typed-array'
+import { buildScatterbrainCacheClient } from '../../cache-client';
+import { MakeTaggedBufferView } from '../../typed-array'
 function columnsForItem<T extends object>(
     config: Config,
     col2shader: Record<string, string>,

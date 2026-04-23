@@ -20,6 +20,8 @@ import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { pl } from 'zod/locales';
 import type { F32 } from 'typegpu/data';
 import { buildRenderFn as OldSchool, VBO } from './wgpu-shader';
+import { generate } from './render/webgpu/generated';
+import { beginValidate, endValidate } from './render/webgpu/validate';
 
 
 
@@ -273,9 +275,18 @@ const Class = 'FS00DXV0T9R1X9FJ4QE'
 async function loadRawJson() {
     return await (await fetch(tenx)).json();
 }
+function buildTest(device: GPUDevice) {
+
+    const yay = generate({ categoricalColumns: ['Class', 'subclass', 'cellId'], categoricalTable: 'lookupTexture', colorByColumn: 'Class', gradientTable: 'gradientTexture', highlightByColumn: 'cellId', mode: 'color', positionColumn: 'umapxy', quantitativeColumns: ['gaba'], samplerName: 'smpl', tableSize: [2, 40] })
+    beginValidate(device);
+    const module = device.createShaderModule({ code: yay, label: 'test shader' })
+    endValidate(device);
+}
 
 export async function whatever() {
     const root = await tgpu.init()
+    buildTest(root.device)
+
     // const r = buildRenderFn(root.device);
     // const r = buildRenderFn(root)
     const dataset = await loadDataset(await loadRawJson())

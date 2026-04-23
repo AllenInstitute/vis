@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/style/noUnusedTemplateLiteral: not at all helpful*/
 
 import type REGL from 'regl';
-import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
+import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from '../../types';
 import type { CachedVertexBuffer, Cacheable } from '@alleninstitute/vis-core';
 import { Box2D, type box2D, type Interval, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import * as lodash from 'lodash';

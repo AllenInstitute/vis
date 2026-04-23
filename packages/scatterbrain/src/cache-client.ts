@@ -54,8 +54,6 @@ export function buildScatterbrainCacheClient<V extends Cacheable>(
             return proms;
         },
         isValue: (v): v is Content<V> => {
-            // console.log('looking for', allNeededColumns)
-            // console.log('in', keys(v))
             for (const column of allNeededColumns) {
                 if (!(column in v)) {
                     return false;

@@ -8,7 +8,7 @@ export default defineConfig({
         lib: {
             entry: resolve(import.meta.dirname, 'src/index.ts'),
             formats: ['es'],
-            fileName: 'main',
+            fileName: 'module',
         },
     },
     resolve: {

@@ -77,11 +77,9 @@ function Demo(props: Props) {
             setCategoricalLookupTableValues(categories, lookup);
 
             const { render, connectToCache } = buildScatterbrainRenderFn(
-                // @ts-expect-error we'll deal with this later
                 regl,
                 { ...settings, dataset },
             );
-            // this ts error is bogus, dont know why
             const renderOneFrame = () => {
                 render({
                     client,
