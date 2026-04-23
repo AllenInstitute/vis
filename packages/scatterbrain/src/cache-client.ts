@@ -1,12 +1,12 @@
-import type { Resource, SharedPriorityCache } from '@alleninstitute/vis-core';
+import type { Cacheable, SharedPriorityCache } from '@alleninstitute/vis-core';
 import type { ColumnRequest, Item, } from './types';
 import reduce from 'lodash/reduce';
 import type { WebGLSafeBasicType } from './typed-array';
 
 
-type Content<V extends Resource> = Record<string, V>
+type Content<V extends Cacheable> = Record<string, V>
 
-export function buildScatterbrainCacheClient<V extends Resource>(
+export function buildScatterbrainCacheClient<V extends Cacheable>(
     allNeededColumns: readonly string[],
     cache: SharedPriorityCache,
     toCacheValue: (buffer: ArrayBuffer, type: WebGLSafeBasicType) => V,

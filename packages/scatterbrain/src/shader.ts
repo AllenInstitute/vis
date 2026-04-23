@@ -2,7 +2,7 @@
 
 import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
-import type { CachedVertexBuffer, Resource } from '@alleninstitute/vis-core';
+import type { CachedVertexBuffer, Cacheable } from '@alleninstitute/vis-core';
 import { Box2D, type box2D, type Interval, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import * as lodash from 'lodash';
 const { keys, mapValues, reduce } = lodash;
@@ -38,7 +38,7 @@ export type ScatterbrainShaderUtils = {
     getClipPosition: string; // ()-> vec4 // the position of the point in clip space - (hint - apply the camera to data-space)
     getPointSize: string; // ()->float
 };
-export class VBO implements Resource {
+export class VBO implements Cacheable {
     buffer: CachedVertexBuffer;
     constructor(buffer: CachedVertexBuffer) {
         this.buffer = buffer;
