@@ -292,12 +292,7 @@ export function buildPipeline(device: GPUDevice, config: Config) {
         // first - determine the diff what what needs to change
         if (categories === lastCategories || isEqual(categories, lastCategories)) {
             // no change - return early, change nothing
-            // return device.createBindGroup({
-            //     layout: lookupBindGroupLayout,
-            //     entries: [
             return { binding: 1, resource: lookupTable };
-            // ]
-            // });
         }
         if (isEqual(keys(categories).toSorted(), keys(lastCategories).toSorted())) {
             // the set of categories stayed the same - great
