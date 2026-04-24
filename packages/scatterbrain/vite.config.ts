@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path';
 import dts from 'vite-plugin-dts';
-import typegpuPlugin from 'unplugin-typegpu/vite';
 
 export default defineConfig({
     build: {
@@ -17,7 +16,6 @@ export default defineConfig({
         },
     },
     plugins: [
-        typegpuPlugin(),
         dts({
             rollupTypes: true,
         }),
