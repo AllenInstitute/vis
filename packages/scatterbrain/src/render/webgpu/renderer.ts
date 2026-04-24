@@ -1,6 +1,6 @@
 import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, WebGLSafeBasicType } from "~/src/types";
-import { buildPipeline, generate, type Config, type Uniforms } from "./generated";
-import { keys, map, omit, pick, reduce } from "lodash";
+import { buildPipeline, type Config } from "./shader";
+import { keys, map, omit, reduce } from "lodash";
 import type { ShaderSettings as BaseSettings } from "../webgl/shader";
 import { getVisibleItems, type NodeWithBounds } from "~/src/dataset";
 import type { Cacheable, SharedPriorityCache } from "@alleninstitute/vis-core";
@@ -171,12 +171,6 @@ export function configureShader(settings: ShaderSettings): {
     // figure out the columns we care about
     // assign them names that are safe to use in the shader (A,B,C, whatever)
     const categories = keys(categoricalFilters).toSorted();
-    // const numCategories = categories.length;
-    // const longestCategory = reduce(
-    //     keys(categoricalFilters),
-    //     (highest, cur) => Math.max(highest, categoricalFilters[cur]),
-    //     0,
-    // );
 
     // the goal here is to associate column names with shader-safe names
     const initialQuantitativeAttrs: Record<string, string> =
