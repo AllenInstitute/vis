@@ -7,16 +7,17 @@ export default defineConfig({
         lib: {
             entry: resolve(import.meta.dirname, 'src/index.ts'),
             formats: ['es'],
-            fileName: 'module',
+            fileName: 'main',
         },
     },
     resolve: {
         alias: {
-            '@': resolve(import.meta.dirname, 'src'),
+            '~': resolve(import.meta.dirname, './'),
         },
     },
     plugins: [
         dts({
+            tsconfigPath: "./tsconfig.json",
             rollupTypes: true,
         }),
     ],
