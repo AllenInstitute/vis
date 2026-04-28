@@ -145,7 +145,7 @@ export function OmezarrViewer({
                         { ...settings, camera: { view: settings.camera.view, screenSize: [1, 1] } },
                         callback,
                         target,
-                        cache,
+                        cache
                     );
                 }
                 return null;
@@ -162,7 +162,7 @@ export function OmezarrViewer({
                                 depth: 1,
                             });
                             lowResPreview(e.target, server.cache, (_e) => {})?.cancelFrame(
-                                'lowres preview beneath actual frame',
+                                'lowres preview beneath actual frame'
                             );
                             if (imgRenderer.current && stash.current) {
                                 imgRenderer.current({
@@ -197,7 +197,7 @@ export function OmezarrViewer({
                         }
                     }
                 },
-                canvas.current,
+                canvas.current
             );
         }
     }, [server, omezarr, settings]);

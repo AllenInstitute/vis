@@ -6,17 +6,8 @@ export * from './resources';
 export * from './errors';
 export * from './colors';
 
-export {
-    beginFrame,
-    buildAsyncRenderer,
-    type RenderFrameConfig,
-} from './abstract/async-frame';
-export type {
-    CachedTexture,
-    CachedVertexBuffer,
-    ReglCacheEntry,
-    Renderer,
-} from './abstract/types';
+export { beginFrame, buildAsyncRenderer, type RenderFrameConfig } from './abstract/async-frame';
+export type { CachedTexture, CachedVertexBuffer, ReglCacheEntry, Renderer } from './abstract/types';
 export { RenderServer } from './abstract/render-server';
 
 export { Logger, logger } from './logger';
