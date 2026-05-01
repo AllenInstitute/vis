@@ -1,0 +1,24 @@
+---
+title: TIFF
+description: A simple TIFF viewer demo using @alleninstitute/vis-tiff
+---
+
+import { Code, Aside } from '@astrojs/starlight/components';
+import { TiffDemo } from '../../../examples/tiff/tiff-demo.tsx';
+import tiffDemoCode from '../../../examples/tiff/tiff-demo.tsx?raw';
+
+# TIFF
+
+This page shows a minimal TIFF viewer built with the `@alleninstitute/vis-tiff` package.
+
+<Aside>
+The demo uses a small public TIFF for convenience, some hosts may block cross-origin requests.
+</Aside>
+
+## Live Demo
+
+<TiffDemo client:only="react" />
+
+## Example Code
+
+<Code language="tsx" code={tiffDemoCode} />

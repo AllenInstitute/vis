@@ -1,0 +1,14 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "paths": {
+            "~/*": ["./*"]
+        },
+        "types": ["@webgpu/types"],
+        "moduleResolution": "Bundler",
+        "module": "es6",
+        "target": "es2024",
+        "lib": ["es2024", "DOM"]
+    },
+    "include": ["./src/index.ts"]
+}
