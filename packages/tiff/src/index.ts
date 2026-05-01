@@ -150,12 +150,7 @@ async function renderWithWebGPU(
     const rgbaData = new Uint8Array(rgba);
 
     if (alignedBytesPerRow === unpaddedBytesPerRow) {
-        device.queue.writeTexture(
-            { texture },
-            rgbaData,
-            { bytesPerRow: unpaddedBytesPerRow },
-            { width, height },
-        );
+        device.queue.writeTexture({ texture }, rgbaData, { bytesPerRow: unpaddedBytesPerRow }, { width, height });
     } else {
         const padded = new Uint8Array(alignedBytesPerRow * height);
         for (let row = 0; row < height; row++) {
