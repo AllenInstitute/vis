@@ -2,7 +2,6 @@ import type { Cacheable, SharedPriorityCache } from '@alleninstitute/vis-core';
 import type { ColumnRequest, Item } from './types';
 import reduce from 'lodash/reduce';
 import type { WebGLSafeBasicType } from './typed-array';
-import { keys } from 'lodash';
 
 type Content<V extends Cacheable> = Record<string, V>;
 

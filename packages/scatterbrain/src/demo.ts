@@ -1,7 +1,6 @@
 /** biome-ignore-all lint/suspicious/noNonNullAssertedOptionalChain: <its a demo> */
 /** biome-ignore-all lint/style/noNonNullAssertion: <its a demo> */
 
-
 import { SharedPriorityCache } from '@alleninstitute/vis-core';
 import { Box2D, type vec4 } from '@alleninstitute/vis-geometry';
 import { loadDataset } from './dataset';
