@@ -5,7 +5,6 @@
         "esModuleInterop": true,
         "exactOptionalPropertyTypes": true,
         "forceConsistentCasingInFileNames": true,
-        "skipLibCheck": true,
-        "types": ["@webgpu/types"]
+        "skipLibCheck": true
     }
 }
