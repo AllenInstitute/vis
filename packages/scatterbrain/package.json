@@ -37,10 +37,8 @@
     ],
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "build": "parcel build",
-        "oldbuild": "parcel build --no-cache",
+        "build": "parcel build --no-cache",
         "dev": "parcel watch --port 1239",
-        "demo": "vite",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
@@ -68,8 +66,6 @@
     "devDependencies": {
         "@types/lodash": "4.17.24",
         "@types/node": "22.19.15",
-        "@webgpu/types": "0.1.69",
-        "vite": "8.0.8",
-        "vite-plugin-dts": "4.5.4"
+        "@webgpu/types": "0.1.69"
     }
 }
