@@ -1,10 +1,8 @@
-
 // lets try and make not a full-fledged scatterbrain shader,
 // with all its fancy filtering, hovering, dot sizes, etc
 // but instead, some subplot shaders - so we render the dots,
 // but we have no fancy filtering, just a simple highlight value,
 // and a color-by attribute
-
 
 // and lets try it with typeGPU generating our shaders for us... which I must admit seems pretty good...
 
@@ -13,7 +11,6 @@ import { SharedPriorityCache } from '@alleninstitute/vis-core';
 import { loadDataset } from './dataset';
 import { Box2D, type vec4 } from '@alleninstitute/vis-geometry';
 import { buildRenderFrameFn, type ShaderSettings } from './render/webgpu/renderer';
-
 
 const tenx =
     'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
@@ -33,9 +30,9 @@ const makeFakeColors = (n: number) => {
     return stuff;
 };
 
-
 export async function whatever() {
-
+    const x: any = 3;
+    let ohno: Array<string> = Array.isArray(x) ? x : [];
     const gradientData = new Uint8Array(256 * 4);
     for (let i = 0; i < 256; i += 4) {
         gradientData[i * 4 + 0] = i;
@@ -43,7 +40,7 @@ export async function whatever() {
         gradientData[i * 4 + 2] = i;
         gradientData[i * 4 + 3] = 255;
     }
-    const adapter = await navigator.gpu.requestAdapter()
+    const adapter = await navigator.gpu.requestAdapter();
     const device = await adapter?.requestDevice()!;
     // buildTest(root.device)
 
@@ -59,25 +56,25 @@ export async function whatever() {
         // colorBy: { kind: 'quantitative', column: '27683', gradient: 'viridis', range: { min: 0, max: 10 } },
         mode: 'color',
         quantitativeFilters: [],
-        highlightByColumn: { kind: 'metadata', column: 'FS00DXV0T9R1X9FJ4QE' }
+        highlightByColumn: { kind: 'metadata', column: 'FS00DXV0T9R1X9FJ4QE' },
     };
 
-    const dataset = await loadDataset(await loadRawJson())
+    const dataset = await loadDataset(await loadRawJson());
     if (!dataset) {
-        throw new Error('blerg this data is toast')
+        throw new Error('blerg this data is toast');
     }
     const cache = new SharedPriorityCache(new Map(), 1024 * 1024 * 2000);
-    const { render, connectToCache } = buildRenderFrameFn(device, { ...settings, dataset })
+    const { render, connectToCache } = buildRenderFrameFn(device, { ...settings, dataset });
 
     const cnvs: HTMLCanvasElement = document.getElementById('canvas') as HTMLCanvasElement;
     cnvs.width = 1500;
     cnvs.height = 1500;
-    const ctx = cnvs.getContext('webgpu')
+    const ctx = cnvs.getContext('webgpu');
     ctx?.configure({
         device: device,
         format: navigator.gpu.getPreferredCanvasFormat(),
-        alphaMode: 'premultiplied'
-    })
+        alphaMode: 'premultiplied',
+    });
 
     const bound = (dataset as ScatterbrainDataset).metadata.tightBoundingBox;
     const view = Box2D.create([bound.lx, bound.ly], [bound.ux, bound.uy]);
@@ -85,7 +82,7 @@ export async function whatever() {
         // redraw?
         // console.log('new data arrived...')
         requestAnimationFrame(() => {
-            console.log('re render!')
+            console.log('re render!');
 
             render({
                 categories,
@@ -99,8 +96,8 @@ export async function whatever() {
                     offset: [0, 0],
                     quantitativeRangeFilters: {},
                     spatialFilterBox: view,
-                }
-            })
+                },
+            });
         });
     });
     render({
@@ -115,7 +112,7 @@ export async function whatever() {
             offset: [0, 0],
             quantitativeRangeFilters: {},
             spatialFilterBox: view,
-        }
-    })
+        },
+    });
 }
 whatever();

@@ -309,8 +309,8 @@ export function generate(config: Config): ScatterbrainShaderUtils {
         return mix(filteredOutColor,${colorize},isFilteredIn());
     `
             : categoryColumnIndex === -1
-                ? colorByQuantitativeValue
-                : colorByCategoricalId;
+              ? colorByQuantitativeValue
+              : colorByCategoricalId;
     return {
         attributes,
         uniforms,
@@ -332,8 +332,8 @@ export type ShaderSettings = {
     quantitativeFilters: readonly string[]; // the names of quantitative variables
     mode: 'color' | 'info';
     colorBy:
-    | { kind: 'metadata'; column: string }
-    | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
+        | { kind: 'metadata'; column: string }
+        | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
 };
 
 export function configureShader(settings: ShaderSettings): {

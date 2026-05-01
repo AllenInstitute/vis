@@ -1,8 +1,8 @@
-import { isEqual, keys, map } from "lodash";
-import { beginValidate, endValidate } from "./validate";
-import * as wgh from 'webgpu-utils'
-import type { vec2, vec4 } from "@alleninstitute/vis-geometry";
-import { setCategoricalLookupTableValues } from "./lookup-texture";
+import { isEqual, keys, map } from 'lodash';
+import { beginValidate, endValidate } from './validate';
+import * as wgh from 'webgpu-utils';
+import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import { setCategoricalLookupTableValues } from './lookup-texture';
 
 function rangeFor(col: string): `${string}_range` {
     return `${col}_range`;
@@ -14,10 +14,7 @@ function rangeFilterExpression(quantitativeColumns: readonly string[]) {
 function categoricalFilterExpression(categoricalColumns: readonly string[], tableName: string) {
     // categorical columns are in order - this array will have the same order as the col in the texture
     return categoricalColumns
-        .map(
-            (attrib, i) =>
-                /*wgsl*/ `step(0.01,textureLoad(${tableName}, vec2u(${i.toFixed(0)},v.${attrib}),0).a)`,
-        )
+        .map((attrib, i) => /*wgsl*/ `step(0.01,textureLoad(${tableName}, vec2u(${i.toFixed(0)},v.${attrib}),0).a)`)
         .join(' * ');
 }
 
@@ -29,21 +26,20 @@ export type Config = {
     gradientTable: string;
     positionColumn: string;
     colorByColumn: string;
-    highlightByColumn: { kind: 'quantitative' | 'metadata', column: string };
-    vertexLocationOrder: string[],
+    highlightByColumn: { kind: 'quantitative' | 'metadata'; column: string };
+    vertexLocationOrder: string[];
 };
 type QuantitativeFilterRanges = Record<`${string}_range`, vec2>;
 // the type of the uniforms on the TS side of the fence
 export type Uniforms = {
-    view: vec4,
-    spatialFilterBox: vec4,
-    filteredOutColor: vec4,
-    highlightColor: vec4,
-    screenSize: vec2,
-    offset: vec2,
-    highlightValue: number,
-} & QuantitativeFilterRanges
-
+    view: vec4;
+    spatialFilterBox: vec4;
+    filteredOutColor: vec4;
+    highlightColor: vec4;
+    screenSize: vec2;
+    offset: vec2;
+    highlightValue: number;
+} & QuantitativeFilterRanges;
 
 export function generate(config: Config): string {
     const {
@@ -58,7 +54,6 @@ export function generate(config: Config): string {
     } = config;
     const catFilter = categoricalFilterExpression(categoricalColumns, categoricalTable);
     const rangeFilter = rangeFilterExpression(quantitativeColumns);
-
 
     const categoryColumnIndex = categoricalColumns.indexOf(colorByColumn);
 
@@ -174,31 +169,43 @@ function generateVertexBufferLayout(config: Config) {
         {
             arrayStride: 8, // xy floats
             stepMode: 'instance',
-            attributes: [{
-                shaderLocation: 0,
-                format: 'float32x2',
-                offset: 0,
-            }]
+            attributes: [
+                {
+                    shaderLocation: 0,
+                    format: 'float32x2',
+                    offset: 0,
+                },
+            ],
         },
-        ...map(categoricalColumns, (cat, i): GPUVertexBufferLayout => ({
-            arrayStride: 4,
-            attributes: [{
-                format: 'uint32',
-                offset: 0,
-                shaderLocation: catStart + i
-            }],
-            stepMode: 'instance'
-        })),
-        ...map(quantitativeColumns, (q, i): GPUVertexBufferLayout => ({
-            arrayStride: 4,
-            attributes: [{
-                format: 'float32',
-                offset: 0,
-                shaderLocation: quantStart + i
-            }],
-            stepMode: 'instance'
-        })),
-    ]
+        ...map(
+            categoricalColumns,
+            (cat, i): GPUVertexBufferLayout => ({
+                arrayStride: 4,
+                attributes: [
+                    {
+                        format: 'uint32',
+                        offset: 0,
+                        shaderLocation: catStart + i,
+                    },
+                ],
+                stepMode: 'instance',
+            }),
+        ),
+        ...map(
+            quantitativeColumns,
+            (q, i): GPUVertexBufferLayout => ({
+                arrayStride: 4,
+                attributes: [
+                    {
+                        format: 'float32',
+                        offset: 0,
+                        shaderLocation: quantStart + i,
+                    },
+                ],
+                stepMode: 'instance',
+            }),
+        ),
+    ];
     return what;
 }
 export function buildPipeline(device: GPUDevice, config: Config) {
@@ -206,7 +213,7 @@ export function buildPipeline(device: GPUDevice, config: Config) {
     beginValidate(device);
     const module = device.createShaderModule({
         code: shader,
-        label: 'scatterbrain shader mod'
+        label: 'scatterbrain shader mod',
     });
     const defs = wgh.makeShaderDataDefinitions(shader);
     const vertexLayout = generateVertexBufferLayout(config);
@@ -232,14 +239,16 @@ export function buildPipeline(device: GPUDevice, config: Config) {
         fragment: {
             module,
             entryPoint: 'fmain',
-            targets: [{
-                format: 'bgra8unorm',
-                blend
-            }]
+            targets: [
+                {
+                    format: 'bgra8unorm',
+                    blend,
+                },
+            ],
         },
         primitive: {
-            topology: 'triangle-strip'
-        }
+            topology: 'triangle-strip',
+        },
     });
     endValidate(device);
 
@@ -256,8 +265,8 @@ export function buildPipeline(device: GPUDevice, config: Config) {
     let gradientTexture = device.createTexture({
         format: 'rgba8unorm',
         size: { width: 256, height: 1 },
-        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING
-    })
+        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    });
     const updateGradient = (data: Uint8Array<ArrayBuffer>) => {
         beginValidate(device);
         if (data.byteLength >= 256 * 4) {
@@ -265,30 +274,37 @@ export function buildPipeline(device: GPUDevice, config: Config) {
             gradientTexture = device.createTexture({
                 format: 'rgba8unorm',
                 size: { width: 256, height: 1 },
-                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING
+                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
             });
-            device.queue.writeTexture({ texture: gradientTexture }, data, { bytesPerRow: 4 * 256, rowsPerImage: 1 }, { width: 256, height: 1 })
+            device.queue.writeTexture(
+                { texture: gradientTexture },
+                data,
+                { bytesPerRow: 4 * 256, rowsPerImage: 1 },
+                { width: 256, height: 1 },
+            );
         } else {
             // warn - we didnt updat the gradient
-            console.warn('warning - not enough data to update gradient texture')
+            console.warn('warning - not enough data to update gradient texture');
         }
 
         endValidate(device);
         return { binding: 2, resource: gradientTexture };
-    }
+    };
     const updateUniforms = (unis: Partial<Uniforms>) => {
-        uniformView.set(unis)
+        uniformView.set(unis);
         // now we write that to the stashed buffer
         device.queue.writeBuffer(uniBuffer, 0, uniformView.arrayBuffer);
-        return { binding: 0, resource: uniBuffer }
-    }
+        return { binding: 0, resource: uniBuffer };
+    };
     let lastCategories = {};
     let lookupTable = device.createTexture({
         format: 'rgba8unorm',
         size: { width: 1, height: 1 },
-        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING
-    })
-    const updateCategorical = (categories: Readonly<Record<string, Readonly<Record<number, { color: vec4; filteredIn: boolean }>>>>) => {
+        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    });
+    const updateCategorical = (
+        categories: Readonly<Record<string, Readonly<Record<number, { color: vec4; filteredIn: boolean }>>>>,
+    ) => {
         // first - determine the diff what what needs to change
         if (categories === lastCategories || isEqual(categories, lastCategories)) {
             // no change - return early, change nothing
@@ -306,6 +322,6 @@ export function buildPipeline(device: GPUDevice, config: Config) {
         }
         return { binding: 1, resource: lookupTable };
         // bindGroups dont have a destroy() - so I'm assuming its totally fine to leak them!!
-    }
+    };
     return { pipeline, updateGradient, updateUniforms, updateCategorical };
 }

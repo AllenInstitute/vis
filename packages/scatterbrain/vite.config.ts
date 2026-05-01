@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import dts from 'vite-plugin-dts';
 
@@ -17,7 +17,7 @@ export default defineConfig({
     },
     plugins: [
         dts({
-            tsconfigPath: "./tsconfig.json",
+            tsconfigPath: './tsconfig.json',
             rollupTypes: true,
         }),
     ],

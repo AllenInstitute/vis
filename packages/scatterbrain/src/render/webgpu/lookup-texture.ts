@@ -1,5 +1,5 @@
-import type { vec4 } from "@alleninstitute/vis-geometry";
-import { reduce, keys } from "lodash";
+import type { vec4 } from '@alleninstitute/vis-geometry';
+import { reduce, keys } from 'lodash';
 
 /**
  * a helper function that MUTATES ALL the values in the given @param texture
@@ -27,7 +27,11 @@ export function setCategoricalLookupTableValues(
             texture.destroy();
         }
         // create a texture!
-        texture = device.createTexture({ format: 'rgba8unorm', size: { width: columns, height: rows }, usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING });
+        texture = device.createTexture({
+            format: 'rgba8unorm',
+            size: { width: columns, height: rows },
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+        });
     }
     // write the rgb of the color, and encode the filter boolean into the alpha channel
     for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {
@@ -43,10 +47,15 @@ export function setCategoricalLookupTableValues(
             data.set(rgbf, rowIndex * columns * 4 + columnIndex * 4);
         }
     }
-    device.queue.writeTexture({ texture }, data, { bytesPerRow: columns * bytesPerPixel, rowsPerImage: rows }, {
-        width: columns,
-        height: rows,
-    });
+    device.queue.writeTexture(
+        { texture },
+        data,
+        { bytesPerRow: columns * bytesPerPixel, rowsPerImage: rows },
+        {
+            width: columns,
+            height: rows,
+        },
+    );
     return texture;
 }
 
@@ -79,8 +88,12 @@ export function updateCategoricalValue(
     data[2] = color[2] * 255;
     data[3] = filteredIn ? 255 : 0;
     device.queue.writeTexture(
-        { texture, origin: { x: col, y: row } }, data, { bytesPerRow: 4, rowsPerImage: 1 }, {
-        width: 1,
-        height: 1,
-    });
+        { texture, origin: { x: col, y: row } },
+        data,
+        { bytesPerRow: 4, rowsPerImage: 1 },
+        {
+            width: 1,
+            height: 1,
+        },
+    );
 }
