@@ -12,7 +12,7 @@ export function TiffDemo() {
     async function loadUrl(next: string) {
         const container = containerRef.current;
         if (!container) return;
-            viewerRef.current?.destroy();
+        viewerRef.current?.destroy();
 
         setLoading(true);
         try {
@@ -38,10 +38,9 @@ export function TiffDemo() {
 
     return (
         <div>
-            <h3>TIFF Demo</h3>
             <div style={{ marginBottom: 8 }}>
                 <input value={inputUrl} onChange={(e) => setInputUrl(e.target.value)} style={{ width: '60%' }} />
-                <button type='button' onClick={() => loadUrl(inputUrl)} style={{ marginLeft: 8 }} disabled={loading}>
+                <button type="button" onClick={() => loadUrl(inputUrl)} style={{ marginLeft: 8 }} disabled={loading}>
                     Load
                 </button>
             </div>
@@ -62,7 +61,7 @@ export function TiffDemo() {
                             background: 'transparent',
                         }}
                     >
-                        <svg  width="40" height="40" viewBox="0 0 50 50" aria-hidden>
+                        <svg width="40" height="40" viewBox="0 0 50 50" aria-hidden>
                             <title>Spinner</title>
                             <circle
                                 cx="25"
