@@ -43,7 +43,7 @@ export type Uniforms = {
 
 export function generate(config: Config): string {
     const {
-        mode,
+        mode: _mode,
         quantitativeColumns,
         categoricalColumns,
         categoricalTable,
@@ -179,7 +179,7 @@ function generateVertexBufferLayout(config: Config) {
         },
         ...map(
             categoricalColumns,
-            (cat, i): GPUVertexBufferLayout => ({
+            (_cat, i): GPUVertexBufferLayout => ({
                 arrayStride: 4,
                 attributes: [
                     {
@@ -193,7 +193,7 @@ function generateVertexBufferLayout(config: Config) {
         ),
         ...map(
             quantitativeColumns,
-            (q, i): GPUVertexBufferLayout => ({
+            (_q, i): GPUVertexBufferLayout => ({
                 arrayStride: 4,
                 attributes: [
                     {
@@ -284,6 +284,7 @@ export function buildPipeline(device: GPUDevice, config: Config) {
             );
         } else {
             // warn - we didnt updat the gradient
+            // biome-ignore lint/suspicious/noConsole: <this is fine>
             console.warn('warning - not enough data to update gradient texture');
         }
 
@@ -296,7 +297,7 @@ export function buildPipeline(device: GPUDevice, config: Config) {
         device.queue.writeBuffer(uniBuffer, 0, uniformView.arrayBuffer);
         return { binding: 0, resource: uniBuffer };
     };
-    let lastCategories = {};
+    const lastCategories = {};
     let lookupTable = device.createTexture({
         format: 'rgba8unorm',
         size: { width: 1, height: 1 },

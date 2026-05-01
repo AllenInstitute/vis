@@ -100,7 +100,7 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
 
         // so... the gad damn bindings - if you dont use a binding, it needs to be omitted from
         // the freaking bg.. that means our gradient texture shouldnt be added if we dont have any quant stuff...
-        let entries: GPUBindGroupEntry[] = [bg0];
+        const entries: GPUBindGroupEntry[] = [bg0];
         if (keys(categories).length > 0) {
             entries.push(bg1);
         }

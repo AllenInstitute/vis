@@ -1,16 +1,12 @@
-// lets try and make not a full-fledged scatterbrain shader,
-// with all its fancy filtering, hovering, dot sizes, etc
-// but instead, some subplot shaders - so we render the dots,
-// but we have no fancy filtering, just a simple highlight value,
-// and a color-by attribute
+/** biome-ignore-all lint/suspicious/noNonNullAssertedOptionalChain: <its a demo> */
+/** biome-ignore-all lint/style/noNonNullAssertion: <its a demo> */
 
-// and lets try it with typeGPU generating our shaders for us... which I must admit seems pretty good...
 
-import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
 import { SharedPriorityCache } from '@alleninstitute/vis-core';
-import { loadDataset } from './dataset';
 import { Box2D, type vec4 } from '@alleninstitute/vis-geometry';
+import { loadDataset } from './dataset';
 import { buildRenderFrameFn, type ShaderSettings } from './render/webgpu/renderer';
+import type { ScatterbrainDataset } from './types';
 
 const tenx =
     'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
@@ -31,8 +27,6 @@ const makeFakeColors = (n: number) => {
 };
 
 export async function whatever() {
-    const x: any = 3;
-    let ohno: Array<string> = Array.isArray(x) ? x : [];
     const gradientData = new Uint8Array(256 * 4);
     for (let i = 0; i < 256; i += 4) {
         gradientData[i * 4 + 0] = i;
@@ -82,6 +76,7 @@ export async function whatever() {
         // redraw?
         // console.log('new data arrived...')
         requestAnimationFrame(() => {
+            // biome-ignore lint/suspicious/noConsole: <this is a demo>
             console.log('re render!');
 
             render({

@@ -1,9 +1,10 @@
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
-import { SharedCacheContext, SharedCacheProvider } from '../common/react/cache-provider';
+import { SharedCacheContext, SharedCacheProvider } from '../common/react/priority-cache-provider';
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
-    buildWebGPUScatterbrainRenderFn,
+    buildScatterbrainRenderFn,
     loadScatterbrainDataset,
+    setCategoricalLookupTableValues,
     type Dataset,
     type ShaderSettings,
 } from '@alleninstitute/vis-scatterbrain';
@@ -35,7 +36,6 @@ const categories = {
     '4MV7HA5DG2XJZ3UD8G9': makeFakeColors(40), // nt type
     FS00DXV0T9R1X9FJ4QE: makeFakeColors(40), // class
 };
-
 const settings: Omit<ShaderSettings, 'dataset'> = {
     categoricalFilters: { '4MV7HA5DG2XJZ3UD8G9': 40, FS00DXV0T9R1X9FJ4QE: 40 },
     colorBy: { kind: 'metadata', column: 'FS00DXV0T9R1X9FJ4QE' },
@@ -51,7 +51,7 @@ type Props = { screenSize: vec2 };
 function Demo(props: Props) {
     const { screenSize } = props;
     const cnvs = useRef<HTMLCanvasElement>(null);
-    const cache = useContext(SharedCacheContext);
+    const server = useContext(SharedCacheContext);
     const [dataset, setDataset] = useState<Dataset | undefined>(undefined);
     useEffect(() => {
         loadRawJson().then((raw) => setDataset(loadScatterbrainDataset(raw)));
@@ -59,7 +59,10 @@ function Demo(props: Props) {
     // todo handlers, etc
     useEffect(() => {
         // build the renderer
-        if (cache && dataset && cnvs.current) {
+        if (server && dataset && cnvs.current) {
+            const ctx = cnvs.current.getContext('2d');
+            const { cache, regl } = server;
+            const lookup = regl.texture({ width: 10, height: 10, format: 'rgba' });
             const gradientData = new Uint8Array(256 * 4);
             for (let i = 0; i < 256; i += 4) {
                 gradientData[i * 4 + 0] = i;
@@ -67,43 +70,40 @@ function Demo(props: Props) {
                 gradientData[i * 4 + 2] = i;
                 gradientData[i * 4 + 3] = 255;
             }
-            const ctx = cnvs.current.getContext('webgpu');
+            const gradient = regl.texture({ width: 256, height: 1, format: 'rgba', data: gradientData });
+            const tgt = regl.framebuffer(screenSize[0], screenSize[1]);
             // make up random colors for the coloring, and add random filtering
-            navigator.gpu.requestAdapter().then((adapter) => {
-                const device = adapter?.requestDevice();
-                ctx!.configure({
-                    device: device,
-                    format: navigator.gpu.getPreferredCanvasFormat(),
-                    alphaMode: 'premultiplied',
-                });
-                const { render, connectToCache } = buildWebGPUScatterbrainRenderFn(device, {
-                    ...settings,
+
+            setCategoricalLookupTableValues(categories, lookup);
+
+            const { render, connectToCache } = buildScatterbrainRenderFn(
+                // @ts-expect-error we'll deal with this later
+                regl,
+                { ...settings, dataset },
+            );
+            // this ts error is bogus, dont know why
+            const renderOneFrame = () => {
+                render({
+                    client,
+                    visibilityThresholdPx: 10,
+                    camera: { view: { minCorner: [-17, -17], maxCorner: [26, 26] }, screenResolution: [800, 800] },
+                    categoricalLookupTable: lookup,
                     dataset,
-                    highlightByColumn: { kind: 'metadata', column: '4MV7HA5DG2XJZ3UD8G9' },
+                    filteredOutColor: [0, 0, 0, 1],
+                    gradient,
+                    hoveredValue: 22,
+                    offset: [0, 0],
+                    quantitativeRangeFilters: {},
+                    spatialFilterBox: { minCorner: [-17, -17], maxCorner: [30, 30] },
+                    target: tgt,
                 });
-                const renderOneFrame = () => {
-                    render({
-                        client,
-                        categories,
-                        gradient: gradientData,
-                        target: ctx?.getCurrentTexture().createView(),
-                        uniforms: {
-                            camera: {
-                                view: { minCorner: [-17, -17], maxCorner: [26, 26] },
-                                screenResolution: [800, 800],
-                            },
-                            filteredOutColor: [0, 0, 0, 1],
-                            highlightedValue: 22,
-                            offset: [0, 0],
-                            quantitativeRangeFilters: {},
-                            spatialFilterBox: { minCorner: [-17, -17], maxCorner: [30, 30] },
-                        },
-                    });
-                };
-                const client = connectToCache(cache, renderOneFrame);
-                renderOneFrame();
-            });
+                const bytes = regl.read({ framebuffer: tgt });
+                const img = new ImageData(new Uint8ClampedArray(bytes), screenSize[0], screenSize[1]);
+                ctx!.putImageData(img, 0, 0);
+            };
+            const client = connectToCache(cache, renderOneFrame);
+            renderOneFrame();
         }
-    }, [dataset, cache, screenSize]);
+    }, [dataset, server, screenSize]);
     return <canvas ref={cnvs} width={screenSize[0]} height={screenSize[1]} />;
 }

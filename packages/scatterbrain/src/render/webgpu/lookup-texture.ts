@@ -27,6 +27,7 @@ export function setCategoricalLookupTableValues(
             texture.destroy();
         }
         // create a texture!
+        // biome-ignore lint/style/noParameterAssign: <this is nonsense>
         texture = device.createTexture({
             format: 'rgba8unorm',
             size: { width: columns, height: rows },
