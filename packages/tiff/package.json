@@ -15,8 +15,6 @@
         "build": "parcel build --no-cache",
         "dev": "parcel watch --port 1240",
         "demo": "parcel serve example/index.html --port 1242",
-        "test": "vitest --watch",
-        "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
         "changelog": "git-cliff -o changelog.md"
     },
