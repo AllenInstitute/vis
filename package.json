@@ -7,12 +7,12 @@
         "test": "pnpm -r run --no-bail test:ci",
         "coverage": "pnpm -r run coverage",
         "typecheck": "pnpm -r --no-bail run typecheck",
-        "fmt": "oxfmt",
-        "fmt:check": "oxfmt --check",
+        "fmt": "oxfmt && cd site && prettier --write '**/*.astro'",
+        "fmt:check": "oxfmt --check && cd site && prettier --check '**/*.astro'",
         "lint": "biome lint . --write",
         "lint:check": "biome lint .",
-        "check": "oxfmt --check && biome lint .",
-        "check:fix": "oxfmt && biome lint . --write",
+        "check": "oxfmt --check && (cd site && prettier --check '**/*.astro') && biome lint .",
+        "check:fix": "oxfmt && (cd site && prettier --write '**/*.astro') && biome lint . --write",
         "changelog": "pnpm -r run changelog"
     },
     "devDependencies": {
