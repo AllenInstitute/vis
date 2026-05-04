@@ -16,7 +16,7 @@
         "changelog": "pnpm -r run changelog"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.4.9",
+        "@biomejs/biome": "2.4.13",
         "oxfmt": "0.46.0",
         "@parcel/packager-ts": "2.16.4",
         "@parcel/transformer-typescript-types": "2.16.4",
