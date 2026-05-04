@@ -1,4 +1,3 @@
-import { isEqual, keys, map } from 'lodash';
 import { beginValidate, endValidate } from './validate';
 import * as wgh from 'webgpu-utils';
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
@@ -7,7 +6,6 @@ import { setCategoricalLookupTableValues } from './lookup-texture';
 function rangeFor(col: string): `${string}_range` {
     return `${col}_range`;
 }
-
 function rangeFilterExpression(quantitativeColumns: readonly string[]) {
     return quantitativeColumns.map((attrib) => /*wgsl*/ `within(v.${attrib},unis.${rangeFor(attrib)})`).join(' * ');
 }
@@ -177,8 +175,7 @@ function generateVertexBufferLayout(config: Config) {
                 },
             ],
         },
-        ...map(
-            categoricalColumns,
+        ...categoricalColumns.map(
             (_cat, i): GPUVertexBufferLayout => ({
                 arrayStride: 4,
                 attributes: [
@@ -191,8 +188,7 @@ function generateVertexBufferLayout(config: Config) {
                 stepMode: 'instance',
             }),
         ),
-        ...map(
-            quantitativeColumns,
+        ...quantitativeColumns.map(
             (_q, i): GPUVertexBufferLayout => ({
                 arrayStride: 4,
                 attributes: [
@@ -255,74 +251,78 @@ export function buildPipeline(device: GPUDevice, config: Config) {
     // make a buffer for the uniforms, and a little utility to update it
 
     const { size } = defs.uniforms['unis'];
-    const uniformView = wgh.makeStructuredView(defs.uniforms.unis);
-    const uniBuffer = device.createBuffer({
-        size,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
-        label: 'scatterbrin uniform buffer',
-    });
+    // const uniformView = wgh.makeStructuredView(defs.uniforms.unis);
+    // const uniBuffer = device.createBuffer({
+    //     size,
+    //     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+    //     label: 'scatterbrin uniform buffer',
+    // });
 
-    let gradientTexture = device.createTexture({
-        format: 'rgba8unorm',
-        size: { width: 256, height: 1 },
-        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-    });
-    const updateGradient = (data: Uint8Array<ArrayBuffer>) => {
-        beginValidate(device);
-        if (data.byteLength >= 256 * 4) {
-            gradientTexture.destroy();
-            gradientTexture = device.createTexture({
-                format: 'rgba8unorm',
-                size: { width: 256, height: 1 },
-                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-            });
-            device.queue.writeTexture(
-                { texture: gradientTexture },
-                data,
-                { bytesPerRow: 4 * 256, rowsPerImage: 1 },
-                { width: 256, height: 1 },
-            );
-        } else {
-            // warn - we didnt updat the gradient
-            // biome-ignore lint/suspicious/noConsole: <this is fine>
-            console.warn('warning - not enough data to update gradient texture');
-        }
+    // let gradientTexture = device.createTexture({
+    //     format: 'rgba8unorm',
+    //     size: { width: 256, height: 1 },
+    //     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    // });
+    // const updateGradient = (data: Uint8Array<ArrayBuffer>) => {
+    //     beginValidate(device);
+    //     if (data.byteLength >= 256 * 4) {
+    //         gradientTexture.destroy();
+    //         gradientTexture = device.createTexture({
+    //             format: 'rgba8unorm',
+    //             size: { width: 256, height: 1 },
+    //             usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    //         });
+    //         device.queue.writeTexture(
+    //             { texture: gradientTexture },
+    //             data,
+    //             { bytesPerRow: 4 * 256, rowsPerImage: 1 },
+    //             { width: 256, height: 1 },
+    //         );
+    //     } else {
+    //         // warn - we didnt updat the gradient
+    //         // biome-ignore lint/suspicious/noConsole: <this is fine>
+    //         console.warn('warning - not enough data to update gradient texture');
+    //     }
 
-        endValidate(device);
-        return { binding: 2, resource: gradientTexture };
-    };
-    const updateUniforms = (unis: Partial<Uniforms>) => {
-        uniformView.set(unis);
-        // now we write that to the stashed buffer
-        device.queue.writeBuffer(uniBuffer, 0, uniformView.arrayBuffer);
-        return { binding: 0, resource: uniBuffer };
-    };
-    const lastCategories = {};
-    let lookupTable = device.createTexture({
-        format: 'rgba8unorm',
-        size: { width: 1, height: 1 },
-        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-    });
-    const updateCategorical = (
-        categories: Readonly<Record<string, Readonly<Record<number, { color: vec4; filteredIn: boolean }>>>>,
-    ) => {
-        // first - determine the diff what what needs to change
-        if (categories === lastCategories || isEqual(categories, lastCategories)) {
-            // no change - return early, change nothing
-            return { binding: 1, resource: lookupTable };
-        }
-        if (isEqual(keys(categories).toSorted(), keys(lastCategories).toSorted())) {
-            // the set of categories stayed the same - great
-            // but something in here changed...
-            // TODO: optimize this to detect if we just change one pixel - a common case when filtering via the UI
-            // for now, overwrite the whole thing
-            lookupTable = setCategoricalLookupTableValues(categories, device, lookupTable);
-        } else {
-            // otherwise - re-build the whole thing, including the size...
-            lookupTable = setCategoricalLookupTableValues(categories, device, lookupTable);
-        }
-        return { binding: 1, resource: lookupTable };
-        // bindGroups dont have a destroy() - so I'm assuming its totally fine to leak them!!
-    };
-    return { pipeline, updateGradient, updateUniforms, updateCategorical };
+    //     endValidate(device);
+    //     return { binding: 2, resource: gradientTexture };
+    // };
+    // const updateUniforms = (unis: Partial<Uniforms>) => {
+    //     uniformView.set(unis);
+    //     // now we write that to the stashed buffer
+    //     device.queue.writeBuffer(uniBuffer, 0, uniformView.arrayBuffer);
+    //     return { binding: 0, resource: uniBuffer };
+    // };
+    // const lastCategories = {};
+    // let lookupTable = device.createTexture({
+    //     format: 'rgba8unorm',
+    //     size: { width: 1, height: 1 },
+    //     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    // });
+    // const updateCategorical = (
+    //     categories: Readonly<Record<string, Readonly<Record<number, { color: vec4; filteredIn: boolean }>>>>,
+    // ) => {
+    //     // first - determine the diff what what needs to change
+    //     if (categories === lastCategories || isEqual(categories, lastCategories)) {
+    //         // no change - return early, change nothing
+    //         return { binding: 1, resource: lookupTable };
+    //     }
+    //     if (isEqual(Object.keys(categories).toSorted(), Object.keys(lastCategories).toSorted())) {
+    //         // the set of categories stayed the same - great
+    //         // but something in here changed...
+    //         // TODO: optimize this to detect if we just change one pixel - a common case when filtering via the UI
+    //         // for now, overwrite the whole thing
+    //         lookupTable = setCategoricalLookupTableValues(categories, device, lookupTable);
+    //     } else {
+    //         // otherwise - re-build the whole thing, including the size...
+    //         lookupTable = setCategoricalLookupTableValues(categories, device, lookupTable);
+    //     }
+    //     return { binding: 1, resource: lookupTable };
+    //     // bindGroups dont have a destroy() - so I'm assuming its totally fine to leak them!!
+    // };
+    const makeUniformBuffer = () => wgh.makeStructuredView(defs.uniforms.unis)
+    const updateUniforms = (updates: Partial<Uniforms>, view: ReturnType<typeof makeUniformBuffer>) => {
+        view.set(updates);
+    }
+    return { pipeline, makeUniformBuffer, updateUniforms, uniformSize: size };
 }

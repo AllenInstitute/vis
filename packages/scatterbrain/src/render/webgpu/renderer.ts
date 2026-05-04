@@ -1,6 +1,6 @@
+/** biome-ignore-all lint/performance/noAccumulatingSpread: leave me be */
 import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, WebGLSafeBasicType } from '~/src/types';
 import { buildPipeline, type Config } from './shader';
-import { keys, map, omit, reduce } from 'lodash';
 import type { ShaderSettings as BaseSettings } from '../webgl/shader';
 import { getVisibleItems, type NodeWithBounds } from '~/src/dataset';
 import type { Cacheable, SharedPriorityCache } from '@alleninstitute/vis-core';
@@ -8,12 +8,26 @@ import { buildScatterbrainCacheClient } from '~/src/cache-client';
 import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import { beginValidate, endValidate } from './validate';
 
+export type Head<T extends ReadonlyArray<unknown>> = T extends readonly [] ? never : T[0];
+export type Tail<T extends ReadonlyArray<unknown>> = T extends readonly [infer _I, ...infer rest] ? rest : never;
+export type Last<T extends ReadonlyArray<unknown>> = T extends readonly [infer K] ? K : Last<Tail<T>>;
+
+export type OR<T extends ReadonlyArray<unknown>> = T extends readonly [infer K] ? K : Head<T> | OR<Tail<T>>;
+
+// todo figure out why parcel cant bundle lodash...
+function omit<T extends Record<string, unknown>, Drop extends ReadonlyArray<keyof T>>(obj: T, ...drop: Drop): Omit<T, OR<Drop>> {
+    const stuff = { ...obj };
+    for (const d of drop) {
+        delete stuff[d]
+    }
+    return stuff;
+}
 export type ShaderSettings = BaseSettings & {
     highlightByColumn: { kind: 'quantitative' | 'metadata'; column: string };
 };
 
 export class VBO implements Cacheable {
-    constructor(readonly buffer: GPUBuffer) {}
+    constructor(readonly buffer: GPUBuffer) { }
     destroy() {
         this.buffer.destroy();
     }
@@ -28,8 +42,7 @@ function columnsForItem<T extends object>(
     dataset: ScatterbrainDataset | SlideviewScatterbrainDataset,
 ) {
     const columns: Record<string, ColumnRequest> = {};
-    const s2c = reduce(
-        keys(col2shader),
+    const s2c = Object.keys(col2shader).reduce(
         (acc, col) => ({ ...acc, [col2shader[col]]: col }),
         {} as Record<string, string>,
     );
@@ -49,7 +62,7 @@ function columnsForItem<T extends object>(
 export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) {
     const { dataset } = settings;
     const { config, columnNameToShaderName } = configureShader(settings);
-    const { pipeline, updateCategorical, updateGradient, updateUniforms } = buildPipeline(device, config);
+    const { pipeline, makeUniformBuffer, updateUniforms, uniformSize } = buildPipeline(device, config);
     const prepareQtCell = columnsForItem<NodeWithBounds>(config, columnNameToShaderName, dataset);
 
     const toGpuBuffer = (buffer: ArrayBuffer, type: WebGLSafeBasicType) => {
@@ -84,28 +97,44 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         viridis[i * 4 + 2] = i;
         viridis[i * 4 + 3] = 255;
     }
+    const unis = makeUniformBuffer();
+    const ubo = device.createBuffer({
+        size: uniformSize,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+        label: 'scatterbrin uniform buffer',
+    });
     const render = (props: RenderPassProps & { client: ReturnType<typeof buildScatterbrainCacheClient<VBO>> }) => {
-        const { target, categories, uniforms, client } = props;
-        const { camera } = uniforms;
+        const { target, camera, offset, filteredOutColor, spatialFilterBox, quantitativeRangeFilters, highlightedValue, client,
+            categoricalLookupTable, gradient } = props;
+        const uniforms = {
+            camera: { ...camera, view: Box2D.toFlatArray(camera.view) }, offset, filteredOutColor, spatialFilterBox: Box2D.toFlatArray(spatialFilterBox), highlightedValue, quantitativeRangeFilters
+        }
         beginValidate(device);
 
-        const bg0 = updateUniforms({
-            ...omit(uniforms, 'camera', 'spatialFilterBox', 'quantitativeRangeFilters'),
-            view: Box2D.toFlatArray(uniforms.camera.view),
-            spatialFilterBox: Box2D.toFlatArray(uniforms.spatialFilterBox),
-            ...uniforms.quantitativeRangeFilters,
-        });
-        const bg1 = updateCategorical(categories);
-        const bg2 = updateGradient(viridis); // todo - dont do this every frame...
+        // we know how many columns are gonna be filtered... because we have a closure over the settings
+        // thats "fine" because this renderer already cant be applied a different set of columns, nor a different dataset...
 
-        // so... the gad damn bindings - if you dont use a binding, it needs to be omitted from
-        // the freaking bg.. that means our gradient texture shouldnt be added if we dont have any quant stuff...
-        const entries: GPUBindGroupEntry[] = [bg0];
-        if (keys(categories).length > 0) {
-            entries.push(bg1);
+        // const bg0 = updateUniforms({
+        //     ...omit(uniforms, 'camera', 'spatialFilterBox', 'quantitativeRangeFilters'),
+        //     view: Box2D.toFlatArray(uniforms.camera.view),
+        //     spatialFilterBox: Box2D.toFlatArray(uniforms.spatialFilterBox),
+        //     ...uniforms.quantitativeRangeFilters,
+        // });
+        // const bg1 = updateCategorical(categories);
+        // const bg2 = updateGradient(viridis); // todo - dont do this every frame...
+
+        // unlike the textures... we'd like to not make our user handle raw buffers...
+        // but perhaps that is silly
+        updateUniforms(uniforms, unis);
+        // it would be... very slightly better if we could not do this for every single node in the quadtree - but
+        // thats a future thing TODO
+        device.queue.writeBuffer(ubo, 0, unis.arrayBuffer);
+        const entries: GPUBindGroupEntry[] = [{ binding: 0, resource: ubo }];
+        if (Object.keys(Object.keys(settings.categoricalFilters)).length > 0) {
+            entries.push({ binding: 1, resource: categoricalLookupTable });
         }
-        if (keys(uniforms.quantitativeRangeFilters).length > 0) {
-            entries.push(bg2);
+        if (Object.keys(uniforms.quantitativeRangeFilters).length > 0) {
+            entries.push({ binding: 2, resource: gradient });
         }
         const bg = device.createBindGroup({
             label: 'single bg',
@@ -149,23 +178,20 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         device.queue.submit([enc.finish()]);
         endValidate(device);
     };
-    return { render, connectToCache };
+    return { render, connectToCache, makeUniformBuffer, pipeline, updateUniforms };
 }
 
 export type RenderPassProps = {
     target: GPUTextureView;
-    uniforms: {
-        camera: { view: box2D; screenResolution: vec2 };
-        offset: vec2;
-        filteredOutColor: vec4;
-        spatialFilterBox: box2D;
-        quantitativeRangeFilters: Record<string, vec2>;
-        highlightedValue: number;
-    };
-    // categoricalLookupTable: GPUTexture
-    // gradient: GPUTexture;
-    categories: Readonly<Record<string, Readonly<Record<number, { color: vec4; filteredIn: boolean }>>>>;
-    gradient: Uint8Array<ArrayBuffer>;
+
+    camera: { view: box2D; screenResolution: vec2 };
+    offset: vec2;
+    filteredOutColor: vec4;
+    spatialFilterBox: box2D;
+    quantitativeRangeFilters: Record<string, vec2>;
+    highlightedValue: number;
+    categoricalLookupTable: GPUTextureView;
+    gradient: GPUTextureView;
 };
 
 export function configureShader(settings: ShaderSettings): {
@@ -178,7 +204,7 @@ export function configureShader(settings: ShaderSettings): {
     const { dataset, categoricalFilters, quantitativeFilters, colorBy, mode, highlightByColumn } = settings;
     // figure out the columns we care about
     // assign them names that are safe to use in the shader (A,B,C, whatever)
-    const categories = keys(categoricalFilters).toSorted();
+    const categories = Object.keys(categoricalFilters).toSorted();
 
     // the goal here is to associate column names with shader-safe names
     const initialQuantitativeAttrs: Record<string, string> =
@@ -186,14 +212,12 @@ export function configureShader(settings: ShaderSettings): {
     const initialCategoricalAttrs: Record<string, string> =
         colorBy.kind === 'metadata' ? { [colorBy.column]: 'COLOR_BY_CATEGORY' } : {};
     // we map each quantitative filter name to the shader-safe attribute name: MEASURE_{i}
-    const qAttrs = reduce(
-        quantitativeFilters.toSorted(),
+    const qAttrs = quantitativeFilters.toSorted().reduce(
         (quantAttrs, quantFilter, i) => ({ ...quantAttrs, [quantFilter]: `MEASURE_${i.toFixed(0)}` }),
         initialQuantitativeAttrs,
     );
     // we map each categorical filter's name to the shader-safe attribute name: CATEGORY_{i}
-    const cAttrs = reduce(
-        categories,
+    const cAttrs = categories.reduce(
         (catAttrs, categoricalFilter, i) => ({ ...catAttrs, [categoricalFilter]: `CATEGORY_${i.toFixed(0)}` }),
         initialCategoricalAttrs,
     );
@@ -203,10 +227,10 @@ export function configureShader(settings: ShaderSettings): {
         ...cAttrs,
         [dataset.metadata.spatialColumn]: 'position',
     };
-    const ordered = map([...categories, ...quantitativeFilters.toSorted()], (col) => colToAttribute[col]);
+    const ordered = [...categories, ...quantitativeFilters.toSorted()].map((col) => colToAttribute[col]);
     const config: Config = {
-        categoricalColumns: keys(cAttrs).map((columnName) => colToAttribute[columnName]),
-        quantitativeColumns: keys(qAttrs).map((columnName) => colToAttribute[columnName]),
+        categoricalColumns: Object.keys(cAttrs).map((columnName) => colToAttribute[columnName]),
+        quantitativeColumns: Object.keys(qAttrs).map((columnName) => colToAttribute[columnName]),
         categoricalTable: 'lookup',
         gradientTable: 'gradient',
         colorByColumn: colToAttribute[colorBy.column],
