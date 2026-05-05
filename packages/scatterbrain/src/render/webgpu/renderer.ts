@@ -12,18 +12,9 @@ export { setCategoricalLookupTableValues, updateCategoricalValue } from './looku
 
 export type Head<T extends ReadonlyArray<unknown>> = T extends readonly [] ? never : T[0];
 export type Tail<T extends ReadonlyArray<unknown>> = T extends readonly [infer _I, ...infer rest] ? rest : never;
-export type Last<T extends ReadonlyArray<unknown>> = T extends readonly [infer K] ? K : Last<Tail<T>>;
 
 export type OR<T extends ReadonlyArray<unknown>> = T extends readonly [infer K] ? K : Head<T> | OR<Tail<T>>;
 
-// todo figure out why parcel cant bundle lodash...
-function omit<T extends Record<string, unknown>, Drop extends ReadonlyArray<keyof T>>(obj: T, ...drop: Drop): Omit<T, OR<Drop>> {
-    const stuff = { ...obj };
-    for (const d of drop) {
-        delete stuff[d]
-    }
-    return stuff;
-}
 export type ShaderSettings = {
     dataset: ScatterbrainDataset | SlideviewScatterbrainDataset;
     categoricalFilters: Record<string, number>; // category name -> maximum # of distinct values in that category
@@ -98,14 +89,6 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         const client = buildScatterbrainCacheClient<VBO>(allColumns, cache, toGpuBuffer, onDataArrived);
         return client;
     };
-    const viridis = new Uint8Array(256 * 4);
-    // ugh todo
-    for (let i = 0; i < 256; i += 1) {
-        viridis[i * 4 + 0] = i;
-        viridis[i * 4 + 1] = i;
-        viridis[i * 4 + 2] = i;
-        viridis[i * 4 + 3] = 255;
-    }
     const unis = makeUniformBuffer();
     const ubo = device.createBuffer({
         size: uniformSize,
@@ -115,6 +98,8 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
     const render = (props: RenderPassProps & { client: ReturnType<typeof buildScatterbrainCacheClient<VBO>> }) => {
         const { target, camera, offset, filteredOutColor, spatialFilterBox, quantitativeRangeFilters, highlightedValue, client,
             categoricalLookupTable, gradient } = props;
+
+
         const uniforms: Uniforms = {
             view: Box2D.toFlatArray(camera.view),
             offset,
@@ -127,23 +112,13 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         }
         beginValidate(device);
 
-        // we know how many columns are gonna be filtered... because we have a closure over the settings
-        // thats "fine" because this renderer already cant be applied a different set of columns, nor a different dataset...
-
-        // const bg0 = updateUniforms({
-        //     ...omit(uniforms, 'camera', 'spatialFilterBox', 'quantitativeRangeFilters'),
-        //     view: Box2D.toFlatArray(uniforms.camera.view),
-        //     spatialFilterBox: Box2D.toFlatArray(uniforms.spatialFilterBox),
-        //     ...uniforms.quantitativeRangeFilters,
-        // });
-        // const bg1 = updateCategorical(categories);
-        // const bg2 = updateGradient(viridis); // todo - dont do this every frame...
-
-        // unlike the textures... we'd like to not make our user handle raw buffers...
-        // but perhaps that is silly
         updateUniforms(uniforms, unis);
-        // it would be... very slightly better if we could not do this for every single node in the quadtree - but
-        // thats a future thing TODO
+        // TODO there will be a big bug here:
+        // in the REGL mental model, uniform values are tied up with the very notion of a draw call
+        // here - if we want to draw(...) a bit, and then change uniforms and draw(...more...)
+        // TLDR there is no way to do that which does not require a pre-allocated buffer of 
+        // uniform buffer objects - although we could spare some memory by making a seprate bind-group for just the things that can change per node...
+        //  (so far, that would be nodeDepth and offset (for slideview))
         device.queue.writeBuffer(ubo, 0, unis.arrayBuffer);
         const entries: GPUBindGroupEntry[] = [{ binding: 0, resource: ubo }];
         if (Object.keys(Object.keys(settings.categoricalFilters)).length > 0) {
@@ -157,6 +132,7 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
             entries,
             layout: pipeline.getBindGroupLayout(0),
         });
+
         const enc = device.createCommandEncoder({ label: 'encoder for scatterbrain render pass' });
         const pass = enc.beginRenderPass({
             colorAttachments: [
@@ -175,7 +151,6 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         // now - actually start submitting stuff
         const visible = getVisibleItems(dataset, camera, 0.1).map(prepareQtCell);
         client.setPriorities(visible, []);
-        // console.log('visible: ', visible.length)
         for (const node of visible) {
             if (client.has(node)) {
                 const drawable = client.get(node);
@@ -185,8 +160,6 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
                     for (let i = 0; i < config.vertexLocationOrder.length; i++) {
                         pass.setVertexBuffer(i, columns[config.vertexLocationOrder[i]].buffer);
                     }
-                    //bind all the vbo...
-                    // with the correct dang locations, ugh
                     pass.draw(4, count);
                 }
             }
