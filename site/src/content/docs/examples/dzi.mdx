@@ -1,15 +1,235 @@
 ---
 title: DZI
-description: A page demonstrating an example DZI image viewer 
-tableOfContents: false
+description: A guide and live demo for building a DZI image viewer with @alleninstitute/vis-dzi
 ---
 
+import { Code, Aside } from '@astrojs/starlight/components';
 import { DziDemo } from '../../../examples/dzi/dzi-demo.tsx';
+import dziViewerCode from '../../../examples/dzi/dzi-viewer.tsx?raw';
+import dziDemoCode from '../../../examples/dzi/dzi-demo.tsx?raw';
 
-A simple proof of concept for displaying DZI (Deep zoom images) using our utilities,
-as well as demonstrating how to share an Offscreen canvas to render WebGL to multiple client canvases.
+[Deep Zoom Image (DZI)](https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95))
+is a tile-based image pyramid format originally created for Microsoft Silverlight. It is well-suited
+for displaying very large images (gigapixels or larger) in a web browser because only the tiles
+visible at the current zoom level and viewport need to be fetched at any one time.
 
-<hr />
-<br />
+The `@alleninstitute/vis-dzi` library provides a WebGL-accelerated DZI renderer built on top of
+[regl](https://github.com/regl-project/regl) and the `@alleninstitute/vis-core` async rendering infrastructure.
+
+<Aside>
+The code examples on this page use React, but the underlying rendering primitives (`RenderServer`,
+`buildAsyncDziRenderer`, etc.) are framework-agnostic. The same concepts — creating a `RenderServer`,
+calling `beginRendering`, and compositing output via `copyToClient` — apply equally in Vue, Svelte,
+vanilla JS, or any other environment that can manage a `<canvas>` element's lifecycle.
+</Aside>
+
+## Live Demo
+
+The example below renders two DZI images side-by-side with a shared SVG annotation overlay. Pan by clicking and dragging; zoom with the scroll wheel. Both canvases share a single offscreen `RenderServer`.
 
 <DziDemo client:only="react" />
+
+## Key Concepts
+
+### The DZI tile pyramid
+
+A DZI image is stored as a folder of JPEG or PNG tiles. Layer `0` is a single 1×1 pixel tile; each higher layer doubles the resolution. The highest-numbered (maximum) layer is the full-resolution image. At any given zoom level the renderer selects the layer whose tile size is closest to — but not exceeding — the screen resolution using `getVisibleTiles`, so only the minimum number of tiles needed are ever fetched.
+
+The `DziImage` descriptor object maps directly to the metadata in a `.dzi` XML file:
+
+```ts
+import type { DziImage } from '@alleninstitute/vis-dzi';
+
+const image: DziImage = {
+    // URL of the *_files/ directory that holds the layer subfolders
+    imagesUrl: 'https://example.com/my-image_files/',
+    format: 'jpeg',      // 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG'
+    overlap: 1,          // pixels of overlap added on each side of a tile
+    tileSize: 512,       // nominal tile edge length in pixels (power of 2)
+    size: {
+        width: 15936,    // full-resolution image width in pixels
+        height: 11526,
+    },
+};
+```
+
+If you have a `.dzi` metadata URL you can parse it directly:
+
+```ts
+import { fetchDziMetadata } from '@alleninstitute/vis-dzi';
+
+const image = await fetchDziMetadata('https://example.com/my-image.dzi');
+```
+
+### The relative camera model
+
+The camera `view` is a `box2D` expressed in **relative image space**: `[0, 0]` is the top-left corner of the image and `[1, 1]` is the bottom-right corner, regardless of the image's pixel dimensions or aspect ratio. This makes it easy to link multiple images with the same logical viewport.
+
+```ts
+import { Box2D } from '@alleninstitute/vis-geometry';
+
+// view the whole image
+const view = Box2D.create([0, 0], [1, 1]);
+
+// zoom into the top-left quadrant
+const view = Box2D.create([0, 0], [0.5, 0.5]);
+```
+
+`screenSize` is a `[width, height]` tuple in pixels and controls the output resolution of the rendered canvas.
+
+```ts
+import type { DziRenderSettings } from '@alleninstitute/vis-dzi';
+
+const camera: DziRenderSettings['camera'] = {
+    view,
+    screenSize: [800, 600],
+};
+```
+
+### The RenderServer and shared WebGL context
+
+WebGL contexts are expensive browser resources. `RenderServer` (from `@alleninstitute/vis-core`) manages a **single offscreen WebGL canvas** that can serve multiple visible `<canvas>` elements. Each client canvas registers itself with the server; when a frame is ready the server copies the offscreen pixels to every registered client using `CanvasRenderingContext2D.putImageData`.
+
+```ts
+import { RenderServer } from '@alleninstitute/vis-core';
+
+// first arg is the offscreen resolution [width, height]; second is required WebGL extensions
+const server = new RenderServer([2048, 2048], ['oes_texture_float']);
+```
+
+Wrap your viewer tree in a context so all child components share the same server:
+
+```tsx
+import { createContext, useState, type PropsWithChildren } from 'react';
+import { RenderServer } from '@alleninstitute/vis-core';
+
+export const renderServerContext = createContext<RenderServer | null>(null);
+
+export function RenderServerProvider({ children }: PropsWithChildren) {
+    const [server] = useState(() => new RenderServer([2048, 2048], ['oes_texture_float']));
+    return <renderServerContext.Provider value={server}>{children}</renderServerContext.Provider>;
+}
+```
+
+<Aside type="caution">
+Create the `RenderServer` inside a `useState` initializer so it is only instantiated once. Recreating it on every render will leak WebGL resources.
+</Aside>
+
+### Building the renderer and starting a frame
+
+`buildAsyncDziRenderer` wraps the synchronous `buildDziRenderer` in the `vis-core` async scheduling layer. It returns a function that, when called, queues tile fetches and GPU uploads in the background and invokes a callback as tiles arrive.
+
+```tsx
+import { useContext, useEffect, useRef } from 'react';
+import { buildAsyncDziRenderer, type DziImage, type DziRenderSettings, type DziTile, type GpuProps as CachedPixels } from '@alleninstitute/vis-dzi';
+import type { buildAsyncRenderer, RenderFrameFn } from '@alleninstitute/vis-core';
+
+// Inside your component:
+const server = useContext(renderServerContext);
+const canvas = useRef<HTMLCanvasElement>(null);
+
+const renderer = useRef<
+    ReturnType<typeof buildAsyncRenderer<DziImage, DziTile, DziRenderSettings, string, string, CachedPixels>>
+>(undefined);
+
+// Create the renderer once when the server is available
+useEffect(() => {
+    const el = canvas.current;
+    if (server?.regl) {
+        renderer.current = buildAsyncDziRenderer(server.regl);
+    }
+    return () => {
+        // Deregister the canvas from the server when the component unmounts
+        if (el) server?.destroyClient(el);
+    };
+}, [server]);
+```
+
+### The rendering loop
+
+Call `server.beginRendering` whenever the camera or image data changes. It accepts a `RenderFrameFn` that describes _what_ to render, an event callback that reacts to frame lifecycle events (`begin`, `progress`, `finished`), and the target client canvas.
+
+```tsx
+useEffect(() => {
+    if (!server || !renderer.current || !canvas.current) return;
+
+    const renderMyData: RenderFrameFn<DziImage, DziTile> = (target, cache, callback) =>
+        renderer.current!(dzi, { camera }, callback, target, cache);
+
+    server.beginRendering(
+        renderMyData,
+        (e) => {
+            if (e.status === 'begin') {
+                // Clear the offscreen buffer before the first tile is drawn
+                server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
+            } else if (e.status === 'progress' || e.status === 'finished') {
+                // Copy the current offscreen state to the client canvas
+                e.server.copyToClient((ctx, image) => {
+                    ctx.putImageData(image, 0, 0);
+                });
+            }
+        },
+        canvas.current,
+    );
+}, [server, dzi, camera]);
+```
+
+The `copyToClient` callback receives a 2D canvas context and an `ImageData` snapshot of the offscreen buffer. This is also where you can composite additional 2D content (see [SVG overlay](#svg-overlay-composition) below).
+
+### SVG overlay composition
+
+Because `copyToClient` hands you a raw `CanvasRenderingContext2D`, you can draw anything on top of the WebGL output using the standard Canvas 2D API. The demo uses this to overlay an SVG annotation layer that is aligned to the same relative coordinate space as the camera view:
+
+```tsx
+const compose = (ctx: CanvasRenderingContext2D, image: ImageData) => {
+    // 1. commit the WebGL tiles
+    ctx.putImageData(image, 0, 0);
+
+    if (svgOverlay) {
+        // 2. convert the camera view (relative coords) into pixel offsets within the SVG
+        const { width, height } = svgOverlay;
+        const svgSize: vec2 = [width, height];
+        const start = Vec2.mul(camera.view.minCorner, svgSize);
+        const wh = Vec2.sub(Vec2.mul(camera.view.maxCorner, svgSize), start);
+        const [sx, sy] = start;
+        const [sw, sh] = wh;
+        // 3. draw the visible region of the SVG stretched to fill the canvas
+        ctx.drawImage(svgOverlay, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+};
+```
+
+### Interactive pan and zoom
+
+The camera is plain React state — updating it triggers a re-render and `beginRendering` fetches and draws the new set of visible tiles. The `@alleninstitute/vis-geometry` `Box2D` and `Vec2` utilities make the math straightforward:
+
+```ts
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+
+/** Zoom toward/away from a mouse position (in screen pixels). */
+function zoom(view: box2D, screenSize: vec2, scale: number, mousePos: vec2): box2D {
+    const zoomPoint = Vec2.add(view.minCorner, Vec2.mul(Vec2.div(mousePos, screenSize), Box2D.size(view)));
+    return Box2D.translate(
+        Box2D.scale(Box2D.translate(view, Vec2.scale(zoomPoint, -1)), [scale, scale]),
+        zoomPoint,
+    );
+}
+
+/** Pan by a pixel delta. */
+function pan(view: box2D, screenSize: vec2, delta: vec2): box2D {
+    const relative = Vec2.div(Vec2.mul(delta, [-1, -1]), screenSize);
+    return Box2D.translate(view, Vec2.mul(relative, Box2D.size(view)));
+}
+```
+
+## Full source
+
+<details>
+    <summary>dzi-demo.tsx — the demo wrapper with shared camera and SVG overlay</summary>
+    <Code code={dziDemoCode} lang="tsx" />
+</details>
+
+<details>
+    <summary>dzi-viewer.tsx — the reusable viewer component</summary>
+    <Code code={dziViewerCode} lang="tsx" />
+</details>

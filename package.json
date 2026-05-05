@@ -16,20 +16,20 @@
         "changelog": "pnpm -r run changelog"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.3.14",
+        "@biomejs/biome": "2.4.13",
         "@parcel/packager-ts": "2.16.4",
         "@parcel/transformer-typescript-types": "2.16.4",
-        "@vitest/coverage-istanbul": "4.0.18",
+        "@vitest/coverage-istanbul": "4.1.1",
         "buffer": "6.0.3",
         "git-cliff": "2.12.0",
         "parcel": "2.16.4",
         "process": "0.11.10",
         "typescript": "5.9.3",
-        "vitest": "4.0.18"
+        "vitest": "4.1.1"
     },
     "volta": {
-        "node": "22.11.0",
-        "pnpm": "9.14.2"
+        "node": "24.15.0",
+        "pnpm": "10.33.0"
     },
-    "packageManager": "pnpm@9.14.2"
+    "packageManager": "pnpm@10.33.0"
 }

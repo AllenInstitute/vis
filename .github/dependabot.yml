@@ -8,3 +8,7 @@ updates:
           - 'AllenInstitute/app-dev'
       commit-message:
           prefix: 'chore(deps):'
+      cooldown:
+          default-days: 7
+          exclude:
+              - '@alleninstitute/*'
