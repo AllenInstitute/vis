@@ -1,14 +1,9 @@
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
 import { SharedCacheContext, SharedCacheProvider } from '../common/react/priority-cache-provider';
 import { useContext, useEffect, useRef, useState } from 'react';
-import {
-    buildScatterbrainRenderFn,
-    loadScatterbrainDataset,
-    setCategoricalLookupTableValues,
-    type Dataset,
-    type ShaderSettings,
-} from '@alleninstitute/vis-scatterbrain';
-
+import { loadScatterbrainDataset, WebGL, type Dataset } from '@alleninstitute/vis-scatterbrain';
+const { setCategoricalLookupTableValues, buildRenderFrameFn } = WebGL;
+type ShaderSettings = Parameters<typeof buildRenderFrameFn>[1];
 const screenSize: vec2 = [800, 800];
 const tenx =
     'https://bkp-2d-visualizations-stage.s3.amazonaws.com/wmb_tenx_01172024_stage-20240128193624/G4I4GFJXJB9ATZ3PTX1/ScatterBrain.json';
@@ -76,7 +71,7 @@ function Demo(props: Props) {
 
             setCategoricalLookupTableValues(categories, lookup);
 
-            const { render, connectToCache } = buildScatterbrainRenderFn(
+            const { render, connectToCache } = buildRenderFrameFn(
                 // @ts-expect-error we'll deal with this later
                 regl,
                 { ...settings, dataset },

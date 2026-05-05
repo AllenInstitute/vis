@@ -1,12 +1,14 @@
 /** biome-ignore-all lint/performance/noAccumulatingSpread: leave me be */
-import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, WebGLSafeBasicType } from '~/src/types';
-import { buildPipeline, type Config } from './shader';
-import type { ShaderSettings as BaseSettings } from '../webgl/shader';
-import { getVisibleItems, type NodeWithBounds } from '~/src/dataset';
 import type { Cacheable, SharedPriorityCache } from '@alleninstitute/vis-core';
-import { buildScatterbrainCacheClient } from '~/src/cache-client';
 import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
+import { buildScatterbrainCacheClient } from '~/src/cache-client';
+import { getVisibleItems, type NodeWithBounds } from '~/src/dataset';
+import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, WebGLSafeBasicType } from '~/src/types';
+import { buildPipeline, type Config, type Uniforms } from './shader';
 import { beginValidate, endValidate } from './validate';
+
+export { setCategoricalLookupTableValues, updateCategoricalValue } from './lookup-texture';
+
 
 export type Head<T extends ReadonlyArray<unknown>> = T extends readonly [] ? never : T[0];
 export type Tail<T extends ReadonlyArray<unknown>> = T extends readonly [infer _I, ...infer rest] ? rest : never;
@@ -22,7 +24,14 @@ function omit<T extends Record<string, unknown>, Drop extends ReadonlyArray<keyo
     }
     return stuff;
 }
-export type ShaderSettings = BaseSettings & {
+export type ShaderSettings = {
+    dataset: ScatterbrainDataset | SlideviewScatterbrainDataset;
+    categoricalFilters: Record<string, number>; // category name -> maximum # of distinct values in that category
+    quantitativeFilters: readonly string[]; // the names of quantitative variables
+    mode: 'color' | 'info';
+    colorBy:
+    | { kind: 'metadata'; column: string }
+    | { kind: 'quantitative'; column: string };
     highlightByColumn: { kind: 'quantitative' | 'metadata'; column: string };
 };
 
@@ -106,8 +115,15 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
     const render = (props: RenderPassProps & { client: ReturnType<typeof buildScatterbrainCacheClient<VBO>> }) => {
         const { target, camera, offset, filteredOutColor, spatialFilterBox, quantitativeRangeFilters, highlightedValue, client,
             categoricalLookupTable, gradient } = props;
-        const uniforms = {
-            camera: { ...camera, view: Box2D.toFlatArray(camera.view) }, offset, filteredOutColor, spatialFilterBox: Box2D.toFlatArray(spatialFilterBox), highlightedValue, quantitativeRangeFilters
+        const uniforms: Uniforms = {
+            view: Box2D.toFlatArray(camera.view),
+            offset,
+            filteredOutColor,
+            highlightColor: [1, 1, 0, 1],
+            screenSize: camera.screenResolution,
+            spatialFilterBox: Box2D.toFlatArray(spatialFilterBox),
+            highlightValue: highlightedValue,
+            ...quantitativeRangeFilters
         }
         beginValidate(device);
 
@@ -133,7 +149,7 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         if (Object.keys(Object.keys(settings.categoricalFilters)).length > 0) {
             entries.push({ binding: 1, resource: categoricalLookupTable });
         }
-        if (Object.keys(uniforms.quantitativeRangeFilters).length > 0) {
+        if (Object.keys(quantitativeRangeFilters).length > 0) {
             entries.push({ binding: 2, resource: gradient });
         }
         const bg = device.createBindGroup({
@@ -155,6 +171,7 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         pass.setPipeline(pipeline);
 
         pass.setBindGroup(0, bg);
+
         // now - actually start submitting stuff
         const visible = getVisibleItems(dataset, camera, 0.1).map(prepareQtCell);
         client.setPriorities(visible, []);

@@ -1,5 +1,4 @@
 import type { vec4 } from '@alleninstitute/vis-geometry';
-import { reduce, keys } from 'lodash-es';
 
 /**
  * a helper function that MUTATES ALL the values in the given @param texture
@@ -16,9 +15,10 @@ export function setCategoricalLookupTableValues(
     texture: GPUTexture,
 ) {
     const bytesPerPixel = 4; // rgba8
-    const categoryKeys = keys(categories).toSorted();
+    const categoryKeys = Object.keys(categories).toSorted();
     const columns = categoryKeys.length;
-    const rows = reduce(categoryKeys, (highest, category) => Math.max(highest, keys(categories[category]).length), 1);
+    const rows = categoryKeys.reduce((highest, category) => Math.max(highest,
+        Object.keys(categories[category]).length), 1);
     const data = new Uint8Array(columns * rows * 4);
     const rgbf = [0, 0, 0, 0];
     const empty = [0, 0, 0, 0] as const;
@@ -37,7 +37,7 @@ export function setCategoricalLookupTableValues(
     // write the rgb of the color, and encode the filter boolean into the alpha channel
     for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {
         const category = categories[categoryKeys[columnIndex]];
-        const nRows = keys(category).length;
+        const nRows = Object.keys(category).length;
         for (let rowIndex = 0; rowIndex < nRows; rowIndex += 1) {
             const color = category[rowIndex]?.color ?? empty;
             const filtered = category[rowIndex]?.filteredIn ?? false;

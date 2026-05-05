@@ -8,6 +8,8 @@ import { getVisibleItems, type NodeWithBounds } from '../../dataset';
 import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';
 import { buildScatterbrainCacheClient } from '../../cache-client';
 import { MakeTaggedBufferView } from '../../typed-array';
+
+
 function columnsForItem<T extends object>(
     config: Config,
     col2shader: Record<string, string>,
