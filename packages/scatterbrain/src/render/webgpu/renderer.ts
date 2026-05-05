@@ -119,6 +119,12 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         // TLDR there is no way to do that which does not require a pre-allocated buffer of 
         // uniform buffer objects - although we could spare some memory by making a seprate bind-group for just the things that can change per node...
         //  (so far, that would be nodeDepth and offset (for slideview))
+        // I... could use dynamic bind-group offsets (https://webgpufundamentals.org/webgpu/lessons/webgpu-bind-group-layouts.html)
+        // however the offset in question has to be a multiple of 256... thats a lot of bytes, so its a bit overkill for just the nodeDepth and slideOffset!
+        // ugh, it also requires bindgroup layouts in non-auto mode - such a slog
+        // ok - seems like the most normal-person thing to do here would be to split out the per-qt-node and the per-frame uniforms into 2 groups
+        // then create the per-qt-node data when we load it, and stow it in the cache... that would be ok, although it does require
+        // a bindGroupLayout (non-automode) separate from the creation of the pipeline... thats gonna be a good idea anyway if anyone ever changes any settings for these...
         device.queue.writeBuffer(ubo, 0, unis.arrayBuffer);
         const entries: GPUBindGroupEntry[] = [{ binding: 0, resource: ubo }];
         if (Object.keys(Object.keys(settings.categoricalFilters)).length > 0) {
@@ -161,6 +167,7 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
                         pass.setVertexBuffer(i, columns[config.vertexLocationOrder[i]].buffer);
                     }
                     pass.draw(4, count);
+
                 }
             }
         }
