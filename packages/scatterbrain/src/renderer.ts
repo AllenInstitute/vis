@@ -16,7 +16,6 @@ export type Item = Readonly<{
     columns: Record<string, ColumnRequest>;
 }>;
 
-
 function columnsForItem<T extends object>(
     config: Config,
     col2shader: Record<string, string>,
@@ -150,7 +149,8 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
         }
     };
     const connectToCache = (cache: SharedPriorityCache, onDataArrived: () => void) => {
-        const client = buildScatterbrainCacheClient(cache,
+        const client = buildScatterbrainCacheClient(
+            cache,
             (buff, type) => {
                 const typed = MakeTaggedBufferView(type, buff);
                 return new VBO({
@@ -159,7 +159,8 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
                     type: 'buffer',
                 });
             },
-            onDataArrived);
+            onDataArrived,
+        );
         return client;
     };
     return { render, connectToCache };

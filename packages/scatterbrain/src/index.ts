@@ -3,6 +3,6 @@ export { getVisibleItems, loadDataset as loadScatterbrainDataset } from './datas
 export {
     buildRenderFrameFn as buildScatterbrainRenderFn,
     setCategoricalLookupTableValues,
-    updateCategoricalValue
+    updateCategoricalValue,
 } from './renderer';
 export * from './types';

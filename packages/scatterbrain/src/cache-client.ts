@@ -1,10 +1,9 @@
 import type { Cacheable, SharedPriorityCache } from '@alleninstitute/vis-core';
 import reduce from 'lodash/reduce';
 import type { WebGLSafeBasicType } from './typed-array';
-import type { ColumnRequest, Item, } from './types';
+import type { ColumnRequest, Item } from './types';
 
-
-type Content<V extends Cacheable> = Record<string, V>
+type Content<V extends Cacheable> = Record<string, V>;
 
 export function buildScatterbrainCacheClient<V extends Cacheable>(
     cache: SharedPriorityCache,
@@ -43,7 +42,7 @@ export function buildScatterbrainCacheClient<V extends Cacheable>(
                         ...getters,
                         [key]: (signal) =>
                             fetch(url, { signal }).then((b) =>
-                                b.arrayBuffer().then((buff) => toCacheValue(buff, type))
+                                b.arrayBuffer().then((buff) => toCacheValue(buff, type)),
                             ),
                     };
                 },

@@ -46,8 +46,8 @@ function mapFields<R extends Record<string, unknown>, Result>(
 type Client = {
     priorities: Record<string, number>;
     notify:
-    | undefined
-    | ((cacheKey: string, result: { status: 'success' } | { status: 'failure'; reason: unknown }) => void);
+        | undefined
+        | ((cacheKey: string, result: { status: 'success' } | { status: 'failure'; reason: unknown }) => void);
 };
 export class SharedPriorityCache {
     private cache: AsyncPriorityCache<Cacheable>;
