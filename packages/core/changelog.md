@@ -19,6 +19,9 @@ All notable changes to this project will be documented in this file.
 - Merge branch 'main' into lane/package-tag-changelogs
 - Merge branch 'main' into lane/package-tag-changelogs
 - Merge branch 'main' into lane/package-tag-changelogs
+- Tag scattebrain to make sure it was working
+- Slight changes to the CacheClient interface ([#253](https://github.com/AllenInstitute/vis/pull/253))
+- Merge branch 'main' into lane/package-tag-changelogs
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -31,6 +34,9 @@ All notable changes to this project will be documented in this file.
 - *(deps)* Bump @types/lodash from 4.17.20 to 4.17.21 ([#215](https://github.com/AllenInstitute/vis/pull/215))
 - *(deps)* Bump lodash and @types/lodash ([#224](https://github.com/AllenInstitute/vis/pull/224))
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
+- *(deps)* Bump lodash and @types/lodash ([#236](https://github.com/AllenInstitute/vis/pull/236))
+- NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
+- *(deps)* Bump @biomejs/biome from 2.4.4 to 2.4.9 ([#245](https://github.com/AllenInstitute/vis/pull/245))
 
 ## [0.0.4] - 2025-07-14
 

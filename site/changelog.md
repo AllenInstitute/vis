@@ -7,10 +7,19 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Fix version display on changelogs and tweak scatterbrain package command
+- Scatterbrain demo ([#233](https://github.com/AllenInstitute/vis/pull/233))
+- DZI Example Improvement ([#238](https://github.com/AllenInstitute/vis/pull/238))
 
 ### 💼 Other
 
 - Merge branch 'main' into lane/package-tag-changelogs
+- Tag scattebrain to make sure it was working
+- Merge branch 'main' into lane/package-tag-changelogs
+
+### ⚙️ Miscellaneous Tasks
+
+- Enhance documentation ([#232](https://github.com/AllenInstitute/vis/pull/232))
+- NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 
 ## [0.0.1] - 2026-02-11
 

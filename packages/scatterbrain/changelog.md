@@ -7,11 +7,20 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Fix version display on changelogs and tweak scatterbrain package command
+- Incorrectly published a change without changing a version ([#239](https://github.com/AllenInstitute/vis/pull/239))
 
 ### 💼 Other
 
 - Merge branch 'main' into lane/package-tag-changelogs
 - Fmt
+- Tag scattebrain to make sure it was working
+- Slight changes to the CacheClient interface ([#253](https://github.com/AllenInstitute/vis/pull/253))
+- Merge branch 'main' into lane/package-tag-changelogs
+
+### ⚙️ Miscellaneous Tasks
+
+- *(deps)* Bump lodash and @types/lodash ([#236](https://github.com/AllenInstitute/vis/pull/236))
+- NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 
 ## [0.0.1] - 2026-02-11
 

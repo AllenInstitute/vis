@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
 - Merge branch 'main' into lane/package-tag-changelogs
 - Merge branch 'main' into lane/package-tag-changelogs
 - Merge branch 'main' into lane/package-tag-changelogs
+- Tag scattebrain to make sure it was working
+- Merge branch 'main' into lane/package-tag-changelogs
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -32,6 +34,7 @@ All notable changes to this project will be documented in this file.
 - Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
 - Renaming render functions from "renderer" to "render command" ([#204](https://github.com/AllenInstitute/vis/pull/204))
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
+- NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 
 ## [0.0.11] - 2025-04-08
 

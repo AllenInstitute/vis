@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - Parse axis name to match our internal casing [134] ([#140](https://github.com/AllenInstitute/vis/pull/140))
 - Allow Workers to be instantiated directly via callback ([#206](https://github.com/AllenInstitute/vis/pull/206))
 - Fix version display on changelogs and tweak scatterbrain package command
+- Incorrectly published a change without changing a version ([#239](https://github.com/AllenInstitute/vis/pull/239))
 
 ### 💼 Other
 
@@ -30,6 +31,8 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Allow slices from planes by % rather than slice index - as the number of slices is not constant at all scales in most volumes ([#187](https://github.com/AllenInstitute/vis/pull/187))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+- Merge branch 'main' into lane/package-tag-changelogs
+- Tag scattebrain to make sure it was working
 - Merge branch 'main' into lane/package-tag-changelogs
 
 ### ⚙️ Miscellaneous Tasks
@@ -58,6 +61,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - *(deps)* Bump zod from 4.1.13 to 4.3.4 ([#222](https://github.com/AllenInstitute/vis/pull/222))
 - *(deps)* Bump zod from 4.3.5 to 4.3.6 ([#228](https://github.com/AllenInstitute/vis/pull/228))
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
+- NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 
 ## [0.0.11] - 2025-04-23
 

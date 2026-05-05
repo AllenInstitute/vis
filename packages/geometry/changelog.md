@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Merge branch 'main' into lane/package-tag-changelogs
+- Tag scattebrain to make sure it was working
+- Merge branch 'main' into lane/package-tag-changelogs
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -35,6 +37,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
 - Quick version bump (which I forgot) ([#231](https://github.com/AllenInstitute/vis/pull/231))
+- NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 
 ## [0.0.6] - 2025-04-08
 
