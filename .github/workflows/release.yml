@@ -1,0 +1,91 @@
+name: Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            package:
+                description: 'Package to release'
+                required: true
+                type: choice
+                options:
+                    - core
+                    - dzi
+                    - geometry
+                    - omezarr
+                    - scatterbrain
+
+jobs:
+    release:
+        name: Bump version, update changelog, tag, and push
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.event.repository.default_branch }}
+                  ssh-key: ${{ secrets.SERVICE_ACCOUNT_SSH_KEY }}
+                  fetch-depth: 0
+
+            - uses: pnpm/action-setup@v6
+              with:
+                  version: 10.33.0
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24.15.0
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Set git user
+              run: |
+                  git config user.name 'svcbrainwebgh'
+                  git config user.email 'svcbrainwebgh@alleninstitute.org'
+
+            - name: Get bumped version
+              run: |
+                  PKG="${{ inputs.package }}"
+                  FULL_TAG=$(pnpm exec git-cliff \
+                      --tag-pattern "@alleninstitute/vis-${PKG}@*" \
+                      --include-path "packages/${PKG}/**" \
+                      --bumped-version 2>/dev/null)
+
+                  if [[ ! "$FULL_TAG" =~ ^@alleninstitute/vis-[^@]+@[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                      echo "::error::Unexpected git-cliff output: '${FULL_TAG}'"
+                      exit 1
+                  fi
+                  if git rev-parse "$FULL_TAG" >/dev/null 2>&1; then
+                      echo "::error::Tag ${FULL_TAG} already exists."
+                      exit 1
+                  fi
+
+                  echo "BUMPED_TAG=${FULL_TAG}" >> $GITHUB_ENV
+                  echo "BUMPED_VERSION=${FULL_TAG##*@}" >> $GITHUB_ENV
+
+            - name: Update version number
+              run: npm pkg set version="${{ env.BUMPED_VERSION }}" --prefix "packages/${{ inputs.package }}"
+
+            - name: Generate changelog
+              uses: orhun/git-cliff-action@v4
+              with:
+                  config: cliff.toml
+                  args: >-
+                      --tag-pattern "@alleninstitute/vis-${{ inputs.package }}@*"
+                      --include-path "packages/${{ inputs.package }}/**"
+                      --tag "${{ env.BUMPED_TAG }}"
+              env:
+                  OUTPUT: packages/${{ inputs.package }}/CHANGELOG.md
+
+            - name: Commit package.json and changelog
+              run: |
+                  git add "packages/${{ inputs.package }}/package.json" \
+                          "packages/${{ inputs.package }}/CHANGELOG.md"
+                  git commit -m "chore(release): ${{ env.BUMPED_TAG }}"
+
+            - name: Create tag
+              run: git tag -a "${{ env.BUMPED_TAG }}" -m "${{ env.BUMPED_TAG }}"
+
+            - name: Push
+              run: |
+                  git push
+                  git push origin tag "${{ env.BUMPED_TAG }}"
