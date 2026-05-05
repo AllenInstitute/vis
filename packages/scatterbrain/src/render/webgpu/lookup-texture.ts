@@ -1,5 +1,5 @@
 import type { vec4 } from '@alleninstitute/vis-geometry';
-import { reduce, keys } from 'lodash';
+import { reduce, keys } from 'lodash-es';
 
 /**
  * a helper function that MUTATES ALL the values in the given @param texture

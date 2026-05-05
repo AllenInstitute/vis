@@ -1,7 +1,6 @@
 import { beginValidate, endValidate } from './validate';
 import * as wgh from 'webgpu-utils';
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
-import { setCategoricalLookupTableValues } from './lookup-texture';
 
 function rangeFor(col: string): `${string}_range` {
     return `${col}_range`;

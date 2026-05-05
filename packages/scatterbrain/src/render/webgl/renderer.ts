@@ -1,8 +1,8 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
 import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset } from '../../types';
 import { Box2D, type vec4 } from '@alleninstitute/vis-geometry';
-import keys from 'lodash/keys';
-import reduce from 'lodash/reduce';
+import keys from 'lodash-es/keys';
+import reduce from 'lodash-es/reduce';
 import type REGL from 'regl';
 import { getVisibleItems, type NodeWithBounds } from '../../dataset';
 import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';

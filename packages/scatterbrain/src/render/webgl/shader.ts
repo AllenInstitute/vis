@@ -4,7 +4,7 @@ import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from '../../types';
 import type { CachedVertexBuffer, Cacheable } from '@alleninstitute/vis-core';
 import { Box2D, type box2D, type Interval, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
-import * as lodash from 'lodash';
+import * as lodash from 'lodash-es';
 const { keys, mapValues, reduce } = lodash;
 
 // the set of columns and what to do with them can vary
@@ -309,8 +309,8 @@ export function generate(config: Config): ScatterbrainShaderUtils {
         return mix(filteredOutColor,${colorize},isFilteredIn());
     `
             : categoryColumnIndex === -1
-              ? colorByQuantitativeValue
-              : colorByCategoricalId;
+                ? colorByQuantitativeValue
+                : colorByCategoricalId;
     return {
         attributes,
         uniforms,
@@ -332,8 +332,8 @@ export type ShaderSettings = {
     quantitativeFilters: readonly string[]; // the names of quantitative variables
     mode: 'color' | 'info';
     colorBy:
-        | { kind: 'metadata'; column: string }
-        | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
+    | { kind: 'metadata'; column: string }
+    | { kind: 'quantitative'; column: string; gradient: 'viridis' | 'inferno'; range: Interval };
 };
 
 export function configureShader(settings: ShaderSettings): {
