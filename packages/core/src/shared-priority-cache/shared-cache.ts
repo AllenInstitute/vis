@@ -19,7 +19,7 @@ type CacheInterface<Item, ItemContent extends Record<string, Cacheable>> = {
 };
 
 export type ClientSpec<Item, ItemContent extends Record<string, Cacheable>> = {
-    isValue: (v: Record<string, Cacheable | undefined>) => v is ItemContent;
+    isValue: (v: Record<string, Cacheable | undefined>, item: Item) => v is ItemContent;
     cacheKeys: (item: Item) => { [k in keyof ItemContent]: string };
     onDataArrived?: (cacheKey: string, result: FetchResult) => void;
     fetch: (item: Item) => { [k in keyof ItemContent]: (abort: AbortSignal) => Promise<Cacheable> };
@@ -109,7 +109,7 @@ export class SharedPriorityCache {
             get: (k: Item) => {
                 const keys = spec.cacheKeys(k);
                 const v = mapFields<Record<string, string>, Cacheable | undefined>(keys, (k) => this.cache.get(k));
-                return spec.isValue(v) ? v : undefined;
+                return spec.isValue(v, k) ? v : undefined;
             },
             has: (k: Item) => {
                 const atLeastOneMissing = Object.values(spec.cacheKeys(k)).some((ck) => !this.cache.has(ck));
