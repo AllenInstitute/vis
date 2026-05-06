@@ -32,14 +32,14 @@ function entries<T extends Record<string, unknown>>(t: T): ReadonlyArray<KV<T>> 
 }
 function mapFields<R extends Record<string, unknown>, Result>(
     r: R,
-    fn: (v: R[keyof R]) => Result,
+    fn: (v: R[keyof R]) => Result
 ): { [k in keyof R]: Result } {
     return entries(r).reduce(
         (acc, [k, v]) => {
             acc[k] = fn(v);
             return acc;
         },
-        {} as { [k in keyof R]: Result },
+        {} as { [k in keyof R]: Result }
     );
 }
 
@@ -61,11 +61,11 @@ export class SharedPriorityCache {
             (ck) => this.importance[ck] ?? 0,
             limitInBytes,
             max_concurrent_fetches,
-            (ck, result) => this.onCacheEntryArrived(ck, result),
+            (ck, result) => this.onCacheEntryArrived(ck, result)
         );
     }
     registerClient<Item, ItemContent extends Record<string, Cacheable>>(
-        spec: ClientSpec<Item, ItemContent>,
+        spec: ClientSpec<Item, ItemContent>
     ): CacheInterface<Item, ItemContent> {
         const id = uniqueId('client');
         this.clients[id] = { priorities: {}, notify: spec.onDataArrived };

@@ -33,7 +33,7 @@ describe('Box3D', () => {
     });
     test('map', () => {
         expect(Box3D.map(Box3D.create([0, 0, 0], [1, 1, 1]), (v) => Vec3.scale(v, 300))).toStrictEqual(
-            Box3D.create([0, 0, 0], [300, 300, 300]),
+            Box3D.create([0, 0, 0], [300, 300, 300])
         );
     });
     test('isValid', () => {
@@ -44,7 +44,7 @@ describe('Box3D', () => {
         expect(nanBox).toBeFalsy();
 
         const infinityBox = Box3D.isValid(
-            Box3D.create([Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY], [1, 1, 1]),
+            Box3D.create([Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY], [1, 1, 1])
         );
         expect(infinityBox).toBeFalsy();
 

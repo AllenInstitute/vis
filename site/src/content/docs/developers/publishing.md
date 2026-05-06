@@ -1,6 +1,6 @@
 ---
 title: Publishing Packages
-description: A page describing how to publish packages in the vis project. 
+description: A page describing how to publish packages in the vis project.
 ---
 
 The `vis` project contains multiple packages, each of which is published to the Allen Institute NPM organization package registry.

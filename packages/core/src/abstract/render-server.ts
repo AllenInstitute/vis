@@ -41,7 +41,7 @@ type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
 type RenderFrameFn<D, I> = (
     target: REGL.Framebuffer2D | null,
     cache: AsyncDataCache<string, string, ReglCacheEntry>,
-    callback: RenderCallback<D, I>,
+    callback: RenderCallback<D, I>
 ) => FrameLifecycle | null;
 
 type Client = HTMLCanvasElement;
@@ -101,7 +101,7 @@ export class RenderServer {
                 updateRequested(ctx, img);
             } catch {
                 logger.error(
-                    'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok',
+                    'error - we tried to copy to a client buffer, but maybe it got unmounted? that can happen, its ok'
                 );
             }
         }

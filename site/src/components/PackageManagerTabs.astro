@@ -12,12 +12,21 @@ const { npm, pnpm, yarn } = Astro.props;
 
 <Tabs syncKey="pkg">
     <TabItem label="npm">
-        <Code code={npm} lang="bash" />
+        <Code
+            code={npm}
+            lang="bash"
+        />
     </TabItem>
     <TabItem label="pnpm">
-        <Code code={pnpm} lang="bash" />
+        <Code
+            code={pnpm}
+            lang="bash"
+        />
     </TabItem>
     <TabItem label="yarn">
-        <Code code={yarn} lang="bash" />
+        <Code
+            code={yarn}
+            lang="bash"
+        />
     </TabItem>
 </Tabs>

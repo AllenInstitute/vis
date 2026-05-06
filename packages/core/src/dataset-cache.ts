@@ -6,7 +6,7 @@ export interface AsyncCache<SemanticKey extends RecordKey, CacheKey extends Reco
     cacheAndUse(
         workingSet: Record<SemanticKey, () => Promise<D>>,
         use: (items: Record<SemanticKey, D>) => void,
-        cacheKey: (semantic: SemanticKey) => CacheKey,
+        cacheKey: (semantic: SemanticKey) => CacheKey
     ): cancelFn | undefined;
 }
 
@@ -24,7 +24,7 @@ function updatePendingRequest<SemanticKey extends RecordKey, CacheKey extends Re
     req: MutablePendingRequest<SemanticKey, CacheKey, D>,
     key: SemanticKey,
     cacheKey: CacheKey,
-    item: D,
+    item: D
 ): boolean {
     if (req.awaiting.has(cacheKey)) {
         const remaningAwaited = req.awaiting.get(cacheKey);
@@ -57,9 +57,11 @@ type MutableCacheEntry<D> = {
  * }
  
  */
-export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D>
-    implements AsyncCache<SemanticKey, CacheKey, D>
-{
+export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends RecordKey, D> implements AsyncCache<
+    SemanticKey,
+    CacheKey,
+    D
+> {
     private limit: number;
     private size: (d: D) => number;
     private destroyer: (d: D) => void;
@@ -243,7 +245,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
         use: (items: Record<SemanticKey, D>) => void,
         toCacheKey: (semanticKey: SemanticKey) => CacheKey,
         // TODO: consider removing taskFinished - it would be more simple to let the caller handle this in their use() function
-        taskFinished?: () => void,
+        taskFinished?: () => void
     ): cancelFn | undefined {
         const keys: SemanticKey[] = Object.keys(workingSet) as SemanticKey[];
         const req: MutablePendingRequest<SemanticKey, CacheKey, D> = {
