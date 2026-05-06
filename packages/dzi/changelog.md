@@ -26,10 +26,10 @@ All notable changes to this project will be documented in this file.
 
 - Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
-- *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
+- _(deps)_ Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
 - Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
 - Update release numbers for release ([#180](https://github.com/AllenInstitute/vis/pull/180))
-- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- _(deps)_ Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
 - Adding "type: module" to all packages ([#201](https://github.com/AllenInstitute/vis/pull/201))
 - Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
 - Renaming render functions from "renderer" to "render command" ([#204](https://github.com/AllenInstitute/vis/pull/204))

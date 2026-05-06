@@ -20,17 +20,20 @@ All notable changes to this project will be documented in this file.
 - A priority cache with a (better?) api ([#171](https://github.com/AllenInstitute/vis/pull/171))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Didn't need quotes
 - Don't filter out unconvenctional commits so we can see everything!
 - Merge branch 'main' into lane/package-tag-changelogs
 - Added support for Zarr V3 ([#191](https://github.com/AllenInstitute/vis/pull/191))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Update vis-omezarr to v0.0.13 ([#192](https://github.com/AllenInstitute/vis/pull/192))
 - Merge branch 'main' into lane/package-tag-changelogs
 - Allow slices from planes by % rather than slice index - as the number of slices is not constant at all scales in most volumes ([#187](https://github.com/AllenInstitute/vis/pull/187))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Merge branch 'main' into lane/package-tag-changelogs
 - Tag scattebrain to make sure it was working
 - Merge branch 'main' into lane/package-tag-changelogs
