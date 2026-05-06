@@ -10,10 +10,7 @@
         "includes": ["**", "!**/dist/**/*", "!**/coverage/**/*", "!**/.astro/**/*", "!**/*.astro"]
     },
     "formatter": {
-        "enabled": true,
-        "indentStyle": "space",
-        "indentWidth": 4,
-        "lineWidth": 120
+        "enabled": false
     },
     "assist": {
         "actions": {
@@ -45,11 +42,6 @@
                 "noInferrableTypes": "error",
                 "noUselessElse": "error"
             }
-        }
-    },
-    "javascript": {
-        "formatter": {
-            "quoteStyle": "single"
         }
     }
 }

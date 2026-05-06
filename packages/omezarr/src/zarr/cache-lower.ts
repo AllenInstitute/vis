@@ -11,11 +11,11 @@ export function decoderFactory(url: string, workerModule: WorkerInit, options?: 
         metadata: OmeZarrMetadata,
         req: ZarrRequest,
         level: OmeZarrShapedDataset,
-        signal?: AbortSignal,
+        signal?: AbortSignal
     ) => {
         if (metadata.url !== url) {
             throw new Error(
-                'trying to use a decoder from a different store - we cant do that yet, although we could build a map of url->stores here if we wanted later - TODO',
+                'trying to use a decoder from a different store - we cant do that yet, although we could build a map of url->stores here if we wanted later - TODO'
             );
         }
         const scene = metadata.attrs.multiscales[0];

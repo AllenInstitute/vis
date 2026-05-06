@@ -100,7 +100,7 @@ export interface RequestHandler<RequestType, ResponseType> {
         message: RequestType,
         responseValidator: Guard<ResponseType>,
         transfers: Transferable[],
-        signal?: AbortSignal | undefined,
+        signal?: AbortSignal | undefined
     ): Promise<ResponseType>;
     destroy: () => void;
 }
@@ -157,7 +157,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         this.#dataCache = new PriorityCache<CacheableByteArray>(
             new Map<CacheKey, CacheableByteArray>(),
             this.#scoreFn,
-            options?.maxBytes ?? getDataCacheSizeLimit(),
+            options?.maxBytes ?? getDataCacheSizeLimit()
         );
         this.#priorityByTimestamp = new Map<CacheKey, number>();
         this.#workerPool = handler;
@@ -216,7 +216,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         key: zarr.AbsolutePath,
         range: zarr.RangeQuery | undefined,
         options: TransferableRequestInit,
-        abort: AbortSignal | undefined,
+        abort: AbortSignal | undefined
     ): Promise<Uint8Array | undefined> {
         const cacheKey = asCacheKey(key, range);
 
@@ -257,7 +257,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             },
             isFetchResponseMessage,
             [],
-            chain.signal,
+            chain.signal
         );
 
         request
@@ -297,7 +297,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     async getRange(
         key: zarr.AbsolutePath,
         range: zarr.RangeQuery,
-        options?: RequestInit,
+        options?: RequestInit
     ): Promise<Uint8Array | undefined> {
         const cacheKey = asCacheKey(key, range);
         const cached = this.#fromCache(cacheKey);

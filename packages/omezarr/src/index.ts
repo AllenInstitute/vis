@@ -7,11 +7,7 @@ export {
     type RenderSettingsChannels,
 } from './sliceview/slice-renderer';
 export { VisZarrError, VisZarrDataError, VisZarrIndexError } from './errors';
-export {
-    type VoxelTile,
-    defaultDecoder,
-    getVisibleTiles,
-} from './sliceview/loader';
+export { type VoxelTile, defaultDecoder, getVisibleTiles } from './sliceview/loader';
 export { buildTileRenderCommand, buildRGBTileRenderCommand } from './sliceview/tile-renderer';
 export {
     type ZarrDimension,

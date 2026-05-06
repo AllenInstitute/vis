@@ -8,7 +8,7 @@ type Content<V extends Cacheable> = Record<string, V>;
 export function buildScatterbrainCacheClient<V extends Cacheable>(
     cache: SharedPriorityCache,
     toCacheValue: (buffer: ArrayBuffer, type: WebGLSafeBasicType) => V,
-    onDataArrived: () => void,
+    onDataArrived: () => void
 ) {
     const client = cache.registerClient<Item, Content<V>>({
         cacheKeys: (item) => {
@@ -19,7 +19,7 @@ export function buildScatterbrainCacheClient<V extends Cacheable>(
                     ...acc,
                     [key]: `${dataset.metadata.metadataFileEndpoint}/${node.file}/${col.name}`,
                 }),
-                {},
+                {}
             );
         },
         fetch: (item) => {
@@ -42,11 +42,11 @@ export function buildScatterbrainCacheClient<V extends Cacheable>(
                         ...getters,
                         [key]: (signal) =>
                             fetch(url, { signal }).then((b) =>
-                                b.arrayBuffer().then((buff) => toCacheValue(buff, type)),
+                                b.arrayBuffer().then((buff) => toCacheValue(buff, type))
                             ),
                     };
                 },
-                {},
+                {}
             );
             return proms;
         },
