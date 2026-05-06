@@ -57,7 +57,7 @@
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
-        "lodash": "4.17.23",
+        "lodash": "4.18.1",
         "regl": "2.1.1",
         "uuid": "13.0.0"
     },
