@@ -26,7 +26,7 @@ function groupLoops(path: Path) {
                 }
                 return loops;
             },
-            [[]] as PathCommand[][],
+            [[]] as PathCommand[][]
         ) ?? [];
     return closed.filter((loop) => loop.length > 0);
 }
@@ -78,15 +78,12 @@ function closedPolygon(loop: PathCommand[]) {
     }, initialState);
 }
 function onlyDefined<T>(collection: ReadonlyArray<T | undefined>): ReadonlyArray<T> {
-    return collection.reduce(
-        (defined, cur) => {
-            if (cur !== undefined) {
-                (defined as T[]).push(cur);
-            }
-            return defined;
-        },
-        [] as ReadonlyArray<T>,
-    );
+    return collection.reduce((defined, cur) => {
+        if (cur !== undefined) {
+            (defined as T[]).push(cur);
+        }
+        return defined;
+    }, [] as ReadonlyArray<T>);
 }
 
 // intersection stuff:
@@ -201,7 +198,7 @@ export function MeshFromAnnotation(annotation: Annotation): AnnotationMesh | und
     // we have to pre-allocate a big pile of 32-bit floats, so we have to count all the lengths:
     const totalNumbers = groups.reduce(
         (sum, group) => sum + group.loops.reduce((total, loop) => total + (loop?.data.length ?? 0), 0),
-        0,
+        0
     );
 
     const points = new Float32Array(totalNumbers);

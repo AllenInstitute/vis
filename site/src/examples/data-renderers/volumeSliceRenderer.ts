@@ -40,7 +40,7 @@ function preferCachedEntries<C extends CacheContentType | object>(
     location: {
         plane: CartesianPlane;
         orthoVal: number;
-    },
+    }
 ) {
     const { plane, orthoVal } = location;
     const idealTiles = getVisibleTiles(camera, plane, orthoVal, grid.metadata, offset);
@@ -60,7 +60,7 @@ function preferCachedEntries<C extends CacheContentType | object>(
                 plane,
                 orthoVal,
                 grid.metadata,
-                offset,
+                offset
             );
             fakes.push(...lowerLOD.tiles);
         }
@@ -74,7 +74,7 @@ function preferCachedEntries<C extends CacheContentType | object>(
 export function renderGrid<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     grid: AxisAlignedZarrSliceGrid,
-    settings: RenderSettings<C>,
+    settings: RenderSettings<C>
 ) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
@@ -150,7 +150,7 @@ export function renderGrid<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKeyFactory,
-        cpuLimit,
+        cpuLimit
     );
     return frame;
 }
@@ -158,7 +158,7 @@ export function renderGrid<C extends CacheContentType | object>(
 export function renderSlice<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     slice: AxisAlignedZarrSlice,
-    settings: RenderSettings<C>,
+    settings: RenderSettings<C>
 ) {
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
@@ -201,7 +201,7 @@ export function renderSlice<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKeyFactory,
-        cpuLimit,
+        cpuLimit
     );
     return frame;
 }

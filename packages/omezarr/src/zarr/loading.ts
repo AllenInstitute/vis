@@ -54,7 +54,7 @@ export async function loadZarrArrayFile(
     res: WebResource,
     path: string,
     version = 2,
-    loadV2Attrs = true,
+    loadV2Attrs = true
 ): Promise<OmeZarrArrayMetadata> {
     const url = getResourceUrl(res);
     const store = new zarr.FetchStore(url);
@@ -66,7 +66,7 @@ export async function loadZarrArrayFileFromStore(
     store: zarr.FetchStore,
     path: string,
     version = 2,
-    loadV2Attrs = true,
+    loadV2Attrs = true
 ): Promise<OmeZarrArrayMetadataLoad> {
     const root = zarr.root(store);
     let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
@@ -114,7 +114,7 @@ export async function loadMetadata(res: WebResource, loadV2ArrayAttrs = true): P
                 );
             })
             .reduce((prev, curr) => prev.concat(curr))
-            .filter((v) => v !== undefined),
+            .filter((v) => v !== undefined)
     );
     return new OmeZarrMetadata(url, attrs, arrays, version);
 }
@@ -137,7 +137,7 @@ export function pickBestScale(
     zarr: OmeZarrMetadata,
     plane: CartesianPlane,
     relativeView: box2D, // a box in data-unit-space
-    displayResolution: vec2, // in the plane given above
+    displayResolution: vec2 // in the plane given above
 ): OmeZarrShapedDataset {
     const datasets = zarr.getAllShapedDatasets(0);
     const axes = zarr.attrs.multiscales[0].axes;
@@ -195,7 +195,7 @@ export function indexOfRelativeSlice(
     layer: OmeZarrShapedDataset,
     axes: readonly OmeZarrAxis[],
     parameter: number,
-    dim: ZarrDimension,
+    dim: ZarrDimension
 ): number {
     const dimIndex = indexFor(dim, axes);
     return Math.floor(layer.shape[dimIndex] * Math.max(0, Math.min(1, parameter)));
@@ -211,7 +211,7 @@ export function nextSliceStep(
     zarr: OmeZarrMetadata,
     plane: CartesianPlane,
     relativeView: box2D, // a box in data-unit-space
-    displayResolution: vec2, // in the plane given above
+    displayResolution: vec2 // in the plane given above
 ) {
     // figure out what layer we'd be viewing
     const layer = pickBestScale(zarr, plane, relativeView, displayResolution);
@@ -235,7 +235,7 @@ export function nextSliceStep(
 export function sizeInUnits(
     plane: CartesianPlane,
     axes: readonly OmeZarrAxis[],
-    dataset: OmeZarrShapedDataset,
+    dataset: OmeZarrShapedDataset
 ): vec2 | undefined {
     const vxls = planeSizeInVoxels(plane, axes, dataset);
 
@@ -281,7 +281,7 @@ export function sizeInVoxels(dim: ZarrDimension, axes: readonly OmeZarrAxis[], d
 export function planeSizeInVoxels(
     plane: CartesianPlane,
     axes: readonly OmeZarrAxis[],
-    dataset: OmeZarrShapedDataset,
+    dataset: OmeZarrShapedDataset
 ): vec2 | undefined {
     // first - u&v must not refer to the same dimension,
     // and both should exist in the axes...
@@ -335,7 +335,7 @@ export async function loadSlice(
     metadata: OmeZarrMetadata,
     r: ZarrRequest,
     level: OmeZarrShapedDataset,
-    signal?: AbortSignal,
+    signal?: AbortSignal
 ) {
     // put the request in native order
     const store = new zarr.FetchStore(metadata.url);

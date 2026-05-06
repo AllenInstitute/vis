@@ -79,7 +79,7 @@ export function SliceView(props: Props) {
                         { ...settings, camera: { ...settings.camera, view } },
                         callback,
                         target,
-                        cache,
+                        cache
                     );
                 }
                 return null;
@@ -105,7 +105,7 @@ export function SliceView(props: Props) {
                         }
                     }
                 },
-                cnvs.current,
+                cnvs.current
             );
         }
     }, [server, omezarr, view]);
@@ -118,7 +118,7 @@ export function SliceView(props: Props) {
                 setView(v);
             }
         },
-        [view],
+        [view]
     );
     return (
         <canvas

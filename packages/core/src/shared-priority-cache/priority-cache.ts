@@ -131,7 +131,7 @@ export class AsyncPriorityCache<T extends Cacheable> extends PriorityCache<T> {
         score: (k: CacheKey) => number,
         limitInBytes: number,
         maxFetches: number,
-        onDataArrived?: (key: CacheKey, result: FetchResult) => void,
+        onDataArrived?: (key: CacheKey, result: FetchResult) => void
     ) {
         super(store, score, limitInBytes);
 

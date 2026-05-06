@@ -85,8 +85,7 @@ export function buildRenderFrameFn(device: GPUDevice, settings: ShaderSettings) 
         return new VBO(B);
     };
     const connectToCache = (cache: SharedPriorityCache, onDataArrived: () => void) => {
-        const allColumns = [...config.categoricalColumns, ...config.quantitativeColumns, config.positionColumn];
-        const client = buildScatterbrainCacheClient<VBO>(allColumns, cache, toGpuBuffer, onDataArrived);
+        const client = buildScatterbrainCacheClient<VBO>(cache, toGpuBuffer, onDataArrived);
         return client;
     };
     const unis = makeUniformBuffer();

@@ -1,25 +1,31 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
-import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset } from '../../types';
-import { Box2D, type vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, type box2D, type vec4 } from '@alleninstitute/vis-geometry';
 import keys from 'lodash-es/keys';
 import reduce from 'lodash-es/reduce';
 import type REGL from 'regl';
+import { buildScatterbrainCacheClient } from '../../cache-client';
 import { getVisibleItems, type NodeWithBounds } from '../../dataset';
 import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';
-import { buildScatterbrainCacheClient } from '../../cache-client';
 import { MakeTaggedBufferView } from '../../typed-array';
+import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from '../../types';
 
+export type Item = Readonly<{
+    dataset: SlideviewScatterbrainDataset | ScatterbrainDataset;
+    node: TreeNode;
+    bounds: box2D;
+    columns: Record<string, ColumnRequest>;
+}>;
 
 function columnsForItem<T extends object>(
     config: Config,
     col2shader: Record<string, string>,
-    dataset: ScatterbrainDataset | SlideviewScatterbrainDataset,
+    dataset: ScatterbrainDataset | SlideviewScatterbrainDataset
 ) {
     const columns: Record<string, ColumnRequest> = {};
     const s2c = reduce(
         keys(col2shader),
         (acc, col) => ({ ...acc, [col2shader[col]]: col }),
-        {} as Record<string, string>,
+        {} as Record<string, string>
     );
 
     for (const c of config.categoricalColumns) {
@@ -45,7 +51,7 @@ function columnsForItem<T extends object>(
  */
 export function setCategoricalLookupTableValues(
     categories: Record<string, Record<number, { color: vec4; filteredIn: boolean }>>,
-    texture: REGL.Texture2D,
+    texture: REGL.Texture2D
 ) {
     const categoryKeys = keys(categories).toSorted();
     const columns = categoryKeys.length;
@@ -83,14 +89,14 @@ export function setCategoricalLookupTableValues(
 export function updateCategoricalValue(
     categories: readonly string[],
     update: { category: string; row: number; color: vec4; filteredIn: boolean },
-    texture: REGL.Texture2D,
+    texture: REGL.Texture2D
 ) {
     const { category, row, color, filteredIn } = update;
     const col = categories.toSorted().indexOf(category);
     if (texture.width <= col || texture.height <= row || row < 0 || col < 0) {
         // todo - it might be better to let regl throw the same error... think about it
         throw new Error(
-            `attempted to update metadata lookup table with invalid coordinates: row=${row},col=${col} is not within ${texture.width}, ${texture.height}`,
+            `attempted to update metadata lookup table with invalid coordinates: row=${row},col=${col} is not within ${texture.width}, ${texture.height}`
         );
     }
     const data = new Uint8Array(4);
@@ -143,9 +149,7 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
         }
     };
     const connectToCache = (cache: SharedPriorityCache, onDataArrived: () => void) => {
-        const allColumns = [...config.categoricalColumns, ...config.quantitativeColumns, config.positionColumn];
         const client = buildScatterbrainCacheClient<VBO>(
-            allColumns,
             cache,
             (buff, type) => {
                 const typed = MakeTaggedBufferView(type, buff);

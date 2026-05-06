@@ -1,0 +1,10 @@
+{
+    "plugins": ["prettier-plugin-astro"],
+    "printWidth": 120,
+    "trailingComma": "es5",
+    "tabWidth": 4,
+    "singleQuote": true,
+    "semi": true,
+    "singleAttributePerLine": true,
+    "endOfLine": "auto"
+}

@@ -1,15 +1,14 @@
 import type { Cacheable, SharedPriorityCache } from '@alleninstitute/vis-core';
-import type { ColumnRequest, Item } from './types';
-import reduce from 'lodash-es/reduce'
+import reduce from 'lodash-es/reduce';
 import type { WebGLSafeBasicType } from './typed-array';
+import type { ColumnRequest, Item } from './types';
 
 type Content<V extends Cacheable> = Record<string, V>;
 
 export function buildScatterbrainCacheClient<V extends Cacheable>(
-    allNeededColumns: readonly string[],
     cache: SharedPriorityCache,
     toCacheValue: (buffer: ArrayBuffer, type: WebGLSafeBasicType) => V,
-    onDataArrived: () => void,
+    onDataArrived: () => void
 ) {
     const client = cache.registerClient<Item, Content<V>>({
         cacheKeys: (item) => {
@@ -43,16 +42,16 @@ export function buildScatterbrainCacheClient<V extends Cacheable>(
                         ...getters,
                         [key]: (signal) =>
                             fetch(url, { signal }).then((b) =>
-                                b.arrayBuffer().then((buff) => toCacheValue(buff, type)),
+                                b.arrayBuffer().then((buff) => toCacheValue(buff, type))
                             ),
                     };
                 },
-                {},
+                {}
             );
             return proms;
         },
-        isValue: (v): v is Content<V> => {
-            for (const column of allNeededColumns) {
+        isValue: (v, item: Item): v is Content<V> => {
+            for (const column of Object.keys(item.columns)) {
                 if (!(column in v)) {
                     return false;
                 }

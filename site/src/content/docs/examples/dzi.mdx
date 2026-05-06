@@ -8,7 +8,7 @@ import { DziDemo } from '../../../examples/dzi/dzi-demo.tsx';
 import dziViewerCode from '../../../examples/dzi/dzi-viewer.tsx?raw';
 import dziDemoCode from '../../../examples/dzi/dzi-demo.tsx?raw';
 
-[Deep Zoom Image (DZI)](https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95))
+[Deep Zoom Image (DZI)](<https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)>)
 is a tile-based image pyramid format originally created for Microsoft Silverlight. It is well-suited
 for displaying very large images (gigapixels or larger) in a web browser because only the tiles
 visible at the current zoom level and viewport need to be fetched at any one time.
@@ -43,11 +43,11 @@ import type { DziImage } from '@alleninstitute/vis-dzi';
 const image: DziImage = {
     // URL of the *_files/ directory that holds the layer subfolders
     imagesUrl: 'https://example.com/my-image_files/',
-    format: 'jpeg',      // 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG'
-    overlap: 1,          // pixels of overlap added on each side of a tile
-    tileSize: 512,       // nominal tile edge length in pixels (power of 2)
+    format: 'jpeg', // 'jpeg' | 'png' | 'jpg' | 'JPG' | 'PNG'
+    overlap: 1, // pixels of overlap added on each side of a tile
+    tileSize: 512, // nominal tile edge length in pixels (power of 2)
     size: {
-        width: 15936,    // full-resolution image width in pixels
+        width: 15936, // full-resolution image width in pixels
         height: 11526,
     },
 };
@@ -112,7 +112,8 @@ export function RenderServerProvider({ children }: PropsWithChildren) {
 ```
 
 <Aside type="caution">
-Create the `RenderServer` inside a `useState` initializer so it is only instantiated once. Recreating it on every render will leak WebGL resources.
+    Create the `RenderServer` inside a `useState` initializer so it is only instantiated once. Recreating it on every
+    render will leak WebGL resources.
 </Aside>
 
 ### Building the renderer and starting a frame
@@ -121,16 +122,23 @@ Create the `RenderServer` inside a `useState` initializer so it is only instanti
 
 ```tsx
 import { useContext, useEffect, useRef } from 'react';
-import { buildAsyncDziRenderer, type DziImage, type DziRenderSettings, type DziTile, type GpuProps as CachedPixels } from '@alleninstitute/vis-dzi';
+import {
+    buildAsyncDziRenderer,
+    type DziImage,
+    type DziRenderSettings,
+    type DziTile,
+    type GpuProps as CachedPixels,
+} from '@alleninstitute/vis-dzi';
 import type { buildAsyncRenderer, RenderFrameFn } from '@alleninstitute/vis-core';
 
 // Inside your component:
 const server = useContext(renderServerContext);
 const canvas = useRef<HTMLCanvasElement>(null);
 
-const renderer = useRef<
-    ReturnType<typeof buildAsyncRenderer<DziImage, DziTile, DziRenderSettings, string, string, CachedPixels>>
->(undefined);
+const renderer =
+    useRef<ReturnType<typeof buildAsyncRenderer<DziImage, DziTile, DziRenderSettings, string, string, CachedPixels>>>(
+        undefined
+    );
 
 // Create the renderer once when the server is available
 useEffect(() => {
@@ -169,7 +177,7 @@ useEffect(() => {
                 });
             }
         },
-        canvas.current,
+        canvas.current
     );
 }, [server, dzi, camera]);
 ```
@@ -209,10 +217,7 @@ import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry
 /** Zoom toward/away from a mouse position (in screen pixels). */
 function zoom(view: box2D, screenSize: vec2, scale: number, mousePos: vec2): box2D {
     const zoomPoint = Vec2.add(view.minCorner, Vec2.mul(Vec2.div(mousePos, screenSize), Box2D.size(view)));
-    return Box2D.translate(
-        Box2D.scale(Box2D.translate(view, Vec2.scale(zoomPoint, -1)), [scale, scale]),
-        zoomPoint,
-    );
+    return Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(zoomPoint, -1)), [scale, scale]), zoomPoint);
 }
 
 /** Pan by a pixel delta. */
@@ -226,10 +231,16 @@ function pan(view: box2D, screenSize: vec2, delta: vec2): box2D {
 
 <details>
     <summary>dzi-demo.tsx — the demo wrapper with shared camera and SVG overlay</summary>
-    <Code code={dziDemoCode} lang="tsx" />
+    <Code
+        code={dziDemoCode}
+        lang="tsx"
+    />
 </details>
 
 <details>
     <summary>dzi-viewer.tsx — the reusable viewer component</summary>
-    <Code code={dziViewerCode} lang="tsx" />
+    <Code
+        code={dziViewerCode}
+        lang="tsx"
+    />
 </details>
