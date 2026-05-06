@@ -10,7 +10,7 @@ async function fetchSlice(
     path: AbsolutePath,
     range: RangeQuery,
     options?: TransferrableRequestInit | undefined,
-    abortController?: AbortController | undefined,
+    abortController?: AbortController | undefined
 ): Promise<Uint8Array | undefined> {
     const store = new FetchStore(rootUrl);
     return store.getRange(path, range, { ...(options || {}), signal: abortController?.signal });
@@ -40,7 +40,7 @@ const handleFetchSlice = (message: FetchSliceMessage) => {
                     id,
                     payload: result?.buffer,
                 },
-                { ...options },
+                { ...options }
             );
         })
         .catch((e) => {

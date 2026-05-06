@@ -63,7 +63,7 @@ jobs:
                   echo "BUMPED_VERSION=${FULL_TAG##*@}" >> $GITHUB_ENV
 
             - name: Update version number
-              run: npm pkg set version="${{ env.BUMPED_VERSION }}" --prefix "packages/${{ inputs.package }}"
+              run: pnpm --filter "@alleninstitute/vis-${{ inputs.package }}" exec -- pnpm version "${{ env.BUMPED_VERSION }}" --no-git-tag-version
 
             - name: Generate changelog
               uses: orhun/git-cliff-action@v4

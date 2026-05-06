@@ -92,7 +92,7 @@ export function OmeZarrView(props: Props) {
             const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
             setView(v);
         },
-        [view, screenSize],
+        [view, screenSize]
     );
 
     const handlePan = (e: React.MouseEvent) => {
@@ -166,10 +166,16 @@ export function OmeZarrView(props: Props) {
                 onMouseMove={handlePan}
             />
             <div style={{}}>
-                <button type="button" onClick={() => handleScrollSlice(-1)}>
+                <button
+                    type="button"
+                    onClick={() => handleScrollSlice(-1)}
+                >
                     &#9664;
                 </button>
-                <button type="button" onClick={() => handleScrollSlice(1)}>
+                <button
+                    type="button"
+                    onClick={() => handleScrollSlice(1)}
+                >
                     &#9654;
                 </button>
             </div>

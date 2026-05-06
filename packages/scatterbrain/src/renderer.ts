@@ -19,13 +19,13 @@ export type Item = Readonly<{
 function columnsForItem<T extends object>(
     config: Config,
     col2shader: Record<string, string>,
-    dataset: ScatterbrainDataset | SlideviewScatterbrainDataset,
+    dataset: ScatterbrainDataset | SlideviewScatterbrainDataset
 ) {
     const columns: Record<string, ColumnRequest> = {};
     const s2c = reduce(
         keys(col2shader),
         (acc, col) => ({ ...acc, [col2shader[col]]: col }),
-        {} as Record<string, string>,
+        {} as Record<string, string>
     );
 
     for (const c of config.categoricalColumns) {
@@ -51,7 +51,7 @@ function columnsForItem<T extends object>(
  */
 export function setCategoricalLookupTableValues(
     categories: Record<string, Record<number, { color: vec4; filteredIn: boolean }>>,
-    texture: REGL.Texture2D,
+    texture: REGL.Texture2D
 ) {
     const categoryKeys = keys(categories).toSorted();
     const columns = categoryKeys.length;
@@ -89,14 +89,14 @@ export function setCategoricalLookupTableValues(
 export function updateCategoricalValue(
     categories: readonly string[],
     update: { category: string; row: number; color: vec4; filteredIn: boolean },
-    texture: REGL.Texture2D,
+    texture: REGL.Texture2D
 ) {
     const { category, row, color, filteredIn } = update;
     const col = categories.toSorted().indexOf(category);
     if (texture.width <= col || texture.height <= row || row < 0 || col < 0) {
         // todo - it might be better to let regl throw the same error... think about it
         throw new Error(
-            `attempted to update metadata lookup table with invalid coordinates: row=${row},col=${col} is not within ${texture.width}, ${texture.height}`,
+            `attempted to update metadata lookup table with invalid coordinates: row=${row},col=${col} is not within ${texture.width}, ${texture.height}`
         );
     }
     const data = new Uint8Array(4);
@@ -159,7 +159,7 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
                     type: 'buffer',
                 });
             },
-            onDataArrived,
+            onDataArrived
         );
         return client;
     };
