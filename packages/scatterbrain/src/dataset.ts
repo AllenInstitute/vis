@@ -10,7 +10,7 @@ import {
     visitBFSMaybe,
 } from '@alleninstitute/vis-geometry';
 import type { PointAttribute, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode, volumeBound } from './types';
-import reduce from 'lodash/reduce';
+import reduce from 'lodash-es/reduce';
 import * as z from 'zod';
 
 type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset;

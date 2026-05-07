@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { buildShaders, type Config, configureShader } from './shader';
-import type { ScatterbrainDataset } from './types';
+import type { ScatterbrainDataset } from '../../types';
 
 const tenx: ScatterbrainDataset = {
     type: 'normal',

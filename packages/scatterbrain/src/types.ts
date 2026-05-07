@@ -2,7 +2,6 @@
 // there are 2 variants, slideview and regular - they are distinguished at runtime
 
 import type { box2D } from '@alleninstitute/vis-geometry';
-
 // by checking the parsed metadata for the 'slides' field
 export type WebGLSafeBasicType = 'uint8' | 'uint16' | 'int8' | 'int16' | 'uint32' | 'int32' | 'float';
 

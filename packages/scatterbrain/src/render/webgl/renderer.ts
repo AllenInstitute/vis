@@ -1,13 +1,13 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
 import { Box2D, type box2D, type vec4 } from '@alleninstitute/vis-geometry';
-import keys from 'lodash/keys';
-import reduce from 'lodash/reduce';
+import keys from 'lodash-es/keys';
+import reduce from 'lodash-es/reduce';
 import type REGL from 'regl';
-import { buildScatterbrainCacheClient } from './cache-client';
-import { getVisibleItems, type NodeWithBounds } from './dataset';
+import { buildScatterbrainCacheClient } from '../../cache-client';
+import { getVisibleItems, type NodeWithBounds } from '../../dataset';
 import { buildScatterbrainRenderCommand, type Config, configureShader, type ShaderSettings, VBO } from './shader';
-import { MakeTaggedBufferView } from './typed-array';
-import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from './types';
+import { MakeTaggedBufferView } from '../../typed-array';
+import type { ColumnRequest, ScatterbrainDataset, SlideviewScatterbrainDataset, TreeNode } from '../../types';
 
 export type Item = Readonly<{
     dataset: SlideviewScatterbrainDataset | ScatterbrainDataset;
@@ -149,7 +149,7 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
         }
     };
     const connectToCache = (cache: SharedPriorityCache, onDataArrived: () => void) => {
-        const client = buildScatterbrainCacheClient(
+        const client = buildScatterbrainCacheClient<VBO>(
             cache,
             (buff, type) => {
                 const typed = MakeTaggedBufferView(type, buff);
@@ -159,7 +159,7 @@ export function buildRenderFrameFn(regl: REGL.Regl, settings: ShaderSettings) {
                     type: 'buffer',
                 });
             },
-            onDataArrived
+            onDataArrived,
         );
         return client;
     };
