@@ -3,26 +3,14 @@ name: Publish to NPM
 on:
     push:
         tags:
-            - '*/v*.*.*'
-    workflow_dispatch:
-        inputs:
-            package:
-                description: 'Package to publish (core, dzi, geometry, omezarr, scatterbrain, or "all")'
-                required: true
-                default: 'all'
-                type: choice
-                options:
-                    - all
-                    - core
-                    - dzi
-                    - geometry
-                    - omezarr
-                    - scatterbrain
+            # Matches per-package release tags: @alleninstitute/vis-{pkg}@{semver}
+            - '@alleninstitute/vis-*@*.*.*'
 
 jobs:
     publish:
-        name: Publish packages to NPM
+        name: Publish package to NPM
         runs-on: ubuntu-latest
+        timeout-minutes: 15
         permissions:
             contents: read
             id-token: write # Required for npm OIDC provenance
@@ -47,10 +35,18 @@ jobs:
             - name: Build
               run: pnpm build
 
-            - name: Publish all packages
-              if: github.event_name == 'push' || inputs.package == 'all'
-              run: pnpm -r publish --no-git-checks --access public --provenance
+            - name: Determine package directory
+              id: pkg
+              shell: bash
+              run: |
+                  REF="${{ github.ref_name }}"
+                  if [[ "$REF" =~ ^@alleninstitute/vis-([^@]+)@[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                      echo "pkg_dir=packages/${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "::error::Unexpected tag format: ${REF}"
+                      exit 1
+                  fi
 
-            - name: Publish single package
-              if: github.event_name == 'workflow_dispatch' && inputs.package != 'all'
-              run: pnpm --filter "@alleninstitute/vis-${{ inputs.package }}" publish --no-git-checks --access public --provenance
+            - name: Publish
+              working-directory: ${{ steps.pkg.outputs.pkg_dir }}
+              run: npm publish --access public --provenance
