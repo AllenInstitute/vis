@@ -6,35 +6,40 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
-- Support for arbitrary color channels in OME-Zarr images [DC-530] ([#123](https://github.com/AllenInstitute/vis/pull/123))
+- Package tag changelog generation
 
 ### 🐛 Bug Fixes
 
-- CI tests weren't running [DT-7060] ([#87](https://github.com/AllenInstitute/vis/pull/87))
-- Remove non-null assertions ([#101](https://github.com/AllenInstitute/vis/pull/101))
-- Fix issue with handling RGB channels in new OME-Zarr metadata code [DT-7615] ([#110](https://github.com/AllenInstitute/vis/pull/110))
 - Parse axis name to match our internal casing [134] ([#140](https://github.com/AllenInstitute/vis/pull/140))
+- Allow Workers to be instantiated directly via callback ([#206](https://github.com/AllenInstitute/vis/pull/206))
+- Fix version display on changelogs and tweak scatterbrain package command
+- Incorrectly published a change without changing a version ([#239](https://github.com/AllenInstitute/vis/pull/239))
 
 ### 💼 Other
 
-- March 2025 ([#99](https://github.com/AllenInstitute/vis/pull/99))
+- A priority cache with a (better?) api ([#171](https://github.com/AllenInstitute/vis/pull/171))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
+- Didn't need quotes
+- Don't filter out unconvenctional commits so we can see everything!
+- Merge branch 'main' into lane/package-tag-changelogs
+- Added support for Zarr V3 ([#191](https://github.com/AllenInstitute/vis/pull/191))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
+- Update vis-omezarr to v0.0.13 ([#192](https://github.com/AllenInstitute/vis/pull/192))
+- Merge branch 'main' into lane/package-tag-changelogs
+- Allow slices from planes by % rather than slice index - as the number of slices is not constant at all scales in most volumes ([#187](https://github.com/AllenInstitute/vis/pull/187))
+
+Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
+- Merge branch 'main' into lane/package-tag-changelogs
+- Tag scattebrain to make sure it was working
+- Merge branch 'main' into lane/package-tag-changelogs
 
 ### ⚙️ Miscellaneous Tasks
 
-- Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
-- Version bumps for only-allow removal release ([#51](https://github.com/AllenInstitute/vis/pull/51))
-- Install Biome, fix formatting [DT-7060] ([#52](https://github.com/AllenInstitute/vis/pull/52))
-- Biome linting with auto-fixes [DT-7060] ([#53](https://github.com/AllenInstitute/vis/pull/53))
-- Dependency health configurations ([#17](https://github.com/AllenInstitute/vis/pull/17))
-- Clean up dependencies [DT-7060] ([#55](https://github.com/AllenInstitute/vis/pull/55))
-- Fix all but non-null assertion lints ([#96](https://github.com/AllenInstitute/vis/pull/96))
-- Update vis-omezarr 0.0.7 - upgrade zarrita to 0.5.0 ([#100](https://github.com/AllenInstitute/vis/pull/100))
-- Logger with log levels ([#97](https://github.com/AllenInstitute/vis/pull/97))
-- Update Vis OME-Zarr package to load the full set of metadata available in Zarr files [DT-7615] ([#103](https://github.com/AllenInstitute/vis/pull/103))
-- Test coverage tooling ([#95](https://github.com/AllenInstitute/vis/pull/95))
-- Updating vis-dzi and vis-omezarr to enable use of vis-scatterbrain 0.0.10 ([#112](https://github.com/AllenInstitute/vis/pull/112))
-- Rename vis-scatterbrain package to vis-core ([#118](https://github.com/AllenInstitute/vis/pull/118))
-- Updates to package versions for Core, Geometry, OmeZarr + examples [DC-530] ([#124](https://github.com/AllenInstitute/vis/pull/124))
 - Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
 - _(deps)_ Bump zod from 3.24.2 to 3.24.3 ([#154](https://github.com/AllenInstitute/vis/pull/154))
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))

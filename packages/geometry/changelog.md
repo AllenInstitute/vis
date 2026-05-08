@@ -17,17 +17,22 @@ All notable changes to this project will be documented in this file.
 - CI tests weren't running [DT-7060] ([#87](https://github.com/AllenInstitute/vis/pull/87))
 - Remove non-null assertions ([#101](https://github.com/AllenInstitute/vis/pull/101))
 
+### ⚙️ Miscellaneous Tasks
+
+- Update Vis OME-Zarr package to load the full set of metadata available in Zarr files [DT-7615] ([#103](https://github.com/AllenInstitute/vis/pull/103))
+
+## [0.0.4] - 2025-03-14
+
+### 🐛 Bug Fixes
+
+- CI tests weren't running [DT-7060] ([#87](https://github.com/AllenInstitute/vis/pull/87))
+
 ### 💼 Other
 
 - March 2025 ([#99](https://github.com/AllenInstitute/vis/pull/99))
 
 ### ⚙️ Miscellaneous Tasks
 
-- Use Parcel to produce libraries ([#9](https://github.com/AllenInstitute/vis/pull/9))
-- Formatting ([#26](https://github.com/AllenInstitute/vis/pull/26))
-- CI workflow [DT-5996] ([#25](https://github.com/AllenInstitute/vis/pull/25))
-- Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
-- Version bumps for only-allow removal release ([#51](https://github.com/AllenInstitute/vis/pull/51))
 - Install Biome, fix formatting [DT-7060] ([#52](https://github.com/AllenInstitute/vis/pull/52))
 - Biome linting with auto-fixes [DT-7060] ([#53](https://github.com/AllenInstitute/vis/pull/53))
 - Dependency health configurations ([#17](https://github.com/AllenInstitute/vis/pull/17))
