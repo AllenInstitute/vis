@@ -1,6 +1,21 @@
 import { beginValidate, endValidate } from './validate';
 import * as wgh from 'webgpu-utils';
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
+import {
+    $a,
+    constant,
+    fragmentEntry,
+    func,
+    location,
+    member,
+    param,
+    returns,
+    shader,
+    struct,
+    texture,
+    uniform,
+    vertexEntry,
+} from './shaders';
 
 function rangeFor(col: string): `${string}_range` {
     return `${col}_range`;
@@ -26,7 +41,9 @@ export type Config = {
     highlightByColumn: { kind: 'quantitative' | 'metadata'; column: string };
     vertexLocationOrder: string[];
 };
+
 type QuantitativeFilterRanges = Record<`${string}_range`, vec2>;
+
 // the type of the uniforms on the TS side of the fence
 export type Uniforms = {
     view: vec4;
@@ -37,6 +54,66 @@ export type Uniforms = {
     offset: vec2;
     highlightValue: number;
 } & QuantitativeFilterRanges;
+
+export const applyCamera = func(
+    'applyCamera',
+    [param('dataPos', 'vec2f'), param('view', 'vec4f')],
+    /*wgsl*/ `
+    let size = view.zw-view.xy;
+    let unit = (dataPos.xy-view.xy)/size;
+    return vec4f((unit*2.0)-1.0,0.0,1.0);
+    `,
+    returns('vec4f')
+);
+
+export const rangeParameter = func(
+    'rangeParameter',
+    [param('v', 'f32'), param('range', 'vec2f')],
+    /*wgsl*/ `
+    return (v-range.x)/(range.y-range.x);
+    `,
+    returns('f32')
+);
+
+export const within = func(
+    'within',
+    [param('v', 'f32'), param('range', 'vec2f')],
+    /*wgsl*/ `
+    return step(range.x,v)*step(v,range.y);
+    `,
+    returns('f32')
+);
+
+const makeVertexStruct = (config: Config) => {
+    const { positionColumn, categoricalColumns, quantitativeColumns } = config;
+    const catStart = 1;
+    const quantStart = catStart + categoricalColumns.length;
+    return struct('Vertex', [
+        member('vIndex', 'u32', [$a.builtin('vertex_index')]),
+        member(positionColumn, 'vec2f', [$a.location(0)]),
+        ...categoricalColumns.map((col, i) => member(col, 'u32', [$a.location(i + catStart)])),
+        ...quantitativeColumns.map((col, i) => member(col, 'f32', [$a.location(i + quantStart)])),
+    ]);
+};
+
+const vsOutputStruct = struct('VsOutput', [
+    member('position', 'vec4f', [$a.builtin('position')]),
+    member('color', 'vec4f', [$a.location(0)]),
+]);
+
+const makeUniformStruct = (config: Config) => {
+    const { quantitativeColumns } = config;
+    return struct('Uniforms', [
+        member('view', 'vec4f'),
+        member('spatialFilterBox', 'vec4f'),
+        member('filteredOutColor', 'vec4f'),
+        member('highlightColor', 'vec4f'),
+        member('screenSize', 'vec2f'),
+        member('offset', 'vec2f'),
+        member('highlightValue', 'u32'),
+        ...quantitativeColumns.map((col) => member(rangeFor(col), 'vec2f')),
+    ]);
+};
 
 export function generate(config: Config): string {
     const {
@@ -62,66 +139,25 @@ export function generate(config: Config): string {
     `;
     const colorize = categoryColumnIndex !== -1 ? colorByCategorical : colorByQuantitative;
 
-    // todo support picking mode
-    const catStart = 1;
-    const quantStart = catStart + categoricalColumns.length;
-    return /*wgsl*/ `
-    // attribs //
-    struct Vertex {
-        @builtin(vertex_index) vIndex: u32,
-        @location(0) ${positionColumn}: vec2f,
-        ${categoricalColumns.map((col, i) => /*wgsl*/ `@location(${i + catStart}) ${col}:u32,`).join('\n')}
-        ${quantitativeColumns.map((col, i) => /*wgsl*/ `@location(${i + quantStart}) ${col}:f32,`).join('\n')}
-    };
-    // uniforms //
-    struct Uniforms {
-        view: vec4f,
-        spatialFilterBox:vec4f,
-        filteredOutColor: vec4f,
-        highlightColor: vec4f,
-        screenSize:vec2f,
-        offset:vec2f,
-        highlightValue: u32,
-        // quantitative columns each need a range value - its the min,max in a vec2
-        ${quantitativeColumns.map((col) => /*wgsl*/ `${rangeFor(col)}:vec2f,`).join('\n')}
-    };
+    const vertexStruct = makeVertexStruct(config);
+    const uniformStruct = makeUniformStruct(config);
 
-    @group(0) @binding(0)
-    var<uniform> unis:Uniforms;
-    
-    // texture bindings... no longer considered uniform...
-    // TIL textureSampler is banned in vertex stage... neat
-    @group(0) @binding(1) var ${categoricalTable}: texture_2d<f32>;
-    @group(0) @binding(2) var ${gradientTable}: texture_2d<f32>;
-    
-    // utility functions //
-    fn applyCamera(dataPos:vec2f, view:vec4f)->vec4f {
-        let size = view.zw-view.xy;
-        let unit = (dataPos.xy-view.xy)/size;
-        return vec4f((unit*2.0)-1.0,0.0,1.0);
-    }
-    fn rangeParameter(v:f32,range:vec2f)->f32{
-        return (v-range.x)/(range.y-range.x);
-    }
-    fn within( v:f32,  range:vec2f)->f32{
-        return step(range.x,v)*step(v,range.y);
-    }
-
-    struct VsOutput {
-        @builtin(position) position: vec4f,
-        @location(0) color: vec4f,
-    };
-
-    const clip = array<vec2f,4>(
-            vec2f(1, -1), 
-            vec2f(1, 1),  
-            vec2f(-1, -1),
-            vec2f(-1, 1)
-        );
-
-    @vertex
-    fn vmain(v:Vertex)->VsOutput{
-        var out: VsOutput;
+    return shader([
+        vertexStruct,
+        uniformStruct,
+        vsOutputStruct,
+        uniform('unis', uniformStruct.name, 0, 0),
+        texture(categoricalTable, 'texture_2d<f32>', 0, 1),
+        texture(gradientTable, 'texture_2d<f32>', 0, 2),
+        applyCamera,
+        rangeParameter,
+        within,
+        constant('clip', /*wgsl*/ `array<vec2f,4>(vec2f(1, -1), vec2f(1, 1), vec2f(-1, -1), vec2f(-1, 1))`),
+        vertexEntry(
+            'vmain',
+            [param('v', vertexStruct.name)],
+            /*wgsl*/ `
+        var out: ${vsOutputStruct.name};
 
         // lets directly compute stuff, rather than helper functions
         // this might be what people want with tgpu - much easier to synthesize a shader
@@ -146,12 +182,104 @@ export function generate(config: Config): string {
         out.color = clr;
         out.position = applyCamera(dPos,unis.view);
         return out;
-    }
-    @fragment
-    fn fmain(v:VsOutput)->@location(0) vec4f {
-        return v.color; // todo: round points with discard?
-    }
-    `;
+        `,
+            returns(vsOutputStruct.name)
+        ),
+        fragmentEntry(
+            'fmain',
+            [param('v', vsOutputStruct.name)],
+            /*wgsl*/ `return v.color;`,
+            returns('vec4f', [location(0)])
+        ),
+    ]).asSource();
+
+    // return /*wgsl*/ `
+    // // attribs //
+    // struct Vertex {
+    //     @builtin(vertex_index) vIndex: u32,
+    //     @location(0) ${positionColumn}: vec2f,
+    //     ${categoricalColumns.map((col, i) => /*wgsl*/ `@location(${i + catStart}) ${col}:u32,`).join('\n')}
+    //     ${quantitativeColumns.map((col, i) => /*wgsl*/ `@location(${i + quantStart}) ${col}:f32,`).join('\n')}
+    // };
+    // // uniforms //
+    // struct Uniforms {
+    //     view: vec4f,
+    //     spatialFilterBox:vec4f,
+    //     filteredOutColor: vec4f,
+    //     highlightColor: vec4f,
+    //     screenSize:vec2f,
+    //     offset:vec2f,
+    //     highlightValue: u32,
+    //     // quantitative columns each need a range value - its the min,max in a vec2
+    //     ${quantitativeColumns.map((col) => /*wgsl*/ `${rangeFor(col)}:vec2f,`).join('\n')}
+    // };
+
+    // @group(0) @binding(0)
+    // var<uniform> unis:Uniforms;
+
+    // // texture bindings... no longer considered uniform...
+    // // TIL textureSampler is banned in vertex stage... neat
+    // @group(0) @binding(1) var ${categoricalTable}: texture_2d<f32>;
+    // @group(0) @binding(2) var ${gradientTable}: texture_2d<f32>;
+
+    // // utility functions //
+    // fn applyCamera(dataPos:vec2f, view:vec4f)->vec4f {
+    //     let size = view.zw-view.xy;
+    //     let unit = (dataPos.xy-view.xy)/size;
+    //     return vec4f((unit*2.0)-1.0,0.0,1.0);
+    // }
+    // fn rangeParameter(v:f32,range:vec2f)->f32{
+    //     return (v-range.x)/(range.y-range.x);
+    // }
+    // fn within( v:f32,  range:vec2f)->f32{
+    //     return step(range.x,v)*step(v,range.y);
+    // }
+
+    // struct VsOutput {
+    //     @builtin(position) position: vec4f,
+    //     @location(0) color: vec4f,
+    // };
+
+    // const clip = array<vec2f,4>(
+    //         vec2f(1, -1),
+    //         vec2f(1, 1),
+    //         vec2f(-1, -1),
+    //         vec2f(-1, 1)
+    //     );
+
+    // @vertex
+    // fn vmain(v:Vertex)->VsOutput{
+    //     var out: VsOutput;
+
+    //     // lets directly compute stuff, rather than helper functions
+    //     // this might be what people want with tgpu - much easier to synthesize a shader
+    //     // but also crazy annoying in its own way I think...
+    //     let p = v.${positionColumn};
+    //     let withinFilterBox = within(p.x,unis.spatialFilterBox.xz)*within(p.y,unis.spatialFilterBox.yw);
+    //     let filteredIn: f32 = withinFilterBox *
+    //         ${catFilter.length > 0 ? catFilter : '1.0'}
+    //       * ${rangeFilter.length > 0 ? rangeFilter : '1.0'};
+
+    //     // highlighting
+    //     let highlighted = 1.0-step(0.1,abs(f32(v.${highlightByColumn.column}-unis.highlightValue)));
+
+    //     // from filtering, we can compute color
+    //     let baseColor = ${colorize};
+    //     let clr = mix(unis.filteredOutColor, baseColor, filteredIn);
+
+    //     // point size (todo make this a uniform...)
+    //     // todo: handle offset (slides)
+    //     let R = 0.02;
+    //     let dPos = clip[v.vIndex]*R + p;
+    //     out.color = clr;
+    //     out.position = applyCamera(dPos,unis.view);
+    //     return out;
+    // }
+    // @fragment
+    // fn fmain(v:VsOutput)->@location(0) vec4f {
+    //     return v.color; // todo: round points with discard?
+    // }
+    // `;
 }
 function generateVertexBufferLayout(config: Config) {
     // position at 0
@@ -185,7 +313,7 @@ function generateVertexBufferLayout(config: Config) {
                     },
                 ],
                 stepMode: 'instance',
-            }),
+            })
         ),
         ...quantitativeColumns.map(
             (_q, i): GPUVertexBufferLayout => ({
@@ -198,7 +326,7 @@ function generateVertexBufferLayout(config: Config) {
                     },
                 ],
                 stepMode: 'instance',
-            }),
+            })
         ),
     ];
     return what;
@@ -319,9 +447,9 @@ export function buildPipeline(device: GPUDevice, config: Config) {
     //     return { binding: 1, resource: lookupTable };
     //     // bindGroups dont have a destroy() - so I'm assuming its totally fine to leak them!!
     // };
-    const makeUniformBuffer = () => wgh.makeStructuredView(defs.uniforms.unis)
+    const makeUniformBuffer = () => wgh.makeStructuredView(defs.uniforms.unis);
     const updateUniforms = (updates: Partial<Uniforms>, view: ReturnType<typeof makeUniformBuffer>) => {
         view.set(updates);
-    }
+    };
     return { pipeline, makeUniformBuffer, updateUniforms, uniformSize: size };
 }

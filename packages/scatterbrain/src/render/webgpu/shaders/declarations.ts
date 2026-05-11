@@ -7,7 +7,7 @@
 import { compute, fragment, vertex, type DeclarationAttribute, type FunctionAttribute, type VariableOrValueAttribute } from './attributes';
 
 function renderAttrs(attrs: DeclarationAttribute[] | undefined): string {
-    return attrs && attrs.length > 0 ? attrs.map((attr) => `@${attr.__gen()}`).join(' ') + ' ' : '';
+    return attrs && attrs.length > 0 ? attrs.map((attr) => `${attr.__gen()}`).join(' ') + ' ' : '';
 }
 
 /// TYPES
@@ -159,7 +159,7 @@ export function constant(name: string, initializer: unknown, type?: string): Con
         name,
         ...(type !== undefined && { type }),
         initializer,
-        __gen: () => `${name} = ${initializer}`,
+        __gen: () => `const ${name}${type !== undefined ? `: ${type}` : ''} = ${initializer}`,
     };
 }
 
@@ -172,7 +172,7 @@ export function override(
     if (type === undefined && initializer === undefined) {
         throw new Error('Override declaration must have at least a type or an initializer');
     }
-    const __gen = () => `${name} = ${initializer}`;
+    const __gen = () => `${renderAttrs(attributes)}var<override> ${name}${type !== undefined ? `: ${type}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''}`;
     if (type === undefined) {
         return {
             __identType: 'value',
@@ -312,7 +312,7 @@ export function struct(name: string, fields: StructMemberDeclaration[]): StructD
         __identType: 'struct',
         name,
         fields,
-        __gen: () => `${name} { ${fields.map((f) => f.__gen()).join('; ')} }`,
+        __gen: () => `struct ${name} { ${fields.map((f) => f.__gen()).join(', ')} }`,
     };
 }
 
@@ -354,7 +354,7 @@ export function func(
         __gen: () => {
             const params = parameters.map((p) => p.__gen()).join(', ');
             const ret = returnType ? ` -> ${returnType.__gen()}` : '';
-            return `${renderAttrs(attributes)}${name}(${params})${ret} { ${body} }`;
+            return `${renderAttrs(attributes)}fn ${name}(${params})${ret} { ${body} }`;
         },
     };
 }
