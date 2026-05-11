@@ -2,25 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.0] - 2026-05-08
+
+### 🚀 Features
+
+- Package tag changelog generation [DT-9260] ([#179](https://github.com/AllenInstitute/vis/pull/179))
 
 ### 🐛 Bug Fixes
 
-- Fix version display on changelogs and tweak scatterbrain package command
 - Incorrectly published a change without changing a version ([#239](https://github.com/AllenInstitute/vis/pull/239))
 
 ### 💼 Other
 
-- Merge branch 'main' into lane/package-tag-changelogs
-- Fmt
-- Tag scattebrain to make sure it was working
 - Slight changes to the CacheClient interface ([#253](https://github.com/AllenInstitute/vis/pull/253))
-- Merge branch 'main' into lane/package-tag-changelogs
 
 ### ⚙️ Miscellaneous Tasks
 
-- _(deps)_ Bump lodash and @types/lodash ([#236](https://github.com/AllenInstitute/vis/pull/236))
+- *(deps)* Bump lodash and @types/lodash ([#236](https://github.com/AllenInstitute/vis/pull/236))
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
+- Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
+- *(deps)* Bump lodash from 4.17.23 to 4.18.1 ([#248](https://github.com/AllenInstitute/vis/pull/248))
 
 ## [0.0.1] - 2026-02-11
 
@@ -94,105 +95,95 @@ All notable changes to this project will be documented in this file.
 * add some react for UI - think about if I like it or it will make my life nice
 
 * fix a perf bug in which we consider rendering every slice in a grid regardless of zoom level.
-  some (better?) smoke and mirrors trickery to try to obscure redraw flickering when panning/zooming
+some (better?) smoke and mirrors trickery to try to obscure redraw flickering when panning/zooming
 
 * working but messy impl of a worker pool that handles decoding zarr chunks for us
 
 # Conflicts:
+#	apps/layers/package.json
 
-# apps/layers/package.json
+* play around with WW pool size, and fix a bug in which the optional render-working budget parameters were being ignored (for the slice renderer specifically)
 
-- play around with WW pool size, and fix a bug in which the optional render-working budget parameters were being ignored (for the slice renderer specifically)
-
-- move a shocking amount of code in to render slide-view style annotations
-
-# Conflicts:
-
-# apps/layers/package.json
-
-- good enough for now
+* move a shocking amount of code in to render slide-view style annotations
 
 # Conflicts:
+#	apps/layers/package.json
 
-# apps/layers/src/demo.ts
-
-- respect queue params
-
-- enable screenshots, with a default output resolution of roughly 85MP
+* good enough for now
 
 # Conflicts:
+#	apps/layers/src/demo.ts
 
-# apps/layers/package.json
+* respect queue params
 
-# apps/layers/src/demo.ts
-
-# pnpm-lock.yaml
-
-- start thinking about upside down data...
-
-- its all upside down now great
-
-- minor tidy, plus a rough attempt at a less flickery stand-in algorithm
-
-- tools to add layers during demotime
+* enable screenshots, with a default output resolution of roughly 85MP
 
 # Conflicts:
+#	apps/layers/package.json
+#	apps/layers/src/demo.ts
+#	pnpm-lock.yaml
 
-# apps/layers/src/demo.ts
+* start thinking about upside down data...
 
-- add a versa layer
+* its all upside down now  great
 
-- add scatterplot-slideview real quick
+* minor tidy, plus a rough attempt at a less flickery stand-in algorithm
 
-# Conflicts:
-
-# apps/layers/src/demo.ts
-
-- start some cleanup so I can merge this...
-
-# Conflicts:
-
-# apps/layers/src/demo.ts
-
-- Merge branch 'noah/layered-demo' into noah/layered-with-react-whynot
+* tools to add layers during demotime
 
 # Conflicts:
+#	apps/layers/src/demo.ts
 
-# apps/layers/src/demo.ts
+* add a versa layer
 
-- quickly change the underlying cache type for scatterplots for much better perf (gpu buffer not client-buffer)
+* add scatterplot-slideview real quick
 
-- try out sds components for quick hacky ui fun - delete old ui code
+# Conflicts:
+#	apps/layers/src/demo.ts
 
-- add a bunch of per-layer ui elements
+* start some cleanup so I can merge this...
 
-- prev/next layer buttons
+# Conflicts:
+#	apps/layers/src/demo.ts
 
-- take a snapshot button
+* Merge branch 'noah/layered-demo' into noah/layered-with-react-whynot
 
-- quickly re-enable drawing layers
+# Conflicts:
+#	apps/layers/src/demo.ts
 
-- a bit hacky, but non-flickering drawings are worth it for a demo
+* quickly change the underlying cache type for scatterplots for much better perf (gpu buffer not client-buffer)
 
-- change moduleResolution in the apps tsconfig to make the zarr library that we use extensively get resolved correctly. this is an issue on their end: https://github.com/gzuidhof/zarr.js/issues/152
+* try out sds components for quick hacky ui fun - delete old ui code
 
-- cleanup some increasingly scary cherrypicks, and finally tidy up those last little demo ts errors.
+* add a bunch of per-layer ui elements
 
-- clean up a bunch of low hanging fruit
+* prev/next layer buttons
 
-- fix up the scatterplot (standalone) demo
+* take a snapshot button
 
-- readme and demo script
+* quickly re-enable drawing layers
 
-- a little more
+* a bit hacky, but non-flickering drawings are worth it for a demo
 
-- copy in the latest and greatest annotation stuff in
+* change moduleResolution in the apps tsconfig to make the zarr library that we use extensively get resolved correctly. this is an issue on their end: https://github.com/gzuidhof/zarr.js/issues/152
 
-- minor cleanups
+* cleanup some increasingly scary cherrypicks, and finally tidy up those last little demo ts errors.
 
-- fix wrongly named example
+* clean up a bunch of low hanging fruit
 
----
+* fix up the scatterplot (standalone) demo
+
+* readme and demo script
+
+* a little more
+
+* copy in the latest and greatest annotation stuff in
+
+* minor cleanups
+
+* fix wrongly named example
+
+---------
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
@@ -211,7 +202,6 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 * ! operator because we know that it exists
 
 * PR feedback cleanup
-
 - CI tests weren't running [DT-7060] ([#87](https://github.com/AllenInstitute/vis/pull/87))
 - Remove non-null assertions ([#101](https://github.com/AllenInstitute/vis/pull/101))
 
@@ -223,17 +213,15 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Implement a resolution-aware dataset layer picker, and a relative camera which is surprisingly nice
 - When initializing the repo, names were changed, this fact was not reflected in imports vs. workspace packages.
 - Turn on tsconfig verbatimmodulesyntax. delete super busted old demo.
-  add a base tsconfig for the others to extend - still a work in progress.
+add a base tsconfig for the others to extend - still a work in progress.
 - Merge pull request [#1](https://github.com/AllenInstitute/vis/pull/1) from AllenInstitute/noah/cleanup-mistakes-during-repo-init
 
 Noah/cleanup mistakes during repo init
-
 - Dont hog the main thread - use a soft limit
 - Update the version to accompany this PR, and two lil cleanups in the scatterbrain demo that got lost in the shuffle of everything
 - Merge pull request [#12](https://github.com/AllenInstitute/vis/pull/12) from AllenInstitute/noah/limit-queue-time
 
 dont hog the main thread - use a soft limit
-
 - Cache limits ([#14](https://github.com/AllenInstitute/vis/pull/14))
 
 * first pass at a system which cant leak cache content references (unlike my first attempt)
@@ -262,22 +250,21 @@ dont hog the main thread - use a soft limit
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
-- Update apps/omezarr-viewer/README.md
+* Update apps/omezarr-viewer/README.md
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
-- fix initial versa view. fix a missing closing-brace that would have made cache-eviction waste a lot of time for no reason
+* fix initial versa view. fix a missing closing-brace that would have made cache-eviction waste a lot of time for no reason
 
-- kick jest out of geometry tests too, switch to vitest, confirm all tests pass
+* kick jest out of geometry tests too, switch to vitest, confirm all tests pass
 
-- remove my debug logging
+* remove my debug logging
 
-- remove isAbortError
+* remove isAbortError
 
----
+---------
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
-
 - Layered rendering util ([#24](https://github.com/AllenInstitute/vis/pull/24))
 
 * well its a start
@@ -287,11 +274,9 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 * mostly just move ReglLayer2D over to packages, and make a minor change (that should hopefully be less surprising) to long-running-frame lifecycle callbacks
 
 * bump the version
-
 - DZI viewer component ([#29](https://github.com/AllenInstitute/vis/pull/29))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
-
 - Flickery frames due to leaky event handling ([#36](https://github.com/AllenInstitute/vis/pull/36))
 - Still flickery ([#37](https://github.com/AllenInstitute/vis/pull/37))
 - Noah/documentation ([#46](https://github.com/AllenInstitute/vis/pull/46))
@@ -314,7 +299,6 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 * thinking about layers
 
 * PR feedback, disable using the .parcel-cache when building
-
 - Formatting ([#26](https://github.com/AllenInstitute/vis/pull/26))
 - Update Scatterbrain Version ([#32](https://github.com/AllenInstitute/vis/pull/32))
 - Pull request template [DT-5996] ([#38](https://github.com/AllenInstitute/vis/pull/38))
