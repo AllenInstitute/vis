@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
 - Slight changes to the CacheClient interface ([#253](https://github.com/AllenInstitute/vis/pull/253))
 - Fix name of file on changelog command
 - Make changelog files uppercase
+- Add fmt to changelog production command
+- Do git stuff to make sure it's actually changing the file name
 
 ### ⚙️ Miscellaneous Tasks
 

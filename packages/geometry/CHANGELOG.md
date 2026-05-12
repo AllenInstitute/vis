@@ -17,6 +17,8 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
 - Fix name of file on changelog command
 - Make changelog files uppercase
+- Add fmt to changelog production command
+- Do git stuff to make sure it's actually changing the file name
 
 ### ⚙️ Miscellaneous Tasks
 
