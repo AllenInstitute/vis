@@ -76,6 +76,9 @@ jobs:
               env:
                   OUTPUT: packages/${{ inputs.package }}/CHANGELOG.md
 
+            - name: Format changelog
+              run: pnpm exec oxfmt "packages/${{ inputs.package }}/CHANGELOG.md"
+
             - name: Commit package.json and changelog
               run: |
                   git add "packages/${{ inputs.package }}/package.json" \
