@@ -7,11 +7,11 @@ The `vis` project contains multiple packages, each of which is published to the 
 
 ## Publishing a New Package
 
-When you have a new package to publish, follow these steps to publish it:
+Publishing is handled by two GitHub Actions workflows. The **Release** workflow is triggered manually and handles bumping the version, generating the changelog, and creating a git tag. Pushing that tag then automatically triggers the **Publish** workflow, which builds and publishes the package to NPM.
 
-1. Authenticate with NPM by running `npm login` in your terminal and entering your credentials. Make sure the account you're used is part of the Allen Institute NPM organization.
+When you have a new package to publish, follow these steps:
 
-2. Add the necessary information about the repository and the registry to the `package.json` file:
+1. Add the necessary information about the repository and the registry to the `package.json` file:
 
 ```json
   "repository": {
@@ -24,23 +24,21 @@ When you have a new package to publish, follow these steps to publish it:
   },
 ```
 
-3. Run `pnpm publish` in the package directory.
+2. Get all changes onto the `main` branch and make sure everything is ship-shape for publishing.
+
+3. Go to **Actions → Release** in the GitHub repository, click **Run workflow**, select the package to release, and run it. The workflow will bump the version, update the changelog, create a tag, and push — which automatically triggers the Publish workflow.
 
 4. Verify your package is available. You can see it listed on the [Allen Institute's NPM organization package registry](https://www.npmjs.com/org/alleninstitute) or on the homepage of this repository.
 
 ## Updating an Existing Package
 
-When you have changes to an existing package that you want to publish, follow these steps to publish the changes:
+When you have changes to an existing package that you want to publish, follow these steps:
 
-1. Authenticate with NPM by running `npm login` in your terminal and entering your credentials. Make sure the account you're used is part of the Allen Institute NPM organization.
+1. Get all changes onto the `main` branch and make sure everything is ship-shape for publishing.
 
-2. Update the version number in the `package.json` file, following the [Semantic Versioning standard](https://semver.org/).
+2. Go to **Actions → Release** in the GitHub repository, click **Run workflow**, select the package to release, and run it. The workflow will automatically determine the next version (following [Semantic Versioning](https://semver.org/)) based on commit history, update the changelog, create a tag, and push — which automatically triggers the Publish workflow.
 
-3. Get that version number update onto the `main` branch and make sure everything is ship-shape for publishing.
-
-4. Run `pnpm publish` in the package directory.
-
-5. Verify that the updated package is available. You can see it listed on the [Allen Institute's NPM organization package registry](https://www.npmjs.com/org/alleninstitute) or on the homepage of this repository.
+3. Verify that the updated package is available. You can see it listed on the [Allen Institute's NPM organization package registry](https://www.npmjs.com/org/alleninstitute) or on the homepage of this repository.
 
 ## Troubleshooting
 
