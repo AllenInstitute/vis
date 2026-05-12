@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 💼 Other
+
+- Fix name of file on changelog command
+
+### ⚙️ Miscellaneous Tasks
+
+- Update documentatoin for publishing [DT-9260]
+
 ## [0.1.0] - 2026-05-08
 
 ### 🚀 Features
@@ -22,6 +32,7 @@ All notable changes to this project will be documented in this file.
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 - Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
 - *(deps)* Bump lodash from 4.17.23 to 4.18.1 ([#248](https://github.com/AllenInstitute/vis/pull/248))
+- *(release)* @alleninstitute/vis-scatterbrain@0.1.0
 
 ## [0.0.1] - 2026-02-11
 

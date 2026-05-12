@@ -6,37 +6,33 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
-- Package tag changelog generation
+- Package tag changelog generation [DT-9260] ([#179](https://github.com/AllenInstitute/vis/pull/179))
 
 ### 🐛 Bug Fixes
 
 - Allow Workers to be instantiated directly via callback ([#206](https://github.com/AllenInstitute/vis/pull/206))
-- Fix version display on changelogs and tweak scatterbrain package command
 
 ### 💼 Other
 
-- Don't filter out unconvenctional commits so we can see everything!
-- Merge branch 'main' into lane/package-tag-changelogs
-- Merge branch 'main' into lane/package-tag-changelogs
-- Merge branch 'main' into lane/package-tag-changelogs
-- Tag scattebrain to make sure it was working
 - Slight changes to the CacheClient interface ([#253](https://github.com/AllenInstitute/vis/pull/253))
-- Merge branch 'main' into lane/package-tag-changelogs
+- Fix name of file on changelog command
 
 ### ⚙️ Miscellaneous Tasks
 
-- _(deps)_ Bump @types/lodash from 4.17.19 to 4.17.20 ([#185](https://github.com/AllenInstitute/vis/pull/185))
-- _(deps)_ Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- *(deps)* Bump @types/lodash from 4.17.19 to 4.17.20 ([#185](https://github.com/AllenInstitute/vis/pull/185))
+- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
 - Create standalone Priority Cache without fetching ([#199](https://github.com/AllenInstitute/vis/pull/199))
 - Adding "type: module" to all packages ([#201](https://github.com/AllenInstitute/vis/pull/201))
 - Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
 - Chore -cached loading (V3 omezarr support) step one ([#205](https://github.com/AllenInstitute/vis/pull/205))
-- _(deps)_ Bump @types/lodash from 4.17.20 to 4.17.21 ([#215](https://github.com/AllenInstitute/vis/pull/215))
-- _(deps)_ Bump lodash and @types/lodash ([#224](https://github.com/AllenInstitute/vis/pull/224))
+- *(deps)* Bump @types/lodash from 4.17.20 to 4.17.21 ([#215](https://github.com/AllenInstitute/vis/pull/215))
+- *(deps)* Bump lodash and @types/lodash ([#224](https://github.com/AllenInstitute/vis/pull/224))
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
-- _(deps)_ Bump lodash and @types/lodash ([#236](https://github.com/AllenInstitute/vis/pull/236))
+- *(deps)* Bump lodash and @types/lodash ([#236](https://github.com/AllenInstitute/vis/pull/236))
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
-- _(deps)_ Bump @biomejs/biome from 2.4.4 to 2.4.9 ([#245](https://github.com/AllenInstitute/vis/pull/245))
+- *(deps)* Bump @biomejs/biome from 2.4.4 to 2.4.9 ([#245](https://github.com/AllenInstitute/vis/pull/245))
+- Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
+- *(deps)* Bump lodash from 4.17.23 to 4.18.1 ([#248](https://github.com/AllenInstitute/vis/pull/248))
 
 ## [0.0.4] - 2025-07-14
 
@@ -58,11 +54,11 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 ### ⚙️ Miscellaneous Tasks
 
 - Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
-- _(deps)_ Bump @types/lodash from 4.14.202 to 4.17.16 ([#153](https://github.com/AllenInstitute/vis/pull/153))
-- _(deps)_ Bump @types/lodash from 4.17.16 to 4.17.17 ([#168](https://github.com/AllenInstitute/vis/pull/168))
+- *(deps)* Bump @types/lodash from 4.14.202 to 4.17.16 ([#153](https://github.com/AllenInstitute/vis/pull/153))
+- *(deps)* Bump @types/lodash from 4.17.16 to 4.17.17 ([#168](https://github.com/AllenInstitute/vis/pull/168))
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
-- _(deps)_ Bump @types/lodash from 4.17.17 to 4.17.19 ([#177](https://github.com/AllenInstitute/vis/pull/177))
-- _(deps)_ Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
+- *(deps)* Bump @types/lodash from 4.17.17 to 4.17.19 ([#177](https://github.com/AllenInstitute/vis/pull/177))
+- *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
 
 ## [0.0.3] - 2025-04-23
 
