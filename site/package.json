@@ -36,7 +36,7 @@
         "preview": "astro preview",
         "astro": "astro",
         "typecheck": "astro check",
-        "changelog": "git-cliff -o CHANGELOG.md"
+        "changelog": "git-cliff -o CHANGELOG.md && oxfmt CHANGELOG.md"
     },
     "devDependencies": {
         "@types/file-saver": "2.0.7",

@@ -14,16 +14,18 @@ All notable changes to this project will be documented in this file.
 - Scatterbrain rendering in vis, including shader generation ([#223](https://github.com/AllenInstitute/vis/pull/223))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Fix name of file on changelog command
+- Make changelog files uppercase
 
 ### ⚙️ Miscellaneous Tasks
 
 - Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
-- *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
+- _(deps)_ Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
 - Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
 - Update release numbers for release ([#180](https://github.com/AllenInstitute/vis/pull/180))
-- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- _(deps)_ Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
 - Adding "type: module" to all packages ([#201](https://github.com/AllenInstitute/vis/pull/201))
 - Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
@@ -74,7 +76,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
 ### 🚀 Features
 
-- *(geometry)* LineSegmentsIntersect and det ([#21](https://github.com/AllenInstitute/vis/pull/21))
+- _(geometry)_ LineSegmentsIntersect and det ([#21](https://github.com/AllenInstitute/vis/pull/21))
 
 ### 🐛 Bug Fixes
 
@@ -85,6 +87,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Merge pull request [#12](https://github.com/AllenInstitute/vis/pull/12) from AllenInstitute/noah/limit-queue-time
 
 dont hog the main thread - use a soft limit
+
 - Cache limits ([#14](https://github.com/AllenInstitute/vis/pull/14))
 
 * first pass at a system which cant leak cache content references (unlike my first attempt)
@@ -113,21 +116,22 @@ dont hog the main thread - use a soft limit
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
-* Update apps/omezarr-viewer/README.md
+- Update apps/omezarr-viewer/README.md
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
-* fix initial versa view. fix a missing closing-brace that would have made cache-eviction waste a lot of time for no reason
+- fix initial versa view. fix a missing closing-brace that would have made cache-eviction waste a lot of time for no reason
 
-* kick jest out of geometry tests too, switch to vitest, confirm all tests pass
+- kick jest out of geometry tests too, switch to vitest, confirm all tests pass
 
-* remove my debug logging
+- remove my debug logging
 
-* remove isAbortError
+- remove isAbortError
 
----------
+---
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - DZI viewer component ([#29](https://github.com/AllenInstitute/vis/pull/29))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
@@ -141,6 +145,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 * thinking about layers
 
 * PR feedback, disable using the .parcel-cache when building
+
 - Formatting ([#26](https://github.com/AllenInstitute/vis/pull/26))
 - CI workflow [DT-5996] ([#25](https://github.com/AllenInstitute/vis/pull/25))
 - Remove only-allow so builds stop failing ([#47](https://github.com/AllenInstitute/vis/pull/47))
@@ -150,7 +155,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
 ### 🐛 Bug Fixes
 
-- *(vis-geometry)* Adds missing functionality from `bkp-client` ([#10](https://github.com/AllenInstitute/vis/pull/10))
+- _(vis-geometry)_ Adds missing functionality from `bkp-client` ([#10](https://github.com/AllenInstitute/vis/pull/10))
 
 ### 💼 Other
 
@@ -166,9 +171,10 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
 * minor cleanup
 
----------
+---
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Bump version
 
 ### ⚙️ Miscellaneous Tasks
@@ -192,7 +198,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Right side up data, in the correct aspect ratio
 - When initializing the repo, names were changed, this fact was not reflected in imports vs. workspace packages.
 - Turn on tsconfig verbatimmodulesyntax. delete super busted old demo.
-add a base tsconfig for the others to extend - still a work in progress.
+  add a base tsconfig for the others to extend - still a work in progress.
 - Merge pull request [#1](https://github.com/AllenInstitute/vis/pull/1) from AllenInstitute/noah/cleanup-mistakes-during-repo-init
 
 Noah/cleanup mistakes during repo init

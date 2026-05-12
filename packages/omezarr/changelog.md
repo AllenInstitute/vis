@@ -19,40 +19,44 @@ All notable changes to this project will be documented in this file.
 - A priority cache with a (better?) api ([#171](https://github.com/AllenInstitute/vis/pull/171))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Added support for Zarr V3 ([#191](https://github.com/AllenInstitute/vis/pull/191))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Update vis-omezarr to v0.0.13 ([#192](https://github.com/AllenInstitute/vis/pull/192))
 - Allow slices from planes by % rather than slice index - as the number of slices is not constant at all scales in most volumes ([#187](https://github.com/AllenInstitute/vis/pull/187))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
+
 - Fix name of file on changelog command
+- Make changelog files uppercase
 
 ### ⚙️ Miscellaneous Tasks
 
 - Add helpful linting rules ([#127](https://github.com/AllenInstitute/vis/pull/127))
-- *(deps)* Bump zod from 3.24.2 to 3.24.3 ([#154](https://github.com/AllenInstitute/vis/pull/154))
+- _(deps)_ Bump zod from 3.24.2 to 3.24.3 ([#154](https://github.com/AllenInstitute/vis/pull/154))
 - Dev command, reorganized docs, added stubs ([#163](https://github.com/AllenInstitute/vis/pull/163))
-- *(deps)* Bump zod from 3.24.3 to 3.25.46 ([#165](https://github.com/AllenInstitute/vis/pull/165))
-- *(deps)* Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
-- *(deps)* Bump zarrita from 0.5.1 to 0.5.2 ([#175](https://github.com/AllenInstitute/vis/pull/175))
+- _(deps)_ Bump zod from 3.24.3 to 3.25.46 ([#165](https://github.com/AllenInstitute/vis/pull/165))
+- _(deps)_ Bump @biomejs/biome from 1.9.4 to 2.0.6 ([#174](https://github.com/AllenInstitute/vis/pull/174))
+- _(deps)_ Bump zarrita from 0.5.1 to 0.5.2 ([#175](https://github.com/AllenInstitute/vis/pull/175))
 - Add Changelogs ([#117](https://github.com/AllenInstitute/vis/pull/117))
 - Update release numbers for release ([#180](https://github.com/AllenInstitute/vis/pull/180))
-- *(deps)* Bump zod from 3.25.50 to 4.0.14 ([#181](https://github.com/AllenInstitute/vis/pull/181))
-- *(deps)* Bump zarrita from 0.5.2 to 0.5.3 ([#189](https://github.com/AllenInstitute/vis/pull/189))
-- *(deps)* Bump zod from 4.0.14 to 4.1.5 ([#188](https://github.com/AllenInstitute/vis/pull/188))
-- *(deps)* Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
-- *(deps)* Bump zod from 4.1.5 to 4.1.11 ([#195](https://github.com/AllenInstitute/vis/pull/195))
+- _(deps)_ Bump zod from 3.25.50 to 4.0.14 ([#181](https://github.com/AllenInstitute/vis/pull/181))
+- _(deps)_ Bump zarrita from 0.5.2 to 0.5.3 ([#189](https://github.com/AllenInstitute/vis/pull/189))
+- _(deps)_ Bump zod from 4.0.14 to 4.1.5 ([#188](https://github.com/AllenInstitute/vis/pull/188))
+- _(deps)_ Bump @biomejs/biome from 2.1.3 to 2.2.2 ([#190](https://github.com/AllenInstitute/vis/pull/190))
+- _(deps)_ Bump zod from 4.1.5 to 4.1.11 ([#195](https://github.com/AllenInstitute/vis/pull/195))
 - Create standalone Priority Cache without fetching ([#199](https://github.com/AllenInstitute/vis/pull/199))
 - Adding "type: module" to all packages ([#201](https://github.com/AllenInstitute/vis/pull/201))
 - Adding in a caching multithreaded Fetch Store ([#200](https://github.com/AllenInstitute/vis/pull/200))
 - Chore -cached loading (V3 omezarr support) step one ([#205](https://github.com/AllenInstitute/vis/pull/205))
 - Renaming render functions from "renderer" to "render command" ([#204](https://github.com/AllenInstitute/vis/pull/204))
-- *(deps)* Bump zod from 4.1.11 to 4.1.12 ([#214](https://github.com/AllenInstitute/vis/pull/214))
-- *(deps)* Bump zarrita from 0.5.3 to 0.5.4 ([#210](https://github.com/AllenInstitute/vis/pull/210))
-- *(deps)* Bump zod from 4.1.12 to 4.1.13 ([#218](https://github.com/AllenInstitute/vis/pull/218))
-- *(deps)* Bump zod from 4.1.13 to 4.3.4 ([#222](https://github.com/AllenInstitute/vis/pull/222))
-- *(deps)* Bump zod from 4.3.5 to 4.3.6 ([#228](https://github.com/AllenInstitute/vis/pull/228))
+- _(deps)_ Bump zod from 4.1.11 to 4.1.12 ([#214](https://github.com/AllenInstitute/vis/pull/214))
+- _(deps)_ Bump zarrita from 0.5.3 to 0.5.4 ([#210](https://github.com/AllenInstitute/vis/pull/210))
+- _(deps)_ Bump zod from 4.1.12 to 4.1.13 ([#218](https://github.com/AllenInstitute/vis/pull/218))
+- _(deps)_ Bump zod from 4.1.13 to 4.3.4 ([#222](https://github.com/AllenInstitute/vis/pull/222))
+- _(deps)_ Bump zod from 4.3.5 to 4.3.6 ([#228](https://github.com/AllenInstitute/vis/pull/228))
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 - Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
