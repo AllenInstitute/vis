@@ -4,37 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Package tag changelog generation [DT-9260] ([#179](https://github.com/AllenInstitute/vis/pull/179))
+
 ### 🐛 Bug Fixes
 
-- Fix version display on changelogs and tweak scatterbrain package command
 - Scatterbrain demo ([#233](https://github.com/AllenInstitute/vis/pull/233))
 - DZI Example Improvement ([#238](https://github.com/AllenInstitute/vis/pull/238))
 
 ### 💼 Other
 
-- Merge branch 'main' into lane/package-tag-changelogs
-- Tag scattebrain to make sure it was working
-- Merge branch 'main' into lane/package-tag-changelogs
+- Fix name of file on changelog command
+- Make changelog files uppercase
+- Add fmt to changelog production command
+- Do git stuff to make sure it's actually changing the file name
 
 ### ⚙️ Miscellaneous Tasks
 
 - Enhance documentation ([#232](https://github.com/AllenInstitute/vis/pull/232))
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
+- Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
+- Update documentatoin for publishing [DT-9260]
 
 ## [0.0.1] - 2026-02-11
 
-### 🚀 Features
-
-- Package tag changelog generation
-
 ### 💼 Other
 
-- Don't filter out unconvenctional commits so we can see everything!
 - Added support for Zarr V3 ([#191](https://github.com/AllenInstitute/vis/pull/191))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
-- Merge branch 'main' into lane/package-tag-changelogs
 - Allow slices from planes by % rather than slice index - as the number of slices is not constant at all scales in most volumes ([#187](https://github.com/AllenInstitute/vis/pull/187))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>

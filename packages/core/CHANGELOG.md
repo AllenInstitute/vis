@@ -6,22 +6,19 @@ All notable changes to this project will be documented in this file.
 
 ### 🚀 Features
 
-- Package tag changelog generation
+- Package tag changelog generation [DT-9260] ([#179](https://github.com/AllenInstitute/vis/pull/179))
 
 ### 🐛 Bug Fixes
 
 - Allow Workers to be instantiated directly via callback ([#206](https://github.com/AllenInstitute/vis/pull/206))
-- Fix version display on changelogs and tweak scatterbrain package command
 
 ### 💼 Other
 
-- Don't filter out unconvenctional commits so we can see everything!
-- Merge branch 'main' into lane/package-tag-changelogs
-- Merge branch 'main' into lane/package-tag-changelogs
-- Merge branch 'main' into lane/package-tag-changelogs
-- Tag scattebrain to make sure it was working
 - Slight changes to the CacheClient interface ([#253](https://github.com/AllenInstitute/vis/pull/253))
-- Merge branch 'main' into lane/package-tag-changelogs
+- Fix name of file on changelog command
+- Make changelog files uppercase
+- Add fmt to changelog production command
+- Do git stuff to make sure it's actually changing the file name
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -37,6 +34,8 @@ All notable changes to this project will be documented in this file.
 - _(deps)_ Bump lodash and @types/lodash ([#236](https://github.com/AllenInstitute/vis/pull/236))
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 - _(deps)_ Bump @biomejs/biome from 2.4.4 to 2.4.9 ([#245](https://github.com/AllenInstitute/vis/pull/245))
+- Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
+- _(deps)_ Bump lodash from 4.17.23 to 4.18.1 ([#248](https://github.com/AllenInstitute/vis/pull/248))
 
 ## [0.0.4] - 2025-07-14
 
