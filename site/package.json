@@ -67,6 +67,5 @@
         "regl": "2.1.1",
         "sharp": "0.34.5",
         "zarrita": "0.5.1"
-    },
-    "packageManager": "pnpm@9.14.2"
+    }
 }
