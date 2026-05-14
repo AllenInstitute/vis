@@ -124,6 +124,22 @@ importers:
         specifier: 4.17.24
         version: 4.17.24
 
+  packages/tiff:
+    dependencies:
+      tiff:
+        specifier: ^7.1.3
+        version: 7.1.3
+      webgpu-utils:
+        specifier: ^0.2.0
+        version: 0.2.4
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.69
+        version: 0.1.69
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   site:
     dependencies:
       '@alleninstitute/vis-core':
@@ -141,6 +157,9 @@ importers:
       '@alleninstitute/vis-scatterbrain':
         specifier: workspace:*
         version: link:../packages/scatterbrain
+      '@alleninstitute/vis-tiff':
+        specifier: workspace:*
+        version: link:../packages/tiff
       '@astrojs/check':
         specifier: 0.9.6
         version: 0.9.6(prettier-plugin-astro@0.14.1)(prettier@3.5.3)(typescript@5.9.3)
@@ -2118,6 +2137,9 @@ packages:
   '@vscode/l10n@0.0.18':
     resolution: {integrity: sha512-KYSIHVmslkaCDyw013pphY+d7x1qV8IZupYfeIfzNA+nsaWHbn5uPuQRvdRFsa9zFzGeudPuoGoZ1Op4jrJXIQ==}
 
+  '@webgpu/types@0.1.69':
+    resolution: {integrity: sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ==}
+
   '@zarrita/storage@0.1.3':
     resolution: {integrity: sha512-ZyCMYN3LuCNtKxro9876r/KyHyXV+ie2Bhk1qYsJR4Jp+sAjoVRRNNSJPsJxk64ZgFFezayO5S2hCu88/1Odwg==}
 
@@ -2753,6 +2775,9 @@ packages:
 
   inline-style-parser@0.2.4:
     resolution: {integrity: sha512-0aO8FkhNZlj/ZIbNi7Lxxr12obT7cL1moPfE4tg1LkX7LlLfC6DeX4l2ZEud1ukP9jNQyNnfzQVqwbwmAATY4Q==}
+
+  iobuffer@6.0.1:
+    resolution: {integrity: sha512-SZWYkWNfjIXIBYSDpXDYIgshqtbOPsi4lviawAEceR1Kqk+sHDlcQjWrzNQsii80AyBY0q5c8HCTNjqo74ul+Q==}
 
   iron-webcrypto@1.2.1:
     resolution: {integrity: sha512-feOM6FaSr6rEABp/eDfVseKyTMDt+KGpeB35SkVn9Tyn0CqvVsY3EwI0v5i8nMHyJnzCIQf7nsy3p41TPkJZhg==}
@@ -3641,6 +3666,9 @@ packages:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
 
+  tiff@7.1.3:
+    resolution: {integrity: sha512-YEEq3fT++2pdta/9P/vGG4QRMdZQoe6W6JNaWnIi6NvAsbeNITwFCtmWwL/BZvOi+uo2I3ohyOkD3sZfme+c6g==}
+
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
 
@@ -4089,6 +4117,9 @@ packages:
 
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
+
+  webgpu-utils@0.2.4:
+    resolution: {integrity: sha512-nER0/yVy4tZZbR/j9ktmFnM0Nj7zOOgiE4jbtuHhwr3xf0jaW4bEkR89v8z+/LSFX1InKmEpj9al12wvLZO7Jg==}
 
   which-pm-runs@1.1.0:
     resolution: {integrity: sha512-n1brCuqClxfFfq/Rb0ICg9giSZqCS+pLtccdag6C2HyufBrh3fBOiy9nb6ggRMvWOVH5GrdJskj5iGTZNxd7SA==}
@@ -6133,6 +6164,8 @@ snapshots:
 
   '@vscode/l10n@0.0.18': {}
 
+  '@webgpu/types@0.1.69': {}
+
   '@zarrita/storage@0.1.3':
     dependencies:
       reference-spec-reader: 0.2.0
@@ -6982,6 +7015,8 @@ snapshots:
   import-meta-resolve@4.2.0: {}
 
   inline-style-parser@0.2.4: {}
+
+  iobuffer@6.0.1: {}
 
   iron-webcrypto@1.2.1: {}
 
@@ -8280,6 +8315,11 @@ snapshots:
 
   term-size@2.2.1: {}
 
+  tiff@7.1.3:
+    dependencies:
+      fflate: 0.8.2
+      iobuffer: 6.0.1
+
   tiny-inflate@1.0.3: {}
 
   tinybench@2.9.0: {}
@@ -8609,6 +8649,8 @@ snapshots:
   weak-lru-cache@1.2.2: {}
 
   web-namespaces@2.0.1: {}
+
+  webgpu-utils@0.2.4: {}
 
   which-pm-runs@1.1.0: {}
 
