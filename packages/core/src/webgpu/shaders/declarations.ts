@@ -20,11 +20,46 @@ export type IdentifierDeclaration = {
     readonly name: string;
 };
 
+export type StructMemberDeclaration = IdentifierDeclaration &
+    DeclarationGenerator & {
+        type: TypeIdentifier;
+        attributes?: VariableOrValueAttribute[];
+    };
+
+export type StructDeclaration = IdentifierDeclaration &
+    DeclarationGenerator & {
+        __identType: 'struct';
+        name: string;
+        fields: StructMemberDeclaration[];
+    };
+
+export type TypeIdentifier = string | StructDeclaration;
+
+export type FunctionParameterDeclaration = IdentifierDeclaration &
+    DeclarationGenerator & {
+        type: TypeIdentifier;
+        attributes?: VariableOrValueAttribute[];
+    };
+
+export type FunctionReturnTypeDeclaration = DeclarationGenerator & {
+    type: TypeIdentifier;
+    attributes?: VariableOrValueAttribute[];
+};
+
+export type FunctionDeclaration = IdentifierDeclaration &
+    DeclarationGenerator & {
+        __identType: 'function';
+        parameters: FunctionParameterDeclaration[];
+        body: string;
+        returnType?: FunctionReturnTypeDeclaration;
+        attributes?: FunctionAttribute[];
+    };
+
 export type ConstValueDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'value';
         readonly assignmentType: 'const';
-        readonly type?: string;
+        readonly type?: TypeIdentifier;
         readonly initializer: unknown;
     };
 
@@ -35,11 +70,11 @@ export type OverrideValueDeclaration = IdentifierDeclaration &
         readonly attributes?: VariableOrValueAttribute[];
     } & (
         | {
-              readonly type: string;
+              readonly type: TypeIdentifier;
               readonly initializer?: unknown;
           }
         | {
-              readonly type?: string;
+              readonly type?: TypeIdentifier;
               readonly initializer: unknown;
           }
     );
@@ -53,7 +88,7 @@ export type PrivateVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'variable';
         readonly assignmentType: 'private';
-        readonly type?: string;
+        readonly type?: TypeIdentifier;
         readonly initializer?: unknown;
     };
 
@@ -61,7 +96,7 @@ export type WorkgroupVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'variable';
         readonly assignmentType: 'workgroup';
-        readonly type: string;
+        readonly type: TypeIdentifier;
     };
 
 // NOTE: currently, these "Resource Interface" declarations hard-code their group and binding, but
@@ -77,7 +112,7 @@ export type UniformVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'variable';
         readonly assignmentType: 'uniform';
-        readonly type: string;
+        readonly type: TypeIdentifier;
         readonly attributes?: VariableOrValueAttribute[];
     };
 
@@ -104,7 +139,7 @@ export type StorageVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'variable';
         readonly assignmentType: 'storage';
-        readonly type: string;
+        readonly type: TypeIdentifier;
         readonly accessMode?: 'read' | 'write' | 'read_write';
         readonly attributes?: VariableOrValueAttribute[];
     };
@@ -115,44 +150,11 @@ export type ResourceDeclaration =
     | SamplerVariableDeclaration
     | StorageVariableDeclaration;
 
-export type StructMemberDeclaration = IdentifierDeclaration &
-    DeclarationGenerator & {
-        type: string;
-        attributes?: VariableOrValueAttribute[];
-    };
-
-export type StructDeclaration = IdentifierDeclaration &
-    DeclarationGenerator & {
-        __identType: 'struct';
-        name: string;
-        fields: StructMemberDeclaration[];
-    };
-
-export type FunctionParameterDeclaration = IdentifierDeclaration &
-    DeclarationGenerator & {
-        type: string;
-        attributes?: VariableOrValueAttribute[];
-    };
-
-export type FunctionReturnTypeDeclaration = DeclarationGenerator & {
-    type: string;
-    attributes?: VariableOrValueAttribute[];
-};
-
-export type FunctionDeclaration = IdentifierDeclaration &
-    DeclarationGenerator & {
-        __identType: 'function';
-        parameters: FunctionParameterDeclaration[];
-        body: string;
-        returnType?: FunctionReturnTypeDeclaration;
-        attributes?: FunctionAttribute[];
-    };
-
 export type Declaration = ValueDeclaration | StructDeclaration | ResourceDeclaration | FunctionDeclaration;
 
 /// CONSTRUCTORS
 
-export function constant(name: string, initializer: unknown, type?: string): ConstValueDeclaration {
+export function constant(name: string, initializer: unknown, type?: TypeIdentifier): ConstValueDeclaration {
     return {
         __identType: 'value',
         assignmentType: 'const',
@@ -165,7 +167,7 @@ export function constant(name: string, initializer: unknown, type?: string): Con
 
 export function override(
     name: string,
-    type?: string,
+    type?: TypeIdentifier,
     initializer?: unknown,
     attributes?: VariableOrValueAttribute[]
 ): OverrideValueDeclaration {
@@ -194,7 +196,7 @@ export function override(
     };
 }
 
-export function privateVar(name: string, type?: string, initializer?: unknown): PrivateVariableDeclaration {
+export function privateVar(name: string, type?: TypeIdentifier, initializer?: unknown): PrivateVariableDeclaration {
     return {
         __identType: 'variable',
         assignmentType: 'private',
@@ -206,7 +208,7 @@ export function privateVar(name: string, type?: string, initializer?: unknown): 
     };
 }
 
-export function workgroupVar(name: string, type: string): WorkgroupVariableDeclaration {
+export function workgroupVar(name: string, type: TypeIdentifier): WorkgroupVariableDeclaration {
     return {
         __identType: 'variable',
         assignmentType: 'workgroup',
@@ -218,7 +220,7 @@ export function workgroupVar(name: string, type: string): WorkgroupVariableDecla
 
 export function uniform(
     name: string,
-    type: string,
+    type: TypeIdentifier,
     group: number,
     binding: number,
     attributes?: VariableOrValueAttribute[]
@@ -278,7 +280,7 @@ export function sampler(
 
 export function storage(
     name: string,
-    type: string,
+    type: TypeIdentifier,
     group: number,
     binding: number,
     accessMode?: 'read' | 'write' | 'read_write',
@@ -298,7 +300,7 @@ export function storage(
     };
 }
 
-export function member(name: string, type: string, attributes?: VariableOrValueAttribute[]): StructMemberDeclaration {
+export function member(name: string, type: TypeIdentifier, attributes?: VariableOrValueAttribute[]): StructMemberDeclaration {
     return {
         name,
         type,
@@ -318,7 +320,7 @@ export function struct(name: string, fields: StructMemberDeclaration[]): StructD
 
 export function param(
     name: string,
-    type: string,
+    type: TypeIdentifier,
     attributes?: VariableOrValueAttribute[]
 ): FunctionParameterDeclaration {
     return {
@@ -329,7 +331,7 @@ export function param(
     };
 }
 
-export function returns(type: string, attributes?: VariableOrValueAttribute[]): FunctionReturnTypeDeclaration {
+export function returns(type: TypeIdentifier, attributes?: VariableOrValueAttribute[]): FunctionReturnTypeDeclaration {
     return {
         type,
         ...(attributes !== undefined && { attributes }),
