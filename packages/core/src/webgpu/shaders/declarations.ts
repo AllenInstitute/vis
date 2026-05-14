@@ -1,10 +1,17 @@
 /**
- * This file defines the various types of declarations that can be used in our shader generation system, 
- * including variables, constants, structs, and functions. Each declaration type includes a __gen method 
+ * This file defines the various types of declarations that can be used in our shader generation system,
+ * including variables, constants, structs, and functions. Each declaration type includes a __gen method
  * that generates the corresponding WGSL code for that declaration.
  */
 
-import { compute, fragment, vertex, type DeclarationAttribute, type FunctionAttribute, type VariableOrValueAttribute } from './attributes';
+import {
+    compute,
+    fragment,
+    vertex,
+    type DeclarationAttribute,
+    type FunctionAttribute,
+    type VariableOrValueAttribute,
+} from './attributes';
 
 function renderAttrs(attrs: DeclarationAttribute[] | undefined): string {
     return attrs && attrs.length > 0 ? attrs.map((attr) => `${attr.__gen()}`).join(' ') + ' ' : '';
@@ -174,7 +181,8 @@ export function override(
     if (type === undefined && initializer === undefined) {
         throw new Error('Override declaration must have at least a type or an initializer');
     }
-    const __gen = () => `${renderAttrs(attributes)}var<override> ${name}${type !== undefined ? `: ${type}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''}`;
+    const __gen = () =>
+        `${renderAttrs(attributes)}var<override> ${name}${type !== undefined ? `: ${type}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''}`;
     if (type === undefined) {
         return {
             __identType: 'value',
@@ -233,8 +241,7 @@ export function uniform(
         group,
         binding,
         ...(attributes !== undefined && { attributes }),
-        __gen: () =>
-            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<uniform> ${name}: ${type}`,
+        __gen: () => `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<uniform> ${name}: ${type}`,
     };
 }
 
@@ -253,8 +260,7 @@ export function texture(
         group,
         binding,
         ...(attributes !== undefined && { attributes }),
-        __gen: () =>
-            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${type}`,
+        __gen: () => `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${type}`,
     };
 }
 
@@ -272,8 +278,7 @@ export function sampler(
         type,
         group,
         binding,
-        __gen: () =>
-            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${type}`,
+        __gen: () => `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${type}`,
         ...(attributes !== undefined && { attributes }),
     };
 }
@@ -300,7 +305,11 @@ export function storage(
     };
 }
 
-export function member(name: string, type: TypeIdentifier, attributes?: VariableOrValueAttribute[]): StructMemberDeclaration {
+export function member(
+    name: string,
+    type: TypeIdentifier,
+    attributes?: VariableOrValueAttribute[]
+): StructMemberDeclaration {
     return {
         name,
         type,

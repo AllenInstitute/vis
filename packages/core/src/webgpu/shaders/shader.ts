@@ -1,16 +1,16 @@
 /**
  * This file defines the `WgslShader` type, which represents a shader program in WGSL.
- * Also included are methods for serializing and deserializing the shader definition, as 
- * well as generating the WGSL source code from a `WgslShader` object and its declarations. 
- * The `shader` function is a simple helper function for creating a new `WgslShader` 
+ * Also included are methods for serializing and deserializing the shader definition, as
+ * well as generating the WGSL source code from a `WgslShader` object and its declarations.
+ * The `shader` function is a simple helper function for creating a new `WgslShader`
  * object from an array of declarations.
  */
 
-import type { Declaration } from "./declarations";
+import type { Declaration } from './declarations';
 
 export type WgslShader = {
     declarations: Declaration[];
-}
+};
 
 // NOTE: In the future, we may want to add further typeguards for the different declarations
 // so that we can confirm the structure of the whole shader; for now, this is sufficient for

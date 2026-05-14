@@ -74,7 +74,7 @@ export {
     vertexEntry,
     fragmentEntry,
     computeEntry,
-    constructors as $s
+    constructors as $s,
 } from './declarations';
 
 export { WGSLShader, shader } from './shader';
