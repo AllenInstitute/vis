@@ -225,7 +225,7 @@ export function builtin(name: ShaderBuiltins): BuiltinAttribute {
 }
 
 export function constAttr(): ConstAttribute {
-    return { const: true, __gen: () => `@const` };
+    return { const: true, __gen: () => '@const' };
 }
 
 export function diagnostic(severity: ShaderSeverityControlName, message: string): DiagnosticAttribute {
@@ -274,7 +274,7 @@ export function interpolate(
 }
 
 export function invariant(): InvariantAttribute {
-    return { invariant: true, __gen: () => `@invariant` };
+    return { invariant: true, __gen: () => '@invariant' };
 }
 
 export function location(n: number): LocationAttribute {
@@ -285,7 +285,7 @@ export function location(n: number): LocationAttribute {
 }
 
 export function mustUse(): MustUseAttribute {
-    return { must_use: true, __gen: () => `@must_use` };
+    return { must_use: true, __gen: () => '@must_use' };
 }
 
 export function size(n: number): SizeAttribute {
@@ -308,15 +308,15 @@ export function workgroupSize(
 }
 
 export function vertex(): VertexAttribute {
-    return { vertex: true, __gen: () => `@vertex` };
+    return { vertex: true, __gen: () => '@vertex' };
 }
 
 export function fragment(): FragmentAttribute {
-    return { fragment: true, __gen: () => `@fragment` };
+    return { fragment: true, __gen: () => '@fragment' };
 }
 
 export function compute(): ComputeAttribute {
-    return { compute: true, __gen: () => `@compute` };
+    return { compute: true, __gen: () => '@compute' };
 }
 
 export const constructors = {
