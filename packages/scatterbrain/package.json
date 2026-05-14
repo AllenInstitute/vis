@@ -61,7 +61,6 @@
         "registry": "https://registry.npmjs.org",
         "access": "public"
     },
-    "packageManager": "pnpm@9.14.2",
     "devDependencies": {
         "@types/lodash": "4.17.24"
     }
