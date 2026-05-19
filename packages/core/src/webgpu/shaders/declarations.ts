@@ -17,6 +17,13 @@ function renderAttrs(attrs: DeclarationAttribute[] | undefined): string {
     return attrs && attrs.length > 0 ? attrs.map((attr) => `${attr.__gen()}`).join(' ') + ' ' : '';
 }
 
+function renderTypeIdentifier(type: TypeIdentifier): string {
+    if (typeof type === 'string') {
+        return type;
+    }
+    return type.name;
+}
+
 /// TYPES
 
 export type DeclarationGenerator = {
@@ -40,7 +47,13 @@ export type StructDeclaration = IdentifierDeclaration &
         fields: StructMemberDeclaration[];
     };
 
-export type TypeIdentifier = string | StructDeclaration;
+export type AliasDeclaration = IdentifierDeclaration &
+    DeclarationGenerator & {
+        __identType: 'alias';
+        aliasedType: TypeIdentifier;
+    };
+
+export type TypeIdentifier = string | StructDeclaration | AliasDeclaration;
 
 export type FunctionParameterDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
@@ -57,7 +70,7 @@ export type FunctionDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'function';
         parameters: FunctionParameterDeclaration[];
-        body: string;
+        body: () => string;
         returnType?: FunctionReturnTypeDeclaration;
         attributes?: FunctionAttribute[];
     };
@@ -168,7 +181,7 @@ export function constant(name: string, initializer: unknown, type?: TypeIdentifi
         name,
         ...(type !== undefined && { type }),
         initializer,
-        __gen: () => `const ${name}${type !== undefined ? `: ${type}` : ''} = ${initializer}`,
+        __gen: () => `const ${name}${type !== undefined ? `: ${renderTypeIdentifier(type)}` : ''} = ${initializer};`,
     };
 }
 
@@ -182,7 +195,7 @@ export function override(
         throw new Error('Override declaration must have at least a type or an initializer');
     }
     const __gen = () =>
-        `${renderAttrs(attributes)}var<override> ${name}${type !== undefined ? `: ${type}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''}`;
+        `${renderAttrs(attributes)}var<override> ${name}${type !== undefined ? `: ${renderTypeIdentifier(type)}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''};`;
     if (type === undefined) {
         return {
             __identType: 'value',
@@ -212,7 +225,7 @@ export function privateVar(name: string, type?: TypeIdentifier, initializer?: un
         ...(type !== undefined && { type }),
         ...(initializer !== undefined && { initializer }),
         __gen: () =>
-            `var<private> ${name}${type !== undefined ? `: ${type}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''}`,
+            `var<private> ${name}${type !== undefined ? `: ${renderTypeIdentifier(type)}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''};`,
     };
 }
 
@@ -222,7 +235,7 @@ export function workgroupVar(name: string, type: TypeIdentifier): WorkgroupVaria
         assignmentType: 'workgroup',
         name,
         type,
-        __gen: () => `var<workgroup> ${name}: ${type}`,
+        __gen: () => `var<workgroup> ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
 
@@ -241,7 +254,8 @@ export function uniform(
         group,
         binding,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<uniform> ${name}: ${type}`,
+        __gen: () =>
+            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<uniform> ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
 
@@ -260,7 +274,8 @@ export function texture(
         group,
         binding,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${type}`,
+        __gen: () =>
+            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
 
@@ -278,7 +293,8 @@ export function sampler(
         type,
         group,
         binding,
-        __gen: () => `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${type}`,
+        __gen: () =>
+            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${renderTypeIdentifier(type)};`,
         ...(attributes !== undefined && { attributes }),
     };
 }
@@ -301,7 +317,7 @@ export function storage(
         ...(accessMode !== undefined && { accessMode }),
         ...(attributes !== undefined && { attributes }),
         __gen: () =>
-            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<storage${accessMode !== undefined ? `, ${accessMode}` : ''}> ${name}: ${type}`,
+            `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<storage${accessMode !== undefined ? `, ${accessMode}` : ''}> ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
 
@@ -314,7 +330,7 @@ export function member(
         name,
         type,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}${name}: ${type}`,
+        __gen: () => `${renderAttrs(attributes)}${name}: ${renderTypeIdentifier(type)}`,
     };
 }
 
@@ -327,6 +343,15 @@ export function struct(name: string, fields: StructMemberDeclaration[]): StructD
     };
 }
 
+export function alias(name: string, aliasedType: TypeIdentifier): AliasDeclaration {
+    return {
+        __identType: 'alias',
+        name,
+        aliasedType,
+        __gen: () => `alias ${name} = ${renderTypeIdentifier(aliasedType)};`,
+    };
+}
+
 export function param(
     name: string,
     type: TypeIdentifier,
@@ -336,7 +361,7 @@ export function param(
         name,
         type,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}${name}: ${type}`,
+        __gen: () => `${renderAttrs(attributes)}${name}: ${renderTypeIdentifier(type)}`,
     };
 }
 
@@ -344,14 +369,14 @@ export function returns(type: TypeIdentifier, attributes?: VariableOrValueAttrib
     return {
         type,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}${type}`,
+        __gen: () => `${renderAttrs(attributes)}${renderTypeIdentifier(type)}`,
     };
 }
 
 export function func(
     name: string,
     parameters: FunctionParameterDeclaration[],
-    body: string,
+    body: () => string,
     returnType?: FunctionReturnTypeDeclaration,
     attributes?: FunctionAttribute[]
 ): FunctionDeclaration {
@@ -365,7 +390,7 @@ export function func(
         __gen: () => {
             const params = parameters.map((p) => p.__gen()).join(', ');
             const ret = returnType ? ` -> ${returnType.__gen()}` : '';
-            return `${renderAttrs(attributes)}fn ${name}(${params})${ret} { ${body} }`;
+            return `${renderAttrs(attributes)}fn ${name}(${params})${ret} { ${body()} }`;
         },
     };
 }
@@ -373,7 +398,7 @@ export function func(
 export function vertexEntry(
     name: string,
     parameters: FunctionParameterDeclaration[],
-    body: string,
+    body: () => string,
     returnType?: FunctionReturnTypeDeclaration
 ): FunctionDeclaration {
     return func(name, parameters, body, returnType, [vertex()]);
@@ -382,7 +407,7 @@ export function vertexEntry(
 export function fragmentEntry(
     name: string,
     parameters: FunctionParameterDeclaration[],
-    body: string,
+    body: () => string,
     returnType?: FunctionReturnTypeDeclaration
 ): FunctionDeclaration {
     return func(name, parameters, body, returnType, [fragment()]);
@@ -391,7 +416,7 @@ export function fragmentEntry(
 export function computeEntry(
     name: string,
     parameters: FunctionParameterDeclaration[],
-    body: string,
+    body: () => string,
     returnType?: FunctionReturnTypeDeclaration
 ): FunctionDeclaration {
     return func(name, parameters, body, returnType, [compute()]);

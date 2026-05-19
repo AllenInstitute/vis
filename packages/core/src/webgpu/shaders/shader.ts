@@ -21,23 +21,11 @@ export function isWgslShader(value: unknown): value is WgslShader {
 
 export function asSource(shader: WgslShader): string {
     if (isWgslShader(shader)) {
-        return shader.declarations.map((d) => d.__gen()).join(';\n');
+        return shader.declarations.map((d) => d.__gen()).join('\n');
     }
     throw new Error('Invalid shader object');
 }
 
 export function shader(declarations: Declaration[]): WgslShader {
     return { declarations };
-}
-
-export function serializeShader(shader: WgslShader): string {
-    return JSON.stringify(shader);
-}
-
-export function deserializeShader(serialized: string): WgslShader {
-    const parsed = JSON.parse(serialized);
-    if (isWgslShader(parsed)) {
-        return parsed;
-    }
-    throw new Error('Invalid serialized shader');
 }

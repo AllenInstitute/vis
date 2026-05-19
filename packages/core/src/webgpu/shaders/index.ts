@@ -39,6 +39,8 @@ export type {
     Declaration,
 } from './declarations';
 
+export type { WgslShader } from './shader';
+
 export {
     align,
     blendSrc,
@@ -77,4 +79,4 @@ export {
     constructors as $s,
 } from './declarations';
 
-export { WGSLShader, shader } from './shader';
+export { asSource, isWgslShader, shader } from './shader';
