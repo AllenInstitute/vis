@@ -1,0 +1,82 @@
+export type {
+    AlignAttribute,
+    BlendSrcAttribute,
+    BuiltinAttribute,
+    ConstAttribute,
+    DiagnosticAttribute,
+    IdAttribute,
+    InterpolateAttribute,
+    InvariantAttribute,
+    LocationAttribute,
+    MustUseAttribute,
+    SizeAttribute,
+    WorkgroupSizeAttribute,
+    VertexAttribute,
+    FragmentAttribute,
+    ComputeAttribute,
+    VariableOrValueAttribute,
+    FunctionAttribute,
+} from './attributes';
+
+export type {
+    IdentifierDeclaration,
+    ConstValueDeclaration,
+    OverrideValueDeclaration,
+    ValueDeclaration,
+    PrivateVariableDeclaration,
+    WorkgroupVariableDeclaration,
+    ResourceIdentifierDeclaration,
+    UniformVariableDeclaration,
+    TextureVariableDeclaration,
+    SamplerVariableDeclaration,
+    StorageVariableDeclaration,
+    ResourceDeclaration,
+    StructMemberDeclaration,
+    StructDeclaration,
+    FunctionParameterDeclaration,
+    FunctionReturnTypeDeclaration,
+    FunctionDeclaration,
+    Declaration,
+} from './declarations';
+
+export type { WgslShader } from './shader';
+
+export {
+    align,
+    blendSrc,
+    builtin,
+    constAttr,
+    diagnostic,
+    id,
+    interpolate,
+    invariant,
+    location,
+    mustUse,
+    size,
+    vertex,
+    fragment,
+    compute,
+    workgroupSize,
+    constructors as $a,
+} from './attributes';
+
+export {
+    constant,
+    override,
+    privateVar,
+    workgroupVar,
+    uniform,
+    texture,
+    sampler,
+    member,
+    struct,
+    param,
+    returns,
+    func,
+    vertexEntry,
+    fragmentEntry,
+    computeEntry,
+    constructors as $s,
+} from './declarations';
+
+export { asSource, isWgslShader, shader } from './shader';
