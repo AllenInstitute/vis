@@ -53,7 +53,9 @@ export type AliasDeclaration = IdentifierDeclaration &
         aliasedType: TypeIdentifier;
     };
 
-export type TypeIdentifier = string | StructDeclaration | AliasDeclaration;
+export type WgslType = string; // TODO: enumerate builtins someday, eg. 'vec2i' | 'vec3f' ...
+
+export type TypeIdentifier = WgslType | StructDeclaration | AliasDeclaration;
 
 export type FunctionParameterDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
