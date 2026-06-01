@@ -353,7 +353,7 @@ export async function loadSlice(
         throw new VisZarrDataError(message);
     }
     const { raw } = await loadZarrArrayFileFromStore(store, arr.path, metadata.zarrVersion, false);
-    const result = await zarr.get(raw, buildQuery(r, axes, level.shape), { opts: { signal: signal ?? null } });
+    const result = await zarr.get(raw, buildQuery(r, axes, level.shape), signal ? { opts: { signal } } : undefined);
     if (typeof result === 'number') {
         throw new Error('oh noes, slice came back all weird');
     }
