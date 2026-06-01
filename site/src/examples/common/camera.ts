@@ -23,7 +23,7 @@ export function zoom(view: box2D, screenSize: vec2, zoomScale: number, mousePos:
     // scale the box with our new zoom point as the center
     const newView = Box2D.translate(
         Box2D.scale(Box2D.translate(view, Vec2.scale(zoomPoint, -1)), [zoomScale, zoomScale]),
-        zoomPoint,
+        zoomPoint
     );
 
     return newView;

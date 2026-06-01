@@ -38,7 +38,7 @@
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
-        "changelog": "git-cliff -o changelog.md"
+        "changelog": "git-cliff -o CHANGELOG.md --tag-pattern @alleninstitute/vis-omezarr@* && oxfmt CHANGELOG.md"
     },
     "repository": {
         "type": "git",
@@ -54,6 +54,5 @@
         "regl": "2.1.1",
         "zarrita": "0.6.1",
         "zod": "4.3.6"
-    },
-    "packageManager": "pnpm@9.14.2"
+    }
 }

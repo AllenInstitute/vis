@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-scatterbrain",
-    "version": "0.0.2",
+    "version": "0.1.0",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -43,7 +43,7 @@
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
-        "changelog": "git-cliff -o changelog.md"
+        "changelog": "git-cliff -o CHANGELOG.md --tag-pattern @alleninstitute/vis-scatterbrain@* && oxfmt CHANGELOG.md"
     },
     "repository": {
         "type": "git",
@@ -52,7 +52,7 @@
     "dependencies": {
         "@alleninstitute/vis-core": "workspace:*",
         "@alleninstitute/vis-geometry": "workspace:*",
-        "lodash": "4.17.23",
+        "lodash": "4.18.1",
         "regl": "2.1.0",
         "ts-pattern": "5.9.0",
         "zod": "4.3.6"
@@ -61,7 +61,6 @@
         "registry": "https://registry.npmjs.org",
         "access": "public"
     },
-    "packageManager": "pnpm@9.14.2",
     "devDependencies": {
         "@types/lodash": "4.17.24"
     }

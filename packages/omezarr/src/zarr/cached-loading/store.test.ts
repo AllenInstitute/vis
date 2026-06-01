@@ -21,7 +21,7 @@ class Whatever implements RequestHandler<FetchMessage, FetchResponseMessage> {
         message: FetchMessage,
         _responseValidator: (obj: unknown) => obj is FetchResponseMessage,
         _transfers: Transferable[],
-        signal?: AbortSignal | undefined,
+        signal?: AbortSignal | undefined
     ): Promise<FetchResponseMessage> {
         // so the generic parameters here cant work - the compile-time types of the interface to the worker are determined at construction time, not request time.
         // you can make the types work out here, but its a foot-gun. if you pass a responseValidator that the worker cant handle, the types will work out, but none of your promises will ever
@@ -127,7 +127,7 @@ describe('basics', () => {
             a.then(
                 // biome-ignore lint/suspicious/noConsole: Provides test outcome context
                 (x) => console.log('a should be cancelled, but instead its', x),
-                () => {},
+                () => {}
             );
             expect(B instanceof Uint8Array).toBeTruthy();
             expect(pool.log).toHaveLength(1);

@@ -60,13 +60,13 @@ function dropZ(box: box3D) {
 function getVisibleItemsInTree(
     dataset: { root: TreeNode; boundingBox: volumeBound },
     camera: { view: box2D; screenResolution: vec2 },
-    limit: number,
+    limit: number
 ) {
     const { root, boundingBox } = dataset;
     const hits: { node: TreeNode; bounds: box2D }[] = [];
     const rootBounds = Box3D.create(
         [boundingBox.lx, boundingBox.ly, boundingBox.lz],
-        [boundingBox.ux, boundingBox.uy, boundingBox.uz],
+        [boundingBox.ux, boundingBox.uy, boundingBox.uz]
     );
     visitBFSMaybe<TreeNode>(root, children, (t) => {
         const B = dropZ(bounds(rootBounds, sanitizeName(t.file)));
@@ -83,7 +83,7 @@ function getVisibleItemsInTree(
 export function getVisibleItems(
     dataset: Dataset,
     camera: { view: box2D; screenResolution: vec2; layout?: Record<string, vec2> },
-    visibilitySizeThreshold: number,
+    visibilitySizeThreshold: number
 ) {
     // determine
     if (dataset.type === 'normal') {
@@ -110,8 +110,8 @@ export function getVisibleItems(
             ...getVisibleItemsInTree(
                 slide.tree,
                 { ...camera, view: Box2D.translate(camera.view, offset) },
-                visibilitySizeThreshold,
-            ),
+                visibilitySizeThreshold
+            )
         );
     }
     return hits;
@@ -141,7 +141,7 @@ const commonMetadataSchema = z.object({
         return reduce<PointAttribute, Record<string, PointAttribute>>(
             attrs,
             (acc, attr) => ({ ...acc, [attr.name]: attr }),
-            {},
+            {}
         );
     }),
 });

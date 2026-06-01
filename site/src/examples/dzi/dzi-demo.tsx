@@ -72,7 +72,10 @@ export function DziDemo() {
         <RenderServerProvider>
             <div style={{ display: 'flex', flexDirection: 'row' }}>
                 {images.map((v) => (
-                    <div key={v.imagesUrl} style={{ width: SCREEN_SIZE[0], height: SCREEN_SIZE[1], marginTop: 0 }}>
+                    <div
+                        key={v.imagesUrl}
+                        style={{ width: SCREEN_SIZE[0], height: SCREEN_SIZE[1], marginTop: 0 }}
+                    >
                         <DziViewer
                             id={v.imagesUrl}
                             dzi={v}

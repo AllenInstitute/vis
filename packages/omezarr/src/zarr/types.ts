@@ -371,7 +371,7 @@ export class OmeZarrMetadata {
      */
     #getShapeElementMax(
         getShapeElement: (a: OmeZarrArrayMetadata, multiscaleIndex: number) => number,
-        multiscale?: number | string,
+        multiscale?: number | string
     ): number {
         const multiscaleIndex = this.#getValidMultiscaleIndex(multiscale);
         return this.#attrs.multiscales[multiscaleIndex].datasets

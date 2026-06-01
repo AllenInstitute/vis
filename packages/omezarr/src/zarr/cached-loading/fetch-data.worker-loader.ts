@@ -17,7 +17,7 @@ const fetchFile = async (
     rootUrl: string,
     path: AbsolutePath,
     options?: TransferrableRequestInit | undefined,
-    abortController?: AbortController | undefined,
+    abortController?: AbortController | undefined
 ): Promise<Uint8Array | undefined> => {
     const store = new FetchStore(rootUrl);
     return store.get(path, { ...(options || {}), signal: abortController?.signal ?? null });
@@ -28,7 +28,7 @@ const fetchSlice = async (
     path: AbsolutePath,
     range: RangeQuery,
     options?: TransferrableRequestInit | undefined,
-    abortController?: AbortController | undefined,
+    abortController?: AbortController | undefined
 ): Promise<Uint8Array | undefined> => {
     const store = new FetchStore(rootUrl);
     const wait = async (ms: number) =>
@@ -78,7 +78,7 @@ const handleFetch = (message: FetchMessage, abortControllers: Record<string, Abo
                     id,
                     payload: result?.buffer,
                 },
-                { ...options },
+                { ...options }
             );
         })
         .catch((e) => {

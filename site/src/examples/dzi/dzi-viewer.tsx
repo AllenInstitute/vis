@@ -93,7 +93,7 @@ export function DziViewer({
                         e.server.copyToClient(compose);
                     }
                 },
-                canvas.current,
+                canvas.current
             );
         }
     }, [server, svgOverlay, dzi, camera]);

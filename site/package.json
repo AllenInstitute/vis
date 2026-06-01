@@ -36,7 +36,7 @@
         "preview": "astro preview",
         "astro": "astro",
         "typecheck": "astro check",
-        "changelog": "git-cliff -o changelog.md"
+        "changelog": "git-cliff -o CHANGELOG.md && oxfmt CHANGELOG.md"
     },
     "devDependencies": {
         "@types/file-saver": "2.0.7",
@@ -68,6 +68,5 @@
         "regl": "2.1.1",
         "sharp": "0.34.5",
         "zarrita": "0.5.1"
-    },
-    "packageManager": "pnpm@9.14.2"
+    }
 }

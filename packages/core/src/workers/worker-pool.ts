@@ -97,7 +97,7 @@ export class WorkerPool {
         message: WorkerMessage,
         responseValidator: MessageValidator<WorkerMessageWithId>,
         transfers: Transferable[],
-        signal?: AbortSignal | undefined,
+        signal?: AbortSignal | undefined
     ): Promise<WorkerMessageWithId> {
         if (this.#workers.length < 1) {
             return Promise.reject('this woorker pool has been disposed');

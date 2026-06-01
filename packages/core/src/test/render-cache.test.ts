@@ -102,7 +102,7 @@ describe('async cache', () => {
     let cache = new AsyncDataCache<Columns, string, Data>(
         (_item: Data) => {},
         () => 1,
-        10,
+        10
     );
     let disposed: Data[] = [];
     let rendered: SpyOnRenderer[] = []; // these are just for spying
@@ -115,7 +115,7 @@ describe('async cache', () => {
                 disposed.push(item);
             },
             () => 1,
-            10,
+            10
         );
         disposed = [];
         rendered = [];
