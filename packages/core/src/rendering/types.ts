@@ -2,8 +2,6 @@ export type PipelineGraph = {
     groups: GroupNode[];
 }
 
-const x: GPUBufferUsageFlags;
-
 export type Node = GroupNode | BindingNode;
 
 export type GroupNode = {
