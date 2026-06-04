@@ -1,5 +1,5 @@
-import { WgslShader } from '../shaders';
-import { WgpuResource } from './resources';
+import type { WgslShader } from '../shaders';
+import type { WgpuResource } from './resources';
 
 export type BindingGraphResourceNode<T = unknown> = {
     __nodeType: 'resource';
@@ -10,10 +10,14 @@ export type BindingGraphResourceNode<T = unknown> = {
 
 export function isBindingGraphResourceNode(value: unknown): value is BindingGraphResourceNode {
     return (
-        typeof value === 'object' && value !== null &&
-        '__nodeType' in value && value.__nodeType === 'resource' &&
-        'resource' in value && typeof value.resource === 'object' &&
-        'pipelines' in value && Array.isArray(value.pipelines)
+        typeof value === 'object' &&
+        value !== null &&
+        '__nodeType' in value &&
+        value.__nodeType === 'resource' &&
+        'resource' in value &&
+        typeof value.resource === 'object' &&
+        'pipelines' in value &&
+        Array.isArray(value.pipelines)
     );
 }
 

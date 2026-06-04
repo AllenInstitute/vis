@@ -1,5 +1,10 @@
 class GraphNode {
-    constructor(public id: string, public type: string, public data: any, public children: GraphNode[] = []) {}
+    constructor(
+        public id: string,
+        public type: string,
+        public data: any,
+        public children: GraphNode[] = []
+    ) {}
 }
 
 /**
@@ -59,7 +64,7 @@ function mergeGraphs(rootsA: GraphNode[], rootsB: GraphNode[]): GraphNode[] {
             if (seen.has(node.id)) return; // TODO: this should actually be an error, since it indicates that the input graph has a cycle
             seen.add(node.id);
 
-             // TODO: will want to restructure this to avoid .get() for every child, maybe? want this to be as memory/cpu efficient as possible
+            // TODO: will want to restructure this to avoid .get() for every child, maybe? want this to be as memory/cpu efficient as possible
             if (!edges.has(node.id)) edges.set(node.id, new Set());
             for (const child of node.children) {
                 const childSet = edges.get(node.id);
@@ -109,7 +114,7 @@ function mergeGraphs(rootsA: GraphNode[], rootsB: GraphNode[]): GraphNode[] {
     if (topoOrder.length !== nodeMap.size) {
         throw new Error(
             'Cannot merge graphs: the combined edge set contains a cycle. ' +
-            'The two graphs impose contradictory ordering constraints.'
+                'The two graphs impose contradictory ordering constraints.'
         );
     }
 
@@ -120,7 +125,7 @@ function mergeGraphs(rootsA: GraphNode[], rootsB: GraphNode[]): GraphNode[] {
     // them, causing "gaps" in the traversal logic of the new graph
     for (const [parentId, childIds] of edges) {
         const parent = nodeMap.get(parentId)!;
-        parent.children = [...childIds].map(id => nodeMap.get(id)!);
+        parent.children = [...childIds].map((id) => nodeMap.get(id)!);
     }
 
     // ------------------------------------------------------------------
@@ -131,9 +136,7 @@ function mergeGraphs(rootsA: GraphNode[], rootsB: GraphNode[]): GraphNode[] {
         for (const childId of childIds) hasParent.add(childId);
     }
 
-    return [...nodeMap.keys()]
-        .filter(id => !hasParent.has(id))
-        .map(id => nodeMap.get(id)!);
+    return [...nodeMap.keys()].filter((id) => !hasParent.has(id)).map((id) => nodeMap.get(id)!);
 }
 
 /**
@@ -251,12 +254,7 @@ function mergeCommandAndBindGroupGraphs(
     // context without the required setBindGroup preamble.
     // ───────────────────────────────────────────────────────────────────────
     function cloneSubtree(node: GraphNode): GraphNode {
-        return new GraphNode(
-            node.id,
-            node.type,
-            node.data,
-            node.children.map(cloneSubtree)
-        );
+        return new GraphNode(node.id, node.type, node.data, node.children.map(cloneSubtree));
     }
 
     // ── Step 3 ─────────────────────────────────────────────────────────────
@@ -314,10 +312,8 @@ function mergeCommandAndBindGroupGraphs(
         //   drawables  – will become leaves of the BGG sub-tree
         //   otherState – viewport, scissor, etc.; must precede bind-group
         //                and draw commands in the encoded stream
-        const drawables  = pipeline.children.filter(c => c.type === drawableType);
-        const otherState = pipeline.children
-            .filter(c => c.type !== drawableType)
-            .map(buildNode);
+        const drawables = pipeline.children.filter((c) => c.type === drawableType);
+        const otherState = pipeline.children.filter((c) => c.type !== drawableType).map(buildNode);
 
         const bgRoots = bgSubtrees.get(pipeline.id);
 
@@ -327,7 +323,7 @@ function mergeCommandAndBindGroupGraphs(
             // Clone the entire BGG sub-tree for this pipeline occurrence so
             // it is independent of every other occurrence.
             const clonedRoots = bgRoots.map(cloneSubtree);
-            const leaves      = collectLeaves(clonedRoots);
+            const leaves = collectLeaves(clonedRoots);
 
             // Attach each leaf's assigned Drawables.
             //
@@ -363,4 +359,3 @@ function mergeCommandAndBindGroupGraphs(
 
     return commandRoots.map(buildNode);
 }
-

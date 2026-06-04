@@ -1,10 +1,13 @@
-export type WgpuResource = {
-    texture: GPUTexture;
-} | {
-    buffer: GPUBuffer;
-} | {
-    sampler: GPUSampler;
-}
+export type WgpuResource =
+    | {
+          texture: GPUTexture;
+      }
+    | {
+          buffer: GPUBuffer;
+      }
+    | {
+          sampler: GPUSampler;
+      };
 
 /*
 What do we need to know about resources at the start?
