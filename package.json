@@ -17,7 +17,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.4.13",
-        "oxfmt": "0.46.0",
+        "oxfmt": "0.52.0",
         "prettier": "3.8.3",
         "prettier-plugin-astro": "0.14.1",
         "@parcel/packager-ts": "2.16.4",
