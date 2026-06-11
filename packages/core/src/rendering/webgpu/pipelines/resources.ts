@@ -1,4 +1,4 @@
-export type WgpuResource =
+export type ResourceData =
     | {
           texture: GPUTexture;
       }

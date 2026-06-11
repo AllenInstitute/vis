@@ -12,6 +12,8 @@ import {
     type FunctionAttribute,
     type VariableOrValueAttribute,
 } from './attributes';
+import type { WgslDataType, WgslSampler, WgslSamplerComparison, WgslTextureDataType } from './wgsl-types';
+import { wgslTypeName } from './wgsl-types';
 
 function renderAttrs(attrs: DeclarationAttribute[] | undefined): string {
     return attrs && attrs.length > 0 ? attrs.map((attr) => `${attr.__gen()}`).join(' ') + ' ' : '';
@@ -21,7 +23,11 @@ function renderTypeIdentifier(type: TypeIdentifier): string {
     if (typeof type === 'string') {
         return type;
     }
-    return type.name;
+    if (!('kind' in type)) {
+        // StructDeclaration or AliasDeclaration — both extend IdentifierDeclaration
+        return type.name;
+    }
+    return wgslTypeName(type as WgslDataType);
 }
 
 /// TYPES
@@ -53,7 +59,7 @@ export type AliasDeclaration = IdentifierDeclaration &
         aliasedType: TypeIdentifier;
     };
 
-export type WgslType = string; // TODO: enumerate builtins someday, eg. 'vec2i' | 'vec3f' ...
+export type WgslType = string | WgslDataType;
 
 export type TypeIdentifier = WgslType | StructDeclaration | AliasDeclaration;
 
@@ -143,7 +149,7 @@ export type TextureVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'variable';
         readonly assignmentType: 'texture';
-        readonly type: `texture_${string}`;
+        readonly type: WgslTextureDataType | `texture_${string}`;
         readonly attributes?: VariableOrValueAttribute[];
     };
 
@@ -152,7 +158,7 @@ export type SamplerVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'variable';
         readonly assignmentType: 'sampler';
-        readonly type: 'sampler' | 'sampler_comparison';
+        readonly type: WgslSampler | WgslSamplerComparison | 'sampler' | 'sampler_comparison';
         readonly attributes?: VariableOrValueAttribute[];
     };
 
@@ -263,7 +269,7 @@ export function uniform(
 
 export function texture(
     name: string,
-    type: `texture_${string}`,
+    type: WgslTextureDataType | `texture_${string}`,
     group: number,
     binding: number,
     attributes?: VariableOrValueAttribute[]
@@ -283,7 +289,7 @@ export function texture(
 
 export function sampler(
     name: string,
-    type: 'sampler' | 'sampler_comparison',
+    type: WgslSampler | WgslSamplerComparison | 'sampler' | 'sampler_comparison',
     group: number,
     binding: number,
     attributes?: VariableOrValueAttribute[]

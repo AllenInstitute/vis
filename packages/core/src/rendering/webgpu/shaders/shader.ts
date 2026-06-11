@@ -3,12 +3,18 @@
  * Also included is a method for generating the WGSL source code from a `WgslShader`
  * object and its declarations. The `shader` function is a simple helper function for
  * creating a new `WgslShader` object from an array of declarations.
+ *
+ * NOTE: `WgslShader.declarations` is intentionally typed as `DeclarationGenerator[]`
+ * (the minimal `{ __gen(): string }` interface) rather than the concrete `Declaration`
+ * union. This lets higher-level modules (e.g., `resources/`) define their own objects
+ * that satisfy the declaration interface and drop them directly into a shader without
+ * `shaders/` needing to know about them — preserving a one-way dependency.
  */
 
-import type { Declaration } from './declarations';
+import type { DeclarationGenerator } from './declarations';
 
 export type WgslShader = {
-    declarations: Declaration[];
+    declarations: DeclarationGenerator[];
 };
 
 // NOTE: In the future, we may want to add further typeguards for the different declarations
@@ -25,6 +31,6 @@ export function asSource(shader: WgslShader): string {
     throw new Error('Invalid shader object');
 }
 
-export function shader(declarations: Declaration[]): WgslShader {
+export function shader(declarations: DeclarationGenerator[]): WgslShader {
     return { declarations };
 }

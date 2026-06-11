@@ -1,9 +1,21 @@
+import type { ShaderStageFlags } from '../native-types';
+import type { Resource } from '../resources';
 import type { WgslShader } from '../shaders';
-import type { WgpuResource } from './resources';
+import type { ResourceData } from './resources';
 
-export type BindingGraphResourceNode<T = unknown> = {
+/**
+ * A resource node in the binding graph. Pairs a metadata-only `Resource` *descriptor* (used to
+ * generate the WGSL declaration and to populate the `GPUBindGroupLayoutEntry`) with the concrete
+ * `ResourceData` (the actual GPU object that backs `GPUBindGroupEntry.resource`).
+ */
+export type BindingGraphResourceNode = {
     __nodeType: 'resource';
-    resource: Resource<T>;
+    /** Metadata-only descriptor; used by binding-graph traversal to produce the BGL entry and to
+     *  generate the WGSL declaration once a `{group, binding}` is assigned. */
+    descriptor: Resource;
+    /** The concrete GPU object that will populate the bind-group entry at draw time. */
+    gpu: ResourceData;
+    /** Pipelines that reference this resource. The union of their `stages` drives visibility. */
     pipelines: BindingGraphPipelineNode[];
     label?: string;
 };
@@ -14,10 +26,10 @@ export function isBindingGraphResourceNode(value: unknown): value is BindingGrap
         value !== null &&
         '__nodeType' in value &&
         value.__nodeType === 'resource' &&
-        'resource' in value &&
-        typeof value.resource === 'object' &&
+        'descriptor' in value &&
+        'gpu' in value &&
         'pipelines' in value &&
-        Array.isArray(value.pipelines)
+        Array.isArray((value as { pipelines: unknown }).pipelines)
     );
 }
 
@@ -31,6 +43,10 @@ export type BindingGraphGroupNode = {
 export type BindingGraphPipelineNode = {
     __nodeType: 'pipeline';
     shader: WgslShader;
+    /** Shader stages this pipeline contributes to. Unioned per-resource by traversal to compute
+     *  `GPUBindGroupLayoutEntry.visibility`. If omitted, traversal falls back to the resource's
+     *  own `visibility` field (or defaults to all stages when neither is set). */
+    stages?: ShaderStageFlags;
     depthStencil?: GPUDepthStencilState;
     multisample?: GPUMultisampleState;
     primitive?: GPUPrimitiveTopology;
@@ -80,41 +96,45 @@ export function isBindingGraph(value: unknown): value is BindingGraph {
 
 export function group(
     label: string | undefined,
-    resources: (WgpuResource | BindingGraphResourceNode)[],
+    resources: BindingGraphResourceNode[],
     subgroup?: BindingGraphGroupNode
 ): BindingGraphGroupNode {
     return {
         __nodeType: 'group',
         label,
-        resources: resources.map((r) => (isBindingGraphResourceNode(r) ? r : resource(undefined, r, []))),
+        resources,
         subgroup,
     };
 }
 
 export function resource(
     label: string | undefined,
-    resource: WgpuResource,
+    descriptor: Resource,
+    gpu: ResourceData,
     pipelines: BindingGraphPipelineNode[]
 ): BindingGraphResourceNode {
     return {
         __nodeType: 'resource',
         label,
-        resource,
+        descriptor,
+        gpu,
         pipelines,
     };
 }
 
 export function pipeline(
     shader: WgslShader,
-    depthStencil?: GPUDepthStencilState,
-    multisample?: GPUMultisampleState,
-    primitive?: GPUPrimitiveTopology
+    options: {
+        stages?: ShaderStageFlags;
+        depthStencil?: GPUDepthStencilState;
+        multisample?: GPUMultisampleState;
+        primitive?: GPUPrimitiveTopology;
+        label?: string;
+    } = {}
 ): BindingGraphPipelineNode {
     return {
         __nodeType: 'pipeline',
         shader,
-        depthStencil,
-        multisample,
-        primitive,
+        ...options,
     };
 }
