@@ -1,20 +1,25 @@
 import type { ShaderStageFlags } from '../native-types';
 import type { Resource } from '../resources';
 import type { WgslShader } from '../shaders';
+import type { ResourceProvider } from './draw-context';
 import type { ResourceData } from './resources';
 
 /**
  * A resource node in the binding graph. Pairs a metadata-only `Resource` *descriptor* (used to
- * generate the WGSL declaration and to populate the `GPUBindGroupLayoutEntry`) with the concrete
- * `ResourceData` (the actual GPU object that backs `GPUBindGroupEntry.resource`).
+ * generate the WGSL declaration and to populate the `GPUBindGroupLayoutEntry`) with either a
+ * concrete `ResourceData` (a single shared GPU object for every drawable that touches this slot)
+ * or a `ResourceProvider` callable that yields a `ResourceData` per `DrawContext` (for
+ * per-drawable bindings such as per-instance uniforms).
  */
 export type BindingGraphResourceNode = {
     __nodeType: 'resource';
     /** Metadata-only descriptor; used by binding-graph traversal to produce the BGL entry and to
      *  generate the WGSL declaration once a `{group, binding}` is assigned. */
     descriptor: Resource;
-    /** The concrete GPU object that will populate the bind-group entry at draw time. */
-    gpu: ResourceData;
+    /** Either the concrete GPU object that will populate the bind-group entry at draw time, or a
+     *  per-draw `ResourceProvider` invoked during `assembleBindGroupResources`. Both options
+     *  produce identical `layouts`/`bindings`; only the resolution timing differs. */
+    gpu: ResourceData | ResourceProvider;
     /** Pipelines that reference this resource. The union of their `stages` drives visibility. */
     pipelines: BindingGraphPipelineNode[];
     label?: string;
@@ -110,7 +115,7 @@ export function group(
 export function resource(
     label: string | undefined,
     descriptor: Resource,
-    gpu: ResourceData,
+    gpu: ResourceData | ResourceProvider,
     pipelines: BindingGraphPipelineNode[]
 ): BindingGraphResourceNode {
     return {
