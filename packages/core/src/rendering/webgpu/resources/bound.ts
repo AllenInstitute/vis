@@ -1,25 +1,25 @@
 /**
- * Defines `BoundResource` — a `Resource` that has been assigned a `{group, binding}` pair via
+ * Defines `BoundSlot` — a `ResourceSlot` that has been assigned a `{group, binding}` pair via
  * a binding-graph traversal. The wrapper is frozen (immutable) and carries a working `__gen()`
  * that produces the WGSL declaration by delegating to the existing `$s.uniform / $s.texture /
  * $s.sampler / $s.storage` constructors in `shaders/declarations.ts`.
  *
- * Producing a `BoundResource` does NOT mutate the original `Resource` — the source descriptor
+ * Producing a `BoundSlot` does NOT mutate the original `ResourceSlot` — the source descriptor
  * stays metadata-only and can be reused across multiple binding layouts.
  */
 
 import type { BindGroupLayoutEntry, ShaderStageFlags } from '../native-types';
 import { sampler as samplerDecl, storage as storageDecl, texture as textureDecl, uniform as uniformDecl } from '../shaders';
-import type { Resource } from './resource';
+import type { ResourceSlot } from './resource';
 
 /**
- * A `BoundResource` is a `Resource` extended with `{group, binding}` and a working `__gen()`.
+ * A `BoundSlot` is a `ResourceSlot` extended with `{group, binding}` and a working `__gen()`.
  * It is the value the shader-source generator actually emits WGSL for.
  *
- * The generic parameter narrows to the underlying `Resource` variant so consumers can pattern-
- * match on `kind` and access kind-specific metadata.
+ * The generic parameter narrows to the underlying `ResourceSlot` variant so consumers can
+ * pattern-match on `kind` and access kind-specific metadata.
  */
-export type BoundResource<R extends Resource = Resource> = Readonly<
+export type BoundSlot<R extends ResourceSlot = ResourceSlot> = Readonly<
     R & {
         readonly group: number;
         readonly binding: number;
@@ -28,25 +28,25 @@ export type BoundResource<R extends Resource = Resource> = Readonly<
 >;
 
 /**
- * Wraps a `Resource` with a `{group, binding}` and a working `__gen()`. The returned object is
- * frozen. The original `Resource` is not mutated.
+ * Wraps a `ResourceSlot` with a `{group, binding}` and a working `__gen()`. The returned object
+ * is frozen. The original `ResourceSlot` is not mutated.
  */
-export function bind<R extends Resource>(resource: R, group: number, binding: number): BoundResource<R> {
-    const gen = makeGenFor(resource, group, binding);
+export function bind<R extends ResourceSlot>(slot: R, group: number, binding: number): BoundSlot<R> {
+    const gen = makeGenFor(slot, group, binding);
     const bound = {
-        ...resource,
+        ...slot,
         group,
         binding,
         __gen: gen,
     };
-    return Object.freeze(bound) as BoundResource<R>;
+    return Object.freeze(bound) as BoundSlot<R>;
 }
 
 /**
- * Builds the `__gen` thunk for a bound resource by delegating to the existing declaration
+ * Builds the `__gen` thunk for a bound slot by delegating to the existing declaration
  * constructors. This keeps WGSL formatting in a single place (`shaders/declarations.ts`).
  */
-function makeGenFor(r: Resource, group: number, binding: number): () => string {
+function makeGenFor(r: ResourceSlot, group: number, binding: number): () => string {
     switch (r.kind) {
         case 'uniform':
             return uniformDecl(r.name, r.type, group, binding, r.attributes).__gen;
@@ -73,11 +73,11 @@ function makeGenFor(r: Resource, group: number, binding: number): () => string {
 }
 
 /**
- * Derives a `GPUBindGroupLayoutEntry` for a bound resource. The `visibility` argument lets the
+ * Derives a `GPUBindGroupLayoutEntry` for a bound slot. The `visibility` argument lets the
  * caller (typically the binding-graph traversal) supply the union of stages from every pipeline
- * that references this resource; pass `bound.visibility` directly when no traversal is involved.
+ * that references this slot; pass `bound.visibility` directly when no traversal is involved.
  */
-export function toBindGroupLayoutEntry(bound: BoundResource, visibility: ShaderStageFlags): BindGroupLayoutEntry {
+export function toBindGroupLayoutEntry(bound: BoundSlot, visibility: ShaderStageFlags): BindGroupLayoutEntry {
     const base = { binding: bound.binding, visibility };
     switch (bound.kind) {
         case 'uniform':

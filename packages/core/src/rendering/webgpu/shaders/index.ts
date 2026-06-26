@@ -50,6 +50,7 @@ export type {
     ResourceIdentifierDeclaration,
     SamplerVariableDeclaration,
     StorageVariableDeclaration,
+    StructDecl,
     StructDeclaration,
     StructMemberDeclaration,
     TextureVariableDeclaration,

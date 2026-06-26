@@ -53,6 +53,26 @@ export type StructDeclaration = IdentifierDeclaration &
         fields: StructMemberDeclaration[];
     };
 
+/**
+ * `StructDecl<TsShape>` is a `StructDeclaration` annotated with a phantom TypeScript
+ * shape describing the host-side representation of the struct's contents.
+ *
+ * The phantom is consumed by typed slot factories (e.g. `slot.uniform<T>`) so that
+ * downstream resources can expose strongly-typed `set(values)` APIs without runtime
+ * cost. When `TsShape` is `unknown` (the default), the struct behaves like an
+ * untyped `StructDeclaration` and slots fall back to `unknown`-keyed updates.
+ *
+ * Example:
+ * ```ts
+ * type MyUniforms = { time: number; color: readonly number[] };
+ * const U = struct<MyUniforms>('U', [member('time', 'f32'), member('color', 'vec3f')]);
+ * const u = slot.uniform('u', U); // `u` carries `MyUniforms` through to `set()`
+ * ```
+ */
+export type StructDecl<TsShape = unknown> = StructDeclaration & {
+    readonly __tsShape?: TsShape;
+};
+
 export type AliasDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
         __identType: 'alias';
@@ -342,7 +362,7 @@ export function member(
     };
 }
 
-export function struct(name: string, fields: StructMemberDeclaration[]): StructDeclaration {
+export function struct<TsShape = unknown>(name: string, fields: StructMemberDeclaration[]): StructDecl<TsShape> {
     return {
         __identType: 'struct',
         name,

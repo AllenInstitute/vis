@@ -1,31 +1,31 @@
 export type { BindingMap } from './bind';
 export { bindShader } from './bind';
 
-export type { BoundResource } from './bound';
+export type { BoundSlot } from './bound';
 export { bind, toBindGroupLayoutEntry } from './bound';
 export type {
-    ExternalTextureResource,
-    ExternalTextureResourceOptions,
-    Resource,
-    ResourceKind,
-    SamplerResource,
-    SamplerResourceOptions,
-    StorageResource,
-    StorageResourceOptions,
-    StorageTextureResource,
-    StorageTextureResourceOptions,
-    TextureResource,
-    TextureResourceOptions,
-    UniformResource,
-    UniformResourceOptions,
+    ExternalTextureSlot,
+    ExternalTextureSlotOptions,
+    ResourceSlot,
+    ResourceSlotKind,
+    SamplerSlot,
+    SamplerSlotOptions,
+    StorageSlot,
+    StorageSlotOptions,
+    StorageTextureSlot,
+    StorageTextureSlotOptions,
+    TextureSlot,
+    TextureSlotOptions,
+    UniformSlot,
+    UniformSlotOptions,
 } from './resource';
 export {
-    externalTextureResource,
-    isResource,
-    RESOURCE_BRAND,
-    samplerResource,
-    storageResource,
-    storageTextureResource,
-    textureResource,
-    uniformResource,
+    externalTextureSlot,
+    isResourceSlot,
+    RESOURCE_SLOT_BRAND,
+    samplerSlot,
+    storageSlot,
+    storageTextureSlot,
+    textureSlot,
+    uniformSlot,
 } from './resource';

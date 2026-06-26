@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ShaderStageFlag } from '../native-types';
-import { textureResource, uniformResource } from '../resources';
+import { textureSlot, uniformSlot } from '../resources';
 import { shader } from '../shaders';
 import { computeBindGroupCacheKey } from './bind-group-cache';
 import { group, makeBindingGraph, pipeline, resource } from './binding-graphs';
@@ -18,8 +18,8 @@ const makeCtx = (overrides: Partial<DrawContext> = {}): DrawContext => ({
 });
 
 function makeTwoBindingLayout() {
-    const u = uniformResource('u', 'U');
-    const t = textureResource('tex', 'texture_2d<f32>');
+    const u = uniformSlot('u', 'U');
+    const t = textureSlot('tex', 'texture_2d<f32>');
     const pl = pipeline(shader([u, t]), { stages: ShaderStageFlag.FRAGMENT });
     const bg = makeBindingGraph([
         group(undefined, [resource(undefined, u, fakeBuffer, [pl]), resource(undefined, t, fakeTexture, [pl])]),

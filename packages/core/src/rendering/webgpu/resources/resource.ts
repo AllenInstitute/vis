@@ -1,14 +1,18 @@
 /**
- * Defines the `Resource` type — a metadata-only descriptor of a shader binding (uniform buffer,
- * texture, sampler, storage buffer, storage texture, external texture) that carries everything
- * needed to:
+ * Defines the `ResourceSlot` type — a metadata-only descriptor of a shader binding (uniform
+ * buffer, texture, sampler, storage buffer, storage texture, external texture) that carries
+ * everything needed to:
  *   1. Generate the corresponding WGSL declaration once a `{group, binding}` has been assigned.
- *   2. Construct a `GPUBindGroupLayoutEntry` for the resource.
+ *   2. Construct a `GPUBindGroupLayoutEntry` for the slot.
  *
- * `Resource` implements the `DeclarationGenerator` interface from `shaders/`, so it can be dropped
- * directly into a `WgslShader`'s `declarations` array. Its `__gen()` throws until the resource has
- * been "bound" (see `bound.ts` and `bind.ts`). The shaders module never imports from this module —
- * the dependency is strictly one-way (`resources/` → `shaders/`).
+ * `ResourceSlot` implements the `DeclarationGenerator` interface from `shaders/`, so it can be
+ * dropped directly into a `WgslShader`'s `declarations` array. Its `__gen()` throws until the
+ * slot has been "bound" (see `bound.ts` and `bind.ts`). The shaders module never imports from
+ * this module — the dependency is strictly one-way (`resources/` → `shaders/`).
+ *
+ * `ResourceSlot` is a *descriptor* (it tells the system what the binding looks like). The
+ * data-bearing object that actually carries a `GPUBuffer`/`GPUTexture` for a slot is named
+ * `Resource` and lives in `webgpu/data/resource.ts` (Phase 4).
  */
 
 import type {
@@ -27,10 +31,10 @@ import type {
     WgslTextureDataType,
 } from '../shaders';
 
-/** Brand symbol used by `isResource` to discriminate `Resource` objects at runtime. */
-export const RESOURCE_BRAND = Symbol.for('vis-core.webgpu.Resource');
+/** Brand symbol used by `isResourceSlot` to discriminate `ResourceSlot` objects at runtime. */
+export const RESOURCE_SLOT_BRAND = Symbol.for('vis-core.webgpu.ResourceSlot');
 
-export type ResourceKind =
+export type ResourceSlotKind =
     | 'uniform'
     | 'storage'
     | 'texture'
@@ -38,26 +42,26 @@ export type ResourceKind =
     | 'sampler'
     | 'externalTexture';
 
-/** Fields common to every `Resource` variant. */
-interface ResourceCommon {
-    readonly __brand: typeof RESOURCE_BRAND;
-    readonly kind: ResourceKind;
+/** Fields common to every `ResourceSlot` variant. */
+interface ResourceSlotCommon {
+    readonly __brand: typeof RESOURCE_SLOT_BRAND;
+    readonly kind: ResourceSlotKind;
     readonly name: string;
     /**
      * Optional explicit visibility. Binding-graph traversal may union additional stages from any
-     * pipelines that reference this resource; when both are present, the union is used.
+     * pipelines that reference this slot; when both are present, the union is used.
      */
     readonly visibility?: ShaderStageFlags;
     /** Optional attributes applied to the variable declaration (e.g., `@align(N)`, `@size(N)`). */
     readonly attributes?: VariableOrValueAttribute[];
     /**
-     * Throws unless this resource has been bound to a `{group, binding}` (see `bind()` /
+     * Throws unless this slot has been bound to a `{group, binding}` (see `bind()` /
      * `bindShader()`). After binding, the bound wrapper's `__gen()` returns the WGSL declaration.
      */
     __gen(): string;
 }
 
-export interface UniformResource extends ResourceCommon {
+export interface UniformSlot extends ResourceSlotCommon {
     readonly kind: 'uniform';
     readonly type: TypeIdentifier;
     /** GPUBindGroupLayoutEntry.buffer.hasDynamicOffset */
@@ -66,7 +70,7 @@ export interface UniformResource extends ResourceCommon {
     readonly minBindingSize?: number;
 }
 
-export interface StorageResource extends ResourceCommon {
+export interface StorageSlot extends ResourceSlotCommon {
     readonly kind: 'storage';
     readonly type: TypeIdentifier;
     /** WGSL storage access mode. Mirrors the optional `accessMode` of `$s.storage(...)`. */
@@ -77,7 +81,7 @@ export interface StorageResource extends ResourceCommon {
     readonly minBindingSize?: number;
 }
 
-export interface TextureResource extends ResourceCommon {
+export interface TextureSlot extends ResourceSlotCommon {
     readonly kind: 'texture';
     readonly type: WgslTextureDataType | `texture_${string}`;
     /** GPUBindGroupLayoutEntry.texture.sampleType (default 'float') */
@@ -88,7 +92,7 @@ export interface TextureResource extends ResourceCommon {
     readonly multisampled?: boolean;
 }
 
-export interface StorageTextureResource extends ResourceCommon {
+export interface StorageTextureSlot extends ResourceSlotCommon {
     readonly kind: 'storageTexture';
     readonly type: WgslTextureDataType | `texture_${string}`;
     /** Required: storage textures must specify a texel format. */
@@ -99,39 +103,39 @@ export interface StorageTextureResource extends ResourceCommon {
     readonly viewDimension?: TextureViewDimension;
 }
 
-export interface SamplerResource extends ResourceCommon {
+export interface SamplerSlot extends ResourceSlotCommon {
     readonly kind: 'sampler';
     readonly type: WgslSampler | WgslSamplerComparison | 'sampler' | 'sampler_comparison';
     /** GPUBindGroupLayoutEntry.sampler.type (default 'filtering') */
     readonly bindingType?: SamplerBindingType;
 }
 
-export interface ExternalTextureResource extends ResourceCommon {
+export interface ExternalTextureSlot extends ResourceSlotCommon {
     readonly kind: 'externalTexture';
 }
 
-export type Resource =
-    | UniformResource
-    | StorageResource
-    | TextureResource
-    | StorageTextureResource
-    | SamplerResource
-    | ExternalTextureResource;
+export type ResourceSlot =
+    | UniformSlot
+    | StorageSlot
+    | TextureSlot
+    | StorageTextureSlot
+    | SamplerSlot
+    | ExternalTextureSlot;
 
-/** Runtime discriminator for `Resource` (used by `bindShader` and binding-graph traversal). */
-export function isResource(value: unknown): value is Resource {
+/** Runtime discriminator for `ResourceSlot` (used by `bindShader` and binding-graph traversal). */
+export function isResourceSlot(value: unknown): value is ResourceSlot {
     return (
         typeof value === 'object' &&
         value !== null &&
         '__brand' in value &&
-        (value as { __brand: unknown }).__brand === RESOURCE_BRAND
+        (value as { __brand: unknown }).__brand === RESOURCE_SLOT_BRAND
     );
 }
 
 function unboundGen(name: string): () => string {
     return () => {
         throw new Error(
-            `Resource '${name}' must be bound to a {group, binding} before source generation; ` +
+            `ResourceSlot '${name}' must be bound to a {group, binding} before source generation; ` +
                 'see bindShader() in @alleninstitute/vis-core/rendering/webgpu/resources'
         );
     };
@@ -139,20 +143,20 @@ function unboundGen(name: string): () => string {
 
 // ---- Constructors -----------------------------------------------------------------------------
 
-export type UniformResourceOptions = {
+export type UniformSlotOptions = {
     visibility?: ShaderStageFlags;
     attributes?: VariableOrValueAttribute[];
     hasDynamicOffset?: boolean;
     minBindingSize?: number;
 };
 
-export function uniformResource(
+export function uniformSlot(
     name: string,
     type: TypeIdentifier,
-    options: UniformResourceOptions = {}
-): UniformResource {
+    options: UniformSlotOptions = {}
+): UniformSlot {
     return {
-        __brand: RESOURCE_BRAND,
+        __brand: RESOURCE_SLOT_BRAND,
         kind: 'uniform',
         name,
         type,
@@ -161,7 +165,7 @@ export function uniformResource(
     };
 }
 
-export type StorageResourceOptions = {
+export type StorageSlotOptions = {
     visibility?: ShaderStageFlags;
     attributes?: VariableOrValueAttribute[];
     accessMode?: 'read' | 'write' | 'read_write';
@@ -169,13 +173,13 @@ export type StorageResourceOptions = {
     minBindingSize?: number;
 };
 
-export function storageResource(
+export function storageSlot(
     name: string,
     type: TypeIdentifier,
-    options: StorageResourceOptions = {}
-): StorageResource {
+    options: StorageSlotOptions = {}
+): StorageSlot {
     return {
-        __brand: RESOURCE_BRAND,
+        __brand: RESOURCE_SLOT_BRAND,
         kind: 'storage',
         name,
         type,
@@ -184,7 +188,7 @@ export function storageResource(
     };
 }
 
-export type TextureResourceOptions = {
+export type TextureSlotOptions = {
     visibility?: ShaderStageFlags;
     attributes?: VariableOrValueAttribute[];
     sampleType?: TextureSampleType;
@@ -192,13 +196,13 @@ export type TextureResourceOptions = {
     multisampled?: boolean;
 };
 
-export function textureResource(
+export function textureSlot(
     name: string,
     type: WgslTextureDataType | `texture_${string}`,
-    options: TextureResourceOptions = {}
-): TextureResource {
+    options: TextureSlotOptions = {}
+): TextureSlot {
     return {
-        __brand: RESOURCE_BRAND,
+        __brand: RESOURCE_SLOT_BRAND,
         kind: 'texture',
         name,
         type,
@@ -207,21 +211,21 @@ export function textureResource(
     };
 }
 
-export type StorageTextureResourceOptions = {
+export type StorageTextureSlotOptions = {
     visibility?: ShaderStageFlags;
     attributes?: VariableOrValueAttribute[];
     access?: StorageTextureAccess;
     viewDimension?: TextureViewDimension;
 };
 
-export function storageTextureResource(
+export function storageTextureSlot(
     name: string,
     type: WgslTextureDataType | `texture_${string}`,
     format: TextureFormat,
-    options: StorageTextureResourceOptions = {}
-): StorageTextureResource {
+    options: StorageTextureSlotOptions = {}
+): StorageTextureSlot {
     return {
-        __brand: RESOURCE_BRAND,
+        __brand: RESOURCE_SLOT_BRAND,
         kind: 'storageTexture',
         name,
         type,
@@ -231,19 +235,19 @@ export function storageTextureResource(
     };
 }
 
-export type SamplerResourceOptions = {
+export type SamplerSlotOptions = {
     visibility?: ShaderStageFlags;
     attributes?: VariableOrValueAttribute[];
     bindingType?: SamplerBindingType;
 };
 
-export function samplerResource(
+export function samplerSlot(
     name: string,
     type: WgslSampler | WgslSamplerComparison | 'sampler' | 'sampler_comparison',
-    options: SamplerResourceOptions = {}
-): SamplerResource {
+    options: SamplerSlotOptions = {}
+): SamplerSlot {
     return {
-        __brand: RESOURCE_BRAND,
+        __brand: RESOURCE_SLOT_BRAND,
         kind: 'sampler',
         name,
         type,
@@ -252,17 +256,17 @@ export function samplerResource(
     };
 }
 
-export type ExternalTextureResourceOptions = {
+export type ExternalTextureSlotOptions = {
     visibility?: ShaderStageFlags;
     attributes?: VariableOrValueAttribute[];
 };
 
-export function externalTextureResource(
+export function externalTextureSlot(
     name: string,
-    options: ExternalTextureResourceOptions = {}
-): ExternalTextureResource {
+    options: ExternalTextureSlotOptions = {}
+): ExternalTextureSlot {
     return {
-        __brand: RESOURCE_BRAND,
+        __brand: RESOURCE_SLOT_BRAND,
         kind: 'externalTexture',
         name,
         ...options,

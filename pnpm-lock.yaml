@@ -62,6 +62,9 @@ importers:
       uuid:
         specifier: 14.0.0
         version: 14.0.0
+      webgpu-utils:
+        specifier: ^2.1.1
+        version: 2.1.1
       zod:
         specifier: 4.3.6
         version: 4.3.6
@@ -4105,6 +4108,9 @@ packages:
 
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
+
+  webgpu-utils@2.1.1:
+    resolution: {integrity: sha512-/v5I3DHwDdmznmPdFQsFfjOMSYTTvrtoflKyPjOMeXo+ND4l3BfvdLmJcI3+TjzM/54cxO174NKEkJ/5549xyQ==}
 
   which-pm-runs@1.1.0:
     resolution: {integrity: sha512-n1brCuqClxfFfq/Rb0ICg9giSZqCS+pLtccdag6C2HyufBrh3fBOiy9nb6ggRMvWOVH5GrdJskj5iGTZNxd7SA==}
@@ -8627,6 +8633,8 @@ snapshots:
   weak-lru-cache@1.2.2: {}
 
   web-namespaces@2.0.1: {}
+
+  webgpu-utils@2.1.1: {}
 
   which-pm-runs@1.1.0: {}
 

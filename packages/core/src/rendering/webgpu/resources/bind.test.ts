@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { constant, shader } from '../shaders';
 import { type BindingMap, bindShader } from './bind';
-import { uniformResource } from './resource';
+import { uniformSlot } from './resource';
 
 describe('bindShader', () => {
-    it('replaces Resource declarations with BoundResource wrappers', () => {
-        const u = uniformResource('u', 'U');
+    it('replaces ResourceSlot declarations with BoundSlot wrappers', () => {
+        const u = uniformSlot('u', 'U');
         const s = shader([u]);
         const bindings: BindingMap = new Map([[u, { group: 0, binding: 0 }]]);
         const bound = bindShader(s, bindings);
@@ -15,7 +15,7 @@ describe('bindShader', () => {
 
     it('passes through non-Resource declarations by reference', () => {
         const c = constant('pi', 3.14);
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const s = shader([c, u]);
         const bindings: BindingMap = new Map([[u, { group: 0, binding: 0 }]]);
         const bound = bindShader(s, bindings);
@@ -24,14 +24,14 @@ describe('bindShader', () => {
     });
 
     it('throws listing every unbound resource name', () => {
-        const a = uniformResource('alpha', 'A');
-        const b = uniformResource('beta', 'B');
+        const a = uniformSlot('alpha', 'A');
+        const b = uniformSlot('beta', 'B');
         const s = shader([a, b]);
         expect(() => bindShader(s, new Map())).toThrow(/alpha.*beta|beta.*alpha/);
     });
 
     it('returns a new shader (does not mutate input)', () => {
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const s = shader([u]);
         const bindings: BindingMap = new Map([[u, { group: 0, binding: 0 }]]);
         const bound = bindShader(s, bindings);

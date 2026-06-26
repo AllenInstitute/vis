@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ShaderStageFlag } from '../native-types';
-import { bindShader, samplerResource, textureResource, uniformResource } from '../resources';
+import { bindShader, samplerSlot, textureSlot, uniformSlot } from '../resources';
 import { asSource, shader } from '../shaders';
 import { group, makeBindingGraph, pipeline, resource } from './binding-graphs';
 import type { DrawContext, ResourceProvider } from './draw-context';
@@ -23,9 +23,9 @@ const makeCtx = (overrides: Partial<DrawContext> = {}): DrawContext => ({
 
 describe('traverseBindingGraph — single group', () => {
     it('assigns sequential bindings within a group', () => {
-        const u = uniformResource('u', 'U');
-        const t = textureResource('tex', 'texture_2d<f32>');
-        const s = samplerResource('samp', 'sampler');
+        const u = uniformSlot('u', 'U');
+        const t = textureSlot('tex', 'texture_2d<f32>');
+        const s = samplerSlot('samp', 'sampler');
         const pl = pipeline(shader([u, t, s]), { stages: ShaderStageFlag.FRAGMENT });
 
         const bg = makeBindingGraph([
@@ -48,9 +48,9 @@ describe('traverseBindingGraph — single group', () => {
 
 describe('traverseBindingGraph — nested subgroups', () => {
     it('assigns each level of the subgroup chain a distinct group index', () => {
-        const a = uniformResource('a', 'A');
-        const b = uniformResource('b', 'B');
-        const c = uniformResource('c', 'C');
+        const a = uniformSlot('a', 'A');
+        const b = uniformSlot('b', 'B');
+        const c = uniformSlot('c', 'C');
         const pl = pipeline(shader([a, b, c]), { stages: ShaderStageFlag.VERTEX });
 
         const bg = makeBindingGraph([
@@ -75,7 +75,7 @@ describe('traverseBindingGraph — nested subgroups', () => {
 
 describe('traverseBindingGraph — visibility', () => {
     it('explicit Resource.visibility wins', () => {
-        const u = uniformResource('u', 'U', { visibility: ShaderStageFlag.VERTEX });
+        const u = uniformSlot('u', 'U', { visibility: ShaderStageFlag.VERTEX });
         const pl = pipeline(shader([u]), { stages: ShaderStageFlag.FRAGMENT });
         const bg = makeBindingGraph([group(undefined, [resource(undefined, u, fakeBuffer, [pl])])]);
         const result = traverseBindingGraph(bg);
@@ -83,7 +83,7 @@ describe('traverseBindingGraph — visibility', () => {
     });
 
     it('unions stages of all referencing pipelines when Resource.visibility is unset', () => {
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const plV = pipeline(shader([u]), { stages: ShaderStageFlag.VERTEX });
         const plF = pipeline(shader([u]), { stages: ShaderStageFlag.FRAGMENT });
         const bg = makeBindingGraph([group(undefined, [resource(undefined, u, fakeBuffer, [plV, plF])])]);
@@ -92,7 +92,7 @@ describe('traverseBindingGraph — visibility', () => {
     });
 
     it('defaults to all stages when neither is provided', () => {
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const pl = pipeline(shader([u]));
         const bg = makeBindingGraph([group(undefined, [resource(undefined, u, fakeBuffer, [pl])])]);
         const result = traverseBindingGraph(bg);
@@ -104,7 +104,7 @@ describe('traverseBindingGraph — visibility', () => {
 
 describe('traverseBindingGraph — duplicate detection', () => {
     it('throws when the same Resource appears at multiple positions', () => {
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const pl = pipeline(shader([u]));
         const bg = makeBindingGraph([
             group(undefined, [
@@ -118,9 +118,9 @@ describe('traverseBindingGraph — duplicate detection', () => {
 
 describe('integration: traverse → bindShader → asSource', () => {
     it('produces fully resolved WGSL combining raw declarations and Resources', () => {
-        const u = uniformResource('unis', 'Uniforms');
-        const t = textureResource('tex', 'texture_2d<f32>');
-        const s = samplerResource('samp', 'sampler');
+        const u = uniformSlot('unis', 'Uniforms');
+        const t = textureSlot('tex', 'texture_2d<f32>');
+        const s = samplerSlot('samp', 'sampler');
         const sh = shader([u, t, s]);
         const pl = pipeline(sh, { stages: ShaderStageFlag.FRAGMENT });
         const bg = makeBindingGraph([
@@ -144,9 +144,9 @@ describe('integration: traverse → bindShader → asSource', () => {
 
 describe('traverseBindingGraphLayout — fixed-only graphs', () => {
     it('emits the same bindings and layouts as the legacy single-call API', () => {
-        const u = uniformResource('u', 'U');
-        const t = textureResource('tex', 'texture_2d<f32>');
-        const s = samplerResource('samp', 'sampler');
+        const u = uniformSlot('u', 'U');
+        const t = textureSlot('tex', 'texture_2d<f32>');
+        const s = samplerSlot('samp', 'sampler');
         const pl = pipeline(shader([u, t, s]), { stages: ShaderStageFlag.FRAGMENT });
         const bg = makeBindingGraph([
             group(undefined, [
@@ -173,8 +173,8 @@ describe('traverseBindingGraphLayout — fixed-only graphs', () => {
     });
 
     it('assembleBindGroupResources on a fixed-only layout matches the legacy bindGroupResources', () => {
-        const u = uniformResource('u', 'U');
-        const t = textureResource('tex', 'texture_2d<f32>');
+        const u = uniformSlot('u', 'U');
+        const t = textureSlot('tex', 'texture_2d<f32>');
         const pl = pipeline(shader([u, t]), { stages: ShaderStageFlag.FRAGMENT });
         const bg = makeBindingGraph([
             group(undefined, [
@@ -193,7 +193,7 @@ describe('traverseBindingGraphLayout — fixed-only graphs', () => {
 
 describe('traverseBindingGraphLayout — provider slots', () => {
     it('emits a provider slot for callable gpu values', () => {
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const pl = pipeline(shader([u]), { stages: ShaderStageFlag.VERTEX });
         const provide: ResourceProvider = vi.fn(() => fakeBuffer);
         const bg = makeBindingGraph([group(undefined, [resource(undefined, u, provide, [pl])])]);
@@ -205,8 +205,8 @@ describe('traverseBindingGraphLayout — provider slots', () => {
     });
 
     it('assembleBindGroupResources invokes each provider once per call with the supplied ctx', () => {
-        const u = uniformResource('u', 'U');
-        const t = textureResource('tex', 'texture_2d<f32>');
+        const u = uniformSlot('u', 'U');
+        const t = textureSlot('tex', 'texture_2d<f32>');
         const pl = pipeline(shader([u, t]), { stages: ShaderStageFlag.FRAGMENT });
 
         const provideU: ResourceProvider = vi.fn(() => fakeBuffer);
@@ -236,7 +236,7 @@ describe('traverseBindingGraphLayout — provider slots', () => {
     });
 
     it('yields different ResourceData per drawable when the provider varies on ctx', () => {
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const pl = pipeline(shader([u]), { stages: ShaderStageFlag.VERTEX });
 
         const bufferA: ResourceData = { buffer: {} as GPUBuffer };
@@ -251,9 +251,9 @@ describe('traverseBindingGraphLayout — provider slots', () => {
     });
 
     it('mixed fixed + provider slots resolve independently in the same group', () => {
-        const u = uniformResource('u', 'U');
-        const t = textureResource('tex', 'texture_2d<f32>');
-        const s = samplerResource('samp', 'sampler');
+        const u = uniformSlot('u', 'U');
+        const t = textureSlot('tex', 'texture_2d<f32>');
+        const s = samplerSlot('samp', 'sampler');
         const pl = pipeline(shader([u, t, s]), { stages: ShaderStageFlag.FRAGMENT });
 
         const perDrawBuffer: ResourceData = { buffer: {} as GPUBuffer };
@@ -278,7 +278,7 @@ describe('traverseBindingGraphLayout — provider slots', () => {
     });
 
     it('throws on the legacy traverseBindingGraph shim when any slot is a provider', () => {
-        const u = uniformResource('u', 'U');
+        const u = uniformSlot('u', 'U');
         const pl = pipeline(shader([u]), { stages: ShaderStageFlag.VERTEX });
         const provide: ResourceProvider = () => fakeBuffer;
         const bg = makeBindingGraph([group(undefined, [resource(undefined, u, provide, [pl])])]);
@@ -289,8 +289,8 @@ describe('traverseBindingGraphLayout — provider slots', () => {
 
 describe('traverseBindingGraphLayout — layout identity stability', () => {
     it('back-to-back calls produce structurally identical bindings and layouts', () => {
-        const u = uniformResource('u', 'U');
-        const t = textureResource('tex', 'texture_2d<f32>');
+        const u = uniformSlot('u', 'U');
+        const t = textureSlot('tex', 'texture_2d<f32>');
         const pl = pipeline(shader([u, t]), { stages: ShaderStageFlag.FRAGMENT });
         const provideU: ResourceProvider = () => fakeBuffer;
         const bg = makeBindingGraph([
