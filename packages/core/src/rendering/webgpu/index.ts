@@ -28,17 +28,10 @@ export type {
 export { asSource, isWgslShader, member, shader, struct } from './shaders';
 export type { StructDecl, StructDeclaration, StructMemberDeclaration, WgslShader } from './shaders';
 
-// ---- Phase 2: DAG bindings + traversal --------------------------------------------------------
+// ---- Phase 2: derived BindingGraph ------------------------------------------------------------
 
-export { bindings, binding, group as bindingGroup, isBindingGraph } from './pipelines/binding-graph';
-export type {
-    BindingGraph,
-    BindingsDescriptor,
-    GroupDescriptor,
-    GroupNode,
-    SlotDescriptor,
-    SlotNode,
-} from './pipelines/binding-graph';
+export { bindings, group, isBindingGraph, isBindingGroup } from './pipelines/binding-graph';
+export type { BindingGraph, BindingGroup, GroupSpec } from './pipelines/binding-graph';
 export { resolveShaderBindings, shaderSlotEntries } from './pipelines/traverse';
 
 // ---- Phase 3: Pipeline / Drawable / Scene authoring -------------------------------------------
