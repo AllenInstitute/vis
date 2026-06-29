@@ -13,9 +13,9 @@ const camStruct = struct('Camera', [
 
 function setup() {
     const cam = uniformSlot('camera', camStruct);
-    group({ slots: [cam] });
+    const root = group(cam);
     const sh = shader([camStruct, cam]);
-    const graph = bindings(sh);
+    const graph = bindings(root, sh);
     return { sh, graph, slotIndex: resolveShaderBindings(graph, sh) };
 }
 

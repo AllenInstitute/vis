@@ -1,42 +1,31 @@
 /**
- * `BindingGroup` + `bindings()` — derived-DAG authoring model.
+ * `BindingGroup` + `bindings()` — variadic-children, graph-local-ownership model.
  *
- * Each `ResourceSlot` belongs to exactly one `BindingGroup` (assigned at `group()` construction).
- * Groups may nest via an optional `parent` link, forming a forest; a group's `depth` (and thus
- * the WGSL `@group(N)` index) is `parent ? parent.depth + 1 : 0`. The shader's `declarations`
- * array is the single source of truth for which slots a shader consumes — `bindings(shader)`
- * derives the canonical `BindingGraph` by walking those declarations and looking up each slot's
- * group. No redundant "slot ↔ shader" authoring is required.
+ * A `BindingGroup` is a tree node that owns an ordered list of slot children (which take
+ * binding indices in *this* group) and an ordered list of subgroup children (which are nested
+ * trees). Authoring is inline:
  *
- * Authoring example:
  * ```ts
- * const camera   = slot.uniform('camera', Camera);
- * const lighting = slot.uniform('lighting', Lighting);
- * const albedo   = slot.texture('albedo', 'texture_2d<f32>');
- * const samp     = slot.sampler('samp', 'sampler');
+ * const material = group({ label: 'material' }, albedo, samp);
+ * const frame    = group({ label: 'frame' }, camera, lighting, material);
  *
- * const frame    = group({ label: 'frame', slots: [camera, lighting] });
- * const material = group({ label: 'material', parent: frame, slots: [albedo, samp] });
- *
- * const shA = shader([camera, albedo, samp]); // doesn't use `lighting`
- * const shB = shader([camera, lighting]);
- *
- * const graphA   = bindings(shA);          // per-shader graph
- * const combined = bindings([shA, shB]);   // multi-shader (shared slots auto-detected)
+ * const shA = shader([camera, albedo, samp]);
+ * const graph = bindings(frame, shA);
  * ```
  *
- * Validation:
- *  1. **Slot uniqueness across groups** — `group()` rejects a slot that already belongs to a
- *     prior group. Enforced eagerly via a module-private `WeakMap`.
- *  2. **Group depth limit** — defaults to 4 (the typical WebGPU `maxBindGroups`). Configurable
- *     via `group({ maxDepth })` on any group in the chain.
- *  3. **Slot coverage** — `bindings()` throws when a shader declares a slot that has not been
- *     assigned to any group.
- *  4. **At least one shader** — `bindings()` rejects an empty input.
+ * Key semantics:
+ *  - **Slot ownership is graph-local.** A `ResourceSlot` may appear in multiple unrelated trees;
+ *    its `(group, binding)` is determined per-graph by `bindings(root, shaders)`.
+ *  - **Within a tree, a slot may appear at most once.** Validated by `bindings()` (not by `group()`).
+ *  - **Binding indices** are assigned only among the *slot* children of a group, preserving their
+ *    relative source order. Subgroup children can be freely interleaved without affecting indices.
+ *  - **Group depth** is graph-local: root = 0, subgroup depth = parent depth + 1. The depth is
+ *    stored on the graph (`_groupDepth`), NOT on the `BindingGroup` itself.
+ *  - **`maxDepth`** is per-node (default 4). `bindings()` enforces it at each subgroup as the
+ *    depth is computed.
  *
  * Per-shader resolution lives in `./traverse.ts`. `resolveShaderBindings(graph, shader)` walks
- * `shader.declarations`, filters to `ResourceSlot`s, and emits `{group: depth, binding: index}`
- * for each by looking up the slot's group via the registry exposed below.
+ * `shader.declarations`, filters to `ResourceSlot`s, and looks each up in `graph._slotIndex`.
  */
 
 import { isResourceSlot, type ResourceSlot } from '../resources';
@@ -45,40 +34,49 @@ import type { WgslShader } from '../shaders';
 // ---- Public types -----------------------------------------------------------------------------
 
 /**
- * An ordered, optionally-nested grouping of `ResourceSlot`s. Determines the `@group(N)` index
- * via `depth` (root groups are at depth 0) and the per-binding index via `slots[i]`'s position.
+ * An immutable tree node carrying ordered slot bindings and ordered subgroup children. Depth
+ * and parent links are graph-local and do NOT live on this object — see `BindingGraph._groupDepth`.
  *
- * Groups are immutable once constructed. To author a new layout, build a new `BindingGroup`.
+ * To author a new layout, build a new `BindingGroup`. Two `bindings()` calls over disjoint trees
+ * may resolve the same slot identity to different `(group, binding)` indices.
  */
 export type BindingGroup = {
     readonly __nodeType: 'binding-group';
     readonly id: string;
     readonly label?: string;
+    /** Slot children in source order; each one's index in this array is its binding index. */
     readonly slots: readonly ResourceSlot[];
-    readonly parent?: BindingGroup;
-    /** `parent ? parent.depth + 1 : 0`. Used as the WGSL `@group(N)` index. */
-    readonly depth: number;
+    /** Subgroup children in source order. Each becomes a nested group at depth+1 in a graph. */
+    readonly subgroups: readonly BindingGroup[];
+    /** Per-node maximum depth permitted at this position in a tree (default 4). */
+    readonly maxDepth: number;
 };
 
-/** Specification accepted by `group()`. */
+/** Optional metadata accepted as the first positional argument of `group()`. */
 export type GroupSpec = {
     readonly label?: string;
-    readonly slots: readonly ResourceSlot[];
-    readonly parent?: BindingGroup;
     /** Override the default group-depth limit (4). */
     readonly maxDepth?: number;
 };
 
 /**
- * A validated derivation from one or more shaders. Carries the shaders that were resolved and
- * the de-duplicated set of groups they reach (parents included transitively). Consumed by the
- * traversal helpers in `./traverse.ts` and by Phase 3 pipeline build.
+ * A validated derivation from a `BindingGroup` tree plus one or more shaders. Carries the root,
+ * the shaders that were resolved, and graph-local slot↔binding + group↔depth indices.
  */
 export type BindingGraph = {
     readonly __graphType: 'binding-graph';
+    /** The root group supplied to `bindings()`. Lives at depth 0 in this graph. */
+    readonly root: BindingGroup;
     readonly shaders: readonly WgslShader[];
-    /** All groups reachable from any shader's declared slots, parents included. */
+    /** All groups reachable from `root`, sorted shallowest-first with ties broken by id. */
     readonly groups: readonly BindingGroup[];
+    /** Graph-local resolution of every slot reachable from `root`. */
+    readonly _slotIndex: ReadonlyMap<
+        ResourceSlot,
+        { readonly group: number; readonly binding: number; readonly owner: BindingGroup }
+    >;
+    /** Graph-local depth lookup for every group in `groups`. */
+    readonly _groupDepth: ReadonlyMap<BindingGroup, number>;
 };
 
 // ---- Runtime type guards -----------------------------------------------------------------------
@@ -99,18 +97,6 @@ export function isBindingGraph(value: unknown): value is BindingGraph {
     );
 }
 
-// ---- Slot ↔ group registry (module-private) ---------------------------------------------------
-
-const slotToGroup = new WeakMap<ResourceSlot, BindingGroup>();
-
-/**
- * Look up the `BindingGroup` a slot belongs to, or `undefined` if it has not been assigned via
- * `group()`. Exported for `./traverse.ts`; not part of the public-API barrel.
- */
-export function groupForSlot(slot: ResourceSlot): BindingGroup | undefined {
-    return slotToGroup.get(slot);
-}
-
 // ---- Construction ------------------------------------------------------------------------------
 
 const DEFAULT_GROUP_DEPTH_LIMIT = 4;
@@ -122,36 +108,56 @@ function freshId(prefix: string): string {
 }
 
 /**
- * Construct a `BindingGroup`. Validates that every slot is a `ResourceSlot`, that no slot is
- * already assigned to another group, and that the resulting depth fits within the limit.
- *
- * @throws if any validation rule fails (see the file-level doc-comment for the full list).
+ * Returns true when `value` is a plain `GroupSpec` (an object that is neither a `ResourceSlot`
+ * nor a `BindingGroup`). Used by `group()` to detect the optional first-arg-as-spec overload.
  */
-export function group(spec: GroupSpec): BindingGroup {
-    const depth = spec.parent ? spec.parent.depth + 1 : 0;
-    const maxDepth = spec.maxDepth ?? DEFAULT_GROUP_DEPTH_LIMIT;
+function isGroupSpec(value: unknown): value is GroupSpec {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        !isResourceSlot(value) &&
+        !isBindingGroup(value)
+    );
+}
 
-    if (depth >= maxDepth) {
-        throw new Error(
-            `group: depth ${depth} reaches or exceeds the limit of ${maxDepth} ` +
-                `(label='${spec.label ?? '<unlabeled>'}'). Increase 'maxDepth' or restructure ` +
-                'the parent chain.'
-        );
+/**
+ * Construct a `BindingGroup`. Accepts an optional spec object followed by any number of
+ * `ResourceSlot` and/or `BindingGroup` children. Children are bucketed by kind preserving
+ * their relative source order; slot children's positions become this group's binding indices.
+ *
+ * Overloads:
+ * ```ts
+ * group(slotA, slotB)                      // no spec
+ * group({ label: 'frame' }, slotA, slotB)  // with spec
+ * group({ label: 'frame' }, slotA, subgroup, slotB) // mixed children
+ * ```
+ *
+ * Validation performed here is shallow: each variadic arg must be a `ResourceSlot` or
+ * `BindingGroup`. Within-tree slot uniqueness and per-node `maxDepth` are validated later by
+ * `bindings()` because they are tree-shape invariants, not local construction invariants.
+ */
+export function group(...args: Array<GroupSpec | ResourceSlot | BindingGroup>): BindingGroup {
+    let spec: GroupSpec | undefined;
+    let children: Array<ResourceSlot | BindingGroup>;
+    if (args.length > 0 && isGroupSpec(args[0])) {
+        spec = args[0];
+        children = args.slice(1) as Array<ResourceSlot | BindingGroup>;
+    } else {
+        children = args as Array<ResourceSlot | BindingGroup>;
     }
 
-    for (let i = 0; i < spec.slots.length; i++) {
-        const s = spec.slots[i] as ResourceSlot;
-        if (!isResourceSlot(s)) {
+    const slots: ResourceSlot[] = [];
+    const subgroups: BindingGroup[] = [];
+    for (let i = 0; i < children.length; i++) {
+        const c = children[i];
+        if (isResourceSlot(c)) {
+            slots.push(c);
+        } else if (isBindingGroup(c)) {
+            subgroups.push(c);
+        } else {
             throw new Error(
-                `group: entry at index ${i} of group '${spec.label ?? '<unlabeled>'}' is not a ` +
-                    'ResourceSlot (use slot.uniform/.texture/.sampler/.storage/etc.).'
-            );
-        }
-        const prior = slotToGroup.get(s);
-        if (prior !== undefined) {
-            throw new Error(
-                `group: slot '${s.name}' is already assigned to group '${prior.label ?? '<unlabeled>'}' ` +
-                    `(id='${prior.id}'). A ResourceSlot may belong to exactly one BindingGroup.`
+                `group: child at position ${i} of group '${spec?.label ?? '<unlabeled>'}' is ` +
+                    'neither a ResourceSlot nor a BindingGroup.'
             );
         }
     }
@@ -159,59 +165,115 @@ export function group(spec: GroupSpec): BindingGroup {
     const node: BindingGroup = {
         __nodeType: 'binding-group',
         id: freshId('group'),
-        ...(spec.label !== undefined && { label: spec.label }),
-        slots: [...spec.slots],
-        ...(spec.parent !== undefined && { parent: spec.parent }),
-        depth,
+        ...(spec?.label !== undefined && { label: spec.label }),
+        slots,
+        subgroups,
+        maxDepth: spec?.maxDepth ?? DEFAULT_GROUP_DEPTH_LIMIT,
     };
 
-    // Register the slot → group mapping only after the group object exists, so error paths
-    // above do not pollute the registry.
-    for (const s of node.slots) {
-        slotToGroup.set(s, node);
-    }
-
-    return node;
+    return Object.freeze(node);
 }
 
 /**
- * Derive a `BindingGraph` from one shader or a list of shaders. Walks each shader's
- * declarations, filters to `ResourceSlot`s, validates that every slot is assigned to a group,
- * and returns the de-duplicated set of reached groups (transitively including parents).
+ * Derive a `BindingGraph` from a root `BindingGroup` and one or more shaders. Walks the tree
+ * top-down assigning each node a depth, builds the slot↔binding index, enforces per-node
+ * `maxDepth` + within-tree slot uniqueness, and validates that every shader's declared slots
+ * appear in the tree.
  *
- * @throws if any declared slot is not assigned to a group, or if the input is empty.
+ * @throws if the supplied input violates any of the validation rules listed above.
  */
-export function bindings(input: WgslShader | readonly WgslShader[]): BindingGraph {
+export function bindings(root: BindingGroup, input: WgslShader | readonly WgslShader[]): BindingGraph {
+    if (!isBindingGroup(root)) {
+        throw new Error('bindings: first argument must be a BindingGroup (constructed via `group()`).');
+    }
     const shaders = Array.isArray(input) ? [...input] : [input as WgslShader];
-
     if (shaders.length === 0) {
         throw new Error('bindings: at least one shader is required');
     }
 
-    const reached = new Set<BindingGroup>();
+    const slotIndex = new Map<
+        ResourceSlot,
+        { group: number; binding: number; owner: BindingGroup }
+    >();
+    const groupDepth = new Map<BindingGroup, number>();
+    const allGroups: BindingGroup[] = [];
+
+    // Iterative DFS so the stack is explicit and the error messages can mention the offending
+    // node without recursion-driven obfuscation.
+    type Frame = { node: BindingGroup; depth: number };
+    const stack: Frame[] = [{ node: root, depth: 0 }];
+    while (stack.length > 0) {
+        const { node, depth } = stack.pop() as Frame;
+
+        if (depth >= node.maxDepth) {
+            throw new Error(
+                `bindings: group '${node.label ?? '<unlabeled>'}' (id='${node.id}') reached depth ` +
+                    `${depth} which meets or exceeds its maxDepth of ${node.maxDepth}.`
+            );
+        }
+
+        if (groupDepth.has(node)) {
+            // A group reached twice via different paths means the same group instance was used
+            // as a subgroup of more than one parent (or transitively a descendant of itself).
+            // Rare in practice but cheap to catch.
+            throw new Error(
+                `bindings: group '${node.label ?? '<unlabeled>'}' (id='${node.id}') appears more ` +
+                    'than once in the tree (a BindingGroup may be referenced as a subgroup at ' +
+                    'most once per graph).'
+            );
+        }
+        groupDepth.set(node, depth);
+        allGroups.push(node);
+
+        for (let i = 0; i < node.slots.length; i++) {
+            const slot = node.slots[i] as ResourceSlot;
+            if (slotIndex.has(slot)) {
+                const prior = slotIndex.get(slot) as { owner: BindingGroup };
+                throw new Error(
+                    `bindings: slot '${slot.name}' appears more than once in the tree ` +
+                        `(first owner: group '${prior.owner.label ?? '<unlabeled>'}'; ` +
+                        `duplicate owner: group '${node.label ?? '<unlabeled>'}'). A slot may ` +
+                        'appear at most once per graph.'
+                );
+            }
+            slotIndex.set(slot, { group: depth, binding: i, owner: node });
+        }
+
+        // Push subgroups in reverse so DFS visits them left-to-right (stable, intuitive order).
+        for (let i = node.subgroups.length - 1; i >= 0; i--) {
+            stack.push({ node: node.subgroups[i] as BindingGroup, depth: depth + 1 });
+        }
+    }
+
+    // Validate every shader's declared slots are present in this graph.
     for (const sh of shaders) {
         for (const decl of sh.declarations) {
             if (!isResourceSlot(decl)) continue;
-            const g = slotToGroup.get(decl);
-            if (g === undefined) {
+            if (!slotIndex.has(decl)) {
                 throw new Error(
                     `bindings: shader (id='${sh.id}') declares slot '${decl.name}' but it is not ` +
-                        'assigned to any group (assign it via `group({ slots: [...] })`).'
+                        "present in the supplied group tree (rooted at '" +
+                        (root.label ?? '<unlabeled>') +
+                        "').",
                 );
-            }
-            // Walk the parent chain so the resulting graph is closed under containment.
-            let cur: BindingGroup | undefined = g;
-            while (cur !== undefined) {
-                reached.add(cur);
-                cur = cur.parent;
             }
         }
     }
 
-    return {
+    // Stable group order: shallowest first, ties broken by construction id.
+    allGroups.sort((a, b) => {
+        const da = groupDepth.get(a) as number;
+        const db = groupDepth.get(b) as number;
+        return da - db || a.id.localeCompare(b.id);
+    });
+
+    const graph: BindingGraph = {
         __graphType: 'binding-graph',
+        root,
         shaders,
-        // Stable order: shallowest groups first, ties broken by construction id.
-        groups: [...reached].sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id)),
+        groups: allGroups,
+        _slotIndex: slotIndex,
+        _groupDepth: groupDepth,
     };
+    return Object.freeze(graph);
 }

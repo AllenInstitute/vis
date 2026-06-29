@@ -32,10 +32,9 @@ function mkColorPipelineState(label?: string) {
 describe('pipeline() — happy path', () => {
     it('creates one BGL per group depth, one pipeline layout, one shader module, one pipeline', () => {
         const camera = uniformSlot('camera', cameraStruct);
-        const g = group({ label: 'frame', slots: [camera] });
-        void g;
+        const root = group({ label: 'frame' }, camera);
         const sh = shader([cameraStruct, camera]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         const built = pipeline(graph, sh, mkColorPipelineState('p'), m.device);
@@ -55,10 +54,10 @@ describe('pipeline() — happy path', () => {
         const cam = uniformSlot('camera', cameraStruct);
         const tex = textureSlot('albedo', 'texture_2d<f32>');
         const samp = samplerSlot('samp', 'sampler');
-        const frame = group({ label: 'frame', slots: [cam] });
-        group({ label: 'material', parent: frame, slots: [tex, samp] });
+        const material = group({ label: 'material' }, tex, samp);
+        const frame = group({ label: 'frame' }, cam, material);
         const sh = shader([cameraStruct, cam, tex, samp]);
-        const graph = bindings(sh);
+        const graph = bindings(frame, sh);
 
         const m = makeMockDevice();
         const built = pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -76,12 +75,12 @@ describe('pipeline() — happy path', () => {
         const a = uniformSlot('a', cameraStruct);
         const skipFiller = uniformSlot('skip', cameraStruct);
         const c = uniformSlot('c', cameraStruct);
-        const g0 = group({ slots: [a] });
-        const g1 = group({ parent: g0, slots: [skipFiller] });
-        group({ parent: g1, slots: [c] });
+        const g2 = group(c);
+        const g1 = group(skipFiller, g2);
+        const g0 = group(a, g1);
 
         const sh = shader([cameraStruct, a, c]); // declares depths 0 and 2 only
-        const graph = bindings(sh);
+        const graph = bindings(g0, sh);
 
         const m = makeMockDevice();
         const built = pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -94,9 +93,9 @@ describe('pipeline() — happy path', () => {
 
     it('builds a fragment-less pipeline when state.fragment is absent', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         pipeline(graph, sh, { primitive: { topology: 'triangle-list' } }, m.device);
@@ -108,9 +107,9 @@ describe('pipeline() — happy path', () => {
 
     it('defaults entry points to vs_main and fs_main', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -122,9 +121,9 @@ describe('pipeline() — happy path', () => {
 
     it('honours explicit entry-point overrides', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         pipeline(
@@ -146,9 +145,9 @@ describe('pipeline() — happy path', () => {
 describe('pipeline() — WGSL + reflection', () => {
     it('feeds asSource(bindShader(...)) to createShaderModule', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -162,9 +161,9 @@ describe('pipeline() — WGSL + reflection', () => {
 
     it('slotIndex matches resolveShaderBindings output', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         const built = pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -175,9 +174,9 @@ describe('pipeline() — WGSL + reflection', () => {
 
     it('populates defs from makeShaderDataDefinitions', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         const built = pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -193,9 +192,9 @@ describe('pipeline() — WGSL + reflection', () => {
 describe('pipeline() — visibility resolution', () => {
     it('uses slot.visibility when explicitly set', () => {
         const cam = uniformSlot('camera', cameraStruct, { visibility: ShaderStageFlag.VERTEX });
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -206,9 +205,9 @@ describe('pipeline() — visibility resolution', () => {
 
     it('defaults visibility to VERTEX | FRAGMENT when slot does not declare', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -221,9 +220,9 @@ describe('pipeline() — visibility resolution', () => {
 describe('pipeline() — error propagation', () => {
     it('propagates createRenderPipeline errors', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         m.calls.createRenderPipeline.mockImplementationOnce(() => {
@@ -235,9 +234,9 @@ describe('pipeline() — error propagation', () => {
 
     it('throws on malformed PipelineStateDescriptor (Zod)', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         expect(() =>
@@ -256,10 +255,10 @@ describe('pipeline() — descriptor composition', () => {
     it('wires the pipeline layout from the produced BGLs in depth order', () => {
         const cam = uniformSlot('camera', cameraStruct);
         const tex = textureSlot('albedo', 'texture_2d<f32>');
-        const frame = group({ slots: [cam] });
-        group({ parent: frame, slots: [tex] });
+        const material = group(tex);
+        const frame = group(cam, material);
         const sh = shader([cameraStruct, cam, tex]);
-        const graph = bindings(sh);
+        const graph = bindings(frame, sh);
 
         const m = makeMockDevice();
         pipeline(graph, sh, mkColorPipelineState('p'), m.device);
@@ -272,9 +271,9 @@ describe('pipeline() — descriptor composition', () => {
 
     it('forwards primitive / depthStencil / multisample / label to the descriptor', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         pipeline(
@@ -299,9 +298,9 @@ describe('pipeline() — descriptor composition', () => {
 
     it('returns a frozen BuiltPipeline', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         const built = pipeline(graph, sh, mkColorPipelineState(), m.device);
@@ -314,9 +313,9 @@ describe('pipeline() — descriptor composition', () => {
 describe('pipeline() — cache (Slice 3c)', () => {
     it('returns the same BuiltPipeline instance for identical inputs', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
         const state = mkColorPipelineState('p');
 
         const m = makeMockDevice();
@@ -330,9 +329,9 @@ describe('pipeline() — cache (Slice 3c)', () => {
 
     it('caches across key-equivalent state objects (key-order independence)', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         const a = pipeline(
@@ -359,9 +358,9 @@ describe('pipeline() — cache (Slice 3c)', () => {
 
     it('produces distinct instances for differing state', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         const a = pipeline(
@@ -383,9 +382,9 @@ describe('pipeline() — cache (Slice 3c)', () => {
 
     it('isolates cache per-device (different device → different instance)', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
         const state = mkColorPipelineState();
 
         const m1 = makeMockDevice();
@@ -399,9 +398,9 @@ describe('pipeline() — cache (Slice 3c)', () => {
 
     it('populates a real fingerprint (not the 3b placeholder)', () => {
         const cam = uniformSlot('camera', cameraStruct);
-        group({ slots: [cam] });
+        const root = group(cam);
         const sh = shader([cameraStruct, cam]);
-        const graph = bindings(sh);
+        const graph = bindings(root, sh);
 
         const m = makeMockDevice();
         const built = pipeline(graph, sh, mkColorPipelineState(), m.device);

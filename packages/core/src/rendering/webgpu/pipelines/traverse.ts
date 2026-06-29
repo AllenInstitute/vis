@@ -1,15 +1,16 @@
 /**
- * Traversal helpers for the derived `BindingGraph` model (see `./binding-graph.ts`).
+ * Traversal helpers for the variadic-children `BindingGraph` model (see `./binding-graph.ts`).
  *
  * The traversal is **per-shader**: each shader's `(group, binding)` resolution comes from
- * walking its own `declarations` array, filtering to `ResourceSlot`s, and looking up each
- * slot's `BindingGroup` via the registry maintained by `binding-graph.ts`.
+ * walking its own `declarations` array, filtering to `ResourceSlot`s, and looking up each slot
+ * in the graph-local `_slotIndex`. Slot ownership is graph-local — the same `ResourceSlot` can
+ * resolve to different indices in two different graphs.
  *
  * Resolution rules:
- * - **Group index** = `BindingGroup.depth` (the slot's containing group; root = 0).
- * - **Binding index** = the slot's position within its containing group's `slots` array.
- * - Two shaders that share a slot resolve it to the same `(group, binding)` automatically,
- *   because the slot lives in exactly one group.
+ * - **Group index** = the slot's graph-local depth (root = 0).
+ * - **Binding index** = the slot's position within its owning group's `slots` array.
+ * - Two shaders that share a slot in the *same graph* resolve it to identical `(group, binding)`,
+ *   because `bindings()` enforces within-tree slot uniqueness.
  *
  * This module is intentionally distinct from the legacy `traversal.ts` (which operates over the
  * chain-style `binding-graphs.ts` and will be removed in Phase 9). The two coexist during the
@@ -18,27 +19,23 @@
 
 import { isResourceSlot, type BindingMap, type ResourceSlot } from '../resources';
 import type { WgslShader } from '../shaders';
-import { type BindingGraph, type BindingGroup, groupForSlot } from './binding-graph';
+import type { BindingGraph, BindingGroup } from './binding-graph';
 
-/** Resolve a single slot's `(group, binding)` or throw if it has not been assigned to a group. */
-function resolveSlot(slot: ResourceSlot, shaderId: string): { group: number; binding: number } {
-    const g = groupForSlot(slot);
-    if (g === undefined) {
+/** Resolve a single slot's `(group, binding)` from the graph or throw if it is not present. */
+function resolveSlot(
+    slot: ResourceSlot,
+    graph: BindingGraph,
+    shaderId: string
+): { group: number; binding: number } {
+    const entry = graph._slotIndex.get(slot);
+    if (entry === undefined) {
         throw new Error(
-            `resolveShaderBindings: slot '${slot.name}' is not assigned to any group ` +
-                `(shader id='${shaderId}'). Did you forget to wrap it in \`group({ slots: [...] })\`?`
+            `resolveShaderBindings: slot '${slot.name}' is not present in the supplied graph ` +
+                `(shader id='${shaderId}'). Did you forget to include it under the root passed to ` +
+                '`bindings(root, shaders)`?'
         );
     }
-    const binding = g.slots.indexOf(slot);
-    if (binding < 0) {
-        // Defensive: the registry says this slot is in `g` but indexOf disagrees. Impossible
-        // unless someone mutated `g.slots` post-construction.
-        throw new Error(
-            `resolveShaderBindings: internal inconsistency — slot '${slot.name}' registered to ` +
-                `group '${g.label ?? '<unlabeled>'}' (id='${g.id}') but absent from its slots array.`
-        );
-    }
-    return { group: g.depth, binding };
+    return { group: entry.group, binding: entry.binding };
 }
 
 /**
@@ -46,18 +43,15 @@ function resolveSlot(slot: ResourceSlot, shaderId: string): { group: number; bin
  *
  * @returns a `BindingMap` covering the shader's slots; suitable for `bindShader(shader, map)`.
  *
- * @throws if any declared slot has not been assigned to a `BindingGroup`. This is normally
- * impossible when `graph` was produced by `bindings(shader)` — the same validation runs there —
- * but the per-slot check is repeated here as a defence-in-depth invariant.
+ * @throws if any declared slot is not present in `graph._slotIndex`. This is normally impossible
+ * when `graph` was produced by `bindings(root, shader)` — the same validation runs there — but
+ * the per-slot check is repeated here as a defence-in-depth invariant.
  */
 export function resolveShaderBindings(graph: BindingGraph, shader: WgslShader): BindingMap {
-    // `graph` is currently used only as a witness that validation has occurred; future work may
-    // narrow resolution to slots whose group is in `graph.groups`.
-    void graph;
     const result = new Map<ResourceSlot, { group: number; binding: number }>();
     for (const decl of shader.declarations) {
         if (!isResourceSlot(decl)) continue;
-        result.set(decl, resolveSlot(decl, shader.id));
+        result.set(decl, resolveSlot(decl, graph, shader.id));
     }
     return result;
 }
@@ -76,19 +70,17 @@ export function shaderSlotEntries(
     readonly slot: ResourceSlot;
     readonly owner: BindingGroup;
 }> {
-    void graph;
     const entries: { group: number; binding: number; slot: ResourceSlot; owner: BindingGroup }[] = [];
     for (const decl of shader.declarations) {
         if (!isResourceSlot(decl)) continue;
-        const owner = groupForSlot(decl);
-        if (owner === undefined) {
+        const entry = graph._slotIndex.get(decl);
+        if (entry === undefined) {
             throw new Error(
-                `shaderSlotEntries: slot '${decl.name}' is not assigned to any group ` +
+                `shaderSlotEntries: slot '${decl.name}' is not present in the supplied graph ` +
                     `(shader id='${shader.id}').`
             );
         }
-        const binding = owner.slots.indexOf(decl);
-        entries.push({ group: owner.depth, binding, slot: decl, owner });
+        entries.push({ group: entry.group, binding: entry.binding, slot: decl, owner: entry.owner });
     }
     entries.sort((a, b) => a.group - b.group || a.binding - b.binding);
     return entries;
