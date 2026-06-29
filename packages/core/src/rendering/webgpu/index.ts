@@ -33,11 +33,18 @@ export type { StructDecl, StructDeclaration, StructMemberDeclaration, WgslShader
 export { bindings, group, isBindingGraph, isBindingGroup } from './pipelines/binding-graph';
 export type { BindingGraph, BindingGroup, GroupSpec } from './pipelines/binding-graph';
 export { resolveShaderBindings, shaderSlotEntries } from './pipelines/traverse';
+export type {
+    FragmentStateDescriptor,
+    NormalizedPipelineState,
+    PipelineStateDescriptor,
+    VertexStateDescriptor,
+} from './pipelines/pipeline-state';
 
 // ---- Phase 3: Pipeline / Drawable / Scene authoring -------------------------------------------
 
 /** Phase 3: declarative pipeline factory (replaces the legacy `pipelines/binding-graphs` pipeline()). */
-export const pipeline: unknown = undefined;
+export { pipeline } from './pipelines/build';
+export type { BuiltPipeline } from './pipelines/build';
 
 /** Phase 3: bind a typed slot to a data-bearing `Resource` (buffer/texture/sampler). */
 export const resource: unknown = undefined;
