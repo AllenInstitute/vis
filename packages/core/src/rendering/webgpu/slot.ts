@@ -40,6 +40,7 @@ import {
     type UniformSlot,
     type UniformSlotOptions,
 } from './resources/resource';
+import type { TextureFormat } from './native-types';
 import type {
     StructDecl,
     TypeIdentifier,
@@ -110,7 +111,7 @@ export const slot = {
     storageTexture(
         name: string,
         type: WgslTextureDataType | `texture_${string}`,
-        format: GPUTextureFormat,
+        format: TextureFormat,
         options?: StorageTextureSlotOptions
     ): TypedStorageTextureSlot {
         return storageTextureSlot(name, type, format, options);

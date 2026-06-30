@@ -289,28 +289,28 @@ export enum ColorWriteFlag {
 // ---- Bind Group Layout Entry types ----
 
 export const BufferBindingLayoutSchema = z.object({
-    type: BufferBindingTypeSchema.optional(),
-    hasDynamicOffset: z.boolean().optional(),
-    minBindingSize: z.number().optional(),
+    type: BufferBindingTypeSchema.exactOptional(),
+    hasDynamicOffset: z.boolean().exactOptional(),
+    minBindingSize: z.number().exactOptional(),
 });
 export type BufferBindingLayout = z.infer<typeof BufferBindingLayoutSchema>;
 
 export const SamplerBindingLayoutSchema = z.object({
-    type: SamplerBindingTypeSchema.optional(),
+    type: SamplerBindingTypeSchema.exactOptional(),
 });
 export type SamplerBindingLayout = z.infer<typeof SamplerBindingLayoutSchema>;
 
 export const TextureBindingLayoutSchema = z.object({
-    sampleType: TextureSampleTypeSchema.optional(),
-    viewDimension: TextureViewDimensionSchema.optional(),
-    multisampled: z.boolean().optional(),
+    sampleType: TextureSampleTypeSchema.exactOptional(),
+    viewDimension: TextureViewDimensionSchema.exactOptional(),
+    multisampled: z.boolean().exactOptional(),
 });
 export type TextureBindingLayout = z.infer<typeof TextureBindingLayoutSchema>;
 
 export const StorageTextureBindingLayoutSchema = z.object({
-    access: StorageTextureAccessSchema.optional(),
+    access: StorageTextureAccessSchema.exactOptional(),
     format: TextureFormatSchema,
-    viewDimension: TextureViewDimensionSchema.optional(),
+    viewDimension: TextureViewDimensionSchema.exactOptional(),
 });
 export type StorageTextureBindingLayout = z.infer<typeof StorageTextureBindingLayoutSchema>;
 
@@ -320,58 +320,58 @@ export type ExternalTextureBindingLayout = z.infer<typeof ExternalTextureBinding
 export const BindGroupLayoutEntrySchema = z.object({
     binding: z.number().int().nonnegative(),
     visibility: ShaderStageFlagsSchema,
-    buffer: BufferBindingLayoutSchema.optional(),
-    sampler: SamplerBindingLayoutSchema.optional(),
-    texture: TextureBindingLayoutSchema.optional(),
-    storageTexture: StorageTextureBindingLayoutSchema.optional(),
-    externalTexture: ExternalTextureBindingLayoutSchema.optional(),
+    buffer: BufferBindingLayoutSchema.exactOptional(),
+    sampler: SamplerBindingLayoutSchema.exactOptional(),
+    texture: TextureBindingLayoutSchema.exactOptional(),
+    storageTexture: StorageTextureBindingLayoutSchema.exactOptional(),
+    externalTexture: ExternalTextureBindingLayoutSchema.exactOptional(),
 });
 export type BindGroupLayoutEntry = z.infer<typeof BindGroupLayoutEntrySchema>;
 
 // ---- Pipeline State types ----
 
 export const StencilFaceStateSchema = z.object({
-    compare: CompareFunctionSchema.optional(),
-    failOp: StencilOperationSchema.optional(),
-    depthFailOp: StencilOperationSchema.optional(),
-    passOp: StencilOperationSchema.optional(),
+    compare: CompareFunctionSchema.exactOptional(),
+    failOp: StencilOperationSchema.exactOptional(),
+    depthFailOp: StencilOperationSchema.exactOptional(),
+    passOp: StencilOperationSchema.exactOptional(),
 });
 export type StencilFaceState = z.infer<typeof StencilFaceStateSchema>;
 
 export const DepthStencilStateSchema = z.object({
     format: TextureFormatSchema,
-    depthWriteEnabled: z.boolean().optional(),
-    depthCompare: CompareFunctionSchema.optional(),
-    stencilFront: StencilFaceStateSchema.optional(),
-    stencilBack: StencilFaceStateSchema.optional(),
-    stencilReadMask: z.number().int().nonnegative().optional(),
-    stencilWriteMask: z.number().int().nonnegative().optional(),
-    depthBias: z.number().int().optional(),
-    depthBiasSlopeScale: z.number().optional(),
-    depthBiasClamp: z.number().optional(),
+    depthWriteEnabled: z.boolean().exactOptional(),
+    depthCompare: CompareFunctionSchema.exactOptional(),
+    stencilFront: StencilFaceStateSchema.exactOptional(),
+    stencilBack: StencilFaceStateSchema.exactOptional(),
+    stencilReadMask: z.number().int().nonnegative().exactOptional(),
+    stencilWriteMask: z.number().int().nonnegative().exactOptional(),
+    depthBias: z.number().int().exactOptional(),
+    depthBiasSlopeScale: z.number().exactOptional(),
+    depthBiasClamp: z.number().exactOptional(),
 });
 export type DepthStencilState = z.infer<typeof DepthStencilStateSchema>;
 
 export const MultisampleStateSchema = z.object({
-    count: z.number().int().positive().optional(),
-    mask: z.number().int().nonnegative().optional(),
-    alphaToCoverageEnabled: z.boolean().optional(),
+    count: z.number().int().positive().exactOptional(),
+    mask: z.number().int().nonnegative().exactOptional(),
+    alphaToCoverageEnabled: z.boolean().exactOptional(),
 });
 export type MultisampleState = z.infer<typeof MultisampleStateSchema>;
 
 export const PrimitiveStateSchema = z.object({
-    topology: PrimitiveTopologySchema.optional(),
-    stripIndexFormat: IndexFormatSchema.optional(),
-    frontFace: FrontFaceSchema.optional(),
-    cullMode: CullModeSchema.optional(),
-    unclippedDepth: z.boolean().optional(),
+    topology: PrimitiveTopologySchema.exactOptional(),
+    stripIndexFormat: IndexFormatSchema.exactOptional(),
+    frontFace: FrontFaceSchema.exactOptional(),
+    cullMode: CullModeSchema.exactOptional(),
+    unclippedDepth: z.boolean().exactOptional(),
 });
 export type PrimitiveState = z.infer<typeof PrimitiveStateSchema>;
 
 export const BlendComponentSchema = z.object({
-    operation: BlendOperationSchema.optional(),
-    srcFactor: BlendFactorSchema.optional(),
-    dstFactor: BlendFactorSchema.optional(),
+    operation: BlendOperationSchema.exactOptional(),
+    srcFactor: BlendFactorSchema.exactOptional(),
+    dstFactor: BlendFactorSchema.exactOptional(),
 });
 export type BlendComponent = z.infer<typeof BlendComponentSchema>;
 
@@ -383,8 +383,8 @@ export type BlendState = z.infer<typeof BlendStateSchema>;
 
 export const ColorTargetStateSchema = z.object({
     format: TextureFormatSchema,
-    blend: BlendStateSchema.optional(),
-    writeMask: ColorWriteFlagsSchema.optional(),
+    blend: BlendStateSchema.exactOptional(),
+    writeMask: ColorWriteFlagsSchema.exactOptional(),
 });
 export type ColorTargetState = z.infer<typeof ColorTargetStateSchema>;
 
@@ -399,7 +399,7 @@ export type VertexAttribute = z.infer<typeof VertexAttributeSchema>;
 
 export const VertexBufferLayoutSchema = z.object({
     arrayStride: z.number().int().nonnegative(),
-    stepMode: VertexStepModeSchema.optional(),
+    stepMode: VertexStepModeSchema.exactOptional(),
     attributes: z.array(VertexAttributeSchema),
 });
 export type VertexBufferLayout = z.infer<typeof VertexBufferLayoutSchema>;

@@ -26,7 +26,7 @@
  */
 
 import { type BindGroupLayoutEntry, ShaderStageFlag, type ShaderStageFlags } from '../native-types';
-import { type BindingMap, bind, type Resource, toBindGroupLayoutEntry } from '../resources';
+import { type BindingMap, bind, type ResourceSlot, toBindGroupLayoutEntry } from '../resources';
 import type { BindingGraph, BindingGraphGroupNode, BindingGraphPipelineNode } from './binding-graphs';
 import { type DrawContext, isResourceProvider, type ResourceProvider } from './draw-context';
 import type { ResourceData } from './resources';
@@ -76,7 +76,7 @@ export type TraversalResult = {
 export function traverseBindingGraphLayout(graph: BindingGraph): LayoutResult {
     const flattened = flattenGroups(graph.groups);
 
-    const bindings = new Map<Resource, { group: number; binding: number }>();
+    const bindings = new Map<ResourceSlot, { group: number; binding: number }>();
     const layouts: BindGroupLayoutEntry[][] = [];
     const slots: SlotProvider[][] = [];
 
@@ -171,7 +171,7 @@ function flattenGroups(roots: BindingGraphGroupNode[]): BindingGraphGroupNode[] 
  *   - Else, union the `stages` of every pipeline that references the resource.
  *   - Else, fall back to VERTEX|FRAGMENT|COMPUTE (permissive default).
  */
-function resolveVisibility(descriptor: Resource, pipelines: BindingGraphPipelineNode[]): ShaderStageFlags {
+function resolveVisibility(descriptor: ResourceSlot, pipelines: BindingGraphPipelineNode[]): ShaderStageFlags {
     if (descriptor.visibility !== undefined) return descriptor.visibility;
     let union: ShaderStageFlags = 0;
     let anySpecified = false;

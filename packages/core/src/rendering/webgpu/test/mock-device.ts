@@ -27,11 +27,15 @@ export interface MockGpuObject {
 
 export interface MockGpuBindGroupLayout extends MockGpuObject {
     readonly __mockKind: 'bindGroupLayout';
-    readonly descriptor: GPUBindGroupLayoutDescriptor;
+    readonly descriptor: Omit<GPUBindGroupLayoutDescriptor, 'entries'> & {
+        readonly entries: readonly GPUBindGroupLayoutEntry[];
+    };
 }
 export interface MockGpuPipelineLayout extends MockGpuObject {
     readonly __mockKind: 'pipelineLayout';
-    readonly descriptor: GPUPipelineLayoutDescriptor;
+    readonly descriptor: Omit<GPUPipelineLayoutDescriptor, 'bindGroupLayouts'> & {
+        readonly bindGroupLayouts: readonly (GPUBindGroupLayout | null | undefined)[];
+    };
 }
 export interface MockGpuShaderModule extends MockGpuObject {
     readonly __mockKind: 'shaderModule';
@@ -86,7 +90,7 @@ export function makeMockDevice(): MockDevice {
         const obj: MockGpuBindGroupLayout = Object.freeze({
             __mockKind: 'bindGroupLayout',
             label: descriptor.label ?? '<missing>',
-            descriptor,
+            descriptor: { ...descriptor, entries: [...descriptor.entries] },
         });
         bindGroupLayouts.push(obj);
         return obj as unknown as GPUBindGroupLayout;
@@ -96,7 +100,7 @@ export function makeMockDevice(): MockDevice {
         const obj: MockGpuPipelineLayout = Object.freeze({
             __mockKind: 'pipelineLayout',
             label: descriptor.label ?? '<missing>',
-            descriptor,
+            descriptor: { ...descriptor, bindGroupLayouts: [...descriptor.bindGroupLayouts] },
         });
         pipelineLayouts.push(obj);
         return obj as unknown as GPUPipelineLayout;

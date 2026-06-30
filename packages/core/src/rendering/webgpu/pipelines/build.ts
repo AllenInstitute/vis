@@ -19,7 +19,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { makeShaderDataDefinitions, type ShaderDataDefinitions } from 'webgpu-utils';
-import { ShaderStageFlag, type ShaderStageFlags } from '../native-types';
+import { type BindGroupLayoutEntry, ShaderStageFlag, type ShaderStageFlags } from '../native-types';
 import {
     type BindingMap,
     bindShader,
@@ -132,7 +132,7 @@ function buildBindGroupLayouts(
     const layouts: GPUBindGroupLayout[] = [];
     for (let depth = 0; depth <= maxDepth; depth++) {
         const slots = perDepth[depth] ?? [];
-        const bglEntries: GPUBindGroupLayoutEntry[] = slots.map((s) => {
+        const bglEntries: BindGroupLayoutEntry[] = slots.map((s) => {
             // Bind each slot at its assigned (group, binding) so `toBindGroupLayoutEntry` can read
             // metadata off the `BoundSlot`. Identity of the original slot is preserved via the
             // wrapper's spread; only `__gen()` differs.
@@ -151,7 +151,7 @@ function buildBindGroupLayouts(
         });
         layouts.push(
             device.createBindGroupLayout({
-                entries: bglEntries,
+                entries: bglEntries as unknown as GPUBindGroupLayoutEntry[],
                 ...(labelBase !== undefined && { label: `${labelBase}.bgl[${depth}]` }),
             })
         );
@@ -174,7 +174,7 @@ function composeRenderPipelineDescriptor(
             module,
             entryPoint: state.vertex.entryPoint,
             ...(state.vertex.buffers !== undefined && {
-                buffers: state.vertex.buffers as GPUVertexBufferLayout[],
+                buffers: state.vertex.buffers as unknown as GPUVertexBufferLayout[],
             }),
             ...(state.vertex.constants !== undefined && { constants: state.vertex.constants }),
         },
@@ -185,7 +185,7 @@ function composeRenderPipelineDescriptor(
             fragment: {
                 module,
                 entryPoint: state.fragment.entryPoint,
-                targets: state.fragment.targets as GPUColorTargetState[],
+                targets: state.fragment.targets as unknown as GPUColorTargetState[],
                 ...(state.fragment.constants !== undefined && {
                     constants: state.fragment.constants,
                 }),

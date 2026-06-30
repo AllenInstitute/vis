@@ -1,5 +1,5 @@
 import type { ShaderStageFlags } from '../native-types';
-import type { Resource } from '../resources';
+import type { ResourceSlot } from '../resources';
 import type { WgslShader } from '../shaders';
 import type { ResourceProvider } from './draw-context';
 import type { ResourceData } from './resources';
@@ -15,7 +15,7 @@ export type BindingGraphResourceNode = {
     __nodeType: 'resource';
     /** Metadata-only descriptor; used by binding-graph traversal to produce the BGL entry and to
      *  generate the WGSL declaration once a `{group, binding}` is assigned. */
-    descriptor: Resource;
+    descriptor: ResourceSlot;
     /** Either the concrete GPU object that will populate the bind-group entry at draw time, or a
      *  per-draw `ResourceProvider` invoked during `assembleBindGroupResources`. Both options
      *  produce identical `layouts`/`bindings`; only the resolution timing differs. */
@@ -106,21 +106,21 @@ export function group(
 ): BindingGraphGroupNode {
     return {
         __nodeType: 'group',
-        label,
+        ...(label !== undefined && { label }),
         resources,
-        subgroup,
+        ...(subgroup !== undefined && { subgroup }),
     };
 }
 
 export function resource(
     label: string | undefined,
-    descriptor: Resource,
+    descriptor: ResourceSlot,
     gpu: ResourceData | ResourceProvider,
     pipelines: BindingGraphPipelineNode[]
 ): BindingGraphResourceNode {
     return {
         __nodeType: 'resource',
-        label,
+        ...(label !== undefined && { label }),
         descriptor,
         gpu,
         pipelines,
