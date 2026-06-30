@@ -36,7 +36,7 @@
         "dist"
     ],
     "scripts": {
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc --build",
         "build": "parcel build --no-cache",
         "dev": "parcel watch --port 1235",
         "test": "vitest --watch",
@@ -53,7 +53,8 @@
         "access": "public"
     },
     "devDependencies": {
-        "@types/lodash": "4.17.24"
+        "@types/lodash": "4.17.24",
+        "@webgpu/types": "0.1.70"
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",

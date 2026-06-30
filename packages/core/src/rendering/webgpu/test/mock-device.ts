@@ -50,6 +50,7 @@ export interface MockDevice {
         readonly createShaderModule: ReturnType<typeof vi.fn>;
         readonly createRenderPipeline: ReturnType<typeof vi.fn>;
         readonly createBuffer: ReturnType<typeof vi.fn>;
+        readonly writeBuffer: ReturnType<typeof vi.fn>;
     };
     readonly created: {
         readonly bindGroupLayouts: MockGpuBindGroupLayout[];
@@ -57,6 +58,18 @@ export interface MockDevice {
         readonly shaderModules: MockGpuShaderModule[];
         readonly renderPipelines: MockGpuRenderPipeline[];
     };
+    /** Recorded `queue.writeBuffer` invocations in call order. */
+    readonly writes: WriteBufferCall[];
+}
+
+/** One recorded `queue.writeBuffer(buffer, offset, data, dataOffset?, size?)` invocation. */
+export interface WriteBufferCall {
+    readonly buffer: GPUBuffer;
+    readonly bufferOffset: number;
+    /** Snapshot of the bytes written (copied at call time so later mutation of the source is irrelevant). */
+    readonly data: Uint8Array;
+    readonly dataOffset?: number;
+    readonly size?: number;
 }
 
 /**
@@ -72,7 +85,7 @@ export function makeMockDevice(): MockDevice {
     const createBindGroupLayout = vi.fn((descriptor: GPUBindGroupLayoutDescriptor) => {
         const obj: MockGpuBindGroupLayout = Object.freeze({
             __mockKind: 'bindGroupLayout',
-            label: descriptor.label,
+            label: descriptor.label ?? '<missing>',
             descriptor,
         });
         bindGroupLayouts.push(obj);
@@ -82,7 +95,7 @@ export function makeMockDevice(): MockDevice {
     const createPipelineLayout = vi.fn((descriptor: GPUPipelineLayoutDescriptor) => {
         const obj: MockGpuPipelineLayout = Object.freeze({
             __mockKind: 'pipelineLayout',
-            label: descriptor.label,
+            label: descriptor.label ?? '<missing>',
             descriptor,
         });
         pipelineLayouts.push(obj);
@@ -92,7 +105,7 @@ export function makeMockDevice(): MockDevice {
     const createShaderModule = vi.fn((descriptor: GPUShaderModuleDescriptor) => {
         const obj: MockGpuShaderModule = Object.freeze({
             __mockKind: 'shaderModule',
-            label: descriptor.label,
+            label: descriptor.label ?? '<missing>',
             descriptor,
         });
         shaderModules.push(obj);
@@ -102,7 +115,7 @@ export function makeMockDevice(): MockDevice {
     const createRenderPipeline = vi.fn((descriptor: GPURenderPipelineDescriptor) => {
         const obj: MockGpuRenderPipeline = Object.freeze({
             __mockKind: 'renderPipeline',
-            label: descriptor.label,
+            label: descriptor.label ?? '<missing>',
             descriptor,
         });
         renderPipelines.push(obj);
@@ -112,12 +125,45 @@ export function makeMockDevice(): MockDevice {
     const createBuffer = vi.fn((descriptor: GPUBufferDescriptor) => {
         return Object.freeze({
             __mockKind: 'buffer' as const,
-            label: descriptor.label,
+            label: descriptor.label ?? '<missing>',
             descriptor,
             size: descriptor.size,
             usage: descriptor.usage,
         }) as unknown as GPUBuffer;
     });
+
+    // ---- queue.writeBuffer recorder ----
+    const writes: WriteBufferCall[] = [];
+    const writeBuffer = vi.fn(
+        (
+            buffer: GPUBuffer,
+            bufferOffset: number,
+            data: BufferSource | SharedArrayBuffer,
+            dataOffset?: number,
+            size?: number
+        ) => {
+            // Snapshot the bytes so later writers can't mutate what the test sees.
+            const bytes =
+                data instanceof ArrayBuffer
+                    ? new Uint8Array(data.slice(0))
+                    : ArrayBuffer.isView(data)
+                      ? new Uint8Array(
+                            data.buffer.slice(
+                                data.byteOffset,
+                                data.byteOffset + data.byteLength
+                            )
+                        )
+                      : new Uint8Array(0);
+            const entry: WriteBufferCall = {
+                buffer,
+                bufferOffset,
+                data: bytes,
+                ...(dataOffset !== undefined && { dataOffset }),
+                ...(size !== undefined && { size }),
+            };
+            writes.push(entry);
+        }
+    );
 
     const device = {
         createBindGroupLayout,
@@ -125,6 +171,11 @@ export function makeMockDevice(): MockDevice {
         createShaderModule,
         createRenderPipeline,
         createBuffer,
+        queue: { writeBuffer },
+        limits: {
+            minUniformBufferOffsetAlignment: 256,
+            minStorageBufferOffsetAlignment: 256,
+        },
     } as unknown as GPUDevice;
 
     return {
@@ -135,6 +186,7 @@ export function makeMockDevice(): MockDevice {
             createShaderModule,
             createRenderPipeline,
             createBuffer,
+            writeBuffer,
         },
         created: {
             bindGroupLayouts,
@@ -142,5 +194,6 @@ export function makeMockDevice(): MockDevice {
             shaderModules,
             renderPipelines,
         },
+        writes,
     };
 }

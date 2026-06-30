@@ -44,13 +44,28 @@ export type {
 
 /** Phase 3: device-scoped facade — owns the pipeline cache (and, per phase, BufferManager / encoder hooks). */
 export { RenderingContext, renderingContext } from './context';
-export type { RenderingContextSpec, RenderingContextStats } from './context';
+export type {
+    RenderingContextSpec,
+    RenderingContextStats,
+    ResourceFor,
+    ResourceInit,
+} from './context';
 
 /** Phase 3: `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
 export type { BuiltPipeline } from './pipelines/build';
 
-/** Phase 4: bind a typed slot to a data-bearing `Resource` (buffer/texture/sampler). */
-export const resource: unknown = undefined;
+/** Phase 4: data-bearing `Resource` family. `ctx.resource(slot, init?)` is the public
+ *  constructor; the raw factories are kept private to `RenderingContext` so all construction
+ *  funnels through one place (consistent error wording, future telemetry, etc.). */
+export { isResource, RESOURCE_BRAND } from './data/resource';
+export type {
+    BufferResource,
+    ExternalTextureResource,
+    Resource,
+    SamplerResource,
+    StorageTextureResource,
+    TextureResource,
+} from './data/resource';
 
 /** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. */
 export const drawable: unknown = undefined;

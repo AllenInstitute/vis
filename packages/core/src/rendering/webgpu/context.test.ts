@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BufferHandle, BufferManager, BufferManagerStats } from './memory/types';
 import { renderingContext } from './context';
-import { uniformSlot } from './resources';
+import { isResource } from './data/resource';
+import { samplerSlot, uniformSlot } from './resources';
 import { bindings, group } from './pipelines/binding-graph';
 import { member, shader, struct } from './shaders';
 import { makeMockDevice } from './test/mock-device';
@@ -33,6 +34,8 @@ function makeMockBufferManager(): BufferManager {
     };
     return {
         acquire: vi.fn(stub) as unknown as BufferManager['acquire'],
+        acquireForSlot: vi.fn(stub) as unknown as BufferManager['acquireForSlot'],
+        precheck: vi.fn(() => true),
         release: vi.fn(stub) as unknown as BufferManager['release'],
         endFrame: vi.fn(),
         frameLease: vi.fn(stub) as unknown as BufferManager['frameLease'],
@@ -44,13 +47,6 @@ function makeMockBufferManager(): BufferManager {
             })
         ),
         dispose: vi.fn(),
-    } satisfies {
-        acquire: (sizeBytes: number, usage: number) => BufferHandle;
-        release: (handle: BufferHandle) => void;
-        endFrame: () => void;
-        frameLease: (sizeBytes: number, usage: number) => BufferHandle;
-        stats: () => BufferManagerStats;
-        dispose: () => void;
     };
 }
 
@@ -166,5 +162,135 @@ describe('RenderingContext — BufferManager ownership contract', () => {
         const ctx = renderingContext({ device: m.device, bufferManager: bm });
         ctx.dispose();
         expect(bm.dispose).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 4: ctx.resource() + stats() memory fields
+// ---------------------------------------------------------------------------
+
+/**
+ * Recording `BufferManager` that issues real-looking handles backed by the mock device's
+ * `createBuffer`. Used to verify `ctx.resource()` wiring without dragging the full BatchPool
+ * implementation into the context tests.
+ */
+function makeRecordingBM(device: GPUDevice, residentBytes = 1024, leasedBytes = 512): BufferManager {
+    return {
+        acquire: vi.fn((sizeBytes: number, usage: GPUBufferUsageFlags) => {
+            const gpu = device.createBuffer({ size: sizeBytes, usage });
+            const handle: BufferHandle = {
+                gpu,
+                buffer: gpu,
+                offset: 0,
+                size: sizeBytes,
+                sizeBytes,
+                bucketSize: sizeBytes,
+                usage,
+                release(): void {},
+                sizeInBytes(): number {
+                    return sizeBytes;
+                },
+                destroy(): void {},
+            };
+            return handle;
+        }) as unknown as BufferManager['acquire'],
+        acquireForSlot: vi.fn((_slot, sizeBytes: number, usage: GPUBufferUsageFlags) => {
+            const gpu = device.createBuffer({ size: sizeBytes, usage });
+            const handle: BufferHandle = {
+                gpu,
+                buffer: gpu,
+                offset: 0,
+                size: sizeBytes,
+                sizeBytes,
+                bucketSize: sizeBytes,
+                usage,
+                release(): void {},
+                sizeInBytes(): number {
+                    return sizeBytes;
+                },
+                destroy(): void {},
+            };
+            return handle;
+        }) as unknown as BufferManager['acquireForSlot'],
+        precheck: vi.fn(() => true),
+        release: vi.fn(),
+        endFrame: vi.fn(),
+        frameLease: vi.fn(() => {
+            throw new Error('not supported');
+        }) as unknown as BufferManager['frameLease'],
+        stats: vi.fn(
+            (): BufferManagerStats => ({
+                residentBytes,
+                leasedBytes,
+                freeBytes: residentBytes - leasedBytes,
+            })
+        ),
+        dispose: vi.fn(),
+    };
+}
+
+describe('RenderingContext.resource() — buffer-backed slots', () => {
+    it('constructs a BufferResource for a uniform slot', () => {
+        const m = makeMockDevice();
+        const bm = makeRecordingBM(m.device);
+        const ctx = renderingContext({ device: m.device, bufferManager: bm });
+        const { cam } = fixture();
+        const r = ctx.resource(cam);
+        expect(isResource(r)).toBe(true);
+        expect(r.kind).toBe('uniform');
+        expect(r.slot).toBe(cam);
+        expect(bm.acquireForSlot).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws when called without a bufferManager (clear, labeled error)', () => {
+        const m = makeMockDevice();
+        const ctx = renderingContext({ device: m.device, label: 'ctxNoMem' });
+        const { cam } = fixture();
+        expect(() => ctx.resource(cam)).toThrow(/ctxNoMem/);
+        expect(() => ctx.resource(cam)).toThrow(/bufferManager/);
+    });
+
+    it('throws when called after dispose()', () => {
+        const m = makeMockDevice();
+        const bm = makeRecordingBM(m.device);
+        const ctx = renderingContext({ device: m.device, bufferManager: bm });
+        const { cam } = fixture();
+        ctx.dispose();
+        expect(() => ctx.resource(cam)).toThrow(/use-after-dispose/);
+    });
+});
+
+describe('RenderingContext.resource() — sampler slots', () => {
+    it('constructs a SamplerResource without a bufferManager', () => {
+        const m = makeMockDevice();
+        // device.createSampler is missing on the mock; supply a pre-built sampler instead.
+        const ctx = renderingContext({ device: m.device });
+        const slot = samplerSlot('samp', 'sampler');
+        const sampler = {} as unknown as GPUSampler;
+        const r = ctx.resource(slot, sampler);
+        expect(r.kind).toBe('sampler');
+        expect(r.slot).toBe(slot);
+    });
+});
+
+describe('RenderingContext.stats() — memory fields', () => {
+    it('omits bytes/leasedBytes when no bufferManager is attached', () => {
+        const m = makeMockDevice();
+        const ctx = renderingContext({ device: m.device });
+        const s = ctx.stats();
+        expect(s.bytes).toBeUndefined();
+        expect(s.leasedBytes).toBeUndefined();
+        expect(s.pipelines).toBe(0);
+    });
+
+    it('includes bytes/leasedBytes when a bufferManager is attached (read-through)', () => {
+        const m = makeMockDevice();
+        const bm = makeRecordingBM(m.device, 4096, 1024);
+        const ctx = renderingContext({ device: m.device, bufferManager: bm });
+        const s = ctx.stats();
+        expect(s.bytes).toBe(4096);
+        expect(s.leasedBytes).toBe(1024);
+        expect(s.pipelines).toBe(0);
+        expect(bm.stats).toHaveBeenCalled();
     });
 });

@@ -20,6 +20,7 @@
 
 import { DisposedBufferError, InvalidHandleError, OutOfBudgetError } from '../errors';
 import { type BufferHandle, type BufferUsageFlags, type PoolStats, BufferManagerBase } from '../types';
+import type { ResourceSlot } from '../../resources';
 import { OutOfBucketError } from './errors';
 import {
     type Batch,
@@ -103,6 +104,36 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
         }
         entry.batch.leasedCount++;
         return this.#mintHandle(entry, pool, sizeBytes);
+    }
+
+    acquireForSlot(
+        slot: ResourceSlot,
+        sizeBytes: number,
+        usage: BufferUsageFlags
+    ): BufferHandle {
+        const required = requiredUsageFor(slot);
+        if ((usage & required) !== required) {
+            throw new Error(
+                `BatchPoolBufferManager.acquireForSlot: slot '${slot.name}' (kind '${slot.kind}') requires ` +
+                    `usage bits 0x${required.toString(16)} but received 0x${usage.toString(16)}.`
+            );
+        }
+        return this.acquire(sizeBytes, usage);
+    }
+
+    precheck(budgetCost: number): boolean {
+        if (!(budgetCost >= 0) || !Number.isFinite(budgetCost)) return false;
+        // Optimistic check: every fully-free batch can in principle be evicted to make room.
+        let evictableBytes = 0;
+        for (const pool of this.#poolsByKey.values()) {
+            for (const batch of pool.batches) {
+                if (batch.destroyed) continue;
+                if (batch.leasedCount === 0) {
+                    evictableBytes += batch.buffers.length * pool.bucketSize;
+                }
+            }
+        }
+        return this.#residentBytes - evictableBytes + budgetCost <= this.maxBytes;
     }
 
     release(handle: BufferHandle): void {
@@ -339,7 +370,10 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
         // into the manager; using `this.release(handle)` keeps token validation centralized.
         const manager = this;
         const handle: BufferHandle = {
+            gpu: buffer,
             buffer,
+            offset: 0,
+            size: bucketSize,
             sizeBytes: sizeBytesRequested,
             bucketSize,
             usage,
@@ -356,5 +390,27 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
         this.#activeTokens.set(token, { token, handle, buffer, batch, pool });
         this.#tokenByHandle.set(handle, token);
         return handle;
+    }
+}
+
+/**
+ * Map a `ResourceSlot` to the minimum `GPUBufferUsage` bits a backing buffer must carry.
+ * Only buffer-backed slot kinds participate; texture / sampler / external slots throw because
+ * they're not buffer-backed and should never reach `acquireForSlot`.
+ */
+function requiredUsageFor(slot: ResourceSlot): GPUBufferUsageFlags {
+    switch (slot.kind) {
+        case 'uniform':
+            return GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+        case 'storage':
+            return GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST;
+        case 'texture':
+        case 'storageTexture':
+        case 'sampler':
+        case 'externalTexture':
+            throw new Error(
+                `BatchPoolBufferManager.acquireForSlot: slot '${slot.name}' has kind '${slot.kind}' ` +
+                    'which is not buffer-backed; use a TextureResource / SamplerResource factory instead.'
+            );
     }
 }

@@ -5,9 +5,11 @@ import type {
     BufferHandle,
     BufferUsageFlags,
 } from '../types';
+import { uniformSlot, storageSlot, samplerSlot } from '../../resources';
+import { member, struct } from '../../shaders';
 import { BatchPoolBufferManager } from './batch-pool-buffer-manager';
 import { OutOfBucketError } from './errors';
-import { BatchPoolBufferManagerConfig } from './types';
+import type { BatchPoolBufferManagerConfig } from './types';
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -73,6 +75,12 @@ describe('BufferManager interface conformance', () => {
         class NoopManager implements BufferManager {
             acquire(): BufferHandle {
                 throw new Error('noop');
+            }
+            acquireForSlot(): BufferHandle {
+                throw new Error('noop');
+            }
+            precheck(): boolean {
+                return true;
             }
             release(): void {}
             beginFrame(): void {}
@@ -374,8 +382,12 @@ describe('BatchPoolBufferManager — handle validation', () => {
             ...baseConfig(device),
             growthBatchSize: 1,
         });
+        const fakeBuffer = {} as GPUBuffer;
         const fake: BufferHandle = {
-            buffer: {} as GPUBuffer,
+            gpu: fakeBuffer,
+            offset: 0,
+            size: 256,
+            buffer: fakeBuffer,
             sizeBytes: 100,
             bucketSize: 256,
             usage: USAGE_A,
@@ -453,5 +465,128 @@ describe('BatchPoolBufferManager — Cacheable interop on handles', () => {
         // After release, the entry is back on the free deque.
         expect(manager.stats().leasedBytes).toBe(0);
         expect(manager.stats().freeBytes).toBe(256);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 4 extensions: slab-ready handle shape, acquireForSlot, precheck.
+// ---------------------------------------------------------------------------
+
+describe('BatchPoolBufferManager — BufferHandle slab-ready fields', () => {
+    it('emits gpu/offset/size on every handle; offset is 0 and size == bucketSize for BatchPool', () => {
+        const device = makeFakeDevice();
+        const manager = new BatchPoolBufferManager({
+            ...baseConfig(device),
+            growthBatchSize: 1,
+        });
+        const h = manager.acquire(200, USAGE_A);
+        expect(h.gpu).toBe(h.buffer);
+        expect(h.offset).toBe(0);
+        expect(h.size).toBe(256); // === bucketSize for BatchPool
+        expect(h.bucketSize).toBe(256);
+        expect(h.sizeBytes).toBe(200);
+    });
+});
+
+describe('BatchPoolBufferManager.acquireForSlot', () => {
+    let device: ReturnType<typeof makeFakeDevice>;
+    let manager: BatchPoolBufferManager;
+
+    beforeEach(() => {
+        device = makeFakeDevice();
+        manager = new BatchPoolBufferManager({
+            ...baseConfig(device),
+            growthBatchSize: 1,
+        });
+    });
+
+    it('forwards to acquire when the usage flag-set includes the required bits', () => {
+        const cam = uniformSlot('cam', struct('Camera', [member('view', 'mat4x4f')]));
+        const h = manager.acquireForSlot(
+            cam,
+            64,
+            GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        );
+        expect(h.bucketSize).toBe(256);
+        expect(h.usage).toBe(GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
+    });
+
+    it('rejects a uniform slot whose requested usage is missing COPY_DST', () => {
+        const cam = uniformSlot('cam', struct('Camera', [member('view', 'mat4x4f')]));
+        expect(() => manager.acquireForSlot(cam, 64, GPUBufferUsage.UNIFORM)).toThrow(
+            /requires usage bits/
+        );
+    });
+
+    it('rejects a uniform slot whose requested usage is missing UNIFORM', () => {
+        const cam = uniformSlot('cam', struct('Camera', [member('view', 'mat4x4f')]));
+        expect(() =>
+            manager.acquireForSlot(cam, 64, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST)
+        ).toThrow(/UNIFORM/i);
+    });
+
+    it('accepts a storage slot with STORAGE | COPY_DST', () => {
+        const buf = storageSlot('buf', struct('Buf', [member('flag', 'u32')]));
+        const h = manager.acquireForSlot(
+            buf,
+            4,
+            GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        );
+        expect(h.usage).toBe(GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
+    });
+
+    it('throws on non-buffer-backed slot kinds', () => {
+        const s = samplerSlot('s', 'sampler');
+        expect(() => manager.acquireForSlot(s, 64, 0)).toThrow(/not buffer-backed/);
+    });
+});
+
+describe('BatchPoolBufferManager.precheck', () => {
+    it('returns true when there is plenty of budget headroom', () => {
+        const device = makeFakeDevice();
+        const manager = new BatchPoolBufferManager({
+            ...baseConfig(device),
+            maxBytes: 4096,
+            growthBatchSize: 1,
+        });
+        expect(manager.precheck(256)).toBe(true);
+    });
+
+    it('returns false when adding the cost exceeds maxBytes (no evictable batches)', () => {
+        const device = makeFakeDevice();
+        const manager = new BatchPoolBufferManager({
+            ...baseConfig(device),
+            maxBytes: 256,
+            growthBatchSize: 1,
+        });
+        manager.acquire(200, USAGE_A); // resident 256, 0 evictable
+        expect(manager.precheck(1)).toBe(false);
+    });
+
+    it('returns true when the cost fits only after counting evictable batches', () => {
+        const device = makeFakeDevice();
+        const manager = new BatchPoolBufferManager({
+            ...baseConfig(device),
+            maxBytes: 512,
+            growthBatchSize: 1,
+        });
+        const h = manager.acquire(200, USAGE_A); // resident 256, 0 evictable
+        h.release(); // resident 256, 256 evictable
+        // Adding 256 fits because the existing 256 is evictable: 256 - 256 + 256 = 256 <= 512.
+        expect(manager.precheck(256)).toBe(true);
+        // Adding 257 still fits (256 - 256 + 257 = 257 <= 512).
+        expect(manager.precheck(257)).toBe(true);
+        // Adding 513 does not fit (256 - 256 + 513 = 513 > 512).
+        expect(manager.precheck(513)).toBe(false);
+    });
+
+    it('returns false for negative or NaN costs', () => {
+        const device = makeFakeDevice();
+        const manager = new BatchPoolBufferManager({
+            ...baseConfig(device),
+            maxBytes: 4096,
+        });
+        expect(manager.precheck(-1)).toBe(false);
+        expect(manager.precheck(Number.NaN)).toBe(false);
     });
 });

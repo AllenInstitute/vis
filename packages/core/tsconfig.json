@@ -1,13 +1,7 @@
 {
-    "extends": "../../tsconfig.base.json",
-    "compilerOptions": {
-        "paths": {
-            "~/*": ["./*"]
-        },
-        "moduleResolution": "Bundler",
-        "module": "es6",
-        "target": "es2024",
-        "lib": ["es2024", "DOM"]
-    },
-    "include": ["./src/index.ts"]
+    "files": [],
+    "references": [
+        { "path": "./tsconfig.src.json" },
+        { "path": "./tsconfig.test.json" }
+    ]
 }
