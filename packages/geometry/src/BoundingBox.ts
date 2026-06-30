@@ -83,6 +83,9 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
 
     const toFlatArray = (box: box<V>) => [...box.minCorner, ...box.maxCorner] as const;
     const size = (b: box<V>) => lib.sub(b.maxCorner, b.minCorner);
+    // return the normalized coordinates of a point within a box, where minCorner maps to all 0s
+    // and maxCorner maps to all 1s. This is the inverse of mixing between the corners of the box.
+    const parameter = (b: box<V>, p: V) => lib.div(lib.sub(p, b.minCorner), size(b));
     const midpoint = (b: box<V>) => lib.scale(lib.add(b.minCorner, b.maxCorner), 0.5);
     const map = (box: box<V>, fn: (v: V) => V) => ({
         minCorner: fn(box.minCorner),
@@ -99,6 +102,7 @@ export function BoxClassFactory<V extends VectorConstraint>(lib: VectorLib<V>) {
         intersection, // return the intersection of two boxes if it exists
         containsPoint, // return true if a point is in a box - note that this is exclusive on the low side, and inclusive on the high side
         size, // how big is it?
+        parameter, // return the normalized [0..1] coordinates of a point within the box (inverse of mix between corners)
         midpoint, // yup you guessed it, return a vector at the center of a box.
         toFlatArray,
         scale,
