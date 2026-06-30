@@ -45,8 +45,13 @@ jobs:
             - name: Get bumped version
               run: |
                   PKG="${{ inputs.package }}"
+                  # git-cliff strips the "vis-" prefix when it formats the bumped
+                  # tag, then rejects its own output against --tag-pattern. The
+                  # optional "(vis-)?" group matches the real tags (so the base
+                  # version is detected) AND git-cliff's stripped output (so it
+                  # does not error). We rebuild the canonical tag from the semver.
                   CLIFF_TAG=$(pnpm exec git-cliff \
-                      --tag-pattern "@alleninstitute/vis-${PKG}@*" \
+                      --tag-pattern "@alleninstitute/(vis-)?${PKG}@" \
                       --include-path "packages/${PKG}/**" \
                       --bumped-version)
 
