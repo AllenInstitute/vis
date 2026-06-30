@@ -74,19 +74,20 @@ describe('bindings()', () => {
         expect(g._groupDepth.get(root)).toBe(0);
     });
 
-    it('accepts a single shader or an array equivalently', () => {
+    it('accepts one or many shaders positionally', () => {
         const u = uniformSlot('u', 'U');
         const root = group(u);
-        const sh = shader([u]);
-        const single = bindings(root, sh);
-        const array = bindings(root, [sh]);
-        expect(single.shaders).toEqual(array.shaders);
-        expect(single.groups).toEqual(array.groups);
+        const shA = shader([u]);
+        const shB = shader([u]);
+        const single = bindings(root, shA);
+        const multi = bindings(root, shA, shB);
+        expect(single.shaders).toEqual([shA]);
+        expect(multi.shaders).toEqual([shA, shB]);
     });
 
-    it('throws on empty shader array', () => {
+    it('throws when no shaders are supplied', () => {
         const root = group(uniformSlot('u', 'U'));
-        expect(() => bindings(root, [])).toThrow(/at least one shader/);
+        expect(() => bindings(root)).toThrow(/at least one shader/);
     });
 
     it('throws when the root is not a BindingGroup', () => {
@@ -227,7 +228,7 @@ describe('resolveShaderBindings()', () => {
         const root = group(camera);
         const shA = shader([camera]);
         const shB = shader([camera]);
-        const g = bindings(root, [shA, shB]);
+        const g = bindings(root, shA, shB);
         const a = resolveShaderBindings(g, shA);
         const b = resolveShaderBindings(g, shB);
         expect(a.get(camera)).toEqual({ group: 0, binding: 0 });
@@ -271,7 +272,7 @@ describe('shaderSlotEntries()', () => {
         const root = group(a, b);
         const shA = shader([a]);
         const shB = shader([b]);
-        const g = bindings(root, [shA, shB]);
+        const g = bindings(root, shA, shB);
         expect(shaderSlotEntries(g, shA).map((e) => e.slot.name)).toEqual(['a']);
         expect(shaderSlotEntries(g, shB).map((e) => e.slot.name)).toEqual(['b']);
     });

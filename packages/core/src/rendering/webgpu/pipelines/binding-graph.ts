@@ -11,6 +11,8 @@
  *
  * const shA = shader([camera, albedo, samp]);
  * const graph = bindings(frame, shA);
+ * // multiple shaders are passed positionally:
+ * const merged = bindings(frame, shA, shB);
  * ```
  *
  * Key semantics:
@@ -182,11 +184,10 @@ export function group(...args: Array<GroupSpec | ResourceSlot | BindingGroup>): 
  *
  * @throws if the supplied input violates any of the validation rules listed above.
  */
-export function bindings(root: BindingGroup, input: WgslShader | readonly WgslShader[]): BindingGraph {
+export function bindings(root: BindingGroup, ...shaders: readonly WgslShader[]): BindingGraph {
     if (!isBindingGroup(root)) {
         throw new Error('bindings: first argument must be a BindingGroup (constructed via `group()`).');
     }
-    const shaders = Array.isArray(input) ? [...input] : [input as WgslShader];
     if (shaders.length === 0) {
         throw new Error('bindings: at least one shader is required');
     }
