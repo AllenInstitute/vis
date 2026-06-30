@@ -36,6 +36,7 @@ import {
     type PipelineStateDescriptor,
 } from './pipelines/pipeline-state';
 import { resolveShaderBindings } from './pipelines/traverse';
+import { buildDrawable, type Drawable, type DrawableSpec } from './drawable';
 import type {
     ExternalTextureSlot,
     ResourceSlot,
@@ -250,6 +251,39 @@ export class RenderingContext {
                 return resource as unknown as ResourceFor<S>;
             }
         }
+    }
+
+    /**
+     * Construct a `Drawable` — a pipeline + vertex / index / binding resources + draw call —
+     * against this context. Phase 5 of the rendering refactor.
+     *
+     * Vertex / index input may be:
+     *   - Pre-built: a `Map<bufferSlot, BufferResource | RawBufferResource>` (vertex) /
+     *     `{ resource, format }` (index). The drawable `share()`s each supplied resource so
+     *     the caller retains its own refcount.
+     *   - Raw arrays: a `{ kind: 'arrays', arrays, options?, bufferSlots? }` descriptor.
+     *     `webgpu-utils.createBufferLayoutsFromArrays` is used **only** to derive byte
+     *     layouts; GPU buffer allocation funnels through `this.bufferManager.acquire`, and
+     *     uploads go through `this.device.queue.writeBuffer(handle.gpu, handle.offset, …)` so
+     *     slab-style managers remain transparent. Requires `bufferManager` to have been
+     *     supplied at construction; throws otherwise.
+     *
+     * `bindings` must cover every slot in `pipeline.slotIndex`; resource kinds are validated.
+     *
+     * Pair every `ctx.drawable(spec)` with exactly one `drawable.destroy()` — the destroy
+     * decrefs every owned resource, freshly-allocated buffers fall to refcount 0 and release
+     * their `BufferHandle`s, pre-built ones fall back to the caller's refcount.
+     */
+    drawable(spec: DrawableSpec): Drawable {
+        this.assertNotDisposed();
+        return buildDrawable(
+            {
+                device: this.device,
+                ...(this.bufferManager !== undefined && { bufferManager: this.bufferManager }),
+                ...(this.label !== undefined && { label: this.label }),
+            },
+            spec
+        );
     }
 
     /**

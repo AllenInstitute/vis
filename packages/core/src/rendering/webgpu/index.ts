@@ -61,14 +61,32 @@ export { isResource, RESOURCE_BRAND } from './data/resource';
 export type {
     BufferResource,
     ExternalTextureResource,
+    RawBufferResource,
     Resource,
     SamplerResource,
     StorageTextureResource,
     TextureResource,
 } from './data/resource';
 
-/** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. */
-export const drawable: unknown = undefined;
+/** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
+ *  `ctx.drawable({...})`. */
+export { DRAWABLE_BRAND, isDrawable } from './drawable';
+export type {
+    ArrayDrawCall,
+    Drawable,
+    DrawableReuseSpec,
+    DrawableSpec,
+    DrawCall,
+    IndexBufferBinding,
+    IndexInput,
+    IndexedDrawCall,
+    PreBuiltIndexInput,
+    PreBuiltVertexInput,
+    RawArrayIndexInput,
+    RawArraysVertexInput,
+    VertexBufferBinding,
+    VertexInput,
+} from './drawable';
 
 /** Phase 6: a `Scene` is the v1 replacement for the legacy `Graph` of drawables. */
 export const scene: unknown = undefined;

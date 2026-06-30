@@ -46,11 +46,10 @@ import type { StructDeclaration } from '../shaders';
 /** Brand symbol used by `isResource` to discriminate `Resource` objects at runtime. */
 export const RESOURCE_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Resource');
 
-/** Fields common to every `Resource` variant. */
-interface ResourceCommon {
+/** Brand + lifecycle fields shared by every `Resource` variant — including slot-less ones
+ *  such as `RawBufferResource` (used for vertex/index buffers in `Drawable`). */
+interface ResourceLifecycle {
     readonly __brand: typeof RESOURCE_BRAND;
-    readonly kind: ResourceSlot['kind'];
-    readonly slot: ResourceSlot;
     /** Monotonically increasing version, bumped on every committed mutation. Drives the
      *  bind-group cache invalidation key in Phase 7. */
     readonly version: number;
@@ -62,6 +61,12 @@ interface ResourceCommon {
     share(): this;
     /** Decrement the refcount; release the underlying GPU resource when it reaches `0`. */
     destroy(): void;
+}
+
+/** Fields common to every slot-bound `Resource` variant (everything except `RawBufferResource`). */
+interface ResourceCommon extends ResourceLifecycle {
+    readonly kind: ResourceSlot['kind'];
+    readonly slot: ResourceSlot;
 }
 
 // ---- BufferResource ---------------------------------------------------------------------------
@@ -94,6 +99,28 @@ export interface BufferResource<T = unknown> extends ResourceCommon {
     setField<K extends keyof T>(key: K, value: T[K]): void;
     /** Flush the CPU-side `arrayBuffer` to GPU via `queue.writeBuffer(gpu, offset, ...)`. */
     commit(device: GPUDevice): void;
+}
+
+// ---- RawBufferResource ------------------------------------------------------------------------
+
+/**
+ * Slot-less buffer wrapper used for vertex / index buffers in `Drawable`. Unlike
+ * `BufferResource<T>`, a `RawBufferResource` has no `ResourceSlot`, no `StructuredView`, and
+ * no typed `set()` / `setField()` — it exists solely to carry a `BufferHandle` through the
+ * `Drawable` lifecycle with proper refcount + share + destroy semantics.
+ *
+ * `ctx.drawable()` constructs these internally when given a raw-arrays vertex/index input;
+ * callers building drawables from pre-allocated `BufferHandle`s use `makeRawBufferResource`
+ * directly.
+ */
+export interface RawBufferResource extends ResourceLifecycle {
+    readonly kind: 'rawBuffer';
+    /** Underlying `BufferHandle` (carries `gpu` + `offset` + `size`). */
+    readonly handle: BufferHandle;
+    /** Usage flag-set the handle was allocated with. */
+    readonly usage: BufferUsageFlags;
+    /** Optional debug label, threaded through error messages. */
+    readonly label?: string;
 }
 
 // ---- Texture / Sampler / External wrappers ---------------------------------------------------
@@ -131,6 +158,7 @@ export interface ExternalTextureResource extends ResourceCommon {
 /** Discriminated union of every concrete `Resource` flavor. */
 export type Resource =
     | BufferResource<unknown>
+    | RawBufferResource
     | StorageTextureResource
     | TextureResource
     | SamplerResource
@@ -475,6 +503,57 @@ export function makeExternalTextureResource(
     } satisfies ExternalTextureResource & { share(): ExternalTextureResource };
 
     return resource as ExternalTextureResource;
+}
+
+/**
+ * Construct a `RawBufferResource` wrapping a pre-allocated `BufferHandle`. Used by
+ * `ctx.drawable()` for raw-arrays vertex / index buffers; also re-exported for callers who
+ * manage their own `BufferManager` allocations and want a refcounted lifecycle wrapper.
+ *
+ * The wrapper takes ownership of the handle: `destroy()` (when refcount hits 0) calls
+ * `handle.release()`. Callers must not invoke `handle.release()` themselves while a
+ * `RawBufferResource` holds a reference.
+ */
+export function makeRawBufferResource(
+    handle: BufferHandle,
+    usage: BufferUsageFlags,
+    label?: string
+): RawBufferResource {
+    let refcount = 1;
+    let disposed = false;
+
+    const resource: RawBufferResource & { share(): RawBufferResource } = {
+        __brand: RESOURCE_BRAND,
+        kind: 'rawBuffer' as const,
+        handle,
+        usage,
+        ...(label !== undefined && { label }),
+        version: 0,
+        get refcount(): number {
+            return refcount;
+        },
+        get disposed(): boolean {
+            return disposed;
+        },
+        share(): RawBufferResource {
+            if (disposed) {
+                throw new Error(
+                    `RawBufferResource${label !== undefined ? ` '${label}'` : ''}: share() after destroy().`
+                );
+            }
+            refcount += 1;
+            return resource;
+        },
+        destroy(): void {
+            if (disposed) return;
+            refcount -= 1;
+            if (refcount > 0) return;
+            handle.release();
+            disposed = true;
+        },
+    };
+
+    return resource;
 }
 
 // ---- Internal helpers -------------------------------------------------------------------------
