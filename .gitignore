@@ -8,6 +8,7 @@ coverage
 
 # generated types
 .astro/
+*.tsbuildinfo
 
 # logs
 npm-debug.log*

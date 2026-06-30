@@ -1,0 +1,15 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "composite": true,
+        "paths": { "~/*": ["./*"] },
+        "moduleResolution": "Bundler",
+        "module": "es6",
+        "target": "es2024",
+        "lib": ["es2024", "DOM"],
+        "types": ["@webgpu/types"]
+    },
+    "include": ["./src/**/*.ts"],
+    "exclude": ["./src/**/*.test.ts"]
+}
