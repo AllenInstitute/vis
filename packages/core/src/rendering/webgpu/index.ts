@@ -42,20 +42,23 @@ export type {
 
 // ---- Phase 3: Pipeline / Drawable / Scene authoring -------------------------------------------
 
-/** Phase 3: declarative pipeline factory (replaces the legacy `pipelines/binding-graphs` pipeline()). */
-export { pipeline } from './pipelines/build';
+/** Phase 3: device-scoped facade — owns the pipeline cache (and, per phase, BufferManager / encoder hooks). */
+export { RenderingContext, renderingContext } from './context';
+export type { RenderingContextSpec, RenderingContextStats } from './context';
+
+/** Phase 3: `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
 export type { BuiltPipeline } from './pipelines/build';
 
-/** Phase 3: bind a typed slot to a data-bearing `Resource` (buffer/texture/sampler). */
+/** Phase 4: bind a typed slot to a data-bearing `Resource` (buffer/texture/sampler). */
 export const resource: unknown = undefined;
 
-/** Phase 3: a `Drawable` is a pipeline + resource set + draw-call descriptor. */
+/** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. */
 export const drawable: unknown = undefined;
 
-/** Phase 3: a `Scene` is the v1 replacement for the legacy `Graph` of drawables. */
+/** Phase 6: a `Scene` is the v1 replacement for the legacy `Graph` of drawables. */
 export const scene: unknown = undefined;
 
-// ---- Phase 6: Encoder state ops ----------------------------------------------------------------
+// ---- Phase 6: Scene state-node factories -------------------------------------------------------
 
 /** Phase 6: viewport state command. */
 export const viewport: unknown = undefined;
@@ -71,7 +74,5 @@ export const container: unknown = undefined;
 export const override: unknown = undefined;
 /** Phase 6: explicit draw-call command (used inside containers). */
 export const draw: unknown = undefined;
-/** Phase 6: low-level encoder primitive (advanced authoring escape hatch). */
-export const encoder: unknown = undefined;
-/** Phase 6: `submit(scene, ...)` — the top-level frame command. */
-export const submit: unknown = undefined;
+
+// ---- Phase 7: encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).

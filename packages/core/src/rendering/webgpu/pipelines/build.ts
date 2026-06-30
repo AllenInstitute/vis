@@ -1,20 +1,20 @@
 /**
- * `pipeline(graph, shader, state, device): BuiltPipeline` — build a `GPURenderPipeline` from a
- * derived `BindingGraph`, a `WgslShader`, and a `PipelineStateDescriptor`.
+ * Internal pipeline build helper used by `RenderingContext.pipeline()`.
  *
- * Build sequence:
- *   1. `resolveShaderBindings(graph, shader)` — derive `(group, binding)` per slot.
- *   2. `bindShader(shader, slotIndex)` + `asSource(...)` — produce final WGSL.
- *   3. `makeShaderDataDefinitions(wgsl)` — reflect struct layouts onto `BuiltPipeline.defs`.
+ * Build sequence (consumes pre-computed `normalizedState`, `slotIndex`, `fingerprint` —
+ * `RenderingContext` performs those steps and the cache check before calling in):
+ *   1. `bindShader(shader, slotIndex)` + `asSource(...)` — produce final WGSL.
+ *   2. `makeShaderDataDefinitions(wgsl)` — reflect struct layouts onto `BuiltPipeline.defs`.
  *      Stashed for Phase 4's `BufferResource` round-trip; not consumed by Phase 3 itself.
- *   4. Bucket `shaderSlotEntries(graph, shader)` by group depth → manually construct
+ *   3. Bucket `shaderSlotEntries(graph, shader)` by group depth → manually construct
  *      `GPUBindGroupLayoutEntry`s via existing `toBindGroupLayoutEntry`. Sparse depths (a shader
  *      uses depth 0 + 2 but not 1) get an empty layout so `bindGroupLayouts[i]` always equals
  *      depth `i`.
- *   5. `device.createBindGroupLayout` ×N → `createPipelineLayout` → `createShaderModule`.
- *   6. Compose `GPURenderPipelineDescriptor` from the normalized state and `createRenderPipeline`.
+ *   4. `device.createBindGroupLayout` ×N → `createPipelineLayout` → `createShaderModule`.
+ *   5. Compose `GPURenderPipelineDescriptor` from the normalized state and `createRenderPipeline`.
  *
- * The fingerprint field is populated by Slice 3c (cache); Slice 3b leaves a placeholder.
+ * Pure function — no module-level state. `BuiltPipeline` is the type exposed publicly; this
+ * builder is internal (not re-exported from the webgpu barrel).
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -30,24 +30,18 @@ import {
 } from '../resources';
 import { asSource, type WgslShader } from '../shaders';
 import type { BindingGraph } from './binding-graph';
-import { pipelineFingerprint } from './fingerprint';
-import {
-    type NormalizedPipelineState,
-    normalizePipelineState,
-    type PipelineStateDescriptor,
-} from './pipeline-state';
-import { getCached, setCached } from './pipeline-cache';
-import { resolveShaderBindings, shaderSlotEntries } from './traverse';
+import type { NormalizedPipelineState } from './pipeline-state';
+import { shaderSlotEntries } from './traverse';
 
 /**
- * The compiled artefact returned by `pipeline()`.
+ * The compiled artefact returned by `RenderingContext.pipeline()`.
  *
  * - `gpu` is the `GPURenderPipeline` ready for `setPipeline()`.
  * - `bindGroupLayouts[i]` corresponds to group index `i` (= depth). Sparse depths are empty BGLs.
  * - `slotIndex` is the `BindingMap` produced by `resolveShaderBindings` — Drawables consult it to
  *   look up `(group, binding)` for each `ResourceSlot` when assembling bind groups.
  * - `defs` is the `webgpu-utils` reflection cache. Phase 4 will feed this to `makeStructuredView`.
- * - `fingerprint` is populated by Slice 3c; Slice 3b leaves it as the sentinel `'pending'`.
+ * - `fingerprint` keys the per-`RenderingContext` cache and drives encoder no-op elision.
  */
 export interface BuiltPipeline {
     readonly id: string;
@@ -65,42 +59,37 @@ export interface BuiltPipeline {
 const DEFAULT_VISIBILITY: ShaderStageFlags = ShaderStageFlag.VERTEX | ShaderStageFlag.FRAGMENT;
 
 /**
- * Build a `BuiltPipeline` from a `BindingGraph` + `WgslShader` + `PipelineStateDescriptor`.
- *
- * Slice 3b: no cache; every call performs all device work. Slice 3c adds a per-device fingerprint
- * cache that wraps this function.
+ * Build a `BuiltPipeline`. Internal — call sites go through `RenderingContext.pipeline()`,
+ * which performs `normalizePipelineState` / `resolveShaderBindings` / `pipelineFingerprint`
+ * and the cache check before invoking this builder.
  */
-export function pipeline(
+export function buildPipeline(
+    device: GPUDevice,
     graph: BindingGraph,
     shader: WgslShader,
-    state: PipelineStateDescriptor,
-    device: GPUDevice
+    normalizedState: NormalizedPipelineState,
+    slotIndex: BindingMap,
+    fingerprint: string
 ): BuiltPipeline {
-    const normalizedState = normalizePipelineState(state);
-    const slotIndex = resolveShaderBindings(graph, shader);
-    const fingerprint = pipelineFingerprint(shader, slotIndex, normalizedState);
-
-    const cached = getCached(device, fingerprint);
-    if (cached !== undefined) return cached;
-
+    const label = normalizedState.label;
     const boundShader = bindShader(shader, slotIndex);
     const wgsl = asSource(boundShader);
     const defs = makeShaderDataDefinitions(wgsl);
 
-    const bindGroupLayouts = buildBindGroupLayouts(graph, shader, slotIndex, device, state.label);
+    const bindGroupLayouts = buildBindGroupLayouts(graph, shader, slotIndex, device, label);
     const layout = device.createPipelineLayout({
         bindGroupLayouts: [...bindGroupLayouts],
-        ...(state.label !== undefined && { label: `${state.label}.layout` }),
+        ...(label !== undefined && { label: `${label}.layout` }),
     });
     const module = device.createShaderModule({
         code: wgsl,
-        ...(state.label !== undefined && { label: `${state.label}.module` }),
+        ...(label !== undefined && { label: `${label}.module` }),
     });
 
     const descriptor = composeRenderPipelineDescriptor(layout, module, normalizedState);
     const gpu = device.createRenderPipeline(descriptor);
 
-    const built: BuiltPipeline = Object.freeze({
+    return Object.freeze({
         id: uuidv4(),
         gpu,
         layout,
@@ -111,8 +100,6 @@ export function pipeline(
         state: normalizedState,
         shader,
     });
-    setCached(device, fingerprint, built);
-    return built;
 }
 
 /**
