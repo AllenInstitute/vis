@@ -60,8 +60,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       uuid:
-        specifier: 14.0.0
-        version: 14.0.0
+        specifier: 14.0.1
+        version: 14.0.1
     devDependencies:
       '@types/lodash':
         specifier: 4.17.24
@@ -3870,8 +3870,8 @@ packages:
     resolution: {integrity: sha512-6Z7Ma2aVEWisaL6TvBCy7P8rm2LQoPv6dJ7ecIaIixHcwfbJ0x7mWdbcwlIM5IGQxPZSFYeqRCqlOOeKoJYMkw==}
     engines: {node: '>= 4'}
 
-  uuid@14.0.0:
-    resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
+  uuid@14.0.1:
+    resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
     hasBin: true
 
   uzip-module@1.0.3:
@@ -8455,7 +8455,7 @@ snapshots:
 
   utility-types@3.11.0: {}
 
-  uuid@14.0.0: {}
+  uuid@14.0.1: {}
 
   uzip-module@1.0.3: {}
 
