@@ -17,12 +17,21 @@ import { vi } from 'vitest';
 export interface MockGpuObject {
     readonly __mockKind:
         | 'buffer'
+        | 'bindGroup'
         | 'bindGroupLayout'
         | 'pipelineLayout'
         | 'shaderModule'
-        | 'renderPipeline';
+        | 'renderPipeline'
+        | 'commandEncoder'
+        | 'commandBuffer'
+        | 'renderPassEncoder';
     readonly label?: string;
     readonly descriptor: unknown;
+}
+
+export interface MockGpuBindGroup extends MockGpuObject {
+    readonly __mockKind: 'bindGroup';
+    readonly descriptor: GPUBindGroupDescriptor;
 }
 
 export interface MockGpuBindGroupLayout extends MockGpuObject {
@@ -54,6 +63,9 @@ export interface MockDevice {
         readonly createShaderModule: ReturnType<typeof vi.fn>;
         readonly createRenderPipeline: ReturnType<typeof vi.fn>;
         readonly createBuffer: ReturnType<typeof vi.fn>;
+        readonly createBindGroup: ReturnType<typeof vi.fn>;
+        readonly createCommandEncoder: ReturnType<typeof vi.fn>;
+        readonly queueSubmit: ReturnType<typeof vi.fn>;
         readonly writeBuffer: ReturnType<typeof vi.fn>;
     };
     readonly created: {
@@ -61,9 +73,12 @@ export interface MockDevice {
         readonly pipelineLayouts: MockGpuPipelineLayout[];
         readonly shaderModules: MockGpuShaderModule[];
         readonly renderPipelines: MockGpuRenderPipeline[];
+        readonly bindGroups: MockGpuBindGroup[];
     };
     /** Recorded `queue.writeBuffer` invocations in call order. */
     readonly writes: WriteBufferCall[];
+    /** Recorded render-pass commands in call order (across all passes). */
+    readonly passCommands: PassCommand[];
 }
 
 /** One recorded `queue.writeBuffer(buffer, offset, data, dataOffset?, size?)` invocation. */
@@ -75,6 +90,60 @@ export interface WriteBufferCall {
     readonly dataOffset?: number;
     readonly size?: number;
 }
+
+/** Discriminated union of every render-pass command the mock records. */
+export type PassCommand =
+    | { readonly kind: 'setPipeline'; readonly pipeline: GPURenderPipeline }
+    | { readonly kind: 'setBindGroup'; readonly index: number; readonly bindGroup: GPUBindGroup }
+    | {
+          readonly kind: 'setVertexBuffer';
+          readonly slot: number;
+          readonly buffer: GPUBuffer;
+          readonly offset: number;
+          readonly size: number;
+      }
+    | {
+          readonly kind: 'setIndexBuffer';
+          readonly buffer: GPUBuffer;
+          readonly format: GPUIndexFormat;
+          readonly offset: number;
+          readonly size: number;
+      }
+    | {
+          readonly kind: 'draw';
+          readonly vertexCount: number;
+          readonly instanceCount: number;
+          readonly firstVertex: number;
+          readonly firstInstance: number;
+      }
+    | {
+          readonly kind: 'drawIndexed';
+          readonly indexCount: number;
+          readonly instanceCount: number;
+          readonly firstIndex: number;
+          readonly baseVertex: number;
+          readonly firstInstance: number;
+      }
+    | {
+          readonly kind: 'setViewport';
+          readonly x: number;
+          readonly y: number;
+          readonly width: number;
+          readonly height: number;
+          readonly minDepth: number;
+          readonly maxDepth: number;
+      }
+    | {
+          readonly kind: 'setScissorRect';
+          readonly x: number;
+          readonly y: number;
+          readonly width: number;
+          readonly height: number;
+      }
+    | { readonly kind: 'setStencilReference'; readonly value: number }
+    | { readonly kind: 'setBlendConstant'; readonly color: GPUColor }
+    | { readonly kind: 'beginRenderPass'; readonly descriptor: GPURenderPassDescriptor }
+    | { readonly kind: 'endRenderPass' };
 
 /**
  * Build a recording mock device. Each call site usually constructs a fresh instance so the
@@ -169,13 +238,149 @@ export function makeMockDevice(): MockDevice {
         }
     );
 
+    // ---- createBindGroup recorder ----
+    const bindGroups: MockGpuBindGroup[] = [];
+    const createBindGroup = vi.fn((descriptor: GPUBindGroupDescriptor) => {
+        const obj: MockGpuBindGroup = Object.freeze({
+            __mockKind: 'bindGroup',
+            label: descriptor.label ?? '<missing>',
+            descriptor,
+        });
+        bindGroups.push(obj);
+        return obj as unknown as GPUBindGroup;
+    });
+
+    // ---- queue.submit recorder ----
+    const queueSubmit = vi.fn((_buffers: readonly GPUCommandBuffer[]) => {
+        // No-op; mock only records.
+    });
+
+    // ---- createCommandEncoder + recording render-pass ----
+    const passCommands: PassCommand[] = [];
+    const createCommandEncoder = vi.fn((descriptor?: GPUCommandEncoderDescriptor) => {
+        const beginRenderPass = vi.fn((passDesc: GPURenderPassDescriptor) => {
+            passCommands.push({ kind: 'beginRenderPass', descriptor: passDesc });
+            const pass = {
+                setPipeline: vi.fn((pipeline: GPURenderPipeline) =>
+                    passCommands.push({ kind: 'setPipeline', pipeline })
+                ),
+                setBindGroup: vi.fn((index: number, bindGroup: GPUBindGroup) =>
+                    passCommands.push({ kind: 'setBindGroup', index, bindGroup })
+                ),
+                setVertexBuffer: vi.fn(
+                    (slot: number, buffer: GPUBuffer, offset?: number, size?: number) =>
+                        passCommands.push({
+                            kind: 'setVertexBuffer',
+                            slot,
+                            buffer,
+                            offset: offset ?? 0,
+                            size: size ?? buffer.size,
+                        })
+                ),
+                setIndexBuffer: vi.fn(
+                    (
+                        buffer: GPUBuffer,
+                        format: GPUIndexFormat,
+                        offset?: number,
+                        size?: number
+                    ) =>
+                        passCommands.push({
+                            kind: 'setIndexBuffer',
+                            buffer,
+                            format,
+                            offset: offset ?? 0,
+                            size: size ?? buffer.size,
+                        })
+                ),
+                setViewport: vi.fn(
+                    (
+                        x: number,
+                        y: number,
+                        width: number,
+                        height: number,
+                        minDepth: number,
+                        maxDepth: number
+                    ) =>
+                        passCommands.push({
+                            kind: 'setViewport',
+                            x,
+                            y,
+                            width,
+                            height,
+                            minDepth,
+                            maxDepth,
+                        })
+                ),
+                setScissorRect: vi.fn(
+                    (x: number, y: number, width: number, height: number) =>
+                        passCommands.push({ kind: 'setScissorRect', x, y, width, height })
+                ),
+                setStencilReference: vi.fn((value: number) =>
+                    passCommands.push({ kind: 'setStencilReference', value })
+                ),
+                setBlendConstant: vi.fn((color: GPUColor) =>
+                    passCommands.push({ kind: 'setBlendConstant', color })
+                ),
+                draw: vi.fn(
+                    (
+                        vertexCount: number,
+                        instanceCount?: number,
+                        firstVertex?: number,
+                        firstInstance?: number
+                    ) =>
+                        passCommands.push({
+                            kind: 'draw',
+                            vertexCount,
+                            instanceCount: instanceCount ?? 1,
+                            firstVertex: firstVertex ?? 0,
+                            firstInstance: firstInstance ?? 0,
+                        })
+                ),
+                drawIndexed: vi.fn(
+                    (
+                        indexCount: number,
+                        instanceCount?: number,
+                        firstIndex?: number,
+                        baseVertex?: number,
+                        firstInstance?: number
+                    ) =>
+                        passCommands.push({
+                            kind: 'drawIndexed',
+                            indexCount,
+                            instanceCount: instanceCount ?? 1,
+                            firstIndex: firstIndex ?? 0,
+                            baseVertex: baseVertex ?? 0,
+                            firstInstance: firstInstance ?? 0,
+                        })
+                ),
+                end: vi.fn(() => passCommands.push({ kind: 'endRenderPass' })),
+            };
+            return pass as unknown as GPURenderPassEncoder;
+        });
+        const finish = vi.fn(
+            () =>
+                Object.freeze({
+                    __mockKind: 'commandBuffer',
+                    label: descriptor?.label ?? '<missing>',
+                    descriptor,
+                }) as unknown as GPUCommandBuffer
+        );
+        return {
+            beginRenderPass,
+            finish,
+            label: descriptor?.label ?? '<missing>',
+        } as unknown as GPUCommandEncoder;
+    });
+
     const device = {
         createBindGroupLayout,
         createPipelineLayout,
         createShaderModule,
         createRenderPipeline,
         createBuffer,
-        queue: { writeBuffer },
+        createBindGroup,
+        createCommandEncoder,
+        queue: { writeBuffer, submit: queueSubmit },
         limits: {
             minUniformBufferOffsetAlignment: 256,
             minStorageBufferOffsetAlignment: 256,
@@ -190,6 +395,9 @@ export function makeMockDevice(): MockDevice {
             createShaderModule,
             createRenderPipeline,
             createBuffer,
+            createBindGroup,
+            createCommandEncoder,
+            queueSubmit,
             writeBuffer,
         },
         created: {
@@ -197,7 +405,9 @@ export function makeMockDevice(): MockDevice {
             pipelineLayouts,
             shaderModules,
             renderPipelines,
+            bindGroups,
         },
         writes,
+        passCommands,
     };
 }

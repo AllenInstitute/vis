@@ -17,7 +17,6 @@
  * builder is internal (not re-exported from the webgpu barrel).
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import { makeShaderDataDefinitions, type ShaderDataDefinitions } from 'webgpu-utils';
 import { type BindGroupLayoutEntry, ShaderStageFlag, type ShaderStageFlags } from '../native-types';
 import {
@@ -41,10 +40,12 @@ import { shaderSlotEntries } from './traverse';
  * - `slotIndex` is the `BindingMap` produced by `resolveShaderBindings` — Drawables consult it to
  *   look up `(group, binding)` for each `ResourceSlot` when assembling bind groups.
  * - `defs` is the `webgpu-utils` reflection cache. Phase 4 will feed this to `makeStructuredView`.
- * - `fingerprint` keys the per-`RenderingContext` cache and drives encoder no-op elision.
+ * - `fingerprint` keys the per-`RenderingContext` cache. Because that cache guarantees a
+ *   single `BuiltPipeline` instance per unique fingerprint, downstream code that needs to
+ *   compare pipelines for equality does so by reference (`a === b`); the fingerprint is used
+ *   only for stringy needs (bind-group cache keys, debug labels, error messages).
  */
 export interface BuiltPipeline {
-    readonly id: string;
     readonly gpu: GPURenderPipeline;
     readonly layout: GPUPipelineLayout;
     readonly bindGroupLayouts: readonly GPUBindGroupLayout[];
@@ -90,7 +91,6 @@ export function buildPipeline(
     const gpu = device.createRenderPipeline(descriptor);
 
     return Object.freeze({
-        id: uuidv4(),
         gpu,
         layout,
         bindGroupLayouts,

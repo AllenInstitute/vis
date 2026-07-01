@@ -43,13 +43,14 @@ export type {
 // ---- Phase 3: Pipeline / Drawable / Scene authoring -------------------------------------------
 
 /** Phase 3: device-scoped facade — owns the pipeline cache (and, per phase, BufferManager / encoder hooks). */
-export { RenderingContext, renderingContext } from './context';
+export { renderingContext } from './context';
 export type {
+    RenderingContext,
     RenderingContextSpec,
     RenderingContextStats,
     ResourceFor,
     ResourceInit,
-} from './context';
+} from './context-types';
 
 /** Phase 3: `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
 export type { BuiltPipeline } from './pipelines/build';
@@ -89,23 +90,42 @@ export type {
 } from './drawable';
 
 /** Phase 6: a `Scene` is the v1 replacement for the legacy `Graph` of drawables. */
-export const scene: unknown = undefined;
-
-// ---- Phase 6: Scene state-node factories -------------------------------------------------------
-
-/** Phase 6: viewport state command. */
-export const viewport: unknown = undefined;
-/** Phase 6: scissor state command. */
-export const scissor: unknown = undefined;
-/** Phase 6: stencil-reference state command. */
-export const stencilref: unknown = undefined;
-/** Phase 6: blend-constant state command. */
-export const blendconstant: unknown = undefined;
-/** Phase 6: composite container that scopes encoder state to a sub-tree of drawables. */
-export const container: unknown = undefined;
-/** Phase 6: override-pipeline-constant command. */
-export const override: unknown = undefined;
-/** Phase 6: explicit draw-call command (used inside containers). */
-export const draw: unknown = undefined;
+export {
+    blendconstant,
+    container,
+    draw,
+    override,
+    scene,
+    scissor,
+    stencilref,
+    viewport,
+} from './scene/scene';
+export type { ScissorSpec, ViewportSpec } from './scene/scene';
+export {
+    isScene,
+    isSceneNode,
+    SCENE_BRAND,
+    SCENE_NODE_BRAND,
+} from './scene/types';
+export type {
+    BindingOverrideNode,
+    BlendConstantNode,
+    CompositeSceneNode,
+    ContainerNode,
+    DrawableNode,
+    NodeId,
+    RenderTarget,
+    Scene,
+    SceneDescriptor,
+    SceneEvent,
+    SceneEventListener,
+    SceneNode,
+    ScissorNode,
+    StencilRefNode,
+    StructureChangedEvent,
+    ViewportNode,
+} from './scene/types';
 
 // ---- Phase 7: encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
+export { GRAPH_ENCODER_BRAND, isGraphEncoder } from './encoder/encoder';
+export type { EncoderStats, GraphEncoder } from './encoder/encoder';

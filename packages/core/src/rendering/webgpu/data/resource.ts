@@ -203,18 +203,31 @@ export type ResourceInit<S extends ResourceSlot> = S extends UniformSlot
 // ---- Reflection cache -------------------------------------------------------------------------
 
 /**
- * Cache of `(slot) → webgpu-utils VariableDefinition` keyed by slot identity. Built on first
- * access via a synthetic WGSL snippet (`<struct decl> @group(0)@binding(0) var<...> __slot: T`)
- * and reused for the life of the slot. Slots whose `type` is a raw WGSL identifier (no
- * `StructDeclaration`) cache `undefined` so subsequent lookups stay fast.
+ * Per-context memo of `(slot) → webgpu-utils VariableDefinition`, keyed by slot identity.
+ * Owned by the `RenderingContext` (created via `makeSlotReflectionCache()`) and threaded into
+ * `makeBufferResource` so the reflection cost is paid once per (context, slot) instead of via
+ * module-global state. Slots whose `type` is a raw WGSL identifier (no `StructDeclaration`)
+ * cache `undefined` so subsequent lookups stay fast.
  */
-const slotDefCache = new WeakMap<ResourceSlot, VariableDefinition | undefined>();
+export type SlotReflectionCache = WeakMap<ResourceSlot, VariableDefinition | undefined>;
 
-/** Return the `VariableDefinition` reflected from `slot.type`, or `undefined` if not a struct. */
-function reflectSlot(slot: UniformSlot | StorageSlot): VariableDefinition | undefined {
-    if (slotDefCache.has(slot)) return slotDefCache.get(slot);
+/** Construct an empty {@link SlotReflectionCache}. */
+export function makeSlotReflectionCache(): SlotReflectionCache {
+    return new WeakMap<ResourceSlot, VariableDefinition | undefined>();
+}
+
+/**
+ * Return the `VariableDefinition` reflected from `slot.type`, or `undefined` if not a struct.
+ * When a `cache` is supplied the result is memoized on it (checking `has` so a cached
+ * `undefined` still short-circuits); without a cache the reflection is recomputed each call.
+ */
+function reflectSlot(
+    slot: UniformSlot | StorageSlot,
+    cache?: SlotReflectionCache
+): VariableDefinition | undefined {
+    if (cache?.has(slot)) return cache.get(slot);
     const def = computeSlotDef(slot);
-    slotDefCache.set(slot, def);
+    cache?.set(slot, def);
     return def;
 }
 
@@ -261,9 +274,10 @@ export function defaultBufferUsageFor(slot: UniformSlot | StorageSlot): BufferUs
 export function makeBufferResource<T>(
     slot: UniformSlot | StorageSlot,
     bufferManager: BufferManager,
-    init: Partial<T> | undefined
+    init: Partial<T> | undefined,
+    cache?: SlotReflectionCache
 ): BufferResource<T> {
-    const def = reflectSlot(slot);
+    const def = reflectSlot(slot, cache);
     if (def === undefined) {
         throw new Error(
             `RenderingContext.resource: slot '${slot.name}' (kind '${slot.kind}') must carry a ` +
@@ -276,6 +290,14 @@ export function makeBufferResource<T>(
     const view = makeStructuredView(def);
     const sizeBytes = view.arrayBuffer.byteLength;
     const usage = defaultBufferUsageFor(slot);
+    // Fast-fail at the budget boundary before issuing any partial allocations.
+    if (!bufferManager.precheck(sizeBytes)) {
+        throw new Error(
+            `RenderingContext.resource: buffer-manager precheck refused ${sizeBytes} B for slot ` +
+                `'${slot.name}' (kind '${slot.kind}'). The request exceeds the current memory ` +
+                'budget and no batches can be evicted to satisfy it.'
+        );
+    }
     const handle = bufferManager.acquireForSlot(slot, sizeBytes, usage);
 
     let refcount = 1;
@@ -572,7 +594,6 @@ function isGPUSampler(v: unknown): v is GPUSampler {
 
 /** Internal export used by the test suite to exercise reflection in isolation. */
 export const __internal = {
-    reflectSlot,
     isStructDeclaration,
 } as const;
 

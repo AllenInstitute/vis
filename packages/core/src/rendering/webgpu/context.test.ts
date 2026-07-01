@@ -122,14 +122,14 @@ describe('RenderingContext — lifecycle', () => {
 });
 
 describe('RenderingContext — telemetry', () => {
-    it('stats() returns {pipelines: N} matching pipelineCount', () => {
+    it('stats() returns {pipelines: N, bindGroups: 0} matching pipelineCount', () => {
         const m = makeMockDevice();
         const ctx = renderingContext({ device: m.device });
-        expect(ctx.stats()).toEqual({ pipelines: 0 });
+        expect(ctx.stats()).toEqual({ pipelines: 0, bindGroups: 0 });
 
         const { sh, graph } = fixture();
         ctx.pipeline(graph, sh, colorState());
-        expect(ctx.stats()).toEqual({ pipelines: 1 });
+        expect(ctx.stats()).toEqual({ pipelines: 1, bindGroups: 0 });
         expect(ctx.stats().pipelines).toBe(ctx.pipelineCount);
     });
 });

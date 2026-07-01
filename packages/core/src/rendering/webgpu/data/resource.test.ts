@@ -261,6 +261,20 @@ describe('BufferResource — refcount semantics', () => {
     });
 });
 
+// ----- Phase 8: precheck fast-fail ----------------------------------------
+
+describe('makeBufferResource — precheck integration', () => {
+    it('throws (and never calls acquireForSlot) when bufferManager.precheck returns false', () => {
+        const m = makeMockDevice();
+        const { bm } = makeRecordingBufferManager(m.device);
+        (bm.precheck as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+        const cam = uniformSlot('camera', cameraStruct);
+        expect(() => makeBufferResource<Camera>(cam, bm, undefined)).toThrow(/precheck refused/);
+        expect(bm.acquireForSlot).not.toHaveBeenCalled();
+    });
+});
+
 // ----- Other resource kinds -----------------------------------------------
 
 describe('SamplerResource', () => {

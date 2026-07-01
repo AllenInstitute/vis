@@ -192,6 +192,33 @@ describe('ctx.drawable() — raw-arrays vertex / index path', () => {
             })
         ).toThrow(/bufferManager/);
     });
+
+    // Phase 8: precheck integration on the raw-arrays vertex path.
+    it('throws when bufferManager.precheck refuses a vertex allocation', () => {
+        const m = makeMockDevice();
+        const { bm } = makeRecordingBM(m.device);
+        // Precheck returns true for the camera-uniform allocation (so `ctx.resource(cam)`
+        // succeeds), then returns false for the vertex allocation.
+        (bm.precheck as ReturnType<typeof vi.fn>)
+            .mockReturnValueOnce(true)
+            .mockReturnValueOnce(false);
+        const ctx = renderingContext({ device: m.device, bufferManager: bm });
+        const { cam, samp, graph, sh } = pipelineFixture();
+        const pipeline = ctx.pipeline(graph, sh, colorState());
+        const camRes = ctx.resource(cam);
+        const sampRes = ctx.resource(samp, {} as unknown as GPUSampler);
+        expect(() =>
+            ctx.drawable({
+                pipeline,
+                vertex: {
+                    kind: 'arrays',
+                    arrays: { position: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]) },
+                },
+                bindings: { camera: camRes, linear: sampRes },
+                draw: { kind: 'array', vertexCount: 3 },
+            })
+        ).toThrow(/precheck refused/);
+    });
 });
 
 // =============================================================================================

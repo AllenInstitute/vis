@@ -23,7 +23,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { createBufferLayoutsFromArrays } from 'webgpu-utils';
 import type { Arrays, ArraysOptions } from 'webgpu-utils';
-import type { BufferManager } from './memory/types';
+import type { RenderingContext } from './context-types';
 import {
     type BufferResource,
     type RawBufferResource,
@@ -209,13 +209,6 @@ export interface DrawableReuseSpec {
 
 // ---- Internal builder -------------------------------------------------------------------------
 
-/** Subset of `RenderingContext` needed by `buildDrawable`. Avoids a circular import. */
-export interface DrawableBuildContext {
-    readonly device: GPUDevice;
-    readonly bufferManager?: BufferManager;
-    readonly label?: string;
-}
-
 /**
  * Build a `Drawable` from a `DrawableSpec`. Internal — call sites use `ctx.drawable(spec)`,
  * which validates the spec, then forwards to this builder.
@@ -230,14 +223,18 @@ export interface DrawableBuildContext {
  *   4. Assemble a frozen `Drawable`, wiring `destroy()` to decref every owned resource and
  *      `reuse()` to produce a sibling drawable that re-shares the geometry.
  */
-export function buildDrawable(ctx: DrawableBuildContext, spec: DrawableSpec): Drawable {
+export function buildDrawable(ctx: RenderingContext, spec: DrawableSpec): Drawable {
     // ---- Vertex buffers ---------------------------------------------------
-    const vertexBuffers = resolveVertexInput(ctx, spec.vertex, spec.label ?? spec.pipeline.id);
+    const vertexBuffers = resolveVertexInput(
+        ctx,
+        spec.vertex,
+        spec.label ?? spec.pipeline.fingerprint
+    );
 
     // ---- Index buffer (optional) ------------------------------------------
     const indexBuffer =
         spec.index !== undefined
-            ? resolveIndexInput(ctx, spec.index, spec.label ?? spec.pipeline.id)
+            ? resolveIndexInput(ctx, spec.index, spec.label ?? spec.pipeline.fingerprint)
             : undefined;
 
     if (spec.draw.kind === 'indexed' && indexBuffer === undefined) {
@@ -277,7 +274,7 @@ export function buildDrawable(ctx: DrawableBuildContext, spec: DrawableSpec): Dr
 // ---- Helpers ----------------------------------------------------------------------------------
 
 function makeFrozenDrawable(
-    ctx: DrawableBuildContext,
+    ctx: RenderingContext,
     args: {
         readonly pipeline: BuiltPipeline;
         readonly draw: DrawCall;
@@ -363,7 +360,7 @@ function isPreBuiltIndex(i: IndexInput): i is PreBuiltIndexInput {
 }
 
 function resolveVertexInput(
-    ctx: DrawableBuildContext,
+    ctx: RenderingContext,
     input: VertexInput,
     labelForErrors: string
 ): Map<number, VertexBufferBinding> {
@@ -401,6 +398,13 @@ function resolveVertexInput(
         const data = ta.data;
         const byteLength = data.byteLength;
         const usage = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
+        if (!bm.precheck(byteLength)) {
+            throw new Error(
+                `ctx.drawable '${labelForErrors}': buffer-manager precheck refused ${byteLength} B ` +
+                    `for vertex buffer slot ${input.bufferSlots?.[i] ?? i}. The request exceeds the ` +
+                    'current memory budget.'
+            );
+        }
         const handle = bm.acquire(byteLength, usage);
         // Always include `handle.offset` so a future slab manager works transparently.
         ctx.device.queue.writeBuffer(handle.gpu, handle.offset, data);
@@ -417,7 +421,7 @@ function resolveVertexInput(
 }
 
 function resolveIndexInput(
-    ctx: DrawableBuildContext,
+    ctx: RenderingContext,
     input: IndexInput,
     labelForErrors: string
 ): IndexBufferBinding {
@@ -439,6 +443,12 @@ function resolveIndexInput(
 
     const { typedArray, format } = normalizeIndexArray(input);
     const usage = GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST;
+    if (!bm.precheck(typedArray.byteLength)) {
+        throw new Error(
+            `ctx.drawable '${labelForErrors}': buffer-manager precheck refused ${typedArray.byteLength} B ` +
+                'for index buffer. The request exceeds the current memory budget.'
+        );
+    }
     const handle = bm.acquire(typedArray.byteLength, usage);
     // Cast through `BufferSource` — the WebGPU types model `writeBuffer`'s data param as
     // `GPUAllowSharedBufferSource`, which the union `Uint16Array | Uint32Array` does not
@@ -492,7 +502,7 @@ function resolveBindings(
         if (resource === undefined) {
             throw new Error(
                 `ctx.drawable${label !== undefined ? ` '${label}'` : ''}: missing binding for ` +
-                    `slot '${slot.name}' (kind '${slot.kind}') required by pipeline ${pipeline.id}.`
+                    `slot '${slot.name}' (kind '${slot.kind}') required by pipeline ${pipeline.fingerprint}.`
             );
         }
         if (!isResource(resource)) {
@@ -528,7 +538,7 @@ function resolveBindings(
                 for (const r of out.values()) r.destroy();
                 throw new Error(
                     `ctx.drawable${label !== undefined ? ` '${label}'` : ''}: bindings entry for slot ` +
-                        `'${k.name}' is not referenced by pipeline ${pipeline.id}.`
+                        `'${k.name}' is not referenced by pipeline ${pipeline.fingerprint}.`
                 );
             }
         }
@@ -560,7 +570,7 @@ function mergeBindingsForReuse(
             for (const r of out.values()) r.destroy();
             throw new Error(
                 `Drawable.reuse${label !== undefined ? ` '${label}'` : ''}: missing binding for slot ` +
-                    `'${slot.name}' required by pipeline ${newPipeline.id}.`
+                    `'${slot.name}' required by pipeline ${newPipeline.fingerprint}.`
             );
         }
         if (candidate.kind === 'rawBuffer') {

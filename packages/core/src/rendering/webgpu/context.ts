@@ -20,11 +20,13 @@ import {
     type ExternalTextureResource,
     type Resource,
     type SamplerResource,
+    type SlotReflectionCache,
     type StorageTextureResource,
     type TextureResource,
     makeBufferResource,
     makeExternalTextureResource,
     makeSamplerResource,
+    makeSlotReflectionCache,
     makeStorageTextureResource,
     makeTextureResource,
 } from './data/resource';
@@ -37,6 +39,9 @@ import {
 } from './pipelines/pipeline-state';
 import { resolveShaderBindings } from './pipelines/traverse';
 import { buildDrawable, type Drawable, type DrawableSpec } from './drawable';
+import type { BindGroupCacheStore } from './encoder/bind-group-builder';
+import { makeGraphEncoder, type GraphEncoder } from './encoder/encoder';
+import type { Scene } from './scene/types';
 import type {
     ExternalTextureSlot,
     ResourceSlot,
@@ -47,83 +52,35 @@ import type {
     UniformSlot,
 } from './resources/resource';
 import type { WgslShader } from './shaders';
+import type {
+    RenderingContext,
+    RenderingContextSpec,
+    RenderingContextStats,
+    ResourceFor,
+    ResourceInit,
+} from './context-types';
 
 /**
- * Spec passed to `renderingContext()` / `new RenderingContext()`.
- *
- * - `device`: the `GPUDevice` every built pipeline targets.
- * - `label`: optional debug label; surfaces in error messages (e.g. use-after-dispose).
- * - `bufferManager`: optional, user-constructed `BufferManager`. Phase 3 accepts but does not
- *   consume it. Phase 4 wires `ctx.resource(slot, init?)` over this reference.
- */
-export interface RenderingContextSpec {
-    readonly device: GPUDevice;
-    readonly label?: string;
-    readonly bufferManager?: BufferManager;
-}
-
-/**
- * Telemetry snapshot returned by `ctx.stats()`. Extended per phase: Phase 4 surfaces a
- * read-through `{bytes, leasedBytes}` view of the externally-supplied `BufferManager` (the
- * memory fields are absent when no `bufferManager` was provided). Phase 7 adds bind-group
- * cache fields. Shape is intentionally a single object so callers can spread or destructure
- * without churn.
- */
-export interface RenderingContextStats {
-    readonly pipelines: number;
-    /** Bytes currently resident in the bound `BufferManager` (leased + free). Absent when no
-     *  `bufferManager` is attached to this context. */
-    readonly bytes?: number;
-    /** Bytes corresponding to leased (in-use) buffers in the bound `BufferManager`. Absent
-     *  when no `bufferManager` is attached. */
-    readonly leasedBytes?: number;
-}
-
-/**
- * Per-kind initializer accepted by `ctx.resource(slot, init?)`. Conditional over the slot
- * variant so callers get a single overload that produces the right `Resource` subtype.
- */
-export type ResourceInit<S extends ResourceSlot> = S extends UniformSlot
-    ? Partial<Record<string, unknown>>
-    : S extends StorageSlot
-      ? Partial<Record<string, unknown>>
-      : S extends TextureSlot
-        ? { texture: GPUTexture; view?: GPUTextureView }
-        : S extends StorageTextureSlot
-          ? { texture: GPUTexture; view?: GPUTextureView }
-          : S extends SamplerSlot
-            ? GPUSampler | GPUSamplerDescriptor
-            : S extends ExternalTextureSlot
-              ? GPUExternalTexture
-              : never;
-
-/** Output `Resource` subtype for a given slot variant. */
-export type ResourceFor<S extends ResourceSlot> = S extends UniformSlot
-    ? BufferResource
-    : S extends StorageSlot
-      ? BufferResource
-      : S extends TextureSlot
-        ? TextureResource
-        : S extends StorageTextureSlot
-          ? StorageTextureResource
-          : S extends SamplerSlot
-            ? SamplerResource
-            : S extends ExternalTextureSlot
-              ? ExternalTextureResource
-              : never;
-
-/**
- * Device-scoped facade for pipeline build + (future) resource/drawable/encoder construction.
+ * Device-scoped facade for pipeline build + resource / drawable / encoder construction.
+ * Implements the public {@link RenderingContext} interface (declared in `context-types.ts`).
  *
  * Construct via the lowercase factory `renderingContext(spec)` to match the surrounding
- * authoring style; the class export exists for type annotations and `instanceof` checks.
+ * authoring style; this class is an implementation detail and is not part of the public
+ * barrel — callers annotate with the `RenderingContext` interface instead.
  */
-export class RenderingContext {
+export class RenderingContextImpl implements RenderingContext {
     readonly device: GPUDevice;
     readonly label?: string;
     readonly bufferManager?: BufferManager;
 
     private readonly _pipelineCache: Map<string, BuiltPipeline> = new Map();
+    /** Per-context `GPUBindGroup` cache consulted by the encoder. Phase 7. */
+    private readonly _bindGroupCache: BindGroupCacheStore = { cache: new Map() };
+    /** Per-context memo of slot reflection, consumed by `makeBufferResource`. Replaces the
+     *  former module-global `slotDefCache` WeakMap. */
+    private readonly _slotReflectionCache: SlotReflectionCache = makeSlotReflectionCache();
+    /** Cached `GraphEncoder` (Phase 7). One per context — re-created if disposed. */
+    private _encoder: GraphEncoder | undefined;
     private _disposed = false;
 
     constructor(spec: RenderingContextSpec) {
@@ -199,7 +156,8 @@ export class RenderingContext {
                 const resource = makeBufferResource(
                     slot as UniformSlot | StorageSlot,
                     bm,
-                    init as Partial<Record<string, unknown>> | undefined
+                    init as Partial<Record<string, unknown>> | undefined,
+                    this._slotReflectionCache
                 );
                 return resource as unknown as ResourceFor<S>;
             }
@@ -276,14 +234,29 @@ export class RenderingContext {
      */
     drawable(spec: DrawableSpec): Drawable {
         this.assertNotDisposed();
-        return buildDrawable(
-            {
-                device: this.device,
-                ...(this.bufferManager !== undefined && { bufferManager: this.bufferManager }),
-                ...(this.label !== undefined && { label: this.label }),
-            },
-            spec
-        );
+        return buildDrawable(this, spec);
+    }
+
+    /**
+     * Construct (or return the cached) `GraphEncoder` bound to this context. The encoder is
+     * stateless across `submit` calls beyond what `RenderingContext` caches — the bind-group
+     * cache lives on this context, so an encoder freed and re-created here doesn't lose its
+     * cache.
+     */
+    encoder(): GraphEncoder {
+        this.assertNotDisposed();
+        if (this._encoder === undefined) {
+            this._encoder = makeGraphEncoder(this, this._bindGroupCache);
+        }
+        return this._encoder;
+    }
+
+    /**
+     * Encode + submit `scene` to the device queue in one call. Convenience wrapper over
+     * `ctx.encoder().submit(scene)` — the encoder instance is constructed lazily and cached.
+     */
+    submit(scene: Scene): GPUCommandBuffer {
+        return this.encoder().submit(scene);
     }
 
     /**
@@ -295,6 +268,15 @@ export class RenderingContext {
     }
 
     /**
+     * Drop every cached `GPUBindGroup` without disposing the context. Phase 8 lifecycle hook:
+     * call after a large scene mutation (e.g. `Scene.remove` of a big subtree) to release the
+     * bind groups that are no longer referenced. Cheap; rebuilt lazily on next submit.
+     */
+    disposeBindGroupCache(): void {
+        this._bindGroupCache.cache.clear();
+    }
+
+    /**
      * Tear down everything this context owns. Idempotent. After `dispose()` further
      * `pipeline()` calls throw. **Does not** dispose the externally-supplied `bufferManager` —
      * that lifetime belongs to the caller.
@@ -302,12 +284,18 @@ export class RenderingContext {
     dispose(): void {
         if (this._disposed) return;
         this.disposePipelineCache();
+        this.disposeBindGroupCache();
+        this._encoder?.clearSubtreeCache();
+        this._encoder = undefined;
         this._disposed = true;
     }
 
     /** Snapshot of current cache occupancy. Cheap; suitable for HUDs / instrumentation. */
     stats(): RenderingContextStats {
-        const base = { pipelines: this._pipelineCache.size };
+        const base = {
+            pipelines: this._pipelineCache.size,
+            bindGroups: this._bindGroupCache.cache.size,
+        };
         if (this.bufferManager === undefined) return base;
         const bm = this.bufferManager.stats();
         return { ...base, bytes: bm.residentBytes, leasedBytes: bm.leasedBytes };
@@ -322,8 +310,9 @@ export class RenderingContext {
 
 /**
  * Lowercase factory for `RenderingContext`. Matches the convention used by `group`, `bindings`,
- * `shader`, `struct`, etc.
+ * `shader`, `struct`, etc. Returns the public `RenderingContext` interface; the concrete
+ * `RenderingContextImpl` class is an implementation detail.
  */
 export function renderingContext(spec: RenderingContextSpec): RenderingContext {
-    return new RenderingContext(spec);
+    return new RenderingContextImpl(spec);
 }

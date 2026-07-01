@@ -30,6 +30,7 @@
  * `shader.declarations`, filters to `ResourceSlot`s, and looks each up in `graph._slotIndex`.
  */
 
+import { v4 as uuidv4 } from 'uuid';
 import { isResourceSlot, type ResourceSlot } from '../resources';
 import type { WgslShader } from '../shaders';
 
@@ -103,12 +104,6 @@ export function isBindingGraph(value: unknown): value is BindingGraph {
 
 const DEFAULT_GROUP_DEPTH_LIMIT = 4;
 
-let nextNodeId = 0;
-function freshId(prefix: string): string {
-    nextNodeId += 1;
-    return `${prefix}#${nextNodeId}`;
-}
-
 /**
  * Returns true when `value` is a plain `GroupSpec` (an object that is neither a `ResourceSlot`
  * nor a `BindingGroup`). Used by `group()` to detect the optional first-arg-as-spec overload.
@@ -166,7 +161,7 @@ export function group(...args: Array<GroupSpec | ResourceSlot | BindingGroup>): 
 
     const node: BindingGroup = {
         __nodeType: 'binding-group',
-        id: freshId('group'),
+        id: uuidv4(),
         ...(spec?.label !== undefined && { label: spec.label }),
         slots,
         subgroups,
@@ -261,11 +256,13 @@ export function bindings(root: BindingGroup, ...shaders: readonly WgslShader[]):
         }
     }
 
-    // Stable group order: shallowest first, ties broken by construction id.
+    // Stable group order: shallowest first. `allGroups` is populated in deterministic DFS
+    // discovery order and `Array.prototype.sort` is stable, so same-depth ties keep that DFS
+    // order without needing a synthetic construction id.
     allGroups.sort((a, b) => {
         const da = groupDepth.get(a) as number;
         const db = groupDepth.get(b) as number;
-        return da - db || a.id.localeCompare(b.id);
+        return da - db;
     });
 
     const graph: BindingGraph = {
