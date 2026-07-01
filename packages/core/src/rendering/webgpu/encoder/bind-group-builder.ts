@@ -6,10 +6,15 @@
  * and `ctx.dispose()` is the single point that drops every cached `GPUBindGroup`.
  *
  * Cache key shape:
- *   `${pipelineFingerprint}|g${groupIdx}|${resourceVersions.join(',')}|${overrideKey}`
+ *   `${pipelineFingerprint}|g${groupIdx}|${resourceTokens.join(',')}|${overrideKey}`
  *
- * where `overrideKey` is a concatenation of the override-stack entries' `(resource.version,
- * resource.kind)` for every slot in the group that was overridden (empty when none).
+ * where each `resourceToken` is `${resource.id}.${resource.version}` (the resource's stable
+ * UUID plus its mutation version) for every slot in the group, in ascending `binding` order,
+ * and `overrideKey` is a `;`-joined list of `${binding}:${resource.id}.${resource.version}`
+ * for the slots supplied by the override stack (empty when none). Encoding the resource `id`
+ * (not just its `version`) makes the key identity-unique: two distinct resources that happen
+ * to share a slot + version no longer collide onto the same `GPUBindGroup`, and it lets
+ * `sweepBindGroupCache` map an invalidated resource back to its cache entries.
  * Fingerprint (rather than a per-build id) is used because the per-context pipeline cache
  * guarantees fingerprint ↔ `BuiltPipeline` instance uniqueness, and fingerprints are stable
  * across rebuilds — a slightly more informative token to see in cache-key dumps.
@@ -35,8 +40,15 @@ import type { ResourceSlot } from '../resources/resource';
 /** Storage shape the bind-group builder consults. Lives on `RenderingContext`. */
 export interface BindGroupCacheStore {
     /** Map of cache key → assembled `GPUBindGroup`. The cache is unbounded in v1; callers
-     *  invalidate via `clear()` (e.g. `ctx.dispose()`). */
+     *  invalidate selectively via `sweepBindGroupCache` or wholesale via `cache.clear()`
+     *  (e.g. `ctx.dispose()`). */
     readonly cache: Map<string, GPUBindGroup>;
+    /** Forward index: cache key → the (deduped) resources whose id+version composed it. Used
+     *  to clean the reverse index when an entry is swept. */
+    readonly keyToResources: Map<string, readonly Resource[]>;
+    /** Reverse index: resource → the set of cache keys referencing it. `WeakMap` so a resource
+     *  that becomes unreachable drops out automatically without an explicit reset. */
+    readonly resourceToKeys: WeakMap<Resource, Set<string>>;
 }
 
 /** Per-call inputs assembled by the encoder before calling into the builder. */
@@ -85,20 +97,24 @@ export function buildBindGroupsForDraw(args: BindGroupBuildArgs): ResolvedBindGr
         // order makes the cache key deterministic).
         slotEntries.sort((a, b) => a.binding - b.binding);
 
-        const versions: number[] = [];
+        const tokens: string[] = [];
         const overrideTags: string[] = [];
         const entries: GPUBindGroupEntry[] = [];
+        const groupResources: Resource[] = [];
 
         for (const { slot, binding } of slotEntries) {
             const resolved = resolveBinding(slot, drawable, overrideStack);
-            versions.push(resolved.resource.version);
+            const r = resolved.resource;
+            const token = `${r.id}.${r.version}`;
+            tokens.push(token);
             if (resolved.fromOverride) {
-                overrideTags.push(`${binding}:${resolved.resource.version}`);
+                overrideTags.push(`${binding}:${token}`);
             }
-            entries.push(makeBindGroupEntry(binding, resolved.resource, slot));
+            groupResources.push(r);
+            entries.push(makeBindGroupEntry(binding, r, slot));
         }
 
-        const key = `${pipeline.fingerprint}|g${groupIdx}|${versions.join(',')}|${overrideTags.join(';')}`;
+        const key = `${pipeline.fingerprint}|g${groupIdx}|${tokens.join(',')}|${overrideTags.join(';')}`;
         let bg = store.cache.get(key);
         if (bg === undefined) {
             const layout = pipeline.bindGroupLayouts[groupIdx];
@@ -113,6 +129,7 @@ export function buildBindGroupsForDraw(args: BindGroupBuildArgs): ResolvedBindGr
                 label: `${drawable.label ?? drawable.id}.bg${groupIdx}`,
             });
             store.cache.set(key, bg);
+            indexBindGroupKey(store, key, groupResources);
         }
         groups.set(groupIdx, bg);
         keys.set(groupIdx, key);
@@ -121,23 +138,56 @@ export function buildBindGroupsForDraw(args: BindGroupBuildArgs): ResolvedBindGr
     return { groups, keys };
 }
 
-/** Drop every cached bind group whose key references any of the supplied resources (by their
- *  current `version`). Conservative: matches on a substring scan of the version vector. */
+/** Record which resources composed `key` so `sweepBindGroupCache` can find and drop the entry
+ *  when any of them is mutated or destroyed. `resources` is deduped first (a resource bound to
+ *  two slots of the same group must not be double-counted). */
+function indexBindGroupKey(
+    store: BindGroupCacheStore,
+    key: string,
+    resources: readonly Resource[]
+): void {
+    const unique = resources.length > 1 ? Array.from(new Set(resources)) : resources;
+    store.keyToResources.set(key, unique);
+    for (const r of unique) {
+        let set = store.resourceToKeys.get(r);
+        if (set === undefined) {
+            set = new Set();
+            store.resourceToKeys.set(r, set);
+        }
+        set.add(key);
+    }
+}
+
+/** Drop exactly the cached bind groups that reference any of `invalidatedResources`, using the
+ *  reverse index (`resource → keys`) built at bind-group creation. Cross-references in the
+ *  forward index (`key → resources`) are cleaned so no stale entries linger. Returns the number
+ *  of `GPUBindGroup`s actually removed from the cache. Bind groups not touched by these
+ *  resources are left intact, so the next submit only rebuilds what changed. */
 export function sweepBindGroupCache(
     store: BindGroupCacheStore,
     invalidatedResources: readonly Resource[]
 ): number {
     if (invalidatedResources.length === 0) return 0;
-    // We use `resource.version` as the matchable token. Since the cache key already encodes
-    // every consumed resource's version, version-based invalidation is automatic on the next
-    // build — but for `Resource.destroy()`-driven sweeps we proactively delete every cache
-    // entry that *might* have referenced a destroyed resource (any whose key contains the
-    // version, conservatively). v1: just clear the cache entirely — correct and trivially
-    // safe; the cost is a re-build of every bind group on next submit.
-    const before = store.cache.size;
-    store.cache.clear();
-    void invalidatedResources;
-    return before;
+    let removed = 0;
+    for (const r of invalidatedResources) {
+        const keys = store.resourceToKeys.get(r);
+        if (keys === undefined) continue;
+        for (const key of keys) {
+            if (store.cache.delete(key)) removed += 1;
+            // Detach this key from every *other* resource that fed it, then drop the forward
+            // entry. `r`'s own reverse entry is removed wholesale below.
+            const others = store.keyToResources.get(key);
+            if (others !== undefined) {
+                for (const o of others) {
+                    if (o === r) continue;
+                    store.resourceToKeys.get(o)?.delete(key);
+                }
+                store.keyToResources.delete(key);
+            }
+        }
+        store.resourceToKeys.delete(r);
+    }
+    return removed;
 }
 
 // ---- internals --------------------------------------------------------------------------------
@@ -212,10 +262,9 @@ function makeBindGroupEntry(
             return { binding, resource: e.external };
         }
         default: {
-            const _exhaustive: never = resource;
-            void _exhaustive;
-            void slot;
-            throw new Error(`makeBindGroupEntry: unknown resource kind on slot '${slot.name}'.`);
+            const _exhaustive: never = resource; // intentionally marked as never being used, as a compile-time check for exhaustiveness
+            void _exhaustive; // marked as "used" so that the compiler does not complain about an unused variable
+            throw new Error(`makeBindGroupEntry: unmapped resource kind on slot '${slot.name}'.`);
         }
     }
 }

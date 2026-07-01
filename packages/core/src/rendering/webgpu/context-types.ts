@@ -10,20 +10,20 @@
  * cannot participate in a runtime cycle.
  */
 
-import type { BufferManager } from './memory/types';
 import type {
     BufferResource,
     ExternalTextureResource,
+    Resource,
     SamplerResource,
     StorageTextureResource,
     TextureResource,
 } from './data/resource';
-import type { BuiltPipeline } from './pipelines/build';
-import type { BindingGraph } from './pipelines/binding-graph';
-import type { PipelineStateDescriptor } from './pipelines/pipeline-state';
 import type { Drawable, DrawableSpec } from './drawable';
 import type { GraphEncoder } from './encoder/encoder';
-import type { Scene } from './scene/types';
+import type { BufferManager } from './memory/types';
+import type { BindingGraph } from './pipelines/binding-graph';
+import type { BuiltPipeline } from './pipelines/build';
+import type { PipelineStateDescriptor } from './pipelines/pipeline-state';
 import type {
     ExternalTextureSlot,
     ResourceSlot,
@@ -33,6 +33,7 @@ import type {
     TextureSlot,
     UniformSlot,
 } from './resources/resource';
+import type { Scene } from './scene/types';
 import type { WgslShader } from './shaders';
 
 /**
@@ -153,6 +154,13 @@ export interface RenderingContext {
 
     /** Drop every cached `GPUBindGroup` without disposing the context. */
     disposeBindGroupCache(): void;
+
+    /**
+     * Selectively drop the cached `GPUBindGroup`s referencing any of `resources`, leaving other
+     * entries intact. Resources built via `ctx.resource()` trigger this automatically on
+     * `commit()` / `destroy()`. Returns the number of bind groups removed.
+     */
+    sweepBindGroups(resources: readonly Resource[]): number;
 
     /**
      * Tear down everything this context owns. Idempotent. Does **not** dispose the

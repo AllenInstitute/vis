@@ -27,8 +27,9 @@
  * giant `GPUBuffer` carved into slices) is a drop-in replacement for `BatchPoolBufferManager`.
  */
 
-import { makeStructuredView, makeShaderDataDefinitions } from 'webgpu-utils';
+import { v4 as uuidv4 } from 'uuid';
 import type { StructDefinition, StructuredView, VariableDefinition } from 'webgpu-utils';
+import { makeShaderDataDefinitions, makeStructuredView } from 'webgpu-utils';
 import type { BufferHandle, BufferManager, BufferUsageFlags } from '../memory/types';
 import type {
     ExternalTextureSlot,
@@ -46,10 +47,19 @@ import type { StructDeclaration } from '../shaders';
 /** Brand symbol used by `isResource` to discriminate `Resource` objects at runtime. */
 export const RESOURCE_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Resource');
 
+/** Callback a resource invokes when a mutation (`commit()`) or teardown (`destroy()`) means
+ *  any cached `GPUBindGroup` referencing it must be dropped. Wired by `RenderingContext` so
+ *  the bind-group cache is swept automatically; resources built outside a context leave it
+ *  unset and rely on `ctx.sweepBindGroups(...)`. */
+export type ResourceInvalidateHook = (resource: Resource) => void;
+
 /** Brand + lifecycle fields shared by every `Resource` variant — including slot-less ones
  *  such as `RawBufferResource` (used for vertex/index buffers in `Drawable`). */
 interface ResourceLifecycle {
     readonly __brand: typeof RESOURCE_BRAND;
+    /** Globally-unique identity (UUIDv4), stable for the resource's lifetime. Distinguishes
+     *  two resources that share a slot + `version` in the bind-group cache key. */
+    readonly id: string;
     /** Monotonically increasing version, bumped on every committed mutation. Drives the
      *  bind-group cache invalidation key in Phase 7. */
     readonly version: number;
@@ -275,7 +285,8 @@ export function makeBufferResource<T>(
     slot: UniformSlot | StorageSlot,
     bufferManager: BufferManager,
     init: Partial<T> | undefined,
-    cache?: SlotReflectionCache
+    cache?: SlotReflectionCache,
+    onInvalidate?: ResourceInvalidateHook
 ): BufferResource<T> {
     const def = reflectSlot(slot, cache);
     if (def === undefined) {
@@ -306,6 +317,7 @@ export function makeBufferResource<T>(
 
     const resource = {
         __brand: RESOURCE_BRAND,
+        id: uuidv4(),
         kind: slot.kind,
         slot,
         handle,
@@ -341,6 +353,7 @@ export function makeBufferResource<T>(
             if (disposed) throw new Error(`BufferResource '${slot.name}': commit() after destroy().`);
             device.queue.writeBuffer(handle.gpu, handle.offset, view.arrayBuffer);
             version += 1;
+            onInvalidate?.(resource);
         },
         share(): BufferResource<T> {
             if (disposed) throw new Error(`BufferResource '${slot.name}': share() after destroy().`);
@@ -353,6 +366,7 @@ export function makeBufferResource<T>(
             if (refcount > 0) return;
             handle.release();
             disposed = true;
+            onInvalidate?.(resource);
         },
     } satisfies BufferResource<T> & { share(): BufferResource<T> };
 
@@ -367,7 +381,8 @@ export function makeBufferResource<T>(
 export function makeSamplerResource(
     slot: SamplerSlot,
     device: GPUDevice,
-    init: GPUSampler | GPUSamplerDescriptor | undefined
+    init: GPUSampler | GPUSamplerDescriptor | undefined,
+    onInvalidate?: ResourceInvalidateHook
 ): SamplerResource {
     const sampler =
         init === undefined
@@ -381,6 +396,7 @@ export function makeSamplerResource(
 
     const resource = {
         __brand: RESOURCE_BRAND,
+        id: uuidv4(),
         kind: 'sampler' as const,
         slot,
         sampler,
@@ -402,6 +418,7 @@ export function makeSamplerResource(
             if (refcount > 0) return;
             // GPUSampler has no .destroy() — drop the reference and mark disposed.
             disposed = true;
+            onInvalidate?.(resource);
         },
     } satisfies SamplerResource & { share(): SamplerResource };
 
@@ -411,7 +428,8 @@ export function makeSamplerResource(
 /** Construct a `TextureResource` from a prebuilt `GPUTexture` (+ optional explicit view). */
 export function makeTextureResource(
     slot: TextureSlot,
-    init: { texture: GPUTexture; view?: GPUTextureView }
+    init: { texture: GPUTexture; view?: GPUTextureView },
+    onInvalidate?: ResourceInvalidateHook
 ): TextureResource {
     const texture = init.texture;
     const view = init.view ?? texture.createView();
@@ -421,6 +439,7 @@ export function makeTextureResource(
 
     const resource = {
         __brand: RESOURCE_BRAND,
+        id: uuidv4(),
         kind: 'texture' as const,
         slot,
         texture,
@@ -443,6 +462,7 @@ export function makeTextureResource(
             if (refcount > 0) return;
             texture.destroy();
             disposed = true;
+            onInvalidate?.(resource);
         },
     } satisfies TextureResource & { share(): TextureResource };
 
@@ -452,7 +472,8 @@ export function makeTextureResource(
 /** Construct a `StorageTextureResource` from a prebuilt `GPUTexture`. */
 export function makeStorageTextureResource(
     slot: StorageTextureSlot,
-    init: { texture: GPUTexture; view?: GPUTextureView }
+    init: { texture: GPUTexture; view?: GPUTextureView },
+    onInvalidate?: ResourceInvalidateHook
 ): StorageTextureResource {
     const texture = init.texture;
     const view = init.view ?? texture.createView();
@@ -462,6 +483,7 @@ export function makeStorageTextureResource(
 
     const resource = {
         __brand: RESOURCE_BRAND,
+        id: uuidv4(),
         kind: 'storageTexture' as const,
         slot,
         texture,
@@ -484,6 +506,7 @@ export function makeStorageTextureResource(
             if (refcount > 0) return;
             texture.destroy();
             disposed = true;
+            onInvalidate?.(resource);
         },
     } satisfies StorageTextureResource & { share(): StorageTextureResource };
 
@@ -493,13 +516,15 @@ export function makeStorageTextureResource(
 /** Construct an `ExternalTextureResource` from a prebuilt `GPUExternalTexture`. */
 export function makeExternalTextureResource(
     slot: ExternalTextureSlot,
-    external: GPUExternalTexture
+    external: GPUExternalTexture,
+    onInvalidate?: ResourceInvalidateHook
 ): ExternalTextureResource {
     let refcount = 1;
     let disposed = false;
 
     const resource = {
         __brand: RESOURCE_BRAND,
+        id: uuidv4(),
         kind: 'externalTexture' as const,
         slot,
         external,
@@ -521,6 +546,7 @@ export function makeExternalTextureResource(
             if (refcount > 0) return;
             // GPUExternalTexture has no .destroy() in v1 spec — drop the reference and mark disposed.
             disposed = true;
+            onInvalidate?.(resource);
         },
     } satisfies ExternalTextureResource & { share(): ExternalTextureResource };
 
@@ -539,13 +565,15 @@ export function makeExternalTextureResource(
 export function makeRawBufferResource(
     handle: BufferHandle,
     usage: BufferUsageFlags,
-    label?: string
+    label?: string,
+    onInvalidate?: ResourceInvalidateHook
 ): RawBufferResource {
     let refcount = 1;
     let disposed = false;
 
     const resource: RawBufferResource & { share(): RawBufferResource } = {
         __brand: RESOURCE_BRAND,
+        id: uuidv4(),
         kind: 'rawBuffer' as const,
         handle,
         usage,
@@ -572,6 +600,7 @@ export function makeRawBufferResource(
             if (refcount > 0) return;
             handle.release();
             disposed = true;
+            onInvalidate?.(resource);
         },
     };
 

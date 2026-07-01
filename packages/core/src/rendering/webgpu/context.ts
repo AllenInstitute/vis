@@ -14,34 +14,35 @@
  * pipeline cache only — the caller's `BufferManager` lifetime is untouched.
  */
 
-import type { BufferManager } from './memory/types';
+import type {
+    RenderingContext,
+    RenderingContextSpec,
+    RenderingContextStats,
+    ResourceFor,
+    ResourceInit,
+} from './context-types';
 import {
-    type BufferResource,
-    type ExternalTextureResource,
-    type Resource,
-    type SamplerResource,
-    type SlotReflectionCache,
-    type StorageTextureResource,
-    type TextureResource,
     makeBufferResource,
     makeExternalTextureResource,
     makeSamplerResource,
     makeSlotReflectionCache,
     makeStorageTextureResource,
     makeTextureResource,
+    type Resource,
+    type SlotReflectionCache,
 } from './data/resource';
-import { type BuiltPipeline, buildPipeline } from './pipelines/build';
+import { buildDrawable, type Drawable, type DrawableSpec } from './drawable';
+import { type BindGroupCacheStore, sweepBindGroupCache } from './encoder/bind-group-builder';
+import { type GraphEncoder, makeGraphEncoder } from './encoder/encoder';
+import type { BufferManager } from './memory/types';
 import type { BindingGraph } from './pipelines/binding-graph';
+import { type BuiltPipeline, buildPipeline } from './pipelines/build';
 import { pipelineFingerprint } from './pipelines/fingerprint';
 import {
     normalizePipelineState,
     type PipelineStateDescriptor,
 } from './pipelines/pipeline-state';
 import { resolveShaderBindings } from './pipelines/traverse';
-import { buildDrawable, type Drawable, type DrawableSpec } from './drawable';
-import type { BindGroupCacheStore } from './encoder/bind-group-builder';
-import { makeGraphEncoder, type GraphEncoder } from './encoder/encoder';
-import type { Scene } from './scene/types';
 import type {
     ExternalTextureSlot,
     ResourceSlot,
@@ -51,14 +52,8 @@ import type {
     TextureSlot,
     UniformSlot,
 } from './resources/resource';
+import type { Scene } from './scene/types';
 import type { WgslShader } from './shaders';
-import type {
-    RenderingContext,
-    RenderingContextSpec,
-    RenderingContextStats,
-    ResourceFor,
-    ResourceInit,
-} from './context-types';
 
 /**
  * Device-scoped facade for pipeline build + resource / drawable / encoder construction.
@@ -75,7 +70,16 @@ export class RenderingContextImpl implements RenderingContext {
 
     private readonly _pipelineCache: Map<string, BuiltPipeline> = new Map();
     /** Per-context `GPUBindGroup` cache consulted by the encoder. Phase 7. */
-    private readonly _bindGroupCache: BindGroupCacheStore = { cache: new Map() };
+    private readonly _bindGroupCache: BindGroupCacheStore = {
+        cache: new Map(),
+        keyToResources: new Map(),
+        resourceToKeys: new WeakMap(),
+    };
+    /** Stable hook handed to every resource this context builds. Invoked on `commit()` /
+     *  `destroy()` to selectively drop the bind groups referencing that resource. */
+    private readonly _invalidateBindGroups = (resource: Resource): void => {
+        sweepBindGroupCache(this._bindGroupCache, [resource]);
+    };
     /** Per-context memo of slot reflection, consumed by `makeBufferResource`. Replaces the
      *  former module-global `slotDefCache` WeakMap. */
     private readonly _slotReflectionCache: SlotReflectionCache = makeSlotReflectionCache();
@@ -157,7 +161,8 @@ export class RenderingContextImpl implements RenderingContext {
                     slot as UniformSlot | StorageSlot,
                     bm,
                     init as Partial<Record<string, unknown>> | undefined,
-                    this._slotReflectionCache
+                    this._slotReflectionCache,
+                    this._invalidateBindGroups
                 );
                 return resource as unknown as ResourceFor<S>;
             }
@@ -165,7 +170,8 @@ export class RenderingContextImpl implements RenderingContext {
                 const resource = makeSamplerResource(
                     slot as SamplerSlot,
                     this.device,
-                    init as GPUSampler | GPUSamplerDescriptor | undefined
+                    init as GPUSampler | GPUSamplerDescriptor | undefined,
+                    this._invalidateBindGroups
                 );
                 return resource as unknown as ResourceFor<S>;
             }
@@ -178,7 +184,8 @@ export class RenderingContextImpl implements RenderingContext {
                 }
                 const resource = makeTextureResource(
                     slot as TextureSlot,
-                    init as { texture: GPUTexture; view?: GPUTextureView }
+                    init as { texture: GPUTexture; view?: GPUTextureView },
+                    this._invalidateBindGroups
                 );
                 return resource as unknown as ResourceFor<S>;
             }
@@ -191,7 +198,8 @@ export class RenderingContextImpl implements RenderingContext {
                 }
                 const resource = makeStorageTextureResource(
                     slot as StorageTextureSlot,
-                    init as { texture: GPUTexture; view?: GPUTextureView }
+                    init as { texture: GPUTexture; view?: GPUTextureView },
+                    this._invalidateBindGroups
                 );
                 return resource as unknown as ResourceFor<S>;
             }
@@ -204,7 +212,8 @@ export class RenderingContextImpl implements RenderingContext {
                 }
                 const resource = makeExternalTextureResource(
                     slot as ExternalTextureSlot,
-                    init as GPUExternalTexture
+                    init as GPUExternalTexture,
+                    this._invalidateBindGroups
                 );
                 return resource as unknown as ResourceFor<S>;
             }
@@ -274,6 +283,18 @@ export class RenderingContextImpl implements RenderingContext {
      */
     disposeBindGroupCache(): void {
         this._bindGroupCache.cache.clear();
+        this._bindGroupCache.keyToResources.clear();
+    }
+
+    /**
+     * Selectively drop the cached `GPUBindGroup`s that reference any of `resources`, leaving
+     * every other entry intact. `ctx.resource()`-built resources call this automatically on
+     * `commit()` / `destroy()`; call it directly for resources built outside the context.
+     * Safe after `dispose()` (no-op on the already-cleared cache). Returns the number of bind
+     * groups removed.
+     */
+    sweepBindGroups(resources: readonly Resource[]): number {
+        return sweepBindGroupCache(this._bindGroupCache, resources);
     }
 
     /**
