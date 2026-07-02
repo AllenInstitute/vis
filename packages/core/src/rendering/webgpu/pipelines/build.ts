@@ -21,8 +21,8 @@ import { makeShaderDataDefinitions, type ShaderDataDefinitions } from 'webgpu-ut
 import { type BindGroupLayoutEntry, ShaderStageFlag, type ShaderStageFlags } from '../native-types';
 import {
     type BindingMap,
-    bindShader,
     type BoundSlot,
+    bindShader,
     bind as bindSlot,
     type ResourceSlot,
     toBindGroupLayoutEntry,
@@ -142,7 +142,7 @@ function buildBindGroupLayouts(
                 // declarations, so this should be unreachable. Keep the check as a tripwire.
                 throw new Error(
                     `pipeline: slot '${s.slot.name}' was reported by shaderSlotEntries but is ` +
-                        `absent from resolveShaderBindings output (internal inconsistency).`
+                        "absent from resolveShaderBindings output (internal inconsistency)."
                 );
             }
             const bound: BoundSlot = bindSlot(s.slot, idx.group, idx.binding);
@@ -174,7 +174,7 @@ function composeRenderPipelineDescriptor(
             module,
             entryPoint: state.vertex.entryPoint,
             ...(state.vertex.buffers !== undefined && {
-                buffers: state.vertex.buffers as unknown as GPUVertexBufferLayout[],
+                buffers: state.vertex.buffers,
             }),
             ...(state.vertex.constants !== undefined && { constants: state.vertex.constants }),
         },

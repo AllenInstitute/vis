@@ -15,7 +15,33 @@
 
 // ---- Implemented in Phase 1 -------------------------------------------------------------------
 
-export { slot } from './slot';
+export type { StructDecl, StructDeclaration, StructMemberDeclaration, WgslShader } from './shaders';
+export { asSource, isWgslShader, member, shader, struct } from './shaders';
+
+// ---- Declarative vertex inputs ----------------------------------------------------------------
+
+export type {
+    VertexAttributeDecl,
+    VertexAttributeRef,
+    VertexBufferDecl,
+    VertexBufferSpec,
+    VertexLayoutDeclaration,
+} from './pipelines/vertex-layout';
+/** Buffer grouping + `stepMode` + per-attribute format → `GPUVertexBufferLayout[]`
+ *  (see `pipeline({ vertex: { layout } })`) and the typed drawable upload path. */
+export { buffer, isVertexLayout, VERTEX_LAYOUT_BRAND, vertexLayout } from './pipelines/vertex-layout';
+export type { VertexArrayKind, VertexComponentType, VertexFormatInfo } from './shaders/vertex-format';
+/** `GPUVertexFormat` metadata + the natural WGSL-type → format default. */
+export { defaultVertexFormat, VERTEX_FORMAT_INFO, vertexFormatInfo } from './shaders/vertex-format';
+export type {
+    VertexInputAttribute,
+    VertexInputBuiltin,
+    VertexInputBuiltinName,
+    VertexInputInterface,
+} from './shaders/vertex-interface';
+/** The vertex shader *input interface*: ordinary `struct`s + loose `param`s (incl. builtins),
+ *  validated up front. Feeds `vertexEntry(...)` and is grouped into buffers by `vertexLayout(...)`. */
+export { isVertexInput, VERTEX_INPUT_BUILTINS, vertexInput } from './shaders/vertex-interface';
 export type {
     TypedExternalTextureSlot,
     TypedSamplerSlot,
@@ -24,21 +50,19 @@ export type {
     TypedTextureSlot,
     TypedUniformSlot,
 } from './slot';
-
-export { asSource, isWgslShader, member, shader, struct } from './shaders';
-export type { StructDecl, StructDeclaration, StructMemberDeclaration, WgslShader } from './shaders';
+export { slot } from './slot';
 
 // ---- Phase 2: derived BindingGraph ------------------------------------------------------------
 
-export { bindings, group, isBindingGraph, isBindingGroup } from './pipelines/binding-graph';
 export type { BindingGraph, BindingGroup, GroupSpec } from './pipelines/binding-graph';
-export { resolveShaderBindings, shaderSlotEntries } from './pipelines/traverse';
+export { bindings, group, isBindingGraph, isBindingGroup } from './pipelines/binding-graph';
 export type {
     FragmentStateDescriptor,
     NormalizedPipelineState,
     PipelineStateDescriptor,
     VertexStateDescriptor,
 } from './pipelines/pipeline-state';
+export { resolveShaderBindings, shaderSlotEntries } from './pipelines/traverse';
 
 // ---- Phase 3: Pipeline / Drawable / Scene authoring -------------------------------------------
 
@@ -51,14 +75,6 @@ export type {
     ResourceFor,
     ResourceInit,
 } from './context-types';
-
-/** Phase 3: `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
-export type { BuiltPipeline } from './pipelines/build';
-
-/** Phase 4: data-bearing `Resource` family. `ctx.resource(slot, init?)` is the public
- *  constructor; the raw factories are kept private to `RenderingContext` so all construction
- *  funnels through one place (consistent error wording, future telemetry, etc.). */
-export { isResource, RESOURCE_BRAND } from './data/resource';
 export type {
     BufferResource,
     ExternalTextureResource,
@@ -69,9 +85,10 @@ export type {
     TextureResource,
 } from './data/resource';
 
-/** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
- *  `ctx.drawable({...})`. */
-export { DRAWABLE_BRAND, isDrawable } from './drawable';
+/** Phase 4: data-bearing `Resource` family. `ctx.resource(slot, init?)` is the public
+ *  constructor; the raw factories are kept private to `RenderingContext` so all construction
+ *  funnels through one place (consistent error wording, future telemetry, etc.). */
+export { isResource, RESOURCE_BRAND } from './data/resource';
 export type {
     ArrayDrawCall,
     Drawable,
@@ -79,16 +96,26 @@ export type {
     DrawableSpec,
     DrawCall,
     IndexBufferBinding,
-    IndexInput,
     IndexedDrawCall,
+    IndexInput,
     PreBuiltIndexInput,
     PreBuiltVertexInput,
     RawArrayIndexInput,
     RawArraysVertexInput,
+    TypedVertexInput,
     VertexBufferBinding,
     VertexInput,
 } from './drawable';
 
+/** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
+ *  `ctx.drawable({...})`. */
+export { DRAWABLE_BRAND, isDrawable } from './drawable';
+export type { EncoderStats, GraphEncoder } from './encoder/encoder';
+// ---- Phase 7: encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
+export { GRAPH_ENCODER_BRAND, isGraphEncoder } from './encoder/encoder';
+/** Phase 3: `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
+export type { BuiltPipeline } from './pipelines/build';
+export type { ScissorSpec, ViewportSpec } from './scene/scene';
 /** Phase 6: a `Scene` is the v1 replacement for the legacy `Graph` of drawables. */
 export {
     blendconstant,
@@ -100,13 +127,6 @@ export {
     stencilref,
     viewport,
 } from './scene/scene';
-export type { ScissorSpec, ViewportSpec } from './scene/scene';
-export {
-    isScene,
-    isSceneNode,
-    SCENE_BRAND,
-    SCENE_NODE_BRAND,
-} from './scene/types';
 export type {
     BindingOverrideNode,
     BlendConstantNode,
@@ -125,7 +145,9 @@ export type {
     StructureChangedEvent,
     ViewportNode,
 } from './scene/types';
-
-// ---- Phase 7: encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
-export { GRAPH_ENCODER_BRAND, isGraphEncoder } from './encoder/encoder';
-export type { EncoderStats, GraphEncoder } from './encoder/encoder';
+export {
+    isScene,
+    isSceneNode,
+    SCENE_BRAND,
+    SCENE_NODE_BRAND,
+} from './scene/types';

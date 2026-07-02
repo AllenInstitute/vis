@@ -403,3 +403,45 @@ export const VertexBufferLayoutSchema = z.object({
     attributes: z.array(VertexAttributeSchema),
 });
 export type VertexBufferLayout = z.infer<typeof VertexBufferLayoutSchema>;
+
+// ---- Compile-time drift guards ---------------------------------------------------------------
+
+/**
+ * Assert that `T` is assignable to its ambient global counterpart `U`. Purely type-level (erased at 
+ * build) — used only by `WebGpuEnumParity` below.
+ */
+type AssertAssignable<T extends U, U> = T;
+
+/**
+ * Compile-time cross-check that every enum schema above stays a subset of the corresponding
+ * ambient WebGPU global type. If a schema's literals ever drift from the WebGPU spec (a typo, a value
+ * removed from the ambient types, etc.) this tuple fails to type-check here — surfacing the mismatch
+ * at build time instead of silently at `createRenderPipeline`. The Zod schemas remain the runtime
+ * source of truth (no runtime enums are available from ambient sources); these guards only keep them 
+ * honest.
+ */
+type WebGpuEnumParity = [
+    AssertAssignable<PrimitiveTopology, GPUPrimitiveTopology>,
+    AssertAssignable<IndexFormat, GPUIndexFormat>,
+    AssertAssignable<FrontFace, GPUFrontFace>,
+    AssertAssignable<CullMode, GPUCullMode>,
+    AssertAssignable<CompareFunction, GPUCompareFunction>,
+    AssertAssignable<StencilOperation, GPUStencilOperation>,
+    AssertAssignable<BlendOperation, GPUBlendOperation>,
+    // The dual-source `src1*` factors are valid current WebGPU but may be absent from older
+    // `lib.dom.d.ts` / `GPUBlendFactor` definitions; exclude them so the guard stays robust across
+    // toolchains while still catching typos in the mainstream factors.
+    AssertAssignable<Exclude<BlendFactor, `${string}src1${string}`>, GPUBlendFactor>,
+    AssertAssignable<BufferBindingType, GPUBufferBindingType>,
+    AssertAssignable<SamplerBindingType, GPUSamplerBindingType>,
+    AssertAssignable<TextureSampleType, GPUTextureSampleType>,
+    AssertAssignable<TextureViewDimension, GPUTextureViewDimension>,
+    AssertAssignable<StorageTextureAccess, GPUStorageTextureAccess>,
+    AssertAssignable<TextureFormat, GPUTextureFormat>,
+    AssertAssignable<VertexFormat, GPUVertexFormat>,
+    AssertAssignable<VertexStepMode, GPUVertexStepMode>,
+];
+
+// Reference the guard tuple so it participates in type-checking (and isn't flagged as unused).
+export type __WebGpuEnumParity = WebGpuEnumParity;
+

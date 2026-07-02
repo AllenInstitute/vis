@@ -26,6 +26,7 @@ import {
     type VertexBufferLayout,
     VertexBufferLayoutSchema,
 } from '../native-types';
+import { deriveVertexBufferLayouts, type VertexLayoutDeclaration } from './vertex-layout';
 
 /** Default WGSL entry point assumed when none is supplied on `state.vertex`. */
 export const DEFAULT_VERTEX_ENTRY_POINT = 'vs_main';
@@ -36,6 +37,9 @@ export const DEFAULT_FRAGMENT_ENTRY_POINT = 'fs_main';
 export interface VertexStateDescriptor {
     readonly entryPoint?: string;
     readonly buffers?: readonly VertexBufferLayout[];
+    /** Declarative vertex layout (see `vertexLayout(...)`). When present, `buffers` is derived
+     *  from it during normalization; mutually exclusive with a hand-written `buffers`. */
+    readonly layout?: VertexLayoutDeclaration;
     readonly constants?: Readonly<Record<string, number>>;
 }
 
@@ -116,7 +120,7 @@ export interface NormalizedPipelineState {
  * - Idempotent: `normalizePipelineState(normalizePipelineState(s))` returns a deeply-equal value.
  */
 export function normalizePipelineState(state: PipelineStateDescriptor): NormalizedPipelineState {
-    const parsed = PipelineStateDescriptorSchema.parse(state);
+    const parsed = PipelineStateDescriptorSchema.parse(resolveVertexLayout(state));
     const out: Record<string, unknown> = {};
     out.vertex = sortKeys({
         entryPoint: parsed.vertex?.entryPoint ?? DEFAULT_VERTEX_ENTRY_POINT,
@@ -155,4 +159,22 @@ function sortKeys<T>(value: T): T {
         return out as unknown as T;
     }
     return value;
+}
+
+/**
+ * Derive `vertex.buffers` from a declarative `vertex.layout` when present, returning a plain
+ * descriptor for Zod validation (which strips the non-schema `layout` field). Throws if both
+ * `layout` and `buffers` are supplied. No-op when `layout` is absent.
+ */
+function resolveVertexLayout(state: PipelineStateDescriptor): PipelineStateDescriptor {
+    const vertex = state.vertex;
+    if (vertex?.layout === undefined) return state;
+    if (vertex.buffers !== undefined) {
+        throw new Error(
+            'normalizePipelineState: vertex.layout and vertex.buffers are mutually exclusive — ' +
+                'declare a vertexLayout(...) OR hand-write buffers, not both.'
+        );
+    }
+    const { layout, ...vertexRest } = vertex;
+    return { ...state, vertex: { ...vertexRest, buffers: deriveVertexBufferLayouts(layout) } };
 }

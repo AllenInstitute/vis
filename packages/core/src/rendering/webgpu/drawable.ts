@@ -21,17 +21,22 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { createBufferLayoutsFromArrays } from 'webgpu-utils';
 import type { Arrays, ArraysOptions } from 'webgpu-utils';
+import { createBufferLayoutsFromArrays } from 'webgpu-utils';
 import type { RenderingContext } from './context-types';
 import {
     type BufferResource,
-    type RawBufferResource,
-    type Resource,
     isResource,
     makeRawBufferResource,
+    type RawBufferResource,
+    type Resource,
 } from './data/resource';
 import type { BuiltPipeline } from './pipelines/build';
+import {
+    interleaveVertexBuffer,
+    type VertexAttrData,
+    type VertexLayoutDeclaration,
+} from './pipelines/vertex-layout';
 import type { ResourceSlot } from './resources/resource';
 
 // ---- Brand & identity -------------------------------------------------------------------------
@@ -150,7 +155,26 @@ export interface RawArraysVertexInput {
 }
 
 /** Union of every accepted vertex input shape for `ctx.drawable({...})`. */
-export type VertexInput = PreBuiltVertexInput | RawArraysVertexInput;
+export type VertexInput = PreBuiltVertexInput | RawArraysVertexInput | TypedVertexInput;
+
+/**
+ * Declaration-driven typed vertex input. Uses a `vertexLayout(...)` as the single source of truth
+ * for byte packing: `data` supplies each attribute's flat host array (keyed by attribute name),
+ * which is interleaved per the derived offsets/stride, allocated through `ctx.bufferManager`, and
+ * uploaded via `queue.writeBuffer`. One buffer is produced per entry in the layout.
+ *
+ * For `float16` attributes supply raw half-float bits; for normalized (`unorm*`/`snorm*`) formats
+ * supply pre-encoded integers — v1 does not auto-quantize floats.
+ */
+export interface TypedVertexInput {
+    readonly kind: 'typed';
+    /** The layout declaration whose buffers/attributes drive packing. */
+    readonly layout: VertexLayoutDeclaration;
+    /** Per-attribute host data, keyed by attribute name. */
+    readonly data: Readonly<Record<string, VertexAttrData>>;
+    /** Optional override for the per-buffer slot index. Defaults to the buffer's index. */
+    readonly bufferSlots?: readonly number[];
+}
 
 /** Pre-built index input — caller has already allocated a buffer and wrapped it. */
 export interface PreBuiltIndexInput {
@@ -374,6 +398,10 @@ function resolveVertexInput(
         return out;
     }
 
+    if (input.kind === 'typed') {
+        return resolveTypedVertexInput(ctx, input, labelForErrors);
+    }
+
     // Raw-arrays path.
     const bm = ctx.bufferManager;
     if (bm === undefined) {
@@ -416,6 +444,41 @@ function resolveVertexInput(
         );
         out.set(slotIndex, { resource });
     }
+
+    return out;
+}
+
+/** Resolve the declaration-driven typed vertex input: interleave each buffer's attribute data
+ *  per its derived layout, allocate through the buffer manager, and upload. */
+function resolveTypedVertexInput(
+    ctx: RenderingContext,
+    input: TypedVertexInput,
+    labelForErrors: string
+): Map<number, VertexBufferBinding> {
+    const bm = ctx.bufferManager;
+    if (bm === undefined) {
+        throw new Error(
+            `ctx.drawable '${labelForErrors}': typed vertex input requires a bufferManager; ` +
+                'pass one to renderingContext({ device, bufferManager }).'
+        );
+    }
+
+    const out = new Map<number, VertexBufferBinding>();
+    input.layout.buffers.forEach((buffer, i) => {
+        const bytes = interleaveVertexBuffer(buffer, input.data);
+        const usage = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
+        const slotIndex = input.bufferSlots?.[i] ?? i;
+        if (!bm.precheck(bytes.byteLength)) {
+            throw new Error(
+                `ctx.drawable '${labelForErrors}': buffer-manager precheck refused ${bytes.byteLength} B ` +
+                    `for vertex buffer slot ${slotIndex}. The request exceeds the current memory budget.`
+            );
+        }
+        const handle = bm.acquire(bytes.byteLength, usage);
+        ctx.device.queue.writeBuffer(handle.gpu, handle.offset, bytes);
+        const resource = makeRawBufferResource(handle, usage, `${labelForErrors}.vertex[${slotIndex}]`);
+        out.set(slotIndex, { resource });
+    });
 
     return out;
 }
