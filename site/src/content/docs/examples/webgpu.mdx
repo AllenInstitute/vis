@@ -1,0 +1,69 @@
+---
+title: WebGPU
+description: A live demo and walkthrough of setting up a WebGPU renderer with @alleninstitute/vis-core — three rotating shapes sharing a camera, using uniforms and vertex buffers.
+---
+
+import { Code, Aside } from '@astrojs/starlight/components';
+import { WebGpuShapesDemo } from '../../../examples/webgpu/demo.tsx';
+import shaderCode from '../../../examples/webgpu/shader.ts?raw';
+import rendererCode from '../../../examples/webgpu/renderer.ts?raw';
+
+The `@alleninstitute/vis-core` WebGPU authoring API is a declarative layer over WebGPU: you describe
+shaders, bindings, pipelines, drawables, and scenes as data, and a `RenderingContext` caches the
+GPU objects behind them. This example wires the whole thing together to render three slowly rotating
+solids — a cube, a tetrahedron, and a dodecahedron — that share one camera uniform but carry their
+own per-shape color, using **uniform buffers** and **vertex + index buffers**.
+
+<Aside>
+The rendering primitives are framework-agnostic — the React component here only owns the
+`<canvas>` lifecycle. Everything in <code>renderer.ts</code> is plain TypeScript that works in any
+environment with a canvas and a `GPUDevice`.
+</Aside>
+
+## Live Demo
+
+<WebGpuShapesDemo client:only="react" />
+
+## Key Concepts
+
+### Device, buffer manager, and context
+
+Everything hangs off a `RenderingContext`, which owns the pipeline and bind-group caches. It needs a
+`GPUDevice` and a `BufferManager` (a batch-pool implementation ships in the box):
+
+```ts
+const device = await (await navigator.gpu.requestAdapter())!.requestDevice();
+const context = canvas.getContext('webgpu')!;
+const format = navigator.gpu.getPreferredCanvasFormat();
+context.configure({ device, format, alphaMode: 'opaque' });
+
+const bufferManager = new webgpu.BatchPoolBufferAdapter({
+    device, maxBytes: 32 * 1024 * 1024, idleFrameLimit: 60,
+    sizeBuckets: [256, 1024, 4096, 16384, 65536],
+});
+const ctx = webgpu.renderingContext({ device, bufferManager });
+```
+
+### Shaders as data — uniforms and vertex inputs
+
+A shader is a list of declarations. Uniform **slots** (`slot.uniform`) get their `@group`/`@binding`
+assigned by `bindings(group(...), shader)`. The vertex input is declared once with `vertexInput` and
+turned into a `GPUVertexBufferLayout` by `vertexLayout` — the same declaration drives both the WGSL
+`@location` inputs and the pipeline's vertex state.
+
+<Code code={shaderCode} lang="ts" title="shader.ts" />
+
+### Resources, drawables, and the render loop
+
+`ctx.resource(slot, init)` builds a typed uniform buffer you mutate with `set`/`setField` and flush
+with `commit`. `ctx.drawable(...)` binds a pipeline to its vertex/index data and its uniforms. Each
+frame the loop spins every shape's model matrix, commits it, and submits a `scene` whose color
+attachment is the canvas's current texture (a fresh view each frame) plus a depth attachment:
+
+<Code code={rendererCode} lang="ts" title="renderer.ts" />
+
+<Aside type="tip">
+The shared camera uniform is bound into all three drawables, while each shape gets its own instance
+uniform (model matrix + color). The fragment shader reconstructs a flat per-face normal from
+screen-space derivatives (`dpdx`/`dpdy`), so the meshes only need to carry positions.
+</Aside>

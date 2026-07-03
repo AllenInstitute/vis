@@ -16,7 +16,19 @@
 // ---- Implemented in Phase 1 -------------------------------------------------------------------
 
 export type { StructDecl, StructDeclaration, StructMemberDeclaration, WgslShader } from './shaders';
-export { asSource, isWgslShader, member, shader, struct } from './shaders';
+export {
+    asSource,
+    builtin,
+    fragmentEntry,
+    isWgslShader,
+    location,
+    member,
+    param,
+    returns,
+    shader,
+    struct,
+    vertexEntry,
+} from './shaders';
 
 // ---- Declarative vertex inputs ----------------------------------------------------------------
 
@@ -84,7 +96,6 @@ export type {
     StorageTextureResource,
     TextureResource,
 } from './data/resource';
-
 /** Phase 4: data-bearing `Resource` family. `ctx.resource(slot, init?)` is the public
  *  constructor; the raw factories are kept private to `RenderingContext` so all construction
  *  funnels through one place (consistent error wording, future telemetry, etc.). */
@@ -106,13 +117,15 @@ export type {
     VertexBufferBinding,
     VertexInput,
 } from './drawable';
-
 /** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
  *  `ctx.drawable({...})`. */
 export { DRAWABLE_BRAND, isDrawable } from './drawable';
 export type { EncoderStats, GraphEncoder } from './encoder/encoder';
 // ---- Phase 7: encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
 export { GRAPH_ENCODER_BRAND, isGraphEncoder } from './encoder/encoder';
+export type { BufferManager } from './memory';
+/** A concrete `BufferManager` for `renderingContext({ bufferManager })`. */
+export { BatchPoolBufferAdapter } from './memory';
 /** Phase 3: `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
 export type { BuiltPipeline } from './pipelines/build';
 export type { ScissorSpec, ViewportSpec } from './scene/scene';
