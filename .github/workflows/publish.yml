@@ -49,4 +49,4 @@ jobs:
 
             - name: Publish
               working-directory: ${{ steps.pkg.outputs.pkg_dir }}
-              run: npm publish --access public --provenance
+              run: pnpm publish --access public --provenance --no-git-checks
