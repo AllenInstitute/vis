@@ -1,18 +1,18 @@
 import { describe, expect, it, type vi } from 'vitest';
-import { renderingContext } from '../context';
-import { container, draw, scene, viewport } from '../scene/scene';
-import type { RenderTarget } from '../render-target';
-import { bindings, group } from '../pipelines/binding-graph';
 import { uniformSlot } from '../binding';
+import { renderingContext } from '../context';
+import type { BufferManager } from '../memory/types';
+import { bindings, group } from '../pipelines/binding-graph';
+import type { RenderTarget } from '../render-target';
+import { container, draw, scene, viewport } from '../scene/scene';
 import { member, shader, struct } from '../shaders';
 import {
-    makeMockDevice,
-    makeRecordingBufferManager,
     type MockDevice,
     type MockGpuBindGroup,
+    makeMockDevice,
+    makeRecordingBufferManager,
     type PassCommand,
 } from '../test/mock-device';
-import type { BufferManager } from '../memory/types';
 
 // ---- fixtures ---------------------------------------------------------------------------------
 
@@ -481,6 +481,28 @@ describe('GraphEncoder — subtree-command cache', () => {
         expect(ctx.encoder().subtreeCacheSize()).toBeGreaterThan(0);
         ctx.encoder().clearSubtreeCache();
         expect(ctx.encoder().subtreeCacheSize()).toBe(0);
+    });
+
+    it('clearSubtreeCache() detaches listeners so later mutations of a cleared scene are inert', () => {
+        const { ctx, d } = buildFixture();
+        const inner = viewport({ x: 0, y: 0, width: 10, height: 10 }, [draw(d)]);
+        const s = scene({ root: container([inner]) });
+
+        ctx.submit(s, TARGET);
+        expect(ctx.encoder().subtreeCacheSize()).toBe(2); // root container + viewport
+
+        ctx.encoder().clearSubtreeCache();
+        expect(ctx.encoder().subtreeCacheSize()).toBe(0);
+
+        // The listener registered on `s` must have been detached by clearSubtreeCache. If it
+        // were still attached it would fire on this removal and decrement the shared counter
+        // below zero (the stale per-scene cache Map still holds the viewport entry).
+        s.remove(inner.id);
+        expect(ctx.encoder().subtreeCacheSize()).toBe(0);
+
+        // Re-submitting the same scene re-subscribes cleanly and re-records the surviving tree.
+        ctx.submit(s, TARGET);
+        expect(ctx.encoder().subtreeCacheSize()).toBe(1); // only the (now-empty) root container
     });
 
     it('nested composites: inner cache hit still tees commands into outer re-record', () => {

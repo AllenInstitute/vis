@@ -13,6 +13,7 @@ import type {
     NodeId,
     Scene,
     SceneEvent,
+    SceneEventListener,
     SceneNode,
     ScissorNode,
     StencilRefNode,
@@ -112,15 +113,22 @@ export function makeGraphEncoder(
 ): GraphEncoder {
     const id = uuidv4();
     let stats: EncoderStats = ZERO_STATS;
-    // Per-scene subtree cache. Boxed so `clearSubtreeCache()` can reassign — WeakMap has no
-    // `clear` and can't be iterated, so wholesale invalidation requires a fresh instance.
-    // Scene GC drops entries automatically via the WeakMap.
+    // Per-scene subtree cache, weakly keyed so a scene is retained solely by its owner — never
+    // by the encoder. When a scene is collected, its cache entry goes with it. Boxed so
+    // `clearSubtreeCache()` can swap in a fresh WeakMap (WeakMap has no `clear`).
     const perSceneBox: { map: WeakMap<Scene, PerSceneCache> } = { map: new WeakMap() };
-    // Parallel Set of every subscription unsubscribe fn so `clearSubtreeCache()` can eagerly
-    // detach from every scene we've hooked. Not a leak: unsubscribe closures hold a ref to
-    // the scene's internal listener array only — they do not keep the scene alive on their
-    // own once every other reference is dropped.
-    const activeSubscriptions: Set<() => void> = new Set();
+    
+    // Subscription bookkeeping so `clearSubtreeCache()` can detach the `structure-changed`
+    // listeners we registered on every scene we've seen. This must NOT strongly retain any
+    // scene: we hold a `WeakRef` (the listener closure captures only the per-scene cache Map,
+    // never the scene), and a `FinalizationRegistry` prunes the record once the scene is
+    // collected. (Storing the raw `scene.on(...)` unsubscribe closure in a strong Set would leak
+    // every scene, because that closure captures the scene.) The finalizer is best-effort
+    // cleanup only — correctness never depends on it running.
+    const subscriptions: Set<SceneSubscription> = new Set();
+    const subscriptionFinalizer = new FinalizationRegistry<SceneSubscription>((sub) => {
+        subscriptions.delete(sub);
+    });
     // Tracks how many entries exist across all seen scenes.
     let totalCacheEntries = 0;
 
@@ -128,7 +136,7 @@ export function makeGraphEncoder(
         let entry = perSceneBox.map.get(scene);
         if (entry !== undefined) return entry;
         const cache: Map<NodeId, CachedSubtree> = new Map();
-        const listener = (ev: SceneEvent): void => {
+        const listener: SceneEventListener = (ev: SceneEvent): void => {
             if (ev.type !== 'structure-changed') return;
             // Evict the primary node id; on 'remove' also evict every descendant id the event
             // carries (Scene populates `removedNodeIds` for `remove` and any composite→composite
@@ -140,9 +148,11 @@ export function makeGraphEncoder(
                 }
             }
         };
-        const off = scene.on('structure-changed', listener);
-        activeSubscriptions.add(off);
-        entry = { cache, off };
+        scene.on('structure-changed', listener);
+        const sub: SceneSubscription = { ref: new WeakRef(scene), listener };
+        subscriptions.add(sub);
+        subscriptionFinalizer.register(scene, sub, sub);
+        entry = { cache };
         perSceneBox.map.set(scene, entry);
         return entry;
     };
@@ -186,8 +196,14 @@ export function makeGraphEncoder(
     const lastStats = (): EncoderStats => stats;
 
     const clearSubtreeCache = (): void => {
-        for (const off of activeSubscriptions) off();
-        activeSubscriptions.clear();
+        for (const sub of subscriptions) {
+            const scene = sub.ref.deref();
+            if (scene !== undefined) {
+                scene.off('structure-changed', sub.listener);
+                subscriptionFinalizer.unregister(sub);
+            }
+        }
+        subscriptions.clear();
         perSceneBox.map = new WeakMap();
         totalCacheEntries = 0;
     };
@@ -214,7 +230,14 @@ export function isGraphEncoder(value: unknown): value is GraphEncoder {
 /** Per-scene bookkeeping stored in the encoder's `WeakMap<Scene, ...>`. */
 interface PerSceneCache {
     readonly cache: Map<NodeId, CachedSubtree>;
-    readonly off: () => void;
+}
+
+/** Weak record of a `structure-changed` subscription. Lets `clearSubtreeCache()` detach the
+ *  listener from a still-live scene without strongly retaining the scene (the `WeakRef` and the
+ *  `listener` — which closes over the cache Map, not the scene — keep nothing alive). */
+interface SceneSubscription {
+    readonly ref: WeakRef<Scene>;
+    readonly listener: SceneEventListener;
 }
 
 /** Cache entry for a single composite node's subtree. */
