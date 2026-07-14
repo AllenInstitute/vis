@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { uniformSlot } from '../resources';
+import { uniformSlot } from '../binding';
 import { member, shader, struct } from '../shaders';
 import { bindings, group } from './binding-graph';
 import { pipelineFingerprint } from './fingerprint';

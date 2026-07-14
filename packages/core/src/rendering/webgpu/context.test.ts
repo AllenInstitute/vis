@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { BufferHandle, BufferManager, BufferManagerStats } from './memory/types';
+import type { BufferManager, BufferManagerStats } from './memory/types';
 import { renderingContext } from './context';
 import { isResource } from './data/resource';
-import { samplerSlot, uniformSlot } from './resources';
+import { samplerSlot, uniformSlot } from './binding';
 import { bindings, group } from './pipelines/binding-graph';
 import { member, shader, struct } from './shaders';
-import { makeMockDevice } from './test/mock-device';
+import { makeMockDevice, makeRecordingBufferManager } from './test/mock-device';
 
 // ----- helpers ------------------------------------------------------------
 
@@ -166,7 +166,7 @@ describe('RenderingContext — BufferManager ownership contract', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Phase 4: ctx.resource() + stats() memory fields
+// ctx.resource() + stats() memory fields
 // ---------------------------------------------------------------------------
 
 /**
@@ -175,58 +175,9 @@ describe('RenderingContext — BufferManager ownership contract', () => {
  * implementation into the context tests.
  */
 function makeRecordingBM(device: GPUDevice, residentBytes = 1024, leasedBytes = 512): BufferManager {
-    return {
-        acquire: vi.fn((sizeBytes: number, usage: GPUBufferUsageFlags) => {
-            const gpu = device.createBuffer({ size: sizeBytes, usage });
-            const handle: BufferHandle = {
-                gpu,
-                buffer: gpu,
-                offset: 0,
-                size: sizeBytes,
-                sizeBytes,
-                bucketSize: sizeBytes,
-                usage,
-                release(): void {},
-                sizeInBytes(): number {
-                    return sizeBytes;
-                },
-                destroy(): void {},
-            };
-            return handle;
-        }) as unknown as BufferManager['acquire'],
-        acquireForSlot: vi.fn((_slot, sizeBytes: number, usage: GPUBufferUsageFlags) => {
-            const gpu = device.createBuffer({ size: sizeBytes, usage });
-            const handle: BufferHandle = {
-                gpu,
-                buffer: gpu,
-                offset: 0,
-                size: sizeBytes,
-                sizeBytes,
-                bucketSize: sizeBytes,
-                usage,
-                release(): void {},
-                sizeInBytes(): number {
-                    return sizeBytes;
-                },
-                destroy(): void {},
-            };
-            return handle;
-        }) as unknown as BufferManager['acquireForSlot'],
-        precheck: vi.fn(() => true),
-        release: vi.fn(),
-        endFrame: vi.fn(),
-        frameLease: vi.fn(() => {
-            throw new Error('not supported');
-        }) as unknown as BufferManager['frameLease'],
-        stats: vi.fn(
-            (): BufferManagerStats => ({
-                residentBytes,
-                leasedBytes,
-                freeBytes: residentBytes - leasedBytes,
-            })
-        ),
-        dispose: vi.fn(),
-    };
+    return makeRecordingBufferManager(device, {
+        stats: { residentBytes, leasedBytes, freeBytes: residentBytes - leasedBytes },
+    }).bm;
 }
 
 describe('RenderingContext.resource() — buffer-backed slots', () => {

@@ -1,19 +1,3 @@
-/**
- * `PassCommand` — a plain-data description of every state-changing / draw method the encoder
- * ever invokes on a `GPURenderPassEncoder`. The subtree-command cache records these into
- * per-composite arrays so a later `encode(scene)` walk can `applyCommand` them directly to the
- * pass encoder in lieu of re-walking (and re-computing) the subtree.
- *
- * `PassCommand` deliberately mirrors `GPURenderPassEncoder`'s recorded verbs one-for-one; any
- * command the encoder emits must have a corresponding `PassCommand` variant here so it can be
- * replayed and (optionally) counted for stats.
- *
- * Every buffer-carrying variant stores `(buffer, offset, size)` so a future slab manager works
- * transparently — the cache never captures a `BufferHandle`, only the already-resolved
- * `GPUBuffer + offset + size` triple, which is stable across frames as long as the underlying
- * handle hasn't been released.
- */
-
 /** Discriminated union of every command the encoder can emit into a render pass. */
 export type PassCommand =
     | { readonly kind: 'setPipeline'; readonly pipeline: GPURenderPipeline }

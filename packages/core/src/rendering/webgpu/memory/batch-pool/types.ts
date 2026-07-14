@@ -1,32 +1,3 @@
-/**
- * Internal data structures backing `BatchPoolBufferAdapter`.
- *
- * Each `(bucketSize, usage)` pair has a single `Pool`. A pool owns one or more `Batch`es, each a
- * fixed-size group of `GPUBuffer`s allocated together via a single round of `device.createBuffer`
- * calls. The batch is the unit of allocation and the unit of destruction: when every member of a
- * batch has been free for `idleFrameLimit` consecutive frames, the entire batch is destroyed at
- * `endFrame()`.
- *
- * Within a pool, individual free buffers live in a FIFO `freeDeque` keyed across batches. This
- * gives LRU semantics within a pool (oldest-released buffer is the next one handed out, which
- * lets the most-recently-used buffers stay warm for upcoming acquires of the same shape).
- *
- * `PoolFacade` implements `Cacheable` so each pool can flow through cache-aware machinery
- * elsewhere in the codebase. `sizeInBytes()` reports only the pool's **free** (evictable) bytes;
- * leased bytes are excluded so any cache layer that thinks in terms of evictable footprint sees
- * a truthful number. `destroy()` shrinks the pool by one full free batch (oldest-first),
- * matching Design A's "batch as the unit of release" property.
- *
- * **Why we don't use `PriorityCache` directly.** The earlier design called for wrapping each
- * pool as an entry in a `PriorityCache<PoolFacade>` for cross-pool eviction arbitration.
- * `PriorityCache` snapshots `sizeInBytes()` at `put()` time and has no public API to either
- * (a) notify it that an entry's size changed (our pools' free bytes change continuously) or
- * (b) remove an entry without going through eviction. Mutating an entry's reported size while it
- * lives in the cache would silently desynchronize the cache's internal `#used` accounting. We
- * still honor the design's interop goal by implementing `Cacheable` here; the cross-pool victim
- * selection inside the adapter is a small linear scan over the pools map (typically <100 pools).
- */
-
 import type { Cacheable } from '../../../../shared-priority-cache/priority-cache';
 import type { BufferUsageFlags, PoolStats, BufferManagerConfig, BufferManagerStats } from '../types';
 
@@ -85,8 +56,21 @@ export type FreeEntry = {
 };
 
 /**
- * One `(bucketSize, usage)` pool. Implements `Cacheable` so external machinery can reason about
- * a pool's evictable footprint via the shared `Cacheable` contract.
+ * One `(bucketSize, usage)` pool: owns one or more `Batch`es (each a fixed-size group of
+ * `GPUBuffer`s allocated together); the batch is the unit of allocation and destruction. Free
+ * buffers live in a FIFO `freeDeque` across batches, giving within-pool LRU (oldest-released is
+ * handed out next, keeping recently-used buffers warm).
+ *
+ * Implements `Cacheable` so external machinery can reason about a pool's evictable footprint.
+ * `sizeInBytes()` reports only **free** (evictable) bytes — leased bytes are excluded so any
+ * cache layer sees a truthful evictable number; `destroy()` shrinks the pool by one full free
+ * batch (oldest-first).
+ *
+ * **Why not wrap pools in `PriorityCache` directly:** `PriorityCache` snapshots `sizeInBytes()`
+ * at `put()` time with no API to (a) notify it that an entry's size changed (pool free-bytes
+ * change continuously) or (b) remove an entry without going through eviction — either would
+ * desynchronize its internal `#used` accounting. So cross-pool victim selection is a small linear
+ * scan over the pools map (typically <100 pools) while still implementing `Cacheable` for interop.
  */
 export class PoolFacade implements Cacheable {
     /** Stable identifier `${bucketSize}|${usage}`. */

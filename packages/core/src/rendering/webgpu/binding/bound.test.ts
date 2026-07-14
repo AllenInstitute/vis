@@ -9,7 +9,7 @@ import {
     storageTextureSlot,
     textureSlot,
     uniformSlot,
-} from './resource';
+} from './slot';
 
 describe('bind', () => {
     it('returns a frozen object', () => {

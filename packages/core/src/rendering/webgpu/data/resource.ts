@@ -1,34 +1,5 @@
-/**
- * Data-bearing `Resource` family — the runtime counterpart to a `ResourceSlot`.
- *
- * Where a `ResourceSlot` is a *descriptor* (`{name, type, kind, ...}`), a `Resource` is an
- * *instance* that carries an actual `GPUBuffer` (via a `BufferHandle`), `GPUTexture`,
- * `GPUSampler`, or `GPUExternalTexture`. `RenderingContext.resource(slot, init?)` is the only
- * public constructor; raw exports here are kinds and the discriminated union type.
- *
- * Tier-1 type safety: a `BufferResource<T>` carries `T` (the host-side shape of the slot's
- * struct, declared via `struct<T>(...)` and threaded through `slot.uniform<T>(...)`). `set()`
- * accepts `Partial<T>` and `setField<K extends keyof T>(k, v: T[K])` is field-checked at
- * compile time. Reflection (`webgpu-utils.makeShaderDataDefinitions` over a synthetic WGSL
- * snippet built from the slot's `StructDecl`) is cached per-slot in a module-level WeakMap, so
- * repeated `ctx.resource(slot)` calls pay the reflection cost exactly once per slot.
- *
- * Refcount semantics:
- *   - Every freshly-constructed resource has `refcount === 1`.
- *   - `share()` increments the refcount and returns `this` (so call sites can write
- *     `const child = parent.share()`).
- *   - `destroy()` decrements the refcount; when it reaches 0 the resource releases its
- *     `BufferHandle` (or destroys its texture/sampler) and is left in a `disposed === true`
- *     state. Further calls to `destroy()` are no-ops, so callers can always pair their
- *     constructions and tearings-down 1:1 without tracking who has the "last" reference.
- *
- * Slab-readiness: every WebGPU API call on a `BufferResource` threads `handle.offset` + the
- * appropriate byte range through `queue.writeBuffer` so a future `SlabBufferManager` (one
- * giant `GPUBuffer` carved into slices) is a drop-in replacement for `BatchPoolBufferManager`.
- */
-
 import { v4 as uuidv4 } from 'uuid';
-import type { StructDefinition, StructuredView, VariableDefinition } from 'webgpu-utils';
+import type { StructuredView, VariableDefinition } from 'webgpu-utils';
 import { makeShaderDataDefinitions, makeStructuredView } from 'webgpu-utils';
 import type { BufferHandle, BufferManager, BufferUsageFlags } from '../memory/types';
 import type {
@@ -39,8 +10,9 @@ import type {
     StorageTextureSlot,
     TextureSlot,
     UniformSlot,
-} from '../resources/resource';
+} from '../binding/slot';
 import type { StructDeclaration } from '../shaders';
+import { isBranded } from '../brand';
 
 // ---- Brand & shared base ----------------------------------------------------------------------
 
@@ -53,30 +25,40 @@ export const RESOURCE_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Resourc
  *  unset and rely on `ctx.sweepBindGroups(...)`. */
 export type ResourceInvalidateHook = (resource: Resource) => void;
 
-/** Brand + lifecycle fields shared by every `Resource` variant — including slot-less ones
- *  such as `RawBufferResource` (used for vertex/index buffers in `Drawable`). */
-interface ResourceLifecycle {
+/** Public identity + cache metadata carried by every `Resource`. Read-only; carries no
+ *  memory-management surface (see `ResourceLifecycle`, which is internal). Includes slot-less
+ *  variants such as `RawBufferResource` (used for vertex/index buffers in `Drawable`). */
+interface ResourceIdentity {
     readonly __brand: typeof RESOURCE_BRAND;
     /** Globally-unique identity (UUIDv4), stable for the resource's lifetime. Distinguishes
      *  two resources that share a slot + `version` in the bind-group cache key. */
     readonly id: string;
     /** Monotonically increasing version, bumped on every committed mutation. Drives the
-     *  bind-group cache invalidation key in Phase 7. */
+     *  bind-group cache invalidation key. */
     readonly version: number;
-    /** `true` once the underlying GPU resource has been released. */
-    readonly disposed: boolean;
-    /** Current refcount; starts at `1`, incremented by `share()`, decremented by `destroy()`. */
-    readonly refcount: number;
-    /** Increment the refcount and return `this`. Use for explicit cross-Drawable sharing. */
-    share(): this;
-    /** Decrement the refcount; release the underlying GPU resource when it reaches `0`. */
-    destroy(): void;
 }
 
 /** Fields common to every slot-bound `Resource` variant (everything except `RawBufferResource`). */
-interface ResourceCommon extends ResourceLifecycle {
+interface ResourceCommon extends ResourceIdentity {
     readonly kind: ResourceSlot['kind'];
     readonly slot: ResourceSlot;
+}
+
+/**
+ * Internal reference-counting surface. Deliberately **not** part of the public `Resource` type:
+ * resource lifetime is owned by the `RenderingContext` (everything it builds is destroyed on
+ * `ctx.dispose()`) and by the `Scene` (drawables are destroyed when removed), so library users
+ * never call these. Reachable inside the renderer via `asManaged(resource)` / `ManagedResource`.
+ */
+export interface ResourceLifecycle {
+    /** Current refcount; starts at `1`, incremented by `share()`, decremented by `destroy()`. */
+    readonly refcount: number;
+    /** `true` once the underlying GPU resource has been released. */
+    readonly disposed: boolean;
+    /** Increment the refcount and return `this`. */
+    share(): this;
+    /** Decrement the refcount; release the underlying GPU resource when it reaches `0`. */
+    destroy(): void;
 }
 
 // ---- BufferResource ---------------------------------------------------------------------------
@@ -123,7 +105,7 @@ export interface BufferResource<T = unknown> extends ResourceCommon {
  * callers building drawables from pre-allocated `BufferHandle`s use `makeRawBufferResource`
  * directly.
  */
-export interface RawBufferResource extends ResourceLifecycle {
+export interface RawBufferResource extends ResourceIdentity {
     readonly kind: 'rawBuffer';
     /** Underlying `BufferHandle` (carries `gpu` + `offset` + `size`). */
     readonly handle: BufferHandle;
@@ -176,12 +158,17 @@ export type Resource =
 
 /** Runtime discriminator for `Resource` (mirror of `isResourceSlot`). */
 export function isResource(value: unknown): value is Resource {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        '__brand' in value &&
-        (value as { __brand: unknown }).__brand === RESOURCE_BRAND
-    );
+    return isBranded(value, RESOURCE_BRAND);
+}
+
+/** A `Resource` plus its internal reference-counting surface. Used inside the renderer wherever
+ *  lifetime must be driven; never exposed to library consumers. */
+export type ManagedResource = Resource & ResourceLifecycle;
+
+/** Reinterpret a public `Resource` as its `ManagedResource` runtime shape. Every `Resource`
+ *  built by this module carries the lifecycle members — the public type merely hides them. */
+export function asManaged<R extends Resource>(resource: R): R & ResourceLifecycle {
+    return resource as R & ResourceLifecycle;
 }
 
 // ---- Init shapes ------------------------------------------------------------------------------
@@ -277,9 +264,84 @@ export function defaultBufferUsageFor(slot: UniformSlot | StorageSlot): BufferUs
         : GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
 }
 
+/** Control handle passed to a resource's field-builder so its data methods can guard against
+ *  use-after-destroy and record committed mutations. */
+interface ResourceControl {
+    /** Throw a consistent use-after-destroy error for `method`. */
+    guard(method: string): void;
+    /** Bump `version` and sweep any cached bind groups referencing this resource. */
+    commit(): void;
+}
+
+/**
+ * Assemble a `ManagedResource` from its data fields plus the shared reference-counting machinery
+ * (`id` / `version` / `refcount` / `disposed` / `share` / `destroy`). `makeFields` receives a
+ * `ResourceControl` so buffer resources can wire `set()` / `commit()`; `cleanup` releases the
+ * backing GPU object once the refcount reaches `0`.
+ */
+function createManagedResource<Fields extends object>(
+    typeName: string,
+    label: () => string,
+    makeFields: (ctl: ResourceControl) => Fields,
+    cleanup: () => void,
+    onInvalidate: ResourceInvalidateHook | undefined
+): Fields & ResourceIdentity & ResourceLifecycle {
+    let refcount = 1;
+    let version = 0;
+    let disposed = false;
+    // Referenced by the closures below; assigned immediately after construction.
+    let resource!: Fields & ResourceIdentity & ResourceLifecycle;
+
+    const ctl: ResourceControl = {
+        guard(method: string): void {
+            if (disposed) throw new Error(`${typeName} '${label()}': ${method}() after destroy().`);
+        },
+        commit(): void {
+            version += 1;
+            onInvalidate?.(resource as unknown as Resource);
+        },
+    };
+
+    resource = {
+        __brand: RESOURCE_BRAND,
+        id: uuidv4(),
+        ...makeFields(ctl),
+        get version(): number {
+            return version;
+        },
+        get refcount(): number {
+            return refcount;
+        },
+        get disposed(): boolean {
+            return disposed;
+        },
+        share(): typeof resource {
+            if (disposed) throw new Error(`${typeName} '${label()}': share() after destroy().`);
+            refcount += 1;
+            return resource;
+        },
+        destroy(): void {
+            if (disposed) return;
+            refcount -= 1;
+            if (refcount > 0) return;
+            cleanup();
+            disposed = true;
+            onInvalidate?.(resource as unknown as Resource);
+        },
+    } as Fields & ResourceIdentity & ResourceLifecycle;
+
+    return resource;
+}
+
 /**
  * Construct a `BufferResource<T>` for a buffer-backed slot. Internal — call sites go through
  * `ctx.resource(slot, init?)`.
+ *
+ * `T` is the host-side struct shape (from `struct<T>(...)` via `slot.uniform<T>(...)`), so `set()`
+ * takes `Partial<T>` and `setField` is field-checked. Reflection over the slot's `StructDecl` is
+ * cached per-slot on the owning `RenderingContext` (via `cache`), so repeated `ctx.resource(slot)`
+ * calls pay it once. Every GPU write threads `handle.offset` + byte range through `queue.writeBuffer`,
+ * keeping a future slab manager (one big `GPUBuffer` carved into slices) a drop-in replacement.
  */
 export function makeBufferResource<T>(
     slot: UniformSlot | StorageSlot,
@@ -287,13 +349,13 @@ export function makeBufferResource<T>(
     init: Partial<T> | undefined,
     cache?: SlotReflectionCache,
     onInvalidate?: ResourceInvalidateHook
-): BufferResource<T> {
+): BufferResource<T> & ResourceLifecycle {
     const def = reflectSlot(slot, cache);
     if (def === undefined) {
         throw new Error(
             `RenderingContext.resource: slot '${slot.name}' (kind '${slot.kind}') must carry a ` +
                 'StructDecl type (see `struct(...)` in shaders) to construct a BufferResource. ' +
-                'Raw WGSL string types are not supported in v1.'
+                'Raw WGSL string types are not supported.'
         );
     }
     // `makeStructuredView` accepts both `VariableDefinition` and `StructDefinition`; we pass the
@@ -311,70 +373,55 @@ export function makeBufferResource<T>(
     }
     const handle = bufferManager.acquireForSlot(slot, sizeBytes, usage);
 
-    let refcount = 1;
-    let version = 0;
-    let disposed = false;
-
-    const resource = {
-        __brand: RESOURCE_BRAND,
-        id: uuidv4(),
-        kind: slot.kind,
-        slot,
-        handle,
-        view,
-        arrayBuffer: view.arrayBuffer,
-        usage,
-        get version(): number {
-            return version;
-        },
-        get refcount(): number {
-            return refcount;
-        },
-        get disposed(): boolean {
-            return disposed;
-        },
-        set(values: Partial<T>): void {
-            if (disposed) throw new Error(`BufferResource '${slot.name}': set() after destroy().`);
-            view.set(values as unknown);
-        },
-        setField<K extends keyof T>(key: K, value: T[K]): void {
-            if (disposed) throw new Error(`BufferResource '${slot.name}': setField() after destroy().`);
-            const views = view.views as Record<string, unknown>;
-            const target = views[key as string];
-            if (target === undefined) {
-                throw new Error(
-                    `BufferResource '${slot.name}': setField('${String(key)}') — no such field in struct '${(slot.type as StructDeclaration).name}'.`
-                );
-            }
-            // Reuse `set()` for typed-array vs scalar handling.
-            view.set({ [key as string]: value } as unknown);
-        },
-        commit(device: GPUDevice): void {
-            if (disposed) throw new Error(`BufferResource '${slot.name}': commit() after destroy().`);
-            device.queue.writeBuffer(handle.gpu, handle.offset, view.arrayBuffer);
-            version += 1;
-            onInvalidate?.(resource);
-        },
-        share(): BufferResource<T> {
-            if (disposed) throw new Error(`BufferResource '${slot.name}': share() after destroy().`);
-            refcount += 1;
-            return resource;
-        },
-        destroy(): void {
-            if (disposed) return;
-            refcount -= 1;
-            if (refcount > 0) return;
-            handle.release();
-            disposed = true;
-            onInvalidate?.(resource);
-        },
-    } satisfies BufferResource<T> & { share(): BufferResource<T> };
+    const resource = createManagedResource<{
+        kind: 'uniform' | 'storage';
+        slot: UniformSlot | StorageSlot;
+        handle: BufferHandle;
+        view: StructuredView;
+        arrayBuffer: ArrayBuffer;
+        usage: BufferUsageFlags;
+        set(values: Partial<T>): void;
+        setField<K extends keyof T>(key: K, value: T[K]): void;
+        commit(device: GPUDevice): void;
+    }>(
+        'BufferResource',
+        () => slot.name,
+        (ctl) => ({
+            kind: slot.kind,
+            slot,
+            handle,
+            view,
+            arrayBuffer: view.arrayBuffer,
+            usage,
+            set(values: Partial<T>): void {
+                ctl.guard('set');
+                view.set(values as unknown);
+            },
+            setField<K extends keyof T>(key: K, value: T[K]): void {
+                ctl.guard('setField');
+                const views = view.views as Record<string, unknown>;
+                if (views[key as string] === undefined) {
+                    throw new Error(
+                        `BufferResource '${slot.name}': setField('${String(key)}') — no such field in struct '${(slot.type as StructDeclaration).name}'.`
+                    );
+                }
+                view.set({ [key as string]: value } as unknown);
+            },
+            commit(device: GPUDevice): void {
+                ctl.guard('commit');
+                device.queue.writeBuffer(handle.gpu, handle.offset, view.arrayBuffer);
+                ctl.commit();
+            },
+        }),
+        () => handle.release(),
+        onInvalidate
+    ) as BufferResource<T> & ResourceLifecycle;
 
     // Seed initial values without a `commit` — defer device upload until the caller chooses.
     if (init !== undefined) {
         view.set(init as unknown);
     }
-    return resource as BufferResource<T>;
+    return resource;
 }
 
 /** Construct a `SamplerResource` from either a prebuilt `GPUSampler` or a descriptor. */
@@ -383,7 +430,7 @@ export function makeSamplerResource(
     device: GPUDevice,
     init: GPUSampler | GPUSamplerDescriptor | undefined,
     onInvalidate?: ResourceInvalidateHook
-): SamplerResource {
+): SamplerResource & ResourceLifecycle {
     const sampler =
         init === undefined
             ? device.createSampler()
@@ -391,38 +438,14 @@ export function makeSamplerResource(
               ? init
               : device.createSampler(init);
 
-    let refcount = 1;
-    let disposed = false;
-
-    const resource = {
-        __brand: RESOURCE_BRAND,
-        id: uuidv4(),
-        kind: 'sampler' as const,
-        slot,
-        sampler,
-        version: 0,
-        get refcount(): number {
-            return refcount;
-        },
-        get disposed(): boolean {
-            return disposed;
-        },
-        share(): SamplerResource {
-            if (disposed) throw new Error(`SamplerResource '${slot.name}': share() after destroy().`);
-            refcount += 1;
-            return resource;
-        },
-        destroy(): void {
-            if (disposed) return;
-            refcount -= 1;
-            if (refcount > 0) return;
-            // GPUSampler has no .destroy() — drop the reference and mark disposed.
-            disposed = true;
-            onInvalidate?.(resource);
-        },
-    } satisfies SamplerResource & { share(): SamplerResource };
-
-    return resource as SamplerResource;
+    // GPUSampler has no `.destroy()` — the reference is simply dropped on teardown.
+    return createManagedResource(
+        'SamplerResource',
+        () => slot.name,
+        () => ({ kind: 'sampler' as const, slot, sampler }),
+        () => {},
+        onInvalidate
+    ) as SamplerResource & ResourceLifecycle;
 }
 
 /** Construct a `TextureResource` from a prebuilt `GPUTexture` (+ optional explicit view). */
@@ -430,43 +453,17 @@ export function makeTextureResource(
     slot: TextureSlot,
     init: { texture: GPUTexture; view?: GPUTextureView },
     onInvalidate?: ResourceInvalidateHook
-): TextureResource {
+): TextureResource & ResourceLifecycle {
     const texture = init.texture;
     const view = init.view ?? texture.createView();
 
-    let refcount = 1;
-    let disposed = false;
-
-    const resource = {
-        __brand: RESOURCE_BRAND,
-        id: uuidv4(),
-        kind: 'texture' as const,
-        slot,
-        texture,
-        view,
-        version: 0,
-        get refcount(): number {
-            return refcount;
-        },
-        get disposed(): boolean {
-            return disposed;
-        },
-        share(): TextureResource {
-            if (disposed) throw new Error(`TextureResource '${slot.name}': share() after destroy().`);
-            refcount += 1;
-            return resource;
-        },
-        destroy(): void {
-            if (disposed) return;
-            refcount -= 1;
-            if (refcount > 0) return;
-            texture.destroy();
-            disposed = true;
-            onInvalidate?.(resource);
-        },
-    } satisfies TextureResource & { share(): TextureResource };
-
-    return resource as TextureResource;
+    return createManagedResource(
+        'TextureResource',
+        () => slot.name,
+        () => ({ kind: 'texture' as const, slot, texture, view }),
+        () => texture.destroy(),
+        onInvalidate
+    ) as TextureResource & ResourceLifecycle;
 }
 
 /** Construct a `StorageTextureResource` from a prebuilt `GPUTexture`. */
@@ -474,43 +471,17 @@ export function makeStorageTextureResource(
     slot: StorageTextureSlot,
     init: { texture: GPUTexture; view?: GPUTextureView },
     onInvalidate?: ResourceInvalidateHook
-): StorageTextureResource {
+): StorageTextureResource & ResourceLifecycle {
     const texture = init.texture;
     const view = init.view ?? texture.createView();
 
-    let refcount = 1;
-    let disposed = false;
-
-    const resource = {
-        __brand: RESOURCE_BRAND,
-        id: uuidv4(),
-        kind: 'storageTexture' as const,
-        slot,
-        texture,
-        view,
-        version: 0,
-        get refcount(): number {
-            return refcount;
-        },
-        get disposed(): boolean {
-            return disposed;
-        },
-        share(): StorageTextureResource {
-            if (disposed) throw new Error(`StorageTextureResource '${slot.name}': share() after destroy().`);
-            refcount += 1;
-            return resource;
-        },
-        destroy(): void {
-            if (disposed) return;
-            refcount -= 1;
-            if (refcount > 0) return;
-            texture.destroy();
-            disposed = true;
-            onInvalidate?.(resource);
-        },
-    } satisfies StorageTextureResource & { share(): StorageTextureResource };
-
-    return resource as StorageTextureResource;
+    return createManagedResource(
+        'StorageTextureResource',
+        () => slot.name,
+        () => ({ kind: 'storageTexture' as const, slot, texture, view }),
+        () => texture.destroy(),
+        onInvalidate
+    ) as StorageTextureResource & ResourceLifecycle;
 }
 
 /** Construct an `ExternalTextureResource` from a prebuilt `GPUExternalTexture`. */
@@ -518,39 +489,15 @@ export function makeExternalTextureResource(
     slot: ExternalTextureSlot,
     external: GPUExternalTexture,
     onInvalidate?: ResourceInvalidateHook
-): ExternalTextureResource {
-    let refcount = 1;
-    let disposed = false;
-
-    const resource = {
-        __brand: RESOURCE_BRAND,
-        id: uuidv4(),
-        kind: 'externalTexture' as const,
-        slot,
-        external,
-        version: 0,
-        get refcount(): number {
-            return refcount;
-        },
-        get disposed(): boolean {
-            return disposed;
-        },
-        share(): ExternalTextureResource {
-            if (disposed) throw new Error(`ExternalTextureResource '${slot.name}': share() after destroy().`);
-            refcount += 1;
-            return resource;
-        },
-        destroy(): void {
-            if (disposed) return;
-            refcount -= 1;
-            if (refcount > 0) return;
-            // GPUExternalTexture has no .destroy() in v1 spec — drop the reference and mark disposed.
-            disposed = true;
-            onInvalidate?.(resource);
-        },
-    } satisfies ExternalTextureResource & { share(): ExternalTextureResource };
-
-    return resource as ExternalTextureResource;
+): ExternalTextureResource & ResourceLifecycle {
+    // GPUExternalTexture has no `.destroy()` — the reference is simply dropped on teardown.
+    return createManagedResource(
+        'ExternalTextureResource',
+        () => slot.name,
+        () => ({ kind: 'externalTexture' as const, slot, external }),
+        () => {},
+        onInvalidate
+    ) as ExternalTextureResource & ResourceLifecycle;
 }
 
 /**
@@ -567,44 +514,14 @@ export function makeRawBufferResource(
     usage: BufferUsageFlags,
     label?: string,
     onInvalidate?: ResourceInvalidateHook
-): RawBufferResource {
-    let refcount = 1;
-    let disposed = false;
-
-    const resource: RawBufferResource & { share(): RawBufferResource } = {
-        __brand: RESOURCE_BRAND,
-        id: uuidv4(),
-        kind: 'rawBuffer' as const,
-        handle,
-        usage,
-        ...(label !== undefined && { label }),
-        version: 0,
-        get refcount(): number {
-            return refcount;
-        },
-        get disposed(): boolean {
-            return disposed;
-        },
-        share(): RawBufferResource {
-            if (disposed) {
-                throw new Error(
-                    `RawBufferResource${label !== undefined ? ` '${label}'` : ''}: share() after destroy().`
-                );
-            }
-            refcount += 1;
-            return resource;
-        },
-        destroy(): void {
-            if (disposed) return;
-            refcount -= 1;
-            if (refcount > 0) return;
-            handle.release();
-            disposed = true;
-            onInvalidate?.(resource);
-        },
-    };
-
-    return resource;
+): RawBufferResource & ResourceLifecycle {
+    return createManagedResource(
+        'RawBufferResource',
+        () => label ?? '',
+        () => ({ kind: 'rawBuffer' as const, handle, usage, ...(label !== undefined && { label }) }),
+        () => handle.release(),
+        onInvalidate
+    ) as RawBufferResource & ResourceLifecycle;
 }
 
 // ---- Internal helpers -------------------------------------------------------------------------
@@ -621,10 +538,4 @@ function isGPUSampler(v: unknown): v is GPUSampler {
     );
 }
 
-/** Internal export used by the test suite to exercise reflection in isolation. */
-export const __internal = {
-    isStructDeclaration,
-} as const;
 
-// Avoid an "unused import" error when only the StructDefinition type is referenced via JSDoc.
-export type { StructDefinition };

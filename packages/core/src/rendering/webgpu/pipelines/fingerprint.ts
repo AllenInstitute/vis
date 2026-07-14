@@ -1,17 +1,4 @@
-/**
- * Deterministic fingerprint for a built pipeline.
- *
- * Two `pipeline(graph, shader, state, device)` calls collide iff:
- *  - they're for the same `WgslShader` (compared by `shader.id`);
- *  - every slot the shader declares resolves to the same `(group, binding)`;
- *  - the supplied `state` normalizes to the same canonical form (see `pipeline-state.ts`).
- *
- * The hash itself is djb2-32 over the canonical-JSON payload. djb2 is sync, fast, and 32-bit —
- * collision risk for the small populations a single `GPUDevice` will ever cache is negligible,
- * and we use it as a cache key (not for cryptographic intent).
- */
-
-import type { BindingMap } from '../resources';
+import type { BindingMap } from '../binding';
 import type { WgslShader } from '../shaders';
 import type { NormalizedPipelineState } from './pipeline-state';
 
@@ -25,6 +12,11 @@ interface FingerprintPayload {
 /**
  * Compute a deterministic fingerprint for a `(shader, slotIndex, normalizedState)` triple.
  * Returns a hex string of the form `'pl_<hex>'` (the prefix makes the value easy to grep).
+ *
+ * Two calls collide iff the same `WgslShader` (by `shader.id`), the same `(group, binding)` for
+ * every declared slot, and a `state` that normalizes to the same canonical form. The hash is
+ * djb2-32 over canonical JSON — sync, fast, used purely as a cache key (not cryptographic);
+ * collision risk across the small population one `GPUDevice` caches is negligible.
  */
 export function pipelineFingerprint(
     shader: WgslShader,

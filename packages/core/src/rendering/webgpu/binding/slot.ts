@@ -1,20 +1,3 @@
-/**
- * Defines the `ResourceSlot` type — a metadata-only descriptor of a shader binding (uniform
- * buffer, texture, sampler, storage buffer, storage texture, external texture) that carries
- * everything needed to:
- *   1. Generate the corresponding WGSL declaration once a `{group, binding}` has been assigned.
- *   2. Construct a `GPUBindGroupLayoutEntry` for the slot.
- *
- * `ResourceSlot` implements the `DeclarationGenerator` interface from `shaders/`, so it can be
- * dropped directly into a `WgslShader`'s `declarations` array. Its `__gen()` throws until the
- * slot has been "bound" (see `bound.ts` and `bind.ts`). The shaders module never imports from
- * this module — the dependency is strictly one-way (`resources/` → `shaders/`).
- *
- * `ResourceSlot` is a *descriptor* (it tells the system what the binding looks like). The
- * data-bearing object that actually carries a `GPUBuffer`/`GPUTexture` for a slot is named
- * `Resource` and lives in `webgpu/data/resource.ts` (Phase 4).
- */
-
 import type {
     SamplerBindingType,
     ShaderStageFlags,
@@ -30,6 +13,7 @@ import type {
     WgslSamplerComparison,
     WgslTextureDataType,
 } from '../shaders';
+import { isBranded } from '../brand';
 
 /** Brand symbol used by `isResourceSlot` to discriminate `ResourceSlot` objects at runtime. */
 export const RESOURCE_SLOT_BRAND = Symbol.for('vis-core.webgpu.ResourceSlot');
@@ -124,12 +108,7 @@ export type ResourceSlot =
 
 /** Runtime discriminator for `ResourceSlot` (used by `bindShader` and binding-graph traversal). */
 export function isResourceSlot(value: unknown): value is ResourceSlot {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        '__brand' in value &&
-        (value as { __brand: unknown }).__brand === RESOURCE_SLOT_BRAND
-    );
+    return isBranded(value, RESOURCE_SLOT_BRAND);
 }
 
 function unboundGen(name: string): () => string {

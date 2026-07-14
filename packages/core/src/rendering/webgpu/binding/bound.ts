@@ -1,16 +1,6 @@
-/**
- * Defines `BoundSlot` — a `ResourceSlot` that has been assigned a `{group, binding}` pair via
- * a binding-graph traversal. The wrapper is frozen (immutable) and carries a working `__gen()`
- * that produces the WGSL declaration by delegating to the existing `$s.uniform / $s.texture /
- * $s.sampler / $s.storage` constructors in `shaders/declarations.ts`.
- *
- * Producing a `BoundSlot` does NOT mutate the original `ResourceSlot` — the source descriptor
- * stays metadata-only and can be reused across multiple binding layouts.
- */
-
 import type { BindGroupLayoutEntry, ShaderStageFlags } from '../native-types';
 import { sampler as samplerDecl, storage as storageDecl, texture as textureDecl, uniform as uniformDecl } from '../shaders';
-import type { ResourceSlot } from './resource';
+import type { ResourceSlot } from './slot';
 
 /**
  * A `BoundSlot` is a `ResourceSlot` extended with `{group, binding}` and a working `__gen()`.

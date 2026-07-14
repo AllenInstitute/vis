@@ -1,14 +1,3 @@
-/**
- * Tests for the bind-group builder + per-context `GPUBindGroup` cache.
- *
- * Unit block: exercises `buildBindGroupsForDraw` / `sweepBindGroupCache` directly with minimal
- * hand-rolled fixtures, covering the identity-in-key collision fix and selective invalidation.
- *
- * Integration block: drives the real `RenderingContext` + encoder over the recording mock
- * device to verify that `commit()` / `destroy()` on a `ctx.resource()` auto-sweep the cache and
- * that `ctx.sweepBindGroups(...)` drops only the affected entries.
- */
-
 import { describe, expect, it, vi } from 'vitest';
 import { renderingContext } from '../context';
 import type { Resource } from '../data/resource';
@@ -16,8 +5,8 @@ import type { Drawable } from '../drawable';
 import type { BufferHandle, BufferManager, BufferManagerStats } from '../memory/types';
 import { bindings, group } from '../pipelines/binding-graph';
 import type { BuiltPipeline } from '../pipelines/build';
-import { uniformSlot } from '../resources';
-import type { ResourceSlot } from '../resources/resource';
+import { uniformSlot } from '../binding';
+import type { ResourceSlot } from '../binding/slot';
 import { container, draw, scene } from '../scene/scene';
 import type { RenderTarget } from '../scene/types';
 import { member, shader, struct } from '../shaders';
@@ -225,7 +214,6 @@ function makeRecordingBM(device: GPUDevice): BufferManager {
         const gpu = device.createBuffer({ size: sizeBytes, usage });
         const handle: BufferHandle = {
             gpu,
-            buffer: gpu,
             offset: 0,
             size: sizeBytes,
             sizeBytes,

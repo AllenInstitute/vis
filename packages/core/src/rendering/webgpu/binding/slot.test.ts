@@ -8,7 +8,7 @@ import {
     storageTextureSlot,
     textureSlot,
     uniformSlot,
-} from './resource';
+} from './slot';
 
 describe('isResource', () => {
     it('returns true for objects created by Resource constructors', () => {

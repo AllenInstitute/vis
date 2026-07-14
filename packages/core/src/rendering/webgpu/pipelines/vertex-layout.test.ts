@@ -1,10 +1,3 @@
-/**
- * Tests for `vertexLayout(vin, ...)` — deriving `GPUVertexBufferLayout[]` and the typed-upload
- * packing from a validated `vertexInput(...)` interface + a buffer grouping / stepMode / format
- * descriptor. Covers format defaulting + overrides, tight offset/stride packing, multi-buffer +
- * instancing, validation, pipeline-state integration + fingerprint parity, and the interleave packer.
- */
-
 import { describe, expect, it } from 'vitest';
 import { shader } from '../shaders';
 import { location } from '../shaders/attributes';

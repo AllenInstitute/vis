@@ -1,37 +1,5 @@
-/**
- * `BindingGroup` + `bindings()` — variadic-children, graph-local-ownership model.
- *
- * A `BindingGroup` is a tree node that owns an ordered list of slot children (which take
- * binding indices in *this* group) and an ordered list of subgroup children (which are nested
- * trees). Authoring is inline:
- *
- * ```ts
- * const material = group({ label: 'material' }, albedo, samp);
- * const frame    = group({ label: 'frame' }, camera, lighting, material);
- *
- * const shA = shader([camera, albedo, samp]);
- * const graph = bindings(frame, shA);
- * // multiple shaders are passed positionally:
- * const merged = bindings(frame, shA, shB);
- * ```
- *
- * Key semantics:
- *  - **Slot ownership is graph-local.** A `ResourceSlot` may appear in multiple unrelated trees;
- *    its `(group, binding)` is determined per-graph by `bindings(root, shaders)`.
- *  - **Within a tree, a slot may appear at most once.** Validated by `bindings()` (not by `group()`).
- *  - **Binding indices** are assigned only among the *slot* children of a group, preserving their
- *    relative source order. Subgroup children can be freely interleaved without affecting indices.
- *  - **Group depth** is graph-local: root = 0, subgroup depth = parent depth + 1. The depth is
- *    stored on the graph (`_groupDepth`), NOT on the `BindingGroup` itself.
- *  - **`maxDepth`** is per-node (default 4). `bindings()` enforces it at each subgroup as the
- *    depth is computed.
- *
- * Per-shader resolution lives in `./traverse.ts`. `resolveShaderBindings(graph, shader)` walks
- * `shader.declarations`, filters to `ResourceSlot`s, and looks each up in `graph._slotIndex`.
- */
-
 import { v4 as uuidv4 } from 'uuid';
-import { isResourceSlot, type ResourceSlot } from '../resources';
+import { isResourceSlot, type ResourceSlot } from '../binding';
 import type { WgslShader } from '../shaders';
 
 // ---- Public types -----------------------------------------------------------------------------
@@ -176,6 +144,16 @@ export function group(...args: Array<GroupSpec | ResourceSlot | BindingGroup>): 
  * top-down assigning each node a depth, builds the slot↔binding index, enforces per-node
  * `maxDepth` + within-tree slot uniqueness, and validates that every shader's declared slots
  * appear in the tree.
+ *
+ * Resolution rules:
+ *  - **Slot ownership is graph-local:** a `ResourceSlot` may appear in multiple unrelated trees;
+ *    its `(group, binding)` is determined per-graph here, not stored on the slot.
+ *  - **Within a tree a slot may appear at most once** (enforced here, not by `group()`).
+ *  - **Binding indices** are assigned only among a group's *slot* children, in source order;
+ *    subgroup children can be interleaved without affecting them.
+ *  - **Group depth** is graph-local (root = 0, subgroup = parent + 1), stored on the graph
+ *    (`_groupDepth`), not on the `BindingGroup`. **`maxDepth`** (per-node, default 4) is enforced
+ *    at each subgroup as depth is computed. Per-shader resolution lives in `./traverse.ts`.
  *
  * @throws if the supplied input violates any of the validation rules listed above.
  */

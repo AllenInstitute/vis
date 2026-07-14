@@ -1,21 +1,7 @@
-/**
- * `Scene` factories + mutation surface — Phase 6 of the WebGPU rendering refactor.
- *
- * Public exports:
- *   - Constructor: `scene({ target, root, label? })`.
- *   - Node factories (single-word lowercase): `container`, `viewport`, `scissor`, `stencilref`,
- *     `blendconstant`, `override`, `draw`. Each returns a frozen POJO branded for
- *     `isSceneNode`. IDs are assigned via `uuid` at construction.
- *
- * The returned `Scene` is mutable through its methods; mutations dirty the affected ancestors
- * and fire a single `'structure-changed'` event for downstream cache trimming (encoder,
- * bind-group cache).
- */
-
 import { v4 as uuidv4 } from 'uuid';
 import type { Resource } from '../data/resource';
-import type { Drawable } from '../drawable';
-import type { ResourceSlot } from '../resources/resource';
+import { asManagedDrawable, type Drawable } from '../drawable';
+import type { ResourceSlot } from '../binding/slot';
 import {
     type BindingOverrideNode,
     type BlendConstantNode,
@@ -155,10 +141,9 @@ export function override(
 /**
  * Wrap a `Drawable` in a `DrawableNode` for inclusion in a scene tree.
  *
- * **Ownership contract**: when a `DrawableNode` is removed from a `Scene` (or replaced with a
- * different `Drawable`), the `Scene` calls `drawable.destroy()` on the detached drawable. If the
- * caller wants the same `Drawable` to outlive removal (e.g. it's shared between scenes or kept
- * for later re-insertion), call `drawable.share()` first to incref it.
+ * The scene owns the drawables it contains: removing a `DrawableNode` (or replacing it with a
+ * different `Drawable`) releases the detached drawable's GPU resources. A given `Drawable`
+ * should therefore belong to at most one scene at a time.
  */
 export function draw(drawable: Drawable, label?: string): DrawableNode {
     return Object.freeze({
@@ -271,7 +256,6 @@ class SceneImpl implements Scene {
         this.markAncestorsDirty(parentId);
         this.unindexSubtree(node);
         this.swapNode(parent, newParent);
-        // Decref every Drawable in the detached subtree (per the `draw(...)` ownership contract).
         this.destroyDrawablesInSubtree(node);
         this.emit({
             type: 'structure-changed',
@@ -327,15 +311,14 @@ class SceneImpl implements Scene {
         }
         // Reindex: drop the old node's children index entries, re-add the new node's.
         if (existing.kind !== 'draw') this.unindexChildrenOnly(existing);
-        // If we replaced a DrawableNode with a different Drawable, destroy the old one
-        // (per the `draw(...)` ownership contract). Same-drawable replacements (e.g. relabel)
-        // are a no-op.
+        // If we replaced a DrawableNode with a different Drawable, release the old one. 
+        // Same-drawable replacements (e.g. relabel) are a no-op.
         if (
             existing.kind === 'draw' &&
             rebranded.kind === 'draw' &&
             existing.drawable !== rebranded.drawable
         ) {
-            existing.drawable.destroy();
+            asManagedDrawable(existing.drawable).destroy();
         }
         // Update _nodes for the rebranded id (same id, different node object).
         this._nodes.set(id, rebranded);
@@ -465,14 +448,13 @@ class SceneImpl implements Scene {
     }
 
     /**
-     * Walk a (just-detached) subtree and call `destroy()` on every `Drawable`. Per the
-     * `draw(...)` ownership contract, the scene owns its drawables and releases them when the
-     * subtree they live in is removed or replaced. Idempotent: `Drawable.destroy()` is itself
-     * idempotent once refcount hits zero.
+     * Walk a (just-detached) subtree and release every `Drawable` in it. The scene owns its
+     * drawables and frees them when the subtree they live in is removed or replaced. Idempotent:
+     * a drawable's teardown is itself idempotent once its refcount hits zero.
      */
     private destroyDrawablesInSubtree(node: SceneNode): void {
         if (node.kind === 'draw') {
-            node.drawable.destroy();
+            asManagedDrawable(node.drawable).destroy();
             return;
         }
         for (const child of node.children) this.destroyDrawablesInSubtree(child);

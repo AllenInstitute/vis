@@ -1,16 +1,23 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { BufferHandle, BufferManager, BufferManagerStats } from './memory/types';
 import { renderingContext } from './context';
 import {
+    asManaged,
     isResource,
     makeRawBufferResource,
     type RawBufferResource,
+    type Resource,
 } from './data/resource';
-import { isDrawable, type DrawableSpec } from './drawable';
+import { asManagedDrawable, isDrawable, type Drawable, type DrawableSpec } from './drawable';
 import { bindings, group } from './pipelines/binding-graph';
-import { samplerSlot, uniformSlot } from './resources';
+import { samplerSlot, uniformSlot } from './binding';
 import { member, shader, struct } from './shaders';
-import { makeMockDevice } from './test/mock-device';
+import { makeMockDevice, makeRecordingBufferManager } from './test/mock-device';
+
+// Lifetime is context-owned in the public API; these unit tests reach the internal
+// reference-counting surface through `asManaged` / `asManagedDrawable` to verify it directly.
+const rc = (r: Resource): number => asManaged(r).refcount;
+const isDisposed = (r: Resource): boolean => asManaged(r).disposed;
+const destroyDrawable = (d: Drawable): void => asManagedDrawable(d).destroy();
 
 // ----- shared fixtures -----------------------------------------------------
 
@@ -38,63 +45,9 @@ const colorState = () => ({
     fragment: { targets: [{ format: 'bgra8unorm' as const }] },
 });
 
-/** Minimal recording `BufferManager`. Issues real-shape handles backed by the mock device,
- *  records every acquired / released handle, and runs every `acquire` through `device.createBuffer`
- *  so the mock-device call recorder sees the activity. */
-function makeRecordingBM(device: GPUDevice, slabOffset = 0): {
-    bm: BufferManager;
-    acquired: Array<{ sizeBytes: number; usage: GPUBufferUsageFlags; handle: BufferHandle }>;
-    released: BufferHandle[];
-} {
-    const acquired: Array<{
-        sizeBytes: number;
-        usage: GPUBufferUsageFlags;
-        handle: BufferHandle;
-    }> = [];
-    const released: BufferHandle[] = [];
-
-    const make = (sizeBytes: number, usage: GPUBufferUsageFlags): BufferHandle => {
-        const gpu = device.createBuffer({ size: sizeBytes + slabOffset, usage });
-        const handle: BufferHandle = {
-            gpu,
-            buffer: gpu,
-            offset: slabOffset,
-            size: sizeBytes,
-            sizeBytes,
-            bucketSize: sizeBytes,
-            usage,
-            release(): void {
-                released.push(handle);
-            },
-            sizeInBytes(): number {
-                return sizeBytes;
-            },
-            destroy(): void {
-                released.push(handle);
-            },
-        };
-        acquired.push({ sizeBytes, usage, handle });
-        return handle;
-    };
-
-    const bm: BufferManager = {
-        acquire: vi.fn(make),
-        acquireForSlot: vi.fn(
-            (_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) =>
-                make(sizeBytes, usage)
-        ),
-        precheck: vi.fn(() => true),
-        release: vi.fn((h: BufferHandle) => released.push(h)),
-        endFrame: vi.fn(),
-        frameLease: vi.fn(() => {
-            throw new Error('frameLease: not supported in this mock');
-        }) as unknown as BufferManager['frameLease'],
-        stats: vi.fn(
-            (): BufferManagerStats => ({ residentBytes: 0, leasedBytes: 0, freeBytes: 0 })
-        ),
-        dispose: vi.fn(),
-    };
-    return { bm, acquired, released };
+/** Recording `BufferManager` for the drawable tests — records acquisitions + releases. */
+function makeRecordingBM(device: GPUDevice, slabOffset = 0) {
+    return makeRecordingBufferManager(device, { slabOffset });
 }
 
 // =============================================================================================
@@ -193,7 +146,7 @@ describe('ctx.drawable() — raw-arrays vertex / index path', () => {
         ).toThrow(/bufferManager/);
     });
 
-    // Phase 8: precheck integration on the raw-arrays vertex path.
+    // precheck integration on the raw-arrays vertex path.
     it('throws when bufferManager.precheck refuses a vertex allocation', () => {
         const m = makeMockDevice();
         const { bm } = makeRecordingBM(m.device);
@@ -260,7 +213,7 @@ describe('ctx.drawable() — binding validation', () => {
                 pipeline,
                 vertex: { kind: 'arrays', arrays: { position: new Float32Array([0, 0, 0]) } },
                 // Swap sampler resource into the camera (uniform) slot — kind mismatch.
-                bindings: { camera: sampRes, linear: sampRes.share() },
+                bindings: { camera: sampRes, linear: sampRes },
                 draw: { kind: 'array', vertexCount: 1 },
             })
         ).toThrow(/binding kind mismatch/);
@@ -329,7 +282,7 @@ describe('ctx.drawable() — pre-built vertex / index path', () => {
         // Hand-roll a vertex buffer outside the drawable path so we can verify it's NOT
         // re-allocated when supplied pre-built.
         const vHandle = bm.acquire(64, GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST);
-        const vRes: RawBufferResource = makeRawBufferResource(
+        const vRes = makeRawBufferResource(
             vHandle,
             GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
         );
@@ -349,8 +302,8 @@ describe('ctx.drawable() — pre-built vertex / index path', () => {
         // The drawable shared vRes — refcount is now 2.
         expect(vRes.refcount).toBe(2);
 
-        drawable.destroy();
-        // Drawable.destroy() decrefs vRes back to 1; caller still owns it.
+        destroyDrawable(drawable);
+        // Drawable teardown decrefs vRes back to 1.
         expect(vRes.refcount).toBe(1);
         expect(vRes.disposed).toBe(false);
         vRes.destroy();
@@ -413,20 +366,20 @@ describe('drawable.destroy()', () => {
             draw: { kind: 'indexed', indexCount: 3 },
         });
 
-        // Bindings were share()'d into the drawable — caller refcounts are 2.
-        expect(camRes.refcount).toBe(2);
+        // Bindings were shared into the drawable — caller refcounts are 2.
+        expect(rc(camRes)).toBe(2);
 
         const vertexAllocs = acquired.filter((a) => (a.usage & GPUBufferUsage.VERTEX) !== 0);
         const indexAllocs = acquired.filter((a) => (a.usage & GPUBufferUsage.INDEX) !== 0);
         expect(vertexAllocs.length).toBeGreaterThan(0);
         expect(indexAllocs.length).toBeGreaterThan(0);
 
-        drawable.destroy();
+        destroyDrawable(drawable);
 
         // Owned (raw-arrays) handles released; bindings decref'd back to caller's 1.
         for (const a of vertexAllocs) expect(released).toContain(a.handle);
         for (const a of indexAllocs) expect(released).toContain(a.handle);
-        expect(camRes.refcount).toBe(1);
+        expect(rc(camRes)).toBe(1);
     });
 
     it('is idempotent (second destroy() call is a no-op)', () => {
@@ -446,10 +399,10 @@ describe('drawable.destroy()', () => {
             draw: { kind: 'array', vertexCount: 1 },
         });
 
-        drawable.destroy();
-        expect(() => drawable.destroy()).not.toThrow();
-        // camRes was already decref'd back to 1 on first destroy; second is no-op.
-        expect(camRes.refcount).toBe(1);
+        destroyDrawable(drawable);
+        expect(() => destroyDrawable(drawable)).not.toThrow();
+        // camRes was already decref'd back to 1 on first teardown; second is a no-op.
+        expect(rc(camRes)).toBe(1);
     });
 });
 
@@ -487,14 +440,14 @@ describe('drawable.reuse()', () => {
         });
 
         const allocsAfterFirst = acquired.length;
-        const camRefBefore = camRes.refcount;
+        const camRefBefore = rc(camRes);
 
         const second = first.reuse({ pipeline: linePipeline });
 
-        // No new buffer allocations — vertex resource was share()'d.
+        // No new buffer allocations — vertex resource was shared.
         expect(acquired.length).toBe(allocsAfterFirst);
         // Caller's camRes refcount went up by one more (drawable + drawable).
-        expect(camRes.refcount).toBe(camRefBefore + 1);
+        expect(rc(camRes)).toBe(camRefBefore + 1);
         expect(second.pipeline).toBe(linePipeline);
         // Both drawables reference the same vertex resource.
         const firstVRes = [...first.vertexBuffers.values()][0]?.resource;
@@ -502,9 +455,9 @@ describe('drawable.reuse()', () => {
         expect(firstVRes).toBe(secondVRes);
 
         // Destroying one does not break the other.
-        first.destroy();
-        expect(secondVRes?.disposed).toBe(false);
-        second.destroy();
+        destroyDrawable(first);
+        expect(isDisposed(secondVRes!)).toBe(false);
+        destroyDrawable(second);
     });
 
     it('allows binding overrides per slot, sharing the rest from the base drawable', () => {
@@ -531,9 +484,9 @@ describe('drawable.reuse()', () => {
         // The sampler resource is shared from baseline; camB is a fresh share.
         expect(variant.bindings.get(samp)).toBe(sampRes);
         expect(variant.bindings.get(cam)).toBe(camB);
-        expect(camA.refcount).toBe(2); // caller + baseline drawable
-        expect(camB.refcount).toBe(2); // caller + variant drawable
-        expect(sampRes.refcount).toBe(3); // caller + baseline + variant
+        expect(rc(camA)).toBe(2); // caller + baseline drawable
+        expect(rc(camB)).toBe(2); // caller + variant drawable
+        expect(rc(sampRes)).toBe(3); // caller + baseline + variant
     });
 });
 

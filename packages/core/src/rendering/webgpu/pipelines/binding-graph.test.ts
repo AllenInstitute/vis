@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { samplerSlot, textureSlot, uniformSlot } from '../resources';
+import { samplerSlot, textureSlot, uniformSlot } from '../binding';
 import { shader } from '../shaders';
 import { bindings, group, isBindingGraph, isBindingGroup } from './binding-graph';
 import { resolveShaderBindings, shaderSlotEntries } from './traverse';

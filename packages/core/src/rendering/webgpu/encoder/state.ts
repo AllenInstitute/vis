@@ -1,25 +1,3 @@
-/**
- * `ActiveState` — the encoder's running model of the GPU pass encoder's state. Used to elide
- * redundant `setPipeline` / `setBindGroup` / `setVertexBuffer` / `setIndexBuffer` /
- * `setViewport` / `setScissorRect` / `setStencilReference` / `setBlendConstant` calls.
- *
- * Comparison semantics:
- *   - `pipeline` compared by reference. `RenderingContext.pipeline()`'s per-context cache
- *     guarantees a single `BuiltPipeline` instance per unique fingerprint, so `===` is the
- *     tightest and cheapest predicate — and it stays correct even if a hypothetical bug ever
- *     let two structurally-identical builds coexist (they'd force a redundant `setPipeline`,
- *     which is a no-op at the GPU level rather than an incorrectness).
- *   - `bindGroups` keyed by slot index; equal when the cached `GPUBindGroup` object identity
- *     matches (the bind-group cache hands out the same object for identical inputs).
- *   - `vertexBuffers` keyed by slot index; equal when `(handle.gpu, handle.offset, handle.size)`
- *     match. Storing the full `BufferHandle` (rather than the underlying `GPUBuffer`) is what
- *     lets a future slab manager work transparently — two slices of the same physical buffer
- *     compare unequal.
- *   - `indexBuffer` identical iff `(handle.gpu, handle.offset, handle.size, format)` match.
- *   - State node values (`viewport`, `scissor`, `stencilRef`, `blendConstant`) compared
- *     structurally via small per-field helpers.
- */
-
 import type { BufferHandle } from '../memory/types';
 import type { BuiltPipeline } from '../pipelines/build';
 
@@ -254,6 +232,11 @@ function vertexBufferMapsEqual(
  * cache uses this to check whether the current running state matches a cached entry state — a
  * mismatch means the cached commands were recorded under different assumptions and cannot be
  * safely replayed (they might, for example, omit a `setPipeline` the current caller needs).
+ *
+ * Field semantics: `pipeline` by reference (the per-context pipeline cache guarantees one
+ * `BuiltPipeline` instance per fingerprint); `bindGroups` by cached `GPUBindGroup` identity;
+ * `vertexBuffers` / `indexBuffer` by `(handle.gpu, offset, size[, format])` so two slices of one
+ * slab buffer compare unequal; state-node values structurally.
  */
 export function activeStateSnapshotsEqual(
     a: ActiveStateSnapshot,

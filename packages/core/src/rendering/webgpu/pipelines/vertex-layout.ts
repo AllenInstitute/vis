@@ -1,26 +1,5 @@
-/**
- * Vertex buffer layout: compose a concrete `GPUVertexBufferLayout[]` (and the per-buffer packing
- * used by the typed drawable upload) from a validated vertex *input interface*
- * (`shaders/vertex-interface.ts`) plus a buffer-grouping/`stepMode`/format descriptor.
- *
- * The three concerns are kept separate on purpose:
- *   - the WGSL input interface + validation lives in `vertexInput(...)`;
- *   - **buffer grouping + `stepMode`** and **per-attribute wire format** live here, because neither
- *     is encoded by the WGSL interface. Each attribute's `GPUVertexFormat` defaults from its WGSL
- *     type (`vec3f → float32x3`) and may be overridden per attribute (`[loc, 'unorm8x4']`).
- *
- * Layout rules (WebGPU):
- *   - Attributes are packed tightly in the order listed per buffer; each offset is aligned up to
- *     `min(4, componentByteSize)`.
- *   - `arrayStride` is the packed size rounded up to a multiple of 4.
- *   - `@location`s are unique across the whole interface (enforced by `vertexInput`), and every
- *     `@location` attribute must be assigned to exactly one buffer here.
- *   - `stepMode` is omitted when `'vertex'` (the WebGPU default) so a derived layout is byte-for-
- *     byte identical to the equivalent hand-written `{ arrayStride, attributes }`, keeping the
- *     pipeline fingerprint stable.
- */
-
 import type { VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode } from '../native-types';
+import { isBranded } from '../brand';
 import {
     defaultVertexFormat,
     type VertexArrayKind,
@@ -56,11 +35,7 @@ export interface VertexLayoutDeclaration {
 
 /** Runtime discriminator for a `VertexLayoutDeclaration`. */
 export function isVertexLayout(value: unknown): value is VertexLayoutDeclaration {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        (value as { __brand?: unknown }).__brand === VERTEX_LAYOUT_BRAND
-    );
+    return isBranded(value, VERTEX_LAYOUT_BRAND);
 }
 
 // ---- Layout authoring ------------------------------------------------------------------------
@@ -95,6 +70,11 @@ function refParts(ref: VertexAttributeRef): readonly [number, VertexFormat | und
  * WGSL-type-compatible). Throws (aggregating every problem) when a referenced location is unknown,
  * placed more than once, format-incompatible, or when some interface `@location` attribute is left
  * unassigned. `@builtin` inputs are never placed (they aren't buffer-backed).
+ *
+ * Packing rules (WebGPU): attributes are packed tightly per buffer in listed order, each offset
+ * aligned up to `min(4, componentByteSize)`; `arrayStride` is the packed size rounded up to a
+ * multiple of 4; `stepMode` is omitted when `'vertex'` (the default) so a derived layout is
+ * byte-for-byte identical to the hand-written equivalent, keeping the pipeline fingerprint stable.
  */
 export function vertexLayout(
     vin: VertexInputInterface,
@@ -226,7 +206,7 @@ export function deriveVertexBufferLayouts(layout: VertexLayoutDeclaration): Vert
 
 /** Host data for one vertex attribute: a flat `ArrayLike<number>` of `count * elementsPerVertex`
  *  values. For `float16` supply raw half-float bits; for normalized (`unorm*`/`snorm*`) formats
- *  supply pre-encoded integers — v1 does not auto-quantize floats. */
+ *  supply pre-encoded integers — floats are not auto-quantized. */
 export type VertexAttrData = ArrayLike<number>;
 
 function writeComponent(

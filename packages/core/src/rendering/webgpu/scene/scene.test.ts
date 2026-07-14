@@ -1,10 +1,3 @@
-/**
- * Phase 6 — `Scene` mutation + dirty propagation + event tests.
- *
- * The DrawableNode tests use a hand-rolled stub Drawable (we don't need a real pipeline for
- * scene-level semantics — the encoder tests cover that path).
- */
-
 import { describe, expect, it, vi } from 'vitest';
 import type { Drawable } from '../drawable';
 import { DRAWABLE_BRAND } from '../drawable';
@@ -242,9 +235,9 @@ describe('node factories', () => {
     });
 });
 
-// ---- Phase 8: drawable ownership ---------------------------------------------------------------
+// ---- Drawable ownership -------------------------------------------------------------------------
 
-describe('Scene ownership contract (Phase 8)', () => {
+describe('Scene ownership contract', () => {
     it('Scene.remove destroys every Drawable in the removed subtree', () => {
         const a = fakeDrawable('a');
         const b = fakeDrawable('b');

@@ -1,29 +1,3 @@
-/**
- * Bind-group builder + per-`RenderingContext` bind-group cache.
- *
- * The cache lives on `RenderingContext` (accessed via the `BindGroupCacheStore` shape passed
- * to `buildBindGroupsForDraw`) so two contexts against the same device get independent caches
- * and `ctx.dispose()` is the single point that drops every cached `GPUBindGroup`.
- *
- * Cache key shape:
- *   `${pipelineFingerprint}|g${groupIdx}|${resourceTokens.join(',')}|${overrideKey}`
- *
- * where each `resourceToken` is `${resource.id}.${resource.version}` (the resource's stable
- * UUID plus its mutation version) for every slot in the group, in ascending `binding` order,
- * and `overrideKey` is a `;`-joined list of `${binding}:${resource.id}.${resource.version}`
- * for the slots supplied by the override stack (empty when none). Encoding the resource `id`
- * (not just its `version`) makes the key identity-unique: two distinct resources that happen
- * to share a slot + version no longer collide onto the same `GPUBindGroup`, and it lets
- * `sweepBindGroupCache` map an invalidated resource back to its cache entries.
- * Fingerprint (rather than a per-build id) is used because the per-context pipeline cache
- * guarantees fingerprint ↔ `BuiltPipeline` instance uniqueness, and fingerprints are stable
- * across rebuilds — a slightly more informative token to see in cache-key dumps.
- *
- * The bind-group entries that every buffer-backed binding produces always carry
- * `{ buffer: handle.gpu, offset: handle.offset, size: handle.size }` so a slab manager that
- * sub-allocates inside one big GPUBuffer is transparent to the encoder.
- */
-
 import type {
     BufferResource,
     ExternalTextureResource,
@@ -35,11 +9,11 @@ import type {
 } from '../data/resource';
 import type { Drawable } from '../drawable';
 import type { BuiltPipeline } from '../pipelines/build';
-import type { ResourceSlot } from '../resources/resource';
+import type { ResourceSlot } from '../binding/slot';
 
 /** Storage shape the bind-group builder consults. Lives on `RenderingContext`. */
 export interface BindGroupCacheStore {
-    /** Map of cache key → assembled `GPUBindGroup`. The cache is unbounded in v1; callers
+    /** Map of cache key → assembled `GPUBindGroup`. The cache is unbounded; callers
      *  invalidate selectively via `sweepBindGroupCache` or wholesale via `cache.clear()`
      *  (e.g. `ctx.dispose()`). */
     readonly cache: Map<string, GPUBindGroup>;
@@ -114,6 +88,14 @@ export function buildBindGroupsForDraw(args: BindGroupBuildArgs): ResolvedBindGr
             entries.push(makeBindGroupEntry(binding, r, slot));
         }
 
+        // Cache key: `${fingerprint}|g${groupIdx}|${tokens}|${overrideTags}`, where each token is
+        // `${resource.id}.${resource.version}` (stable UUID + mutation version) in ascending
+        // binding order, and overrideTags additionally records `${binding}:${token}` for slots
+        // supplied by the override stack. Including the resource `id` (not just version) keeps the
+        // key identity-unique — two resources sharing a slot+version can't collide onto one
+        // `GPUBindGroup` — and lets `sweepBindGroupCache` map an invalidated resource back to its
+        // entries. The fingerprint is used (not a per-build id) because the pipeline cache
+        // guarantees fingerprint ↔ `BuiltPipeline` uniqueness and is stable across rebuilds.
         const key = `${pipeline.fingerprint}|g${groupIdx}|${tokens.join(',')}|${overrideTags.join(';')}`;
         let bg = store.cache.get(key);
         if (bg === undefined) {

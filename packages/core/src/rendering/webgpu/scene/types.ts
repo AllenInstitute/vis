@@ -1,26 +1,7 @@
-/**
- * Persistent `Scene` types — Phase 6 of the WebGPU rendering refactor.
- *
- * A `Scene` is a mutable, tree-shaped render-graph whose leaves are `DrawableNode`s wrapping
- * `Drawable` instances built via `ctx.drawable(...)`. Inner nodes are either composite
- * containers (`ContainerNode`) or **scoped state nodes** (`ViewportNode`, `ScissorNode`,
- * `StencilRefNode`, `BlendConstantNode`) whose effect is restored on subtree exit by the
- * encoder. `BindingOverrideNode` replaces specific `ResourceSlot` bindings for its subtree.
- *
- * **No `PipelineRefNode`**: each Drawable owns its pipeline assignment (singular). Multi-
- * pipeline rendering is expressed by constructing multiple Drawables sharing geometry via
- * `Resource.share()` (or `drawable.reuse(...)`).
- *
- * Every node descriptor is a POJO — no closures, no GPU references. The scene itself is
- * `structuredClone`-safe **only** when all nodes are non-`draw` (DrawableNode carries a live
- * Drawable object; in a worker scenario the worker that owns the encoder maintains an
- * `id → drawable` dictionary and reconstructs DrawableNodes locally from the message-passing
- * shape).
- */
-
 import type { Resource } from '../data/resource';
+import { isBranded } from '../brand';
 import type { Drawable } from '../drawable';
-import type { ResourceSlot } from '../resources/resource';
+import type { ResourceSlot } from '../binding/slot';
 
 /** Stable per-instance identifier (UUID-ish). Used by `Scene.add` / `remove` / `replace`. */
 export type NodeId = string;
@@ -96,7 +77,15 @@ export interface BindingOverrideNode extends SceneNodeBase {
     readonly children: readonly SceneNode[];
 }
 
-/** Leaf node wrapping a `Drawable`. */
+/**
+ * Leaf node wrapping a `Drawable`. The drawable owns its pipeline assignment — there is no
+ * `PipelineRefNode`; render the same geometry under multiple pipelines via `drawable.reuse(...)`.
+ *
+ * Because this node holds a live `Drawable` (GPU-backed, not a POJO), a `Scene` is only
+ * `structuredClone`-safe when it contains no `draw` leaves. In a worker scenario, pass the tree
+ * without drawables and have the encoder-side worker reconstruct `DrawableNode`s from an
+ * `id → drawable` dictionary.
+ */
 export interface DrawableNode extends SceneNodeBase {
     readonly kind: 'draw';
     readonly drawable: Drawable;
@@ -117,11 +106,7 @@ export type CompositeSceneNode = Exclude<SceneNode, DrawableNode>;
 
 /** Runtime brand check. */
 export function isSceneNode(value: unknown): value is SceneNode {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        (value as { __brand?: unknown }).__brand === SCENE_NODE_BRAND
-    );
+    return isBranded(value, SCENE_NODE_BRAND);
 }
 
 // ---- Events ------------------------------------------------------------------------------------
@@ -194,11 +179,7 @@ export interface Scene {
 
 /** Runtime discriminator for `Scene`. */
 export function isScene(value: unknown): value is Scene {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        (value as { __brand?: unknown }).__brand === SCENE_BRAND
-    );
+    return isBranded(value, SCENE_BRAND);
 }
 
 // ---- Constructor descriptor --------------------------------------------------------------------

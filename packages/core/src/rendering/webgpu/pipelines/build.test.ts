@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderingContext } from '../context';
 import { ShaderStageFlag } from '../native-types';
-import { samplerSlot, textureSlot, uniformSlot } from '../resources';
+import { samplerSlot, textureSlot, uniformSlot } from '../binding';
 import { member, shader, struct } from '../shaders';
 import type { MockGpuBindGroupLayout, MockGpuRenderPipeline } from '../test/mock-device';
 import { makeMockDevice } from '../test/mock-device';

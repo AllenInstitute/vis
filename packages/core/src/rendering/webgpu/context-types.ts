@@ -1,15 +1,3 @@
-/**
- * Type-only companion to `context.ts`.
- *
- * Houses the public `RenderingContext` **interface** (plus its spec / stats / resource-init
- * shapes) so that leaf modules like `drawable.ts` and `encoder/encoder.ts` can depend on the
- * context's shape without importing the concrete `RenderingContextImpl` class — which would
- * form a runtime import cycle (`context.ts` already imports those modules for their builders).
- *
- * Every import here is `type`-only; this module contributes no runtime code and therefore
- * cannot participate in a runtime cycle.
- */
-
 import type {
     BufferResource,
     ExternalTextureResource,
@@ -32,7 +20,7 @@ import type {
     StorageTextureSlot,
     TextureSlot,
     UniformSlot,
-} from './resources/resource';
+} from './binding/slot';
 import type { Scene } from './scene/types';
 import type { WgslShader } from './shaders';
 
@@ -41,8 +29,8 @@ import type { WgslShader } from './shaders';
  *
  * - `device`: the `GPUDevice` every built pipeline targets.
  * - `label`: optional debug label; surfaces in error messages (e.g. use-after-dispose).
- * - `bufferManager`: optional, user-constructed `BufferManager`. Phase 3 accepts but does not
- *   consume it. Phase 4 wires `ctx.resource(slot, init?)` over this reference.
+ * - `bufferManager`: optional, user-constructed `BufferManager`. Backs `ctx.resource(slot, init?)`
+ *   and buffer-backed drawable geometry.
  */
 export interface RenderingContextSpec {
     readonly device: GPUDevice;
@@ -51,15 +39,14 @@ export interface RenderingContextSpec {
 }
 
 /**
- * Telemetry snapshot returned by `ctx.stats()`. Extended per phase: Phase 4 surfaces a
- * read-through `{bytes, leasedBytes}` view of the externally-supplied `BufferManager` (the
- * memory fields are absent when no `bufferManager` was provided). Phase 7 adds bind-group
- * cache fields. Shape is intentionally a single object so callers can spread or destructure
+ * Telemetry snapshot returned by `ctx.stats()`. When a `BufferManager` is attached, surfaces a
+ * read-through `{bytes, leasedBytes}` view of it (both absent otherwise), plus the bind-group
+ * cache size. Shape is intentionally a single object so callers can spread or destructure
  * without churn.
  */
 export interface RenderingContextStats {
     readonly pipelines: number;
-    /** Number of `GPUBindGroup`s currently cached on this context (Phase 7). */
+    /** Number of `GPUBindGroup`s currently cached on this context. */
     readonly bindGroups: number;
     /** Bytes currently resident in the bound `BufferManager` (leased + free). Absent when no
      *  `bufferManager` is attached to this context. */
@@ -132,14 +119,15 @@ export interface RenderingContext {
 
     /**
      * Construct a data-bearing `Resource` for `slot`. Dispatches on `slot.kind`; requires a
-     * `bufferManager` for buffer-backed slot kinds. The returned resource starts with
-     * `refcount === 1` — pair every call with exactly one `destroy()`.
+     * `bufferManager` for buffer-backed slot kinds. The resource is owned by this context and
+     * released automatically on `ctx.dispose()`.
      */
     resource<S extends ResourceSlot>(slot: S, init?: ResourceInit<S>): ResourceFor<S>;
 
     /**
      * Construct a `Drawable` — a pipeline + vertex / index / binding resources + draw call —
-     * against this context. Pair every call with exactly one `drawable.destroy()`.
+     * against this context. The drawable is owned by this context (released on `ctx.dispose()`)
+     * and by any `Scene` it is added to (released when removed).
      */
     drawable(spec: DrawableSpec): Drawable;
 

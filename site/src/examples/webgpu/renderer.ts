@@ -173,11 +173,6 @@ export async function startWebGpuDemo(canvas: HTMLCanvasElement): Promise<() => 
         if (disposed) return;
         disposed = true;
         cancelAnimationFrame(raf);
-        for (const { instance, drawable } of shapes) {
-            drawable.destroy();
-            instance.destroy();
-        }
-        cameraRes.destroy();
         depthTexture?.destroy();
         ctx.dispose();
         bufferManager.dispose();

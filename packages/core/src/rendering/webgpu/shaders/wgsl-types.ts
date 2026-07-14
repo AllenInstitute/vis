@@ -1,19 +1,3 @@
-/**
- * TypeScript representations and Zod v4 schemas for WGSL built-in data types.
- *
- * Each WGSL type is modelled as a plain discriminated-union object keyed on
- * `kind`. These objects are fully serialisable and can be validated at runtime
- * via their corresponding `*Schema` exports.
- *
- * Use `wgslTypeName()` to turn any `WgslDataType` value into its WGSL source
- * string (e.g. `"vec3f"`, `"texture_2d<f32>"`, `"array<f32, 4>"`).
- *
- * Relation to the existing shader-declaration system
- * --------------------------------------------------
- * `declarations.ts` defines `WgslType = string` as a type identifier. You can
- * bridge the two layers with `wgslTypeName(myType)` wherever a raw WGSL type
- * string is expected.
- */
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------

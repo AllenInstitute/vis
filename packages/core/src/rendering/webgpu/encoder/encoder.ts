@@ -1,61 +1,5 @@
-/**
- * `GraphEncoder` — Phase 7 of the WebGPU rendering refactor.
- *
- * Walks a `Scene` against a recording `GPURenderPassEncoder`, emitting state-deduplicated
- * draw commands. State elision is driven by an `ActiveState` instance maintained for the
- * lifetime of the pass.
- *
- * ## Subtree-command caching (Phase 7.1)
- *
- * Every composite node (`container` / `viewport` / `scissor` / `stencilref` / `blendconstant`
- * / `override`) is a candidate for command-list caching. The cache is keyed by `NodeId` and
- * lives on the encoder (one cache per `Scene`, held in a `WeakMap<Scene, ...>` so scene GC
- * naturally drops entries). Each entry records the sequence of `PassCommand`s the walk
- * emitted for that subtree plus the running `ActiveState` snapshots at subtree entry and
- * exit.
- *
- * On each `encode(scene)` walk of a composite node:
- *   - **Cache hit** (node id absent from `scene.dirty` AND we have a cached entry AND the
- *     current `ActiveState` structurally matches the cached entry snapshot) → replay the
- *     cached commands into the pass encoder, then fast-forward `ActiveState` from the cached
- *     exit snapshot. Skips `buildBindGroupsForDraw`, `walk`-function dispatch, and every
- *     per-slot equality check inside the subtree.
- *   - **Cache miss / dirty / entry-state mismatch** → walk the subtree the normal way but tee
- *     every emitted command into a fresh `Recorder`; on subtree exit, cache the recorded
- *     commands + entry/exit snapshots. Nested composites each start their own recorder so
- *     inner subtrees are independently replayable; commands from an inner replay ARE also
- *     appended to any active outer recorder so the outer cache is complete.
- *
- * Cache invalidation is a combination of two mechanisms:
- *   1. Consulting `scene.dirty` at each composite: caller mutations (`add` / `remove` /
- *      `replace` / `markDirty`) already propagate dirty up to the root, so a subtree is
- *      re-recorded whenever anything below it changed.
- *   2. Subscribing to `scene.on('structure-changed', ...)` on first sight of a scene: on
- *      `remove` / `replace` we drop the affected node ids from the cache. This prevents
- *      unbounded growth for scenes that churn subtrees.
- *
- * v1 simplifications (documented for follow-up work):
- *   - **Pipeline-layout compatibility** for `setPipeline`-induced bind-group invalidation is
- *     treated as "identity = compatible". When `setPipeline` swaps pipelines, we conservatively
- *     drop every `ActiveState.bindGroups` entry so the encoder re-emits `setBindGroup` for
- *     every slot the new pipeline needs. A future refinement can compare
- *     `pipeline.layout` / `pipeline.bindGroupLayouts` and elide bind groups where layouts match.
- *
- * State-node semantics (scoped):
- *   - On entry to `ViewportNode` / `ScissorNode` / `StencilRefNode` / `BlendConstantNode`:
- *     snapshot the corresponding `ActiveState` field, apply the node's value (emitting the
- *     setter only if it differs from current).
- *   - On exit: if the snapshotted value differs from what's currently active, emit the
- *     restoration setter (or — if the snapshot is `undefined` — leave the state as-is; WebGPU
- *     has no "unset" verb, but the very-first-frame snapshot of `undefined` is moot because
- *     nothing reads it past the pass boundary).
- *   - `BindingOverrideNode`: pushes its overrides onto a stack consulted by the bind-group
- *     builder; on exit, pops them. The bind groups bound under the override are tagged in the
- *     cache key, so the executor naturally re-binds the original groups on exit when it
- *     encounters the next draw whose cache key differs.
- */
-
 import { v4 as uuidv4 } from 'uuid';
+import { isBranded } from '../brand';
 import type { BufferHandle } from '../memory/types';
 import type { Resource } from '../data/resource';
 import type { Drawable } from '../drawable';
@@ -72,7 +16,7 @@ import type {
     StencilRefNode,
     ViewportNode,
 } from '../scene/types';
-import type { ResourceSlot } from '../resources/resource';
+import type { ResourceSlot } from '../binding/slot';
 import type { RenderingContext } from '../context-types';
 import {
     type BindGroupCacheStore,
@@ -262,11 +206,7 @@ export function makeGraphEncoder(
 }
 
 export function isGraphEncoder(value: unknown): value is GraphEncoder {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        (value as { __brand?: unknown }).__brand === GRAPH_ENCODER_BRAND
-    );
+    return isBranded(value, GRAPH_ENCODER_BRAND);
 }
 
 // ---- internals --------------------------------------------------------------------------------

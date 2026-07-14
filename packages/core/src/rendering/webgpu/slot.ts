@@ -1,25 +1,3 @@
-/**
- * `slot` — public-API factory namespace for declaring resource bindings on a shader.
- *
- * Wraps the lower-level `*Slot` constructors from `./resources/resource` with
- * type-parameterized signatures so that an explicit or inferred TypeScript shape
- * (`T`) flows through the slot, the bound graph, and ultimately the data-bearing
- * `BufferResource<T>` / `TextureResource` returned from `resource(...)` in later
- * phases. The phantom carries no runtime cost and never appears in the generated
- * WGSL.
- *
- * Each typed slot is a structural superset of its underlying `*Slot` type, so it
- * remains assignable to existing untyped consumers (binding-graph traversal,
- * `bindShader`, etc.) without any cast. Tier-1 type safety means that the buffer
- * `set()` method downstream receives `Partial<T>` rather than `Record<string, unknown>`;
- * Tier-2 (member-level inference) and Tier-3 (per-call validation) are deferred to
- * later phases but the `<T>` parameter is already in place to receive them.
- *
- * Cached `webgpu-utils.makeShaderDataDefinitions(...)` reflection — used to derive
- * runtime byte offsets for typed `set()` — is intentionally deferred to Phase 4
- * (BufferManager). For Phase 1 the typed slot is a pure type-system construct.
- */
-
 import {
     externalTextureSlot,
     samplerSlot,
@@ -39,7 +17,7 @@ import {
     type TextureSlotOptions,
     type UniformSlot,
     type UniformSlotOptions,
-} from './resources/resource';
+} from './binding/slot';
 import type { TextureFormat } from './native-types';
 import type {
     StructDecl,

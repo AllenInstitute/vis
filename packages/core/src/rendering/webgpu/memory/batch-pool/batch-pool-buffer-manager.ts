@@ -1,26 +1,6 @@
-/**
- * `BatchPoolBufferManager` — A concrete implementation of `BufferManager`.
- *
- * Allocation strategy: one `Pool` per `(bucketSize, usage)` pair; each pool owns one or more
- * batches of `growthBatchSize` buffers allocated together. The batch is the unit of allocation
- * and the unit of destruction.
- *
- * Eviction strategy:
- *  - Within a pool, free buffers are reused in FIFO order (warm-buffer reuse).
- *  - At `endFrame()`, any batch that has been fully-free for `>= idleFrameLimit` frames is
- *    destroyed.
- *  - During `acquire()`, if granting the request would exceed `maxBytes`, the manager evicts
- *    fully-free batches in oldest-first order across all pools. If the request still cannot fit
- *    after exhausting evictable batches, `OutOfBudgetError` is thrown.
- *
- * Handle validity: each `BufferHandle` carries a unique `Symbol` token; the manager tracks
- * active tokens in a private map. `release()` rejects unknown tokens (foreign handles,
- * double-release, use-after-dispose) by throwing `InvalidHandleError`.
- */
-
 import { DisposedBufferError, InvalidHandleError, OutOfBudgetError } from '../errors';
 import { type BufferHandle, type BufferUsageFlags, type PoolStats, BufferManagerBase } from '../types';
-import type { ResourceSlot } from '../../resources';
+import type { ResourceSlot } from '../../binding';
 import { OutOfBucketError } from './errors';
 import {
     type Batch,
@@ -82,6 +62,13 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
         this.growthBatchSize = growth;
     }
 
+    /**
+     * Acquire a buffer of at least `sizeBytes` with `usage`. Routes to the `(bucketSize, usage)`
+     * pool (rounding up to the smallest bucket), reusing a free buffer in FIFO order (warm reuse)
+     * or allocating a new batch on a miss. If a new batch would exceed `maxBytes`, fully-free
+     * batches are evicted oldest-first across all pools; if it still won't fit, `OutOfBudgetError`
+     * is thrown. (Idle fully-free batches are also destroyed at `endFrame()`.)
+     */
     acquire(sizeBytes: number, usage: BufferUsageFlags): BufferHandle {
         this.#assertNotDisposed();
         if (!(sizeBytes > 0) || !Number.isFinite(sizeBytes)) {
@@ -136,6 +123,10 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
         return this.#residentBytes - evictableBytes + budgetCost <= this.maxBytes;
     }
 
+    /**
+     * Return a handle to its pool. Each handle carries a unique `Symbol` token; unknown tokens
+     * — foreign handles, double-release, use-after-dispose — throw `InvalidHandleError`.
+     */
     release(handle: BufferHandle): void {
         this.#assertNotDisposed();
         const token = this.#tokenByHandle.get(handle);
@@ -371,7 +362,6 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
         const manager = this;
         const handle: BufferHandle = {
             gpu: buffer,
-            buffer,
             offset: 0,
             size: bucketSize,
             sizeBytes: sizeBytesRequested,

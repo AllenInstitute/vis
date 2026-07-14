@@ -1,20 +1,13 @@
-/**
- * Integration test: the declaration-driven typed vertex-input path on `ctx.drawable(...)`.
- * Verifies that a `vertexLayout(...)` used for BOTH pipeline state and the drawable's typed
- * vertex data produces the expected interleaved buffers (correct byte sizes) allocated through
- * the buffer manager.
- */
-
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { renderingContext } from './context';
-import type { BufferHandle, BufferManager, BufferManagerStats } from './memory/types';
+import { asManagedDrawable } from './drawable';
 import { bindings, group } from './pipelines/binding-graph';
 import { buffer, vertexLayout } from './pipelines/vertex-layout';
-import { uniformSlot } from './resources';
+import { uniformSlot } from './binding';
 import { member, shader, struct } from './shaders';
 import { location } from './shaders/attributes';
 import { vertexInput } from './shaders/vertex-interface';
-import { makeMockDevice } from './test/mock-device';
+import { makeMockDevice, makeRecordingBufferManager } from './test/mock-device';
 
 type CameraShape = { view: readonly number[]; proj: readonly number[] };
 const cameraStruct = struct<CameraShape>('Camera', [
@@ -27,44 +20,8 @@ const colorState = () => ({
     fragment: { targets: [{ format: 'bgra8unorm' as const }] },
 });
 
-function makeRecordingBM(device: GPUDevice): {
-    bm: BufferManager;
-    acquired: number[];
-} {
-    const acquired: number[] = [];
-    const make = (sizeBytes: number, usage: GPUBufferUsageFlags): BufferHandle => {
-        const gpu = device.createBuffer({ size: sizeBytes, usage });
-        return {
-            gpu,
-            buffer: gpu,
-            offset: 0,
-            size: sizeBytes,
-            sizeBytes,
-            bucketSize: sizeBytes,
-            usage,
-            release: vi.fn(),
-            sizeInBytes: () => sizeBytes,
-            destroy: vi.fn(),
-        };
-    };
-    const bm: BufferManager = {
-        acquire: vi.fn((sizeBytes: number, usage: GPUBufferUsageFlags) => {
-            acquired.push(sizeBytes);
-            return make(sizeBytes, usage);
-        }),
-        acquireForSlot: vi.fn((_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) =>
-            make(sizeBytes, usage)
-        ),
-        precheck: vi.fn(() => true),
-        release: vi.fn(),
-        endFrame: vi.fn(),
-        frameLease: vi.fn(() => {
-            throw new Error('frameLease not supported');
-        }) as unknown as BufferManager['frameLease'],
-        stats: vi.fn((): BufferManagerStats => ({ residentBytes: 0, leasedBytes: 0, freeBytes: 0 })),
-        dispose: vi.fn(),
-    };
-    return { bm, acquired };
+function makeRecordingBM(device: GPUDevice) {
+    return makeRecordingBufferManager(device);
 }
 
 describe('ctx.drawable() — typed vertex input', () => {
@@ -113,8 +70,9 @@ describe('ctx.drawable() — typed vertex input', () => {
         expect(drawable.vertexBuffers.has(1)).toBe(true);
 
         // Geo: 3 verts * stride 12 = 36; Inst: 2 instances * stride 16 = 32.
-        expect(acquired).toContain(36);
-        expect(acquired).toContain(32);
+        const acquiredSizes = acquired.map((a) => a.sizeBytes);
+        expect(acquiredSizes).toContain(36);
+        expect(acquiredSizes).toContain(32);
 
         // The pipeline derived its vertex.buffers from the same layout.
         expect(pipeline.state.vertex.buffers).toEqual([
@@ -129,6 +87,6 @@ describe('ctx.drawable() — typed vertex input', () => {
             },
         ]);
 
-        drawable.destroy();
+        asManagedDrawable(drawable).destroy();
     });
 });

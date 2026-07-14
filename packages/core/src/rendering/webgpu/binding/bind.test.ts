@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { constant, shader } from '../shaders';
 import { type BindingMap, bindShader } from './bind';
-import { uniformSlot } from './resource';
+import { uniformSlot } from './slot';
 
 describe('bindShader', () => {
     it('replaces ResourceSlot declarations with BoundSlot wrappers', () => {

@@ -1,19 +1,4 @@
-/**
- * Public barrel for `@alleninstitute/vis-core/rendering/webgpu`.
- *
- * This module re-exports the v1 authoring surface — the declarative API used by
- * example/application code to describe shaders, bindings, pipelines, drawables,
- * and scenes — and intentionally does NOT re-export internal helpers (binding-graph
- * traversal, bind-group cache keys, slab BufferHandle plumbing, etc.). Consumers
- * should depend on the symbols below; everything else is implementation detail.
- *
- * The surface is being built out phase-by-phase per `plan-2026-06-25.md`. Symbols
- * that are not yet implemented are exported here as `unknown` stubs so downstream
- * code can begin to import them without breaking the build; each stub will be
- * replaced with the real implementation in the phase that defines it.
- */
-
-// ---- Implemented in Phase 1 -------------------------------------------------------------------
+// ---- Shaders ----------------------------------------------------------------------------------
 
 export type { StructDecl, StructDeclaration, StructMemberDeclaration, WgslShader } from './shaders';
 export {
@@ -64,7 +49,7 @@ export type {
 } from './slot';
 export { slot } from './slot';
 
-// ---- Phase 2: derived BindingGraph ------------------------------------------------------------
+// ---- Binding graphs + pipeline state ----------------------------------------------------------
 
 export type { BindingGraph, BindingGroup, GroupSpec } from './pipelines/binding-graph';
 export { bindings, group, isBindingGraph, isBindingGroup } from './pipelines/binding-graph';
@@ -76,9 +61,9 @@ export type {
 } from './pipelines/pipeline-state';
 export { resolveShaderBindings, shaderSlotEntries } from './pipelines/traverse';
 
-// ---- Phase 3: Pipeline / Drawable / Scene authoring -------------------------------------------
+// ---- Rendering context, resources, drawables, scenes ------------------------------------------
 
-/** Phase 3: device-scoped facade — owns the pipeline cache (and, per phase, BufferManager / encoder hooks). */
+/** Device-scoped facade — owns the pipeline cache, buffer manager, and encoder hooks. */
 export { renderingContext } from './context';
 export type {
     RenderingContext,
@@ -96,9 +81,9 @@ export type {
     StorageTextureResource,
     TextureResource,
 } from './data/resource';
-/** Phase 4: data-bearing `Resource` family. `ctx.resource(slot, init?)` is the public
- *  constructor; the raw factories are kept private to `RenderingContext` so all construction
- *  funnels through one place (consistent error wording, future telemetry, etc.). */
+/** Data-bearing `Resource` family. `ctx.resource(slot, init?)` is the public constructor; the
+ *  raw factories are kept private to `RenderingContext` so all construction funnels through one
+ *  place (consistent error wording, telemetry). */
 export { isResource, RESOURCE_BRAND } from './data/resource';
 export type {
     ArrayDrawCall,
@@ -107,29 +92,29 @@ export type {
     DrawableSpec,
     DrawCall,
     IndexBufferBinding,
+    IndexData,
     IndexedDrawCall,
-    IndexInput,
-    PreBuiltIndexInput,
-    PreBuiltVertexInput,
-    RawArrayIndexInput,
-    RawArraysVertexInput,
-    TypedVertexInput,
+    PreBuiltIndexData,
+    PreBuiltVertexData,
+    RawArrayIndexData,
+    RawArraysVertexData,
+    TypedVertexData,
     VertexBufferBinding,
-    VertexInput,
+    VertexData,
 } from './drawable';
-/** Phase 5: a `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
+/** A `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
  *  `ctx.drawable({...})`. */
 export { DRAWABLE_BRAND, isDrawable } from './drawable';
 export type { EncoderStats, GraphEncoder } from './encoder/encoder';
-// ---- Phase 7: encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
+// Encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
 export { GRAPH_ENCODER_BRAND, isGraphEncoder } from './encoder/encoder';
 export type { BufferManager } from './memory';
 /** A concrete `BufferManager` for `renderingContext({ bufferManager })`. */
 export { BatchPoolBufferAdapter } from './memory';
-/** Phase 3: `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
+/** `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
 export type { BuiltPipeline } from './pipelines/build';
 export type { ScissorSpec, ViewportSpec } from './scene/scene';
-/** Phase 6: a `Scene` is the v1 replacement for the legacy `Graph` of drawables. */
+/** A `Scene` is the retained-mode tree of drawables submitted for rendering. */
 export {
     blendconstant,
     container,

@@ -1,18 +1,3 @@
-/**
- * `PipelineStateDescriptor` — the typed POJO consumed by `pipeline(graph, shader, state, device)`.
- *
- * It mirrors `GPURenderPipelineDescriptor` minus the parts the pipeline builder derives itself:
- * `layout` is built from the binding graph, and `vertex.module` / `fragment.module` come from
- * compiling the shader. Everything else — primitive / depthStencil / multisample / vertex
- * buffer layouts / fragment targets / entry-point names / pipeline-constants — must round-trip
- * the caller's intent so the same shader paired with different states produces distinct
- * `BuiltPipeline`s.
- *
- * The companion `normalizePipelineState(state)` runs Zod validation, defaults the entry-point
- * names to `vs_main` / `fs_main`, and produces a canonical object (recursively key-sorted) ready
- * for the fingerprint hash in Slice 3c.
- */
-
 import { z } from 'zod';
 import {
     type ColorTargetState,

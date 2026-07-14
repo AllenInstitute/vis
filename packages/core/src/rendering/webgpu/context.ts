@@ -1,19 +1,3 @@
-/**
- * `RenderingContext` — device-scoped owner of pipeline build state.
- *
- * Replaces the previous module-level `WeakMap<GPUDevice, Map<fingerprint, BuiltPipeline>>` cache
- * with a per-instance cache so applications and tests can hold isolated caches against the same
- * `GPUDevice`, dispose them deterministically, and instrument them via `stats()`.
- *
- * Future phases extend this class — Phase 4 adds `ctx.resource(slot, init?)` over the
- * externally-supplied `bufferManager`; Phase 5 adds `ctx.drawable({...})`; Phase 7 adds
- * `ctx.encoder()` + `ctx.submit(scene)` and the bind-group cache.
- *
- * **Ownership contract**: a `BufferManager` is **always externally constructed**. The context
- * holds a reference but never creates, manages, or disposes it. `ctx.dispose()` clears the
- * pipeline cache only — the caller's `BufferManager` lifetime is untouched.
- */
-
 import type {
     RenderingContext,
     RenderingContextSpec,
@@ -51,7 +35,7 @@ import type {
     StorageTextureSlot,
     TextureSlot,
     UniformSlot,
-} from './resources/resource';
+} from './binding/slot';
 import type { Scene } from './scene/types';
 import type { WgslShader } from './shaders';
 
@@ -69,7 +53,7 @@ export class RenderingContextImpl implements RenderingContext {
     readonly bufferManager?: BufferManager;
 
     private readonly _pipelineCache: Map<string, BuiltPipeline> = new Map();
-    /** Per-context `GPUBindGroup` cache consulted by the encoder. Phase 7. */
+    /** Per-context `GPUBindGroup` cache consulted by the encoder. */
     private readonly _bindGroupCache: BindGroupCacheStore = {
         cache: new Map(),
         keyToResources: new Map(),
@@ -83,8 +67,11 @@ export class RenderingContextImpl implements RenderingContext {
     /** Per-context memo of slot reflection, consumed by `makeBufferResource`. Replaces the
      *  former module-global `slotDefCache` WeakMap. */
     private readonly _slotReflectionCache: SlotReflectionCache = makeSlotReflectionCache();
-    /** Cached `GraphEncoder` (Phase 7). One per context — re-created if disposed. */
+    /** Cached `GraphEncoder`. One per context — re-created if disposed. */
     private _encoder: GraphEncoder | undefined;
+    /** Everything this context built (resources + drawables). All are destroyed on `dispose()`
+     *  so library users never manage resource lifetime by hand. */
+    private readonly _disposables: Set<{ destroy(): void }> = new Set();
     private _disposed = false;
 
     constructor(spec: RenderingContextSpec) {
@@ -141,8 +128,8 @@ export class RenderingContextImpl implements RenderingContext {
      * - `sampler` → wraps a caller-supplied `GPUSampler` or constructs one from a descriptor.
      * - `externalTexture` → wraps a caller-supplied `GPUExternalTexture`.
      *
-     * The returned resource starts with `refcount === 1`; pair every `ctx.resource()` with
-     * exactly one `destroy()` (or use `share()` to extend its lifetime across owners).
+     * The returned resource is owned by this context and released automatically on
+     * `ctx.dispose()`; callers do not manage its lifetime.
      */
     resource<S extends ResourceSlot>(slot: S, init?: ResourceInit<S>): ResourceFor<S> {
         this.assertNotDisposed();
@@ -164,6 +151,7 @@ export class RenderingContextImpl implements RenderingContext {
                     this._slotReflectionCache,
                     this._invalidateBindGroups
                 );
+                this._disposables.add(resource);
                 return resource as unknown as ResourceFor<S>;
             }
             case 'sampler': {
@@ -173,13 +161,14 @@ export class RenderingContextImpl implements RenderingContext {
                     init as GPUSampler | GPUSamplerDescriptor | undefined,
                     this._invalidateBindGroups
                 );
+                this._disposables.add(resource);
                 return resource as unknown as ResourceFor<S>;
             }
             case 'texture': {
                 if (init === undefined) {
                     throw new Error(
                         `RenderingContext.resource: slot '${slot.name}' (kind 'texture') requires an ` +
-                            'init `{ texture, view? }`; texture creation from image sources is deferred to a follow-up.'
+                            'init `{ texture, view? }`; texture creation from image sources is not supported.'
                     );
                 }
                 const resource = makeTextureResource(
@@ -187,6 +176,7 @@ export class RenderingContextImpl implements RenderingContext {
                     init as { texture: GPUTexture; view?: GPUTextureView },
                     this._invalidateBindGroups
                 );
+                this._disposables.add(resource);
                 return resource as unknown as ResourceFor<S>;
             }
             case 'storageTexture': {
@@ -201,6 +191,7 @@ export class RenderingContextImpl implements RenderingContext {
                     init as { texture: GPUTexture; view?: GPUTextureView },
                     this._invalidateBindGroups
                 );
+                this._disposables.add(resource);
                 return resource as unknown as ResourceFor<S>;
             }
             case 'externalTexture': {
@@ -215,6 +206,7 @@ export class RenderingContextImpl implements RenderingContext {
                     init as GPUExternalTexture,
                     this._invalidateBindGroups
                 );
+                this._disposables.add(resource);
                 return resource as unknown as ResourceFor<S>;
             }
         }
@@ -222,12 +214,11 @@ export class RenderingContextImpl implements RenderingContext {
 
     /**
      * Construct a `Drawable` — a pipeline + vertex / index / binding resources + draw call —
-     * against this context. Phase 5 of the rendering refactor.
+     * against this context.
      *
      * Vertex / index input may be:
      *   - Pre-built: a `Map<bufferSlot, BufferResource | RawBufferResource>` (vertex) /
-     *     `{ resource, format }` (index). The drawable `share()`s each supplied resource so
-     *     the caller retains its own refcount.
+     *     `{ resource, format }` (index). The drawable takes its own reference to each.
      *   - Raw arrays: a `{ kind: 'arrays', arrays, options?, bufferSlots? }` descriptor.
      *     `webgpu-utils.createBufferLayoutsFromArrays` is used **only** to derive byte
      *     layouts; GPU buffer allocation funnels through `this.bufferManager.acquire`, and
@@ -237,13 +228,14 @@ export class RenderingContextImpl implements RenderingContext {
      *
      * `bindings` must cover every slot in `pipeline.slotIndex`; resource kinds are validated.
      *
-     * Pair every `ctx.drawable(spec)` with exactly one `drawable.destroy()` — the destroy
-     * decrefs every owned resource, freshly-allocated buffers fall to refcount 0 and release
-     * their `BufferHandle`s, pre-built ones fall back to the caller's refcount.
+     * The drawable is owned by this context and released on `ctx.dispose()`; a `Scene` releases
+     * it earlier when the drawable is removed. Callers do not manage its lifetime.
      */
     drawable(spec: DrawableSpec): Drawable {
         this.assertNotDisposed();
-        return buildDrawable(this, spec);
+        return buildDrawable(this, spec, (d) => {
+            this._disposables.add(d);
+        });
     }
 
     /**
@@ -277,9 +269,9 @@ export class RenderingContextImpl implements RenderingContext {
     }
 
     /**
-     * Drop every cached `GPUBindGroup` without disposing the context. Phase 8 lifecycle hook:
-     * call after a large scene mutation (e.g. `Scene.remove` of a big subtree) to release the
-     * bind groups that are no longer referenced. Cheap; rebuilt lazily on next submit.
+     * Drop every cached `GPUBindGroup` without disposing the context. Call after a large scene
+     * mutation (e.g. `Scene.remove` of a big subtree) to release the bind groups that are no
+     * longer referenced. Cheap; rebuilt lazily on next submit.
      */
     disposeBindGroupCache(): void {
         this._bindGroupCache.cache.clear();
@@ -304,6 +296,8 @@ export class RenderingContextImpl implements RenderingContext {
      */
     dispose(): void {
         if (this._disposed) return;
+        for (const d of this._disposables) d.destroy();
+        this._disposables.clear();
         this.disposePipelineCache();
         this.disposeBindGroupCache();
         this._encoder?.clearSubtreeCache();

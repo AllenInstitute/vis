@@ -1,9 +1,3 @@
-/**
- * Prototype demonstration for `vertexInput(...)` — the vertex shader *input interface* model.
- * Shows it against a realistic mixed entry (a struct + a loose `@location` param + a builtin) and
- * exercises the up-front validation.
- */
-
 import { describe, expect, it } from 'vitest';
 import { builtin, location } from './attributes';
 import { member, param, returns, struct } from './declarations';

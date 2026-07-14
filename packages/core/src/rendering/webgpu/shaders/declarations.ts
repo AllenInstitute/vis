@@ -1,9 +1,3 @@
-/**
- * This file defines the various types of declarations that can be used in our shader generation system,
- * including variables, constants, structs, and functions. Each declaration type includes a __gen method
- * that generates the corresponding WGSL code for that declaration.
- */
-
 import {
     compute,
     fragment,

@@ -1,18 +1,5 @@
-/**
- * Public types for the WebGPU buffer memory manager.
- *
- * The `BufferManager` interface is the contract every concrete implementation honors. Consumers
- * (binding-graph providers, encoder code, etc.) should type their parameters as `BufferManager`
- * so the underlying allocation strategy can be swapped without changing call sites.
- *
- * The first concrete implementation is `BatchPoolBufferManager` (Design A: batched per-bucket
- * pools). Future siblings — e.g. `LruPoolBufferManager` (per-buffer LRU) or `SlabBufferManager`
- * (sub-allocating slabs) — will conform to the same interface and may be selected at
- * construction.
- */
-
 import type { Cacheable } from '../../../shared-priority-cache/priority-cache';
-import type { ResourceSlot } from '../resources';
+import type { ResourceSlot } from '../binding';
 
 /**
  * GPU buffer usage flag-set. WebGPU's `GPUBufferUsageFlags` is the bag of flags from
@@ -95,9 +82,6 @@ export type BufferManagerStats = {
  * `BatchPoolBufferManager` with no consumer changes. `BatchPoolBufferManager` always emits
  * `offset: 0` and `size === bucketSize`.
  *
- * `buffer` is kept as a legacy alias for `gpu` so older code reading `handle.buffer` continues
- * to compile during the Phase 4 migration; new code should prefer `gpu`.
- *
  * Implements `Cacheable` so handles can be threaded through any other cache-aware machinery in
  * the codebase. `sizeInBytes()` returns the actual `bucketSize` (the physical buffer's byte
  * length), not the caller's `sizeBytes` request. `destroy()` is an alias for `release()` so a
@@ -110,8 +94,6 @@ export interface BufferHandle extends Cacheable {
     readonly offset: number;
     /** Byte length of this handle's slice. Always >= the caller's `sizeBytes` request. */
     readonly size: number;
-    /** Legacy alias for `gpu`. New code should prefer `gpu`. */
-    readonly buffer: GPUBuffer;
     /** The caller's original size request (in bytes). */
     readonly sizeBytes: number;
     /** The actual physical size of the underlying allocation. For `BatchPoolBufferManager` this
@@ -135,7 +117,7 @@ export interface BufferHandle extends Cacheable {
 export interface BufferManager<Stats extends BufferManagerStats = BufferManagerStats> {
     /**
      * Obtain a buffer of at least `sizeBytes`, allocated with `usage`. The returned handle's
-     * `buffer.size` will be the bucket the request rounds up to. Throws `OutOfBucketError` if
+     * `gpu.size` will be the bucket the request rounds up to. Throws `OutOfBucketError` if
      * the request exceeds the largest bucket; throws `OutOfBudgetError` if granting the request
      * would exceed `maxBytes` and no idle entries can be reclaimed.
      */

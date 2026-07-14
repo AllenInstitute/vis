@@ -5,7 +5,7 @@ import type {
     BufferHandle,
     BufferUsageFlags,
 } from '../types';
-import { uniformSlot, storageSlot, samplerSlot } from '../../resources';
+import { uniformSlot, storageSlot, samplerSlot } from '../../binding';
 import { member, struct } from '../../shaders';
 import { BatchPoolBufferManager } from './batch-pool-buffer-manager';
 import { OutOfBucketError } from './errors';
@@ -124,23 +124,23 @@ describe('BatchPoolBufferManager — basic acquire/release', () => {
     it('returns the same buffer when re-acquired after release (single-buffer batch)', () => {
         const single = new BatchPoolBufferManager({ ...baseConfig(device), growthBatchSize: 1 });
         const h1 = single.acquire(200, USAGE_A);
-        const buf1 = h1.buffer;
-        h1.release(); // note: importantly, this does NOT invalidate h1.buffer, which is still held in buf1!
+        const buf1 = h1.gpu;
+        h1.release(); // note: importantly, this does NOT invalidate h1.gpu, which is still held in buf1!
         const h2 = single.acquire(200, USAGE_A);
-        expect(h2.buffer).toBe(buf1);
+        expect(h2.gpu).toBe(buf1);
     });
 
     it('reuses buffers in FIFO order within a multi-buffer batch', () => {
         // Batch of 2: free=[b0,b1]. acquire→b0 leased, free=[b1]. release(h1)→free=[b1,b0].
         // Next acquire returns b1 (head), not b0.
         const h1 = manager.acquire(200, USAGE_A);
-        const b0 = h1.buffer;
+        const b0 = h1.gpu;
         h1.release();
         const h2 = manager.acquire(200, USAGE_A);
-        expect(h2.buffer).not.toBe(b0);
+        expect(h2.gpu).not.toBe(b0);
         h2.release();
         const h3 = manager.acquire(200, USAGE_A);
-        expect(h3.buffer).toBe(b0);
+        expect(h3.gpu).toBe(b0);
     });
 
     it('rounds the requested size up to the smallest matching bucket', () => {
@@ -154,9 +154,9 @@ describe('BatchPoolBufferManager — basic acquire/release', () => {
         const a = manager.acquire(200, USAGE_A);
         const b = manager.acquire(200, USAGE_B);
         const c = manager.acquire(1000, USAGE_A);
-        expect(a.buffer).not.toBe(b.buffer);
-        expect(a.buffer).not.toBe(c.buffer);
-        expect(b.buffer).not.toBe(c.buffer);
+        expect(a.gpu).not.toBe(b.gpu);
+        expect(a.gpu).not.toBe(c.gpu);
+        expect(b.gpu).not.toBe(c.gpu);
         expect(manager.stats().poolCount).toBe(3);
     });
 });
@@ -248,7 +248,7 @@ describe('BatchPoolBufferManager — budget enforcement and eviction', () => {
         // Third acquire forces eviction: USAGE_A's idle batch is the only victim.
         manager.acquire(200, USAGE_B); // Same pool as `b`; growthBatchSize=1 → new batch needed.
         // The very first buffer should now be destroyed.
-        expect(a.buffer.destroy).toHaveBeenCalledTimes(1);
+        expect(a.gpu.destroy).toHaveBeenCalledTimes(1);
         expect(onEvict).toHaveBeenCalledWith({
             bucketSize: 256,
             usage: USAGE_A,
@@ -271,8 +271,8 @@ describe('BatchPoolBufferManager — budget enforcement and eviction', () => {
         // Third request cannot evict (both batches are leased) — must throw.
         expect(() => manager.acquire(200, USAGE_A)).toThrow(OutOfBudgetError);
         // Neither buffer was destroyed.
-        expect(a.buffer.destroy).not.toHaveBeenCalled();
-        expect(b.buffer.destroy).not.toHaveBeenCalled();
+        expect(a.gpu.destroy).not.toHaveBeenCalled();
+        expect(b.gpu.destroy).not.toHaveBeenCalled();
     });
 
     it('throws OutOfBucketError when sizeBytes exceeds the largest bucket', () => {
@@ -300,13 +300,13 @@ describe('BatchPoolBufferManager — idle-batch sweep at endFrame', () => {
         h.release();
         // endFrame at frame 0: age = 0 - 0 = 0 < 2 → keep.
         manager.endFrame();
-        expect(h.buffer.destroy).not.toHaveBeenCalled();
+        expect(h.gpu.destroy).not.toHaveBeenCalled();
         // Frame 1: endFrame: age = 1 < 2 → keep.
         manager.endFrame();
-        expect(h.buffer.destroy).not.toHaveBeenCalled();
+        expect(h.gpu.destroy).not.toHaveBeenCalled();
         // Frame 2: endFrame: age = 2 >= 2 → destroy.
         manager.endFrame();
-        expect(h.buffer.destroy).toHaveBeenCalledTimes(1);
+        expect(h.gpu.destroy).toHaveBeenCalledTimes(1);
         expect(onEvict).toHaveBeenCalledTimes(1);
         expect(manager.stats().residentBytes).toBe(0);
     });
@@ -322,9 +322,9 @@ describe('BatchPoolBufferManager — idle-batch sweep at endFrame', () => {
         manager.endFrame();
         // Re-acquire before endFrame; batch is now leased → not fully-free.
         const h2 = manager.acquire(200, USAGE_A);
-        expect(h2.buffer).toBe(h.buffer);
+        expect(h2.gpu).toBe(h.gpu);
         manager.endFrame();
-        expect(h2.buffer.destroy).not.toHaveBeenCalled();
+        expect(h2.gpu.destroy).not.toHaveBeenCalled();
         h2.release();
     });
 });
@@ -387,7 +387,6 @@ describe('BatchPoolBufferManager — handle validation', () => {
             gpu: fakeBuffer,
             offset: 0,
             size: 256,
-            buffer: fakeBuffer,
             sizeBytes: 100,
             bucketSize: 256,
             usage: USAGE_A,
@@ -469,7 +468,7 @@ describe('BatchPoolBufferManager — Cacheable interop on handles', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Phase 4 extensions: slab-ready handle shape, acquireForSlot, precheck.
+// Extensions: slab-ready handle shape, acquireForSlot, precheck.
 // ---------------------------------------------------------------------------
 
 describe('BatchPoolBufferManager — BufferHandle slab-ready fields', () => {
@@ -480,7 +479,6 @@ describe('BatchPoolBufferManager — BufferHandle slab-ready fields', () => {
             growthBatchSize: 1,
         });
         const h = manager.acquire(200, USAGE_A);
-        expect(h.gpu).toBe(h.buffer);
         expect(h.offset).toBe(0);
         expect(h.size).toBe(256); // === bucketSize for BatchPool
         expect(h.bucketSize).toBe(256);

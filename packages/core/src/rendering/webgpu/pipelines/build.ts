@@ -1,22 +1,3 @@
-/**
- * Internal pipeline build helper used by `RenderingContext.pipeline()`.
- *
- * Build sequence (consumes pre-computed `normalizedState`, `slotIndex`, `fingerprint` —
- * `RenderingContext` performs those steps and the cache check before calling in):
- *   1. `bindShader(shader, slotIndex)` + `asSource(...)` — produce final WGSL.
- *   2. `makeShaderDataDefinitions(wgsl)` — reflect struct layouts onto `BuiltPipeline.defs`.
- *      Stashed for Phase 4's `BufferResource` round-trip; not consumed by Phase 3 itself.
- *   3. Bucket `shaderSlotEntries(graph, shader)` by group depth → manually construct
- *      `GPUBindGroupLayoutEntry`s via existing `toBindGroupLayoutEntry`. Sparse depths (a shader
- *      uses depth 0 + 2 but not 1) get an empty layout so `bindGroupLayouts[i]` always equals
- *      depth `i`.
- *   4. `device.createBindGroupLayout` ×N → `createPipelineLayout` → `createShaderModule`.
- *   5. Compose `GPURenderPipelineDescriptor` from the normalized state and `createRenderPipeline`.
- *
- * Pure function — no module-level state. `BuiltPipeline` is the type exposed publicly; this
- * builder is internal (not re-exported from the webgpu barrel).
- */
-
 import { makeShaderDataDefinitions, type ShaderDataDefinitions } from 'webgpu-utils';
 import { type BindGroupLayoutEntry, ShaderStageFlag, type ShaderStageFlags } from '../native-types';
 import {
@@ -26,7 +7,7 @@ import {
     bind as bindSlot,
     type ResourceSlot,
     toBindGroupLayoutEntry,
-} from '../resources';
+} from '../binding';
 import { asSource, type WgslShader } from '../shaders';
 import type { BindingGraph } from './binding-graph';
 import type { NormalizedPipelineState } from './pipeline-state';
@@ -39,7 +20,7 @@ import { shaderSlotEntries } from './traverse';
  * - `bindGroupLayouts[i]` corresponds to group index `i` (= depth). Sparse depths are empty BGLs.
  * - `slotIndex` is the `BindingMap` produced by `resolveShaderBindings` — Drawables consult it to
  *   look up `(group, binding)` for each `ResourceSlot` when assembling bind groups.
- * - `defs` is the `webgpu-utils` reflection cache. Phase 4 will feed this to `makeStructuredView`.
+ * - `defs` is the `webgpu-utils` reflection cache, fed to `makeStructuredView` when building `BufferResource`s.
  * - `fingerprint` keys the per-`RenderingContext` cache. Because that cache guarantees a
  *   single `BuiltPipeline` instance per unique fingerprint, downstream code that needs to
  *   compare pipelines for equality does so by reference (`a === b`); the fingerprint is used
@@ -56,13 +37,23 @@ export interface BuiltPipeline {
     readonly shader: WgslShader;
 }
 
-/** Default visibility for a slot that doesn't declare its own. Tier-3 inference would tighten this. */
+/** Default visibility for a slot that doesn't declare its own. A future inference pass could tighten this. */
 const DEFAULT_VISIBILITY: ShaderStageFlags = ShaderStageFlag.VERTEX | ShaderStageFlag.FRAGMENT;
 
 /**
  * Build a `BuiltPipeline`. Internal — call sites go through `RenderingContext.pipeline()`,
  * which performs `normalizePipelineState` / `resolveShaderBindings` / `pipelineFingerprint`
- * and the cache check before invoking this builder.
+ * and the cache check before invoking this builder. Pure function; no module-level state.
+ *
+ * Steps:
+ *   1. `bindShader(shader, slotIndex)` + `asSource(...)` — produce final WGSL.
+ *   2. `makeShaderDataDefinitions(wgsl)` — reflect struct layouts onto `BuiltPipeline.defs`
+ *      (consumed later by `BufferResource`, not by the build itself).
+ *   3. Bucket `shaderSlotEntries(graph, shader)` by group depth → construct
+ *      `GPUBindGroupLayoutEntry`s via `toBindGroupLayoutEntry`. Sparse depths (a shader uses
+ *      depth 0 + 2 but not 1) get an empty layout so `bindGroupLayouts[i]` always equals depth `i`.
+ *   4. `device.createBindGroupLayout` ×N → `createPipelineLayout` → `createShaderModule`.
+ *   5. Compose `GPURenderPipelineDescriptor` from the normalized state → `createRenderPipeline`.
  */
 export function buildPipeline(
     device: GPUDevice,

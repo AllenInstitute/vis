@@ -18,7 +18,7 @@ export type {
     TextureSlotOptions,
     UniformSlot,
     UniformSlotOptions,
-} from './resource';
+} from './slot';
 export {
     externalTextureSlot,
     isResourceSlot,
@@ -28,4 +28,4 @@ export {
     storageTextureSlot,
     textureSlot,
     uniformSlot,
-} from './resource';
+} from './slot';

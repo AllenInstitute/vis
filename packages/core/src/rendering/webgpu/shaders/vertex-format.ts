@@ -1,15 +1,3 @@
-/**
- * `GPUVertexFormat` metadata: WGSL-type derivation, byte sizes, offset alignment, and the
- * host-array kinds used by the typed upload packer. Split out from the vertex-layout logic so both
- * the layout derivation (`pipelines/vertex-layout.ts`) and any shader-side reasoning can share one
- * table.
- *
- * Also provides `defaultVertexFormat(wgslType)` — the natural `GPUVertexFormat` for a WGSL member
- * type (`vec3f → float32x3`, `vec2u → uint32x2`, `vec2h → float16x2`). Because the format→WGSL-type
- * mapping is many-to-one (`unorm8x4`, `snorm8x4`, `float32x4` all → `vec4f`), the default is the
- * full-precision natural format; normalized/packed formats must be requested explicitly.
- */
-
 import type { VertexFormat } from '../native-types';
 import { vec, type WgslNumericScalarType, type WgslVecSize, wgslTypeName } from './wgsl-types';
 
@@ -19,7 +7,7 @@ export type VertexComponentType = WgslNumericScalarType;
 
 /** Which host-side `TypedArray` element type the typed upload path expects for a format's
  *  components. `float16` supplies raw half-float bits as `u16`. Normalized formats (`unorm*` /
- *  `snorm*`) accept pre-encoded integer arrays — v1 does not auto-quantize floats. */
+ *  `snorm*`) accept pre-encoded integer arrays — floats are not auto-quantized. */
 export type VertexArrayKind = 'u8' | 'i8' | 'u16' | 'i16' | 'u32' | 'i32' | 'f32';
 
 /** Per-`GPUVertexFormat` metadata used to derive WGSL types, pack byte layouts, and validate. */

@@ -1,35 +1,5 @@
-/**
- * PROTOTYPE — declarative vertex shader *input interface*.
- *
- * Where `vertex-input.ts` models a special `vertexStruct`, this explores the more general shape:
- * a `vertexInput([...])` that accepts ordinary `struct` declarations AND loose entry `param`s
- * (including `@builtin(vertex_index | instance_index)`), validates that every leaf is a
- * well-formed vertex-stage input, and hands its parameter list to `vertexEntry(...)`. No special
- * "vertex struct" type is required — a plain `struct(...)` simply *works as* a vertex input.
- *
- * This deliberately covers only concern (1) from the design discussion — the WGSL input
- * *interface* + validation. The two orthogonal concerns are left as follow-ups:
- *   - per-attribute wire **format** (`GPUVertexFormat`) — a plain `member('c','vec4f',[location(1)])`
- *     can't say whether `c` is `unorm8x4` vs `float32x4`; the derived `attributes` here expose the
- *     WGSL type only.
- *   - **buffer grouping + stepMode** — not encoded by the WGSL interface at all.
- *
- * Example (mixed struct + loose @location + builtin):
- * ```ts
- * const VertexIn = struct('VertexIn', [
- *     member('position', 'vec3f', [location(0)]),
- *     member('color',    'vec4f', [location(1)]),
- * ]);
- * const vin = vertexInput([
- *     VertexIn,                                   // struct → flattened @location members
- *     param('instanceOffset', 'vec3f', [location(2)]), // loose per-instance-ish attribute
- *     param('vertIdx', 'u32', [builtin('vertex_index')]), // builtin (no buffer)
- * ]);
- * const shader = shader([...vin.structs, vin.entry('vs_main', () => '...', returns('vec4f', [builtin('position')]))]);
- * ```
- */
-
 import type { BuiltinAttribute, LocationAttribute, VariableOrValueAttribute } from './attributes';
+import { isBranded } from '../brand';
 import {
     type FunctionDeclaration,
     type FunctionParameterDeclaration,
@@ -47,7 +17,7 @@ export const VERTEX_INPUT_BUILTINS = ['vertex_index', 'instance_index'] as const
 export type VertexInputBuiltinName = (typeof VERTEX_INPUT_BUILTINS)[number];
 
 /** A buffer-backed `@location` leaf of the interface. Carries the WGSL type only — the wire
- *  `GPUVertexFormat` is a follow-up concern (see file header). */
+ *  `GPUVertexFormat` is handled separately (see file header). */
 export interface VertexInputAttribute {
     readonly name: string;
     readonly location: number;
@@ -115,10 +85,18 @@ function deriveParamName(structName: string): string {
 
 // ---- builder --------------------------------------------------------------------------------
 
-/** Compose + validate a vertex shader input interface from ordinary `struct` declarations and/or
- *  loose entry `param`s. Throws (aggregating every problem) if any leaf is not a valid vertex
- *  input: each leaf must carry exactly one of `@location` or a vertex-stage `@builtin`, and all
- *  `@location`s must be unique across the whole interface. */
+/**
+ * Compose + validate a vertex shader input interface from ordinary `struct` declarations and/or
+ * loose entry `param`s (including `@builtin(vertex_index | instance_index)`). Throws (aggregating
+ * every problem) if any leaf is invalid: each must carry exactly one of `@location` or a
+ * vertex-stage `@builtin`, and all `@location`s must be unique across the interface.
+ *
+ * This is the shader-side vertex-input surface: it yields the `@vertex` entry's parameter list
+ * (via `.entry(...)`) plus the classified `@location` / `@builtin` leaves (the latter are
+ * driver-generated and never buffer-backed). The complementary buffer-side concerns — per-attribute
+ * `GPUVertexFormat`, buffer grouping, and `stepMode` — are added by `vertexLayout(vin, ...)`, which
+ * consumes the returned interface.
+ */
 export function vertexInput(
     inputs: readonly (StructDeclaration | FunctionParameterDeclaration)[]
 ): VertexInputInterface {
@@ -213,9 +191,5 @@ export function vertexInput(
 
 /** Runtime discriminator for a `VertexInputInterface`. */
 export function isVertexInput(value: unknown): value is VertexInputInterface {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        (value as { __brand?: unknown }).__brand === VERTEX_INPUT_BRAND
-    );
+    return isBranded(value, VERTEX_INPUT_BRAND);
 }

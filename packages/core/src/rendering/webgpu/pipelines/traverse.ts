@@ -1,23 +1,4 @@
-/**
- * Traversal helpers for the variadic-children `BindingGraph` model (see `./binding-graph.ts`).
- *
- * The traversal is **per-shader**: each shader's `(group, binding)` resolution comes from
- * walking its own `declarations` array, filtering to `ResourceSlot`s, and looking up each slot
- * in the graph-local `_slotIndex`. Slot ownership is graph-local — the same `ResourceSlot` can
- * resolve to different indices in two different graphs.
- *
- * Resolution rules:
- * - **Group index** = the slot's graph-local depth (root = 0).
- * - **Binding index** = the slot's position within its owning group's `slots` array.
- * - Two shaders that share a slot in the *same graph* resolve it to identical `(group, binding)`,
- *   because `bindings()` enforces within-tree slot uniqueness.
- *
- * This module is intentionally distinct from the legacy `traversal.ts` (which operates over the
- * chain-style `binding-graphs.ts` and will be removed in Phase 9). The two coexist during the
- * phase transition.
- */
-
-import { isResourceSlot, type BindingMap, type ResourceSlot } from '../resources';
+import { isResourceSlot, type BindingMap, type ResourceSlot } from '../binding';
 import type { WgslShader } from '../shaders';
 import type { BindingGraph, BindingGroup } from './binding-graph';
 
@@ -58,8 +39,8 @@ export function resolveShaderBindings(graph: BindingGraph, shader: WgslShader): 
 
 /**
  * Enumerate every `(group, binding, slot, owner)` for a shader, sorted by `(group, binding)`.
- * Used by Phase 3 pipeline build (and potentially diagnostics) to walk a shader's binding
- * layout without going through `bindShader` first.
+ * Used by pipeline build (and diagnostics) to walk a shader's binding layout without going
+ * through `bindShader` first.
  */
 export function shaderSlotEntries(
     graph: BindingGraph,

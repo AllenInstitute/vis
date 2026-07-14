@@ -1,14 +1,6 @@
-/**
- * `bindShader` substitutes every `ResourceSlot` in a `WgslShader`'s declarations array with a
- * `BoundSlot` (using `{group, binding}` entries supplied by the caller, typically produced by a
- * binding-graph traversal). Non-slot declarations pass through unchanged.
- *
- * After `bindShader`, the returned shader is fully renderable via `asSource()`.
- */
-
 import type { DeclarationGenerator, WgslShader } from '../shaders';
 import { bind } from './bound';
-import { isResourceSlot, type ResourceSlot } from './resource';
+import { isResourceSlot, type ResourceSlot } from './slot';
 
 /**
  * Maps each `ResourceSlot` referenced by a shader to its assigned `{group, binding}`. The keys

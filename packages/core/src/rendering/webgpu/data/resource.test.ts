@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BufferHandle, BufferManager, BufferManagerStats } from '../memory/types';
-import { uniformSlot, storageSlot, samplerSlot, textureSlot, externalTextureSlot, storageTextureSlot } from '../resources';
+import { uniformSlot, storageSlot, samplerSlot, textureSlot, externalTextureSlot, storageTextureSlot } from '../binding';
 import { member, struct } from '../shaders';
 import { makeMockDevice } from '../test/mock-device';
 import {
@@ -44,7 +44,6 @@ function makeRecordingBufferManager(device: GPUDevice): {
         const gpu = device.createBuffer({ size: sizeBytes, usage });
         const handle: BufferHandle = {
             gpu,
-            buffer: gpu,
             offset: 0,
             size: sizeBytes,
             sizeBytes,
@@ -261,7 +260,7 @@ describe('BufferResource — refcount semantics', () => {
     });
 });
 
-// ----- Phase 8: precheck fast-fail ----------------------------------------
+// ----- BufferManager precheck integration ---------------------------------
 
 describe('makeBufferResource — precheck integration', () => {
     it('throws (and never calls acquireForSlot) when bufferManager.precheck returns false', () => {

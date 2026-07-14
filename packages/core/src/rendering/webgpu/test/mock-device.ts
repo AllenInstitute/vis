@@ -1,17 +1,5 @@
-/**
- * Recording mock `GPUDevice` for tests. Extends the pattern already used by
- * `memory/batch-pool/batch-pool-buffer-manager.test.ts` with the pipeline-build entry points
- * `createBindGroupLayout` / `createPipelineLayout` / `createShaderModule` / `createRenderPipeline`.
- *
- * Each `create*` call returns a unique branded stub so tests can identify the produced object
- * (e.g. assert that the `GPUPipelineLayout` was built from the BGLs returned by earlier calls).
- * No actual WebGPU validation runs — the mock just records the descriptor and hands back a
- * recognizable token.
- *
- * Not exported from the public webgpu barrel; intended only for use inside `*.test.ts` files.
- */
-
 import { vi } from 'vitest';
+import type { BufferHandle, BufferManager, BufferManagerStats } from '../memory/types';
 
 /** Stubbed GPU object returned by the mock — `__mockKind` lets tests assert provenance. */
 export interface MockGpuObject {
@@ -410,4 +398,88 @@ export function makeMockDevice(): MockDevice {
         writes,
         passCommands,
     };
+}
+
+/** A single recorded acquisition from `makeRecordingBufferManager`. */
+export interface RecordedAcquire {
+    readonly sizeBytes: number;
+    readonly usage: GPUBufferUsageFlags;
+    readonly handle: BufferHandle;
+}
+
+/** Handle returned by `makeRecordingBufferManager`: the manager plus its recorded activity. */
+export interface RecordingBufferManager {
+    readonly bm: BufferManager;
+    /** Every `acquire` / `acquireForSlot` call, in order. */
+    readonly acquired: RecordedAcquire[];
+    /** Every handle handed to `release()` / `handle.release()` / `handle.destroy()`. */
+    readonly released: BufferHandle[];
+}
+
+/** Options for `makeRecordingBufferManager`. */
+export interface RecordingBufferManagerOptions {
+    /** Non-zero handle offset, emulating a slab allocator. Default `0`. */
+    readonly slabOffset?: number;
+    /** Values returned by `bm.stats()`. Missing fields default to `0`. */
+    readonly stats?: Partial<BufferManagerStats>;
+}
+
+/**
+ * A recording `BufferManager` backed by a mock device's `createBuffer`. Issues real-looking
+ * `BufferHandle`s, records every acquisition/release, and returns configurable `stats()`.
+ * Shared by the rendering tests in place of per-file duplicates.
+ */
+export function makeRecordingBufferManager(
+    device: GPUDevice,
+    options: RecordingBufferManagerOptions = {}
+): RecordingBufferManager {
+    const slabOffset = options.slabOffset ?? 0;
+    const acquired: RecordedAcquire[] = [];
+    const released: BufferHandle[] = [];
+
+    const make = (sizeBytes: number, usage: GPUBufferUsageFlags): BufferHandle => {
+        const gpu = device.createBuffer({ size: sizeBytes + slabOffset, usage });
+        const handle: BufferHandle = {
+            gpu,
+            offset: slabOffset,
+            size: sizeBytes,
+            sizeBytes,
+            bucketSize: sizeBytes,
+            usage,
+            release(): void {
+                released.push(handle);
+            },
+            sizeInBytes(): number {
+                return sizeBytes;
+            },
+            destroy(): void {
+                released.push(handle);
+            },
+        };
+        acquired.push({ sizeBytes, usage, handle });
+        return handle;
+    };
+
+    const stats: BufferManagerStats = {
+        residentBytes: options.stats?.residentBytes ?? 0,
+        leasedBytes: options.stats?.leasedBytes ?? 0,
+        freeBytes: options.stats?.freeBytes ?? 0,
+    };
+
+    const bm: BufferManager = {
+        acquire: vi.fn(make),
+        acquireForSlot: vi.fn((_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) =>
+            make(sizeBytes, usage)
+        ) as unknown as BufferManager['acquireForSlot'],
+        precheck: vi.fn(() => true),
+        release: vi.fn((h: BufferHandle) => released.push(h)),
+        endFrame: vi.fn(),
+        frameLease: vi.fn(() => {
+            throw new Error('frameLease: not supported in the recording mock');
+        }) as unknown as BufferManager['frameLease'],
+        stats: vi.fn((): BufferManagerStats => stats),
+        dispose: vi.fn(),
+    };
+
+    return { bm, acquired, released };
 }

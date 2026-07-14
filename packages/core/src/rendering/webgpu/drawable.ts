@@ -1,30 +1,10 @@
-/**
- * `Drawable` — a `BuiltPipeline` + its concrete vertex / index / binding `Resource`s + a
- * `DrawCall`. The atomic unit emitted by Phase 6 `Scene`'s `draw(...)` leaves and rendered by
- * the Phase 7 `Encoder`.
- *
- * Construction funnels through `RenderingContext.drawable(spec)`; this module exports the
- * public types (`Drawable`, `DrawCall`, `DrawableSpec`, …) and the internal `buildDrawable`
- * helper invoked by the context.
- *
- * **Lifecycle**: every `Drawable` is constructed with `refcount === 1` on each of the
- * resources it owns. The drawable always calls `share()` on a caller-supplied pre-built
- * `Resource`, so the caller retains its own refcount independently of the drawable's. When
- * `drawable.destroy()` runs it decrefs every owned resource exactly once — pre-built ones
- * fall back to the caller's refcount, freshly-created ones (the raw-arrays path) drop to 0
- * and release their `BufferHandle`s.
- *
- * **Slab-readiness**: every vertex / index allocation goes through `bufferManager.acquire`
- * (the raw-arrays path) — `device.createBuffer` is never called from this module. Uploads
- * use `queue.writeBuffer(handle.gpu, handle.offset, data)` so a future `SlabBufferManager`
- * is a drop-in replacement.
- */
-
 import { v4 as uuidv4 } from 'uuid';
+import { isBranded } from './brand';
 import type { Arrays, ArraysOptions } from 'webgpu-utils';
 import { createBufferLayoutsFromArrays } from 'webgpu-utils';
 import type { RenderingContext } from './context-types';
 import {
+    asManaged,
     type BufferResource,
     isResource,
     makeRawBufferResource,
@@ -37,7 +17,7 @@ import {
     type VertexAttrData,
     type VertexLayoutDeclaration,
 } from './pipelines/vertex-layout';
-import type { ResourceSlot } from './resources/resource';
+import type { ResourceSlot } from './binding/slot';
 
 // ---- Brand & identity -------------------------------------------------------------------------
 
@@ -72,9 +52,9 @@ export type DrawCall = ArrayDrawCall | IndexedDrawCall;
 // ---- Drawable interfaces ----------------------------------------------------------------------
 
 /** Bound vertex buffer for a single slot (matches `pipeline.vertex.buffers[slot]`). Carries the
- *  refcounted resource plus the layout the buffer was allocated against. */
+ *  buffer resource the encoder feeds into `setVertexBuffer`. */
 export interface VertexBufferBinding {
-    /** Refcount-managed wrapper around the underlying `BufferHandle`. */
+    /** Buffer resource wrapping the underlying `BufferHandle`. */
     readonly resource: BufferResource<unknown> | RawBufferResource;
 }
 
@@ -106,31 +86,32 @@ export interface Drawable {
     readonly bindings: ReadonlyMap<ResourceSlot, Resource>;
     /** The draw-call descriptor consumed by the encoder. */
     readonly draw: DrawCall;
-    /** Decrement the refcount on every owned resource. Idempotent — second call is a no-op. */
-    destroy(): void;
     /** Construct a sibling `Drawable` sharing this one's vertex / index buffers (and any
      *  unspecified bindings) but using a new pipeline and/or binding overrides. Useful for
      *  multi-pipeline patterns (e.g. one geometry rendered with both a colour-pass and a
-     *  picking-pass pipeline). */
+     *  picking-pass pipeline). The sibling is owned by the same context. */
     reuse(spec: DrawableReuseSpec): Drawable;
 }
 
 /** Runtime discriminator for `Drawable`. */
 export function isDrawable(value: unknown): value is Drawable {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        '__brand' in value &&
-        (value as { __brand: unknown }).__brand === DRAWABLE_BRAND
-    );
+    return isBranded(value, DRAWABLE_BRAND);
+}
+
+/** A `Drawable` plus its internal teardown method. Lifetime is driven inside the renderer
+ *  (context on dispose, scene on removal); the public `Drawable` type hides `destroy()`. */
+export type ManagedDrawable = Drawable & { destroy(): void };
+
+/** Reinterpret a public `Drawable` as its `ManagedDrawable` runtime shape. */
+export function asManagedDrawable(drawable: Drawable): ManagedDrawable {
+    return drawable as ManagedDrawable;
 }
 
 // ---- Spec / Input shapes ----------------------------------------------------------------------
 
 /** Map<bufferSlot, pre-built BufferResource | RawBufferResource>. The keys are slot indices
- *  into `pipeline.state.vertex.buffers`; values are refcounted buffer wrappers. The drawable
- *  calls `share()` on each so the caller's refcount is preserved. */
-export type PreBuiltVertexInput = ReadonlyMap<
+ *  into `pipeline.state.vertex.buffers`; the drawable takes its own reference to each. */
+export type PreBuiltVertexData = ReadonlyMap<
     number,
     BufferResource<unknown> | RawBufferResource
 >;
@@ -143,7 +124,7 @@ export type PreBuiltVertexInput = ReadonlyMap<
  *
  * Requires `ctx.bufferManager` to have been supplied at context construction.
  */
-export interface RawArraysVertexInput {
+export interface RawArraysVertexData {
     readonly kind: 'arrays';
     /** Named arrays consumed by `webgpu-utils.createBufferLayoutsFromArrays`. */
     readonly arrays: Arrays;
@@ -155,7 +136,7 @@ export interface RawArraysVertexInput {
 }
 
 /** Union of every accepted vertex input shape for `ctx.drawable({...})`. */
-export type VertexInput = PreBuiltVertexInput | RawArraysVertexInput | TypedVertexInput;
+export type VertexData = PreBuiltVertexData | RawArraysVertexData | TypedVertexData;
 
 /**
  * Declaration-driven typed vertex input. Uses a `vertexLayout(...)` as the single source of truth
@@ -164,9 +145,9 @@ export type VertexInput = PreBuiltVertexInput | RawArraysVertexInput | TypedVert
  * uploaded via `queue.writeBuffer`. One buffer is produced per entry in the layout.
  *
  * For `float16` attributes supply raw half-float bits; for normalized (`unorm*`/`snorm*`) formats
- * supply pre-encoded integers — v1 does not auto-quantize floats.
+ * supply pre-encoded integers — floats are not auto-quantized.
  */
-export interface TypedVertexInput {
+export interface TypedVertexData {
     readonly kind: 'typed';
     /** The layout declaration whose buffers/attributes drive packing. */
     readonly layout: VertexLayoutDeclaration;
@@ -177,13 +158,13 @@ export interface TypedVertexInput {
 }
 
 /** Pre-built index input — caller has already allocated a buffer and wrapped it. */
-export interface PreBuiltIndexInput {
+export interface PreBuiltIndexData {
     readonly resource: BufferResource<unknown> | RawBufferResource;
     readonly format: GPUIndexFormat;
 }
 
 /** Raw-array index input — the drawable allocates + uploads through `ctx.bufferManager`. */
-export interface RawArrayIndexInput {
+export interface RawArrayIndexData {
     readonly kind: 'arrays';
     /** Index data. `Uint16Array` ⇒ `format: 'uint16'`; `Uint32Array` ⇒ `'uint32'`. Plain
      *  `number[]` defaults to `uint32`. */
@@ -193,7 +174,7 @@ export interface RawArrayIndexInput {
 }
 
 /** Union of every accepted index input shape for `ctx.drawable({...})`. */
-export type IndexInput = PreBuiltIndexInput | RawArrayIndexInput;
+export type IndexData = PreBuiltIndexData | RawArrayIndexData;
 
 /** Spec passed to `ctx.drawable({...})`. */
 export interface DrawableSpec {
@@ -202,13 +183,12 @@ export interface DrawableSpec {
     readonly pipeline: BuiltPipeline;
     /** Vertex input — either a pre-built `Map<bufferSlot, BufferResource>` or a raw-arrays
      *  descriptor that allocates through `ctx.bufferManager`. */
-    readonly vertex: VertexInput;
+    readonly vertex: VertexData;
     /** Optional index input. Required when `draw.kind === 'indexed'`. */
-    readonly index?: IndexInput;
+    readonly index?: IndexData;
     /** Bindings keyed by `ResourceSlot.name` (matching slots declared in `pipeline.slotIndex`)
      *  or directly by `ResourceSlot`. Every slot in `pipeline.slotIndex` must be present;
-     *  resource kinds are validated against slot kinds. The drawable calls `share()` on each
-     *  supplied resource. */
+     *  resource kinds are validated against slot kinds. */
     readonly bindings: Record<string, Resource> | ReadonlyMap<ResourceSlot, Resource>;
     /** The draw-call descriptor. */
     readonly draw: DrawCall;
@@ -223,7 +203,7 @@ export interface DrawableReuseSpec {
      *  re-validated — caller is responsible for picking a compatible pipeline). */
     readonly pipeline?: BuiltPipeline;
     /** Bindings to override. Slots not present in `bindings` inherit from `this.bindings`
-     *  (and are `share()`'d into the new drawable). */
+     *  (and are shared into the new drawable). */
     readonly bindings?: Record<string, Resource> | ReadonlyMap<ResourceSlot, Resource>;
     /** Optional replacement draw-call. Defaults to `this.draw`. */
     readonly draw?: DrawCall;
@@ -243,13 +223,17 @@ export interface DrawableReuseSpec {
  *   2. Resolve index input similarly. Validate `draw.kind === 'indexed' ⇔ indexBuffer !== undefined`.
  *   3. Resolve bindings against `pipeline.slotIndex` (matching by slot, or by `slot.name` for
  *      record-shaped inputs). Validate every required slot is present and `resource.kind`
- *      matches `slot.kind`. Call `share()` on every supplied resource.
- *   4. Assemble a frozen `Drawable`, wiring `destroy()` to decref every owned resource and
+ *      matches `slot.kind`. Take a reference to every supplied resource.
+ *   4. Assemble a frozen `Drawable`, wiring `destroy()` to release every owned resource and
  *      `reuse()` to produce a sibling drawable that re-shares the geometry.
  */
-export function buildDrawable(ctx: RenderingContext, spec: DrawableSpec): Drawable {
+export function buildDrawable(
+    ctx: RenderingContext,
+    spec: DrawableSpec,
+    track: (drawable: ManagedDrawable) => void
+): ManagedDrawable {
     // ---- Vertex buffers ---------------------------------------------------
-    const vertexBuffers = resolveVertexInput(
+    const vertexBuffers = resolveVertexData(
         ctx,
         spec.vertex,
         spec.label ?? spec.pipeline.fingerprint
@@ -258,12 +242,12 @@ export function buildDrawable(ctx: RenderingContext, spec: DrawableSpec): Drawab
     // ---- Index buffer (optional) ------------------------------------------
     const indexBuffer =
         spec.index !== undefined
-            ? resolveIndexInput(ctx, spec.index, spec.label ?? spec.pipeline.fingerprint)
+            ? resolveIndexData(ctx, spec.index, spec.label ?? spec.pipeline.fingerprint)
             : undefined;
 
     if (spec.draw.kind === 'indexed' && indexBuffer === undefined) {
         // Tear down anything we've already shared before throwing.
-        for (const b of vertexBuffers.values()) b.resource.destroy();
+        for (const b of vertexBuffers.values()) asManaged(b.resource).destroy();
         throw new Error(
             `ctx.drawable${spec.label !== undefined ? ` '${spec.label}'` : ''}: draw.kind === 'indexed' ` +
                 'requires an `index` input on the spec.'
@@ -276,14 +260,15 @@ export function buildDrawable(ctx: RenderingContext, spec: DrawableSpec): Drawab
         bindings = resolveBindings(spec.pipeline, spec.bindings, spec.label);
     } catch (err) {
         // Tear down everything we've shared so far before bubbling out.
-        for (const b of vertexBuffers.values()) b.resource.destroy();
-        indexBuffer?.resource.destroy();
+        for (const b of vertexBuffers.values()) asManaged(b.resource).destroy();
+        if (indexBuffer !== undefined) asManaged(indexBuffer.resource).destroy();
         throw err;
     }
 
     // ---- Build the frozen Drawable ----------------------------------------
     return makeFrozenDrawable(
         ctx,
+        track,
         {
             pipeline: spec.pipeline,
             draw: spec.draw,
@@ -299,6 +284,7 @@ export function buildDrawable(ctx: RenderingContext, spec: DrawableSpec): Drawab
 
 function makeFrozenDrawable(
     ctx: RenderingContext,
+    track: (drawable: ManagedDrawable) => void,
     args: {
         readonly pipeline: BuiltPipeline;
         readonly draw: DrawCall;
@@ -307,10 +293,10 @@ function makeFrozenDrawable(
     vertexBuffers: Map<number, VertexBufferBinding>,
     indexBuffer: IndexBufferBinding | undefined,
     bindings: Map<ResourceSlot, Resource>
-): Drawable {
+): ManagedDrawable {
     let disposed = false;
 
-    const drawable: Drawable = {
+    const drawable: ManagedDrawable = {
         __brand: DRAWABLE_BRAND,
         id: uuidv4(),
         ...(args.label !== undefined && { label: args.label }),
@@ -322,9 +308,9 @@ function makeFrozenDrawable(
         destroy(): void {
             if (disposed) return;
             disposed = true;
-            for (const b of vertexBuffers.values()) b.resource.destroy();
-            indexBuffer?.resource.destroy();
-            for (const r of bindings.values()) r.destroy();
+            for (const b of vertexBuffers.values()) asManaged(b.resource).destroy();
+            if (indexBuffer !== undefined) asManaged(indexBuffer.resource).destroy();
+            for (const r of bindings.values()) asManaged(r).destroy();
         },
         reuse(reuseSpec: DrawableReuseSpec): Drawable {
             if (disposed) {
@@ -347,15 +333,16 @@ function makeFrozenDrawable(
             //    new pipeline; we don't re-derive layouts from arrays here.
             const sharedVertex = new Map<number, VertexBufferBinding>();
             for (const [slot, binding] of vertexBuffers) {
-                sharedVertex.set(slot, { resource: binding.resource.share() });
+                sharedVertex.set(slot, { resource: asManaged(binding.resource).share() });
             }
             const sharedIndex: IndexBufferBinding | undefined =
                 indexBuffer !== undefined
-                    ? { resource: indexBuffer.resource.share(), format: indexBuffer.format }
+                    ? { resource: asManaged(indexBuffer.resource).share(), format: indexBuffer.format }
                     : undefined;
 
             return makeFrozenDrawable(
                 ctx,
+                track,
                 {
                     pipeline: newPipeline,
                     draw: newDraw,
@@ -368,24 +355,26 @@ function makeFrozenDrawable(
         },
     };
 
-    return Object.freeze(drawable);
+    const frozen = Object.freeze(drawable);
+    track(frozen);
+    return frozen;
 }
 
 /** Decide whether the user-supplied `vertex` arg is the pre-built shape (a `Map`). */
-function isPreBuiltVertex(v: VertexInput): v is PreBuiltVertexInput {
+function isPreBuiltVertex(v: VertexData): v is PreBuiltVertexData {
     return v instanceof Map;
 }
 
 /** Decide whether the user-supplied `index` arg is the pre-built shape. */
-function isPreBuiltIndex(i: IndexInput): i is PreBuiltIndexInput {
-    // `RawArrayIndexInput` carries a `kind: 'arrays'` literal; pre-built carries a `resource`
+function isPreBuiltIndex(i: IndexData): i is PreBuiltIndexData {
+    // `RawArrayIndexData` carries a `kind: 'arrays'` literal; pre-built carries a `resource`
     // (which is brand-checkable).
     return 'resource' in i && isResource(i.resource);
 }
 
-function resolveVertexInput(
+function resolveVertexData(
     ctx: RenderingContext,
-    input: VertexInput,
+    input: VertexData,
     labelForErrors: string
 ): Map<number, VertexBufferBinding> {
     const out = new Map<number, VertexBufferBinding>();
@@ -393,13 +382,13 @@ function resolveVertexInput(
     if (isPreBuiltVertex(input)) {
         for (const [bufferSlot, resource] of input) {
             assertBufferLikeUsage(resource, GPUBufferUsage.VERTEX, 'vertex', labelForErrors);
-            out.set(bufferSlot, { resource: resource.share() as typeof resource });
+            out.set(bufferSlot, { resource: asManaged(resource).share() });
         }
         return out;
     }
 
     if (input.kind === 'typed') {
-        return resolveTypedVertexInput(ctx, input, labelForErrors);
+        return resolveTypedVertexData(ctx, input, labelForErrors);
     }
 
     // Raw-arrays path.
@@ -450,9 +439,9 @@ function resolveVertexInput(
 
 /** Resolve the declaration-driven typed vertex input: interleave each buffer's attribute data
  *  per its derived layout, allocate through the buffer manager, and upload. */
-function resolveTypedVertexInput(
+function resolveTypedVertexData(
     ctx: RenderingContext,
-    input: TypedVertexInput,
+    input: TypedVertexData,
     labelForErrors: string
 ): Map<number, VertexBufferBinding> {
     const bm = ctx.bufferManager;
@@ -483,15 +472,15 @@ function resolveTypedVertexInput(
     return out;
 }
 
-function resolveIndexInput(
+function resolveIndexData(
     ctx: RenderingContext,
-    input: IndexInput,
+    input: IndexData,
     labelForErrors: string
 ): IndexBufferBinding {
     if (isPreBuiltIndex(input)) {
         assertBufferLikeUsage(input.resource, GPUBufferUsage.INDEX, 'index', labelForErrors);
         return {
-            resource: input.resource.share() as typeof input.resource,
+            resource: asManaged(input.resource).share(),
             format: input.format,
         };
     }
@@ -525,7 +514,7 @@ function resolveIndexInput(
     return { resource, format };
 }
 
-function normalizeIndexArray(input: RawArrayIndexInput): {
+function normalizeIndexArray(input: RawArrayIndexData): {
     typedArray: Uint16Array | Uint32Array;
     format: GPUIndexFormat;
 } {
@@ -589,7 +578,7 @@ function resolveBindings(
                     `'${slot.name}' — pipeline expects '${slot.kind}' but resource is '${resource.kind}'.`
             );
         }
-        out.set(slot, resource.share());
+        out.set(slot, asManaged(resource).share());
     }
 
     // Detect stray entries supplied for slots the pipeline doesn't declare. (Map case only —
@@ -598,7 +587,7 @@ function resolveBindings(
         for (const k of input.keys()) {
             if (!consumedKeys.has(k)) {
                 // Decref everything we already shared before throwing.
-                for (const r of out.values()) r.destroy();
+                for (const r of out.values()) asManaged(r).destroy();
                 throw new Error(
                     `ctx.drawable${label !== undefined ? ` '${label}'` : ''}: bindings entry for slot ` +
                         `'${k.name}' is not referenced by pipeline ${pipeline.fingerprint}.`
@@ -630,7 +619,7 @@ function mergeBindingsForReuse(
         if (candidate === undefined) candidate = base.get(slot);
         if (candidate === undefined) {
             // Decref whatever we've already shared before throwing.
-            for (const r of out.values()) r.destroy();
+            for (const r of out.values()) asManaged(r).destroy();
             throw new Error(
                 `Drawable.reuse${label !== undefined ? ` '${label}'` : ''}: missing binding for slot ` +
                     `'${slot.name}' required by pipeline ${newPipeline.fingerprint}.`
@@ -638,20 +627,20 @@ function mergeBindingsForReuse(
         }
         if (candidate.kind === 'rawBuffer') {
             if (slot.kind !== 'uniform' && slot.kind !== 'storage') {
-                for (const r of out.values()) r.destroy();
+                for (const r of out.values()) asManaged(r).destroy();
                 throw new Error(
                     `Drawable.reuse${label !== undefined ? ` '${label}'` : ''}: binding for slot '${slot.name}' ` +
                         `(kind '${slot.kind}') cannot be a RawBufferResource.`
                 );
             }
         } else if (candidate.kind !== slot.kind) {
-            for (const r of out.values()) r.destroy();
+            for (const r of out.values()) asManaged(r).destroy();
             throw new Error(
                 `Drawable.reuse${label !== undefined ? ` '${label}'` : ''}: binding kind mismatch for slot ` +
                     `'${slot.name}' — pipeline expects '${slot.kind}' but resource is '${candidate.kind}'.`
             );
         }
-        out.set(slot, candidate.share());
+        out.set(slot, asManaged(candidate).share());
     }
     return out;
 }

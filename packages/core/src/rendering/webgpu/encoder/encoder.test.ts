@@ -1,33 +1,18 @@
-/**
- * Phase 7 — `GraphEncoder` integration tests.
- *
- * Uses the recording mock-device to assert exact pass-command sequences. Verifies:
- *   (a) WebGPU ordering (setPipeline → setBindGroup* → setVertexBuffer* → setIndexBuffer? → draw)
- *   (b) no redundant `setPipeline` between consecutive same-pipeline draws
- *   (c) `setBindGroup(N, X)` not re-emitted when X is already bound for slot N
- *   (e) state-node subtree restores prior viewport on exit
- *   (g) `BufferHandle.offset` is threaded through every `setVertexBuffer` / `setIndexBuffer` /
- *       bind-group entry
- */
-
 import { describe, expect, it, vi } from 'vitest';
 import { renderingContext } from '../context';
 import { container, draw, scene, viewport } from '../scene/scene';
 import type { RenderTarget } from '../scene/types';
 import { bindings, group } from '../pipelines/binding-graph';
-import { uniformSlot } from '../resources';
+import { uniformSlot } from '../binding';
 import { member, shader, struct } from '../shaders';
 import {
     makeMockDevice,
+    makeRecordingBufferManager,
     type MockDevice,
     type MockGpuBindGroup,
     type PassCommand,
 } from '../test/mock-device';
-import type {
-    BufferHandle,
-    BufferManager,
-    BufferManagerStats,
-} from '../memory/types';
+import type { BufferManager } from '../memory/types';
 
 // ---- fixtures ---------------------------------------------------------------------------------
 
@@ -62,39 +47,7 @@ const TARGET: RenderTarget = {
 };
 
 function makeRecordingBM(device: GPUDevice, slabOffset = 0): BufferManager {
-    const make = (sizeBytes: number, usage: GPUBufferUsageFlags): BufferHandle => {
-        const gpu = device.createBuffer({ size: sizeBytes + slabOffset, usage });
-        const handle: BufferHandle = {
-            gpu,
-            buffer: gpu,
-            offset: slabOffset,
-            size: sizeBytes,
-            sizeBytes,
-            bucketSize: sizeBytes,
-            usage,
-            release: vi.fn(),
-            sizeInBytes: () => sizeBytes,
-            destroy: vi.fn(),
-        };
-        return handle;
-    };
-    return {
-        acquire: vi.fn(make),
-        acquireForSlot: vi.fn(
-            (_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) =>
-                make(sizeBytes, usage)
-        ),
-        precheck: vi.fn(() => true),
-        release: vi.fn(),
-        endFrame: vi.fn(),
-        frameLease: vi.fn(() => {
-            throw new Error('frameLease not supported');
-        }) as unknown as BufferManager['frameLease'],
-        stats: vi.fn(
-            (): BufferManagerStats => ({ residentBytes: 0, leasedBytes: 0, freeBytes: 0 })
-        ),
-        dispose: vi.fn(),
-    };
+    return makeRecordingBufferManager(device, { slabOffset }).bm;
 }
 
 function passCmds(m: MockDevice, kind: PassCommand['kind']): PassCommand[] {
@@ -237,7 +190,7 @@ describe('GraphEncoder — state elision', () => {
         const d2 = ctx.drawable({
             pipeline,
             vertex: { kind: 'arrays', arrays: { position: verts } },
-            bindings: { camera: camRes.share() },
+            bindings: { camera: camRes },
             draw: { kind: 'array', vertexCount: 3 },
         });
 
@@ -269,7 +222,7 @@ describe('GraphEncoder — state elision', () => {
         const d2 = ctx.drawable({
             pipeline,
             vertex: { kind: 'arrays', arrays: { position: verts } },
-            bindings: { camera: camRes.share() },
+            bindings: { camera: camRes },
             draw: { kind: 'array', vertexCount: 3 },
         });
 
@@ -329,7 +282,7 @@ describe('GraphEncoder — scoped state restoration', () => {
             ctx.drawable({
                 pipeline,
                 vertex: { kind: 'arrays', arrays: { position: verts } },
-                bindings: { camera: camRes.share() },
+                bindings: { camera: camRes },
                 draw: { kind: 'array', vertexCount: 1 },
             })
         );
@@ -337,7 +290,7 @@ describe('GraphEncoder — scoped state restoration', () => {
             ctx.drawable({
                 pipeline,
                 vertex: { kind: 'arrays', arrays: { position: verts } },
-                bindings: { camera: camRes.share() },
+                bindings: { camera: camRes },
                 draw: { kind: 'array', vertexCount: 1 },
             })
         );
@@ -424,7 +377,7 @@ describe('RenderingContext — encoder + bind-group cache lifecycle', () => {
     });
 });
 
-// ---- Phase 7.1: subtree-command cache -------------------------------------------------------
+// ---- Subtree-command cache -------------------------------------------------------------------
 //
 // The encoder maintains a per-`Scene` cache keyed by composite node id. On a second `submit`
 // of the same scene with no dirty nodes, the encoder should replay cached command lists
@@ -433,7 +386,7 @@ describe('RenderingContext — encoder + bind-group cache lifecycle', () => {
 // command replay, invalidation via `markSubtreeDirty`, and cache-entry eviction on structural
 // changes.
 
-describe('GraphEncoder — subtree-command cache (Phase 7.1)', () => {
+describe('GraphEncoder — subtree-command cache', () => {
     function buildFixture() {
         const m = makeMockDevice();
         const bm = makeRecordingBM(m.device);

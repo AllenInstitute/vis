@@ -1,8 +1,3 @@
-/**
- * Zod v4 schemas and inferred types for native WebGPU API descriptor objects
- * and enum/flags types. Schemas can be used for runtime validation; inferred
- * types are structurally compatible with the global WebGPU typings.
- */
 import { z } from 'zod';
 
 // ---- String Literal Enums ----
