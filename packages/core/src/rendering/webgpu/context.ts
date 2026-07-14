@@ -1,4 +1,13 @@
 import type {
+    ExternalTextureSlot,
+    ResourceSlot,
+    SamplerSlot,
+    StorageSlot,
+    StorageTextureSlot,
+    TextureSlot,
+    UniformSlot,
+} from './binding/slot';
+import type {
     RenderingContext,
     RenderingContextSpec,
     RenderingContextStats,
@@ -27,15 +36,7 @@ import {
     type PipelineStateDescriptor,
 } from './pipelines/pipeline-state';
 import { resolveShaderBindings } from './pipelines/traverse';
-import type {
-    ExternalTextureSlot,
-    ResourceSlot,
-    SamplerSlot,
-    StorageSlot,
-    StorageTextureSlot,
-    TextureSlot,
-    UniformSlot,
-} from './binding/slot';
+import type { RenderTarget } from './render-target';
 import type { Scene } from './scene/types';
 import type { WgslShader } from './shaders';
 
@@ -253,11 +254,12 @@ export class RenderingContextImpl implements RenderingContext {
     }
 
     /**
-     * Encode + submit `scene` to the device queue in one call. Convenience wrapper over
-     * `ctx.encoder().submit(scene)` — the encoder instance is constructed lazily and cached.
+     * Encode + submit `scene` to `target` on the device queue in one call. Convenience wrapper
+     * over `ctx.encoder().submit(scene, target)` — the encoder instance is constructed lazily and
+     * cached.
      */
-    submit(scene: Scene): GPUCommandBuffer {
-        return this.encoder().submit(scene);
+    submit(scene: Scene, target: RenderTarget): GPUCommandBuffer {
+        return this.encoder().submit(scene, target);
     }
 
     /**

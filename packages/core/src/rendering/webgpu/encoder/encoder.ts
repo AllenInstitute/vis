@@ -1,14 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
+import type { ResourceSlot } from '../binding/slot';
 import { isBranded } from '../brand';
-import type { BufferHandle } from '../memory/types';
+import type { RenderingContext } from '../context-types';
 import type { Resource } from '../data/resource';
 import type { Drawable } from '../drawable';
+import type { BufferHandle } from '../memory/types';
+import type { RenderTarget } from '../render-target';
 import type {
     BindingOverrideNode,
     BlendConstantNode,
     DrawableNode,
     NodeId,
-    RenderTarget,
     Scene,
     SceneEvent,
     SceneNode,
@@ -16,8 +18,6 @@ import type {
     StencilRefNode,
     ViewportNode,
 } from '../scene/types';
-import type { ResourceSlot } from '../binding/slot';
-import type { RenderingContext } from '../context-types';
 import {
     type BindGroupCacheStore,
     buildBindGroupsForDraw,
@@ -26,14 +26,14 @@ import { applyPassCommand, type PassCommand } from './pass-commands';
 import {
     ActiveState,
     type ActiveStateSnapshot,
-    type BlendConstantValue,
-    type ScissorValue,
-    type ViewportValue,
     activeStateSnapshotsEqual,
+    type BlendConstantValue,
     blendConstantsEqual,
     indexBuffersEqual,
     normalizeBlendConstant,
+    type ScissorValue,
     scissorsEqual,
+    type ViewportValue,
     vertexHandlesEqual,
     viewportsEqual,
 } from './state';
@@ -85,10 +85,10 @@ export const GRAPH_ENCODER_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Gr
 export interface GraphEncoder {
     readonly __brand: typeof GRAPH_ENCODER_BRAND;
     readonly id: string;
-    /** Encode + submit `scene` to the device queue. */
-    submit(scene: Scene): GPUCommandBuffer;
-    /** Encode `scene` and return the finished command buffer (no queue submit). */
-    encode(scene: Scene): GPUCommandBuffer;
+    /** Encode + submit `scene` to `target` on the device queue. */
+    submit(scene: Scene, target: RenderTarget): GPUCommandBuffer;
+    /** Encode `scene` into `target` and return the finished command buffer (no queue submit). */
+    encode(scene: Scene, target: RenderTarget): GPUCommandBuffer;
     /** Stats from the most recent `submit` / `encode` call (zeroed before each). */
     lastStats(): EncoderStats;
     /**
@@ -147,18 +147,18 @@ export function makeGraphEncoder(
         return entry;
     };
 
-    const submit = (scene: Scene): GPUCommandBuffer => {
-        const cb = encode(scene);
+    const submit = (scene: Scene, target: RenderTarget): GPUCommandBuffer => {
+        const cb = encode(scene, target);
         rc.device.queue.submit([cb]);
         return cb;
     };
 
-    const encode = (scene: Scene): GPUCommandBuffer => {
+    const encode = (scene: Scene, target: RenderTarget): GPUCommandBuffer => {
         const sceneCache = ensureSceneCache(scene);
         const commandEncoder = rc.device.createCommandEncoder({
             label: `${rc.label ?? 'ctx'}.encoder`,
         });
-        const passDesc = makeBeginPassDescriptor(scene.target);
+        const passDesc = makeBeginPassDescriptor(target);
         const pass = commandEncoder.beginRenderPass(passDesc);
 
         const ctx: WalkContext = {

@@ -1,14 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
+import type { ResourceSlot } from '../binding/slot';
 import type { Resource } from '../data/resource';
 import { asManagedDrawable, type Drawable } from '../drawable';
-import type { ResourceSlot } from '../binding/slot';
 import {
     type BindingOverrideNode,
     type BlendConstantNode,
     type ContainerNode,
     type DrawableNode,
+    isSceneNode,
     type NodeId,
-    type RenderTarget,
+    SCENE_BRAND,
+    SCENE_NODE_BRAND,
     type Scene,
     type SceneDescriptor,
     type SceneEvent,
@@ -17,9 +19,6 @@ import {
     type ScissorNode,
     type StencilRefNode,
     type ViewportNode,
-    isSceneNode,
-    SCENE_BRAND,
-    SCENE_NODE_BRAND,
 } from './types';
 
 // ---- Node factories ---------------------------------------------------------------------------
@@ -176,7 +175,6 @@ export function childrenOf(node: SceneNode): readonly SceneNode[] {
 class SceneImpl implements Scene {
     readonly __brand: typeof SCENE_BRAND = SCENE_BRAND;
     readonly id: string;
-    readonly target: RenderTarget;
     private _root: SceneNode;
     private readonly _parents: Map<NodeId, NodeId> = new Map();
     private readonly _nodes: Map<NodeId, SceneNode> = new Map();
@@ -185,7 +183,6 @@ class SceneImpl implements Scene {
 
     constructor(descriptor: SceneDescriptor) {
         this.id = uuidv4();
-        this.target = descriptor.target;
         this._root = descriptor.root;
         this.indexSubtree(descriptor.root, undefined);
     }

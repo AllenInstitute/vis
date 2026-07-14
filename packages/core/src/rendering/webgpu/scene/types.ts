@@ -1,18 +1,10 @@
-import type { Resource } from '../data/resource';
-import { isBranded } from '../brand';
-import type { Drawable } from '../drawable';
 import type { ResourceSlot } from '../binding/slot';
+import { isBranded } from '../brand';
+import type { Resource } from '../data/resource';
+import type { Drawable } from '../drawable';
 
 /** Stable per-instance identifier (UUID-ish). Used by `Scene.add` / `remove` / `replace`. */
 export type NodeId = string;
-
-/** WebGPU render-target descriptor consumed by `ctx.submit(scene)` to open a render pass. */
-export interface RenderTarget {
-    readonly color: readonly GPURenderPassColorAttachment[];
-    readonly depthStencil?: GPURenderPassDepthStencilAttachment;
-    /** Optional debug label propagated to the begin-pass descriptor. */
-    readonly label?: string;
-}
 
 // ---- Scene node variants ----------------------------------------------------------------------
 
@@ -147,7 +139,6 @@ export const SCENE_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Scene');
 export interface Scene {
     readonly __brand: typeof SCENE_BRAND;
     readonly id: string;
-    readonly target: RenderTarget;
     /** Current scene root. Replaced wholesale by `replace(root.id, newRoot)`. */
     readonly root: SceneNode;
     /** `parents.get(childId) === parentId` for every non-root node. The root is absent. */
@@ -186,7 +177,6 @@ export function isScene(value: unknown): value is Scene {
 
 /** Top-level descriptor passed to `scene({...})`. */
 export interface SceneDescriptor {
-    readonly target: RenderTarget;
     readonly root: SceneNode;
     readonly label?: string;
 }

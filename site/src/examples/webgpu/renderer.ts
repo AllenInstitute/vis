@@ -2,7 +2,8 @@
 /**
  * Framework-agnostic orchestration for the demo: acquire a device, configure the canvas, build the
  * pipeline once, create one shared camera uniform + three per-shape (instance uniform + drawable),
- * and run a requestAnimationFrame loop that spins each shape and submits a scene each frame.
+ * build the scene graph once, and run a requestAnimationFrame loop that spins each shape and submits
+ * that persistent scene to a fresh per-frame render target.
  *
  * Returns a `dispose()` that stops the loop and releases every GPU resource the demo owns.
  */
@@ -98,6 +99,10 @@ export async function startWebGpuDemo(canvas: HTMLCanvasElement): Promise<() => 
 
     const root = webgpu.container(shapes.map((s) => webgpu.draw(s.drawable)));
 
+    // The scene graph is persistent: built once, reused every frame. The render target (which
+    // wraps the per-frame swap-chain view) is supplied separately at submit time.
+    const sceneGraph = webgpu.scene({ root });
+
     // Depth attachment, recreated on resize.
     let depthTexture: GPUTexture | undefined;
     let depthView: GPUTextureView | undefined;
@@ -144,26 +149,23 @@ export async function startWebGpuDemo(canvas: HTMLCanvasElement): Promise<() => 
             instance.commit(device);
         }
 
-        const scene = webgpu.scene({
-            target: {
-                color: [
-                    {
-                        view: context.getCurrentTexture().createView(),
-                        loadOp: 'clear',
-                        clearValue: CLEAR,
-                        storeOp: 'store',
-                    },
-                ],
-                depthStencil: {
-                    view: depthView as GPUTextureView,
-                    depthClearValue: 1,
-                    depthLoadOp: 'clear',
-                    depthStoreOp: 'store',
+        const target: webgpu.RenderTarget = {
+            color: [
+                {
+                    view: context.getCurrentTexture().createView(),
+                    loadOp: 'clear',
+                    clearValue: CLEAR,
+                    storeOp: 'store',
                 },
+            ],
+            depthStencil: {
+                view: depthView as GPUTextureView,
+                depthClearValue: 1,
+                depthLoadOp: 'clear',
+                depthStoreOp: 'store',
             },
-            root,
-        });
-        ctx.submit(scene);
+        };
+        ctx.submit(sceneGraph, target);
 
         raf = requestAnimationFrame(frame);
     };

@@ -1,7 +1,7 @@
 import { describe, expect, it, type vi } from 'vitest';
 import { renderingContext } from '../context';
 import { container, draw, scene, viewport } from '../scene/scene';
-import type { RenderTarget } from '../scene/types';
+import type { RenderTarget } from '../render-target';
 import { bindings, group } from '../pipelines/binding-graph';
 import { uniformSlot } from '../binding';
 import { member, shader, struct } from '../shaders';
@@ -73,8 +73,8 @@ describe('GraphEncoder — basic encoding', () => {
             draw: { kind: 'array', vertexCount: 3 },
         });
 
-        const s = scene({ target: TARGET, root: container([draw(drawable)]) });
-        ctx.submit(s);
+        const s = scene({ root: container([draw(drawable)]) });
+        ctx.submit(s, TARGET);
 
         const kinds = m.passCommands.map((c) => c.kind);
         // The first command after beginRenderPass should be setPipeline; followed by at least
@@ -121,8 +121,8 @@ describe('GraphEncoder — basic encoding', () => {
             draw: { kind: 'array', vertexCount: 1 },
         });
 
-        const s = scene({ target: TARGET, root: container([draw(drawable)]) });
-        ctx.submit(s);
+        const s = scene({ root: container([draw(drawable)]) });
+        ctx.submit(s, TARGET);
 
         const svbs = passCmds(m, 'setVertexBuffer');
         expect(svbs.length).toBe(1);
@@ -159,7 +159,7 @@ describe('GraphEncoder — basic encoding', () => {
             draw: { kind: 'indexed', indexCount: 3 },
         });
 
-        ctx.submit(scene({ target: TARGET, root: container([draw(drawable)]) }));
+        ctx.submit(scene({ root: container([draw(drawable)]) }), TARGET);
 
         const sib = passCmds(m, 'setIndexBuffer');
         expect(sib.length).toBe(1);
@@ -194,8 +194,8 @@ describe('GraphEncoder — state elision', () => {
             draw: { kind: 'array', vertexCount: 3 },
         });
 
-        const s = scene({ target: TARGET, root: container([draw(d1), draw(d2)]) });
-        ctx.submit(s);
+        const s = scene({ root: container([draw(d1), draw(d2)]) });
+        ctx.submit(s, TARGET);
 
         const setPipelineCount = passCmds(m, 'setPipeline').length;
         const drawCount = passCmds(m, 'draw').length;
@@ -226,8 +226,8 @@ describe('GraphEncoder — state elision', () => {
             draw: { kind: 'array', vertexCount: 3 },
         });
 
-        const s = scene({ target: TARGET, root: container([draw(d1), draw(d2)]) });
-        ctx.submit(s);
+        const s = scene({ root: container([draw(d1), draw(d2)]) });
+        ctx.submit(s, TARGET);
 
         // Same camera resource (same version), same pipeline ⇒ bind-group cache hit ⇒
         // only one setBindGroup call across both draws.
@@ -250,11 +250,11 @@ describe('GraphEncoder — state elision', () => {
             bindings: { camera: camRes },
             draw: { kind: 'array', vertexCount: 1 },
         });
-        const s = scene({ target: TARGET, root: container([draw(drawable)]) });
+        const s = scene({ root: container([draw(drawable)]) });
 
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         const createsAfterFirst = m.calls.createBindGroup.mock.calls.length;
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         expect(m.calls.createBindGroup.mock.calls.length).toBe(createsAfterFirst);
     });
 });
@@ -303,8 +303,8 @@ describe('GraphEncoder — scoped state restoration', () => {
             ]),
         ]);
 
-        const s = scene({ target: TARGET, root });
-        ctx.submit(s);
+        const s = scene({ root });
+        ctx.submit(s, TARGET);
 
         const viewports = passCmds(m, 'setViewport').filter(
             (c): c is Extract<PassCommand, { kind: 'setViewport' }> => c.kind === 'setViewport'
@@ -334,10 +334,10 @@ describe('GraphEncoder — Scene.dirty integration', () => {
             bindings: { camera: camRes },
             draw: { kind: 'array', vertexCount: 1 },
         });
-        const s = scene({ target: TARGET, root: container([draw(d)]) });
+        const s = scene({ root: container([draw(d)]) });
         s.markSubtreeDirty(s.root.id);
         expect(s.dirty.size).toBeGreaterThan(0);
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         expect(s.dirty.size).toBe(0);
     });
 });
@@ -357,7 +357,7 @@ describe('RenderingContext — encoder + bind-group cache lifecycle', () => {
             bindings: { camera: camRes },
             draw: { kind: 'array', vertexCount: 1 },
         });
-        ctx.submit(scene({ target: TARGET, root: container([draw(d)]) }));
+        ctx.submit(scene({ root: container([draw(d)]) }), TARGET);
         expect(ctx.stats().bindGroups).toBeGreaterThan(0);
 
         ctx.dispose();
@@ -405,16 +405,16 @@ describe('GraphEncoder — subtree-command cache', () => {
 
     it('second submit of an unchanged scene reports cache hits and emits identical pass commands', () => {
         const { m, ctx, d } = buildFixture();
-        const s = scene({ target: TARGET, root: container([draw(d)]) });
+        const s = scene({ root: container([draw(d)]) });
 
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         const firstStats = ctx.encoder().lastStats();
         expect(firstStats.subtreeCacheHits).toBe(0);
         expect(firstStats.subtreeCacheMisses).toBeGreaterThan(0);
         const firstCommands = m.passCommands.slice();
         const firstBindGroupCount = (m.calls.createBindGroup as ReturnType<typeof vi.fn>).mock.calls.length;
 
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         const secondStats = ctx.encoder().lastStats();
         // Second frame with no dirty nodes: every composite in the tree should be a cache hit
         // (root container + one implicit — the test tree is just `container([draw(...)])`, so
@@ -436,11 +436,11 @@ describe('GraphEncoder — subtree-command cache', () => {
 
     it('markSubtreeDirty on the root forces a full re-record on next submit', () => {
         const { ctx, d } = buildFixture();
-        const s = scene({ target: TARGET, root: container([draw(d)]) });
+        const s = scene({ root: container([draw(d)]) });
 
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         s.markSubtreeDirty(s.root.id);
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         const stats = ctx.encoder().lastStats();
         // Every composite is dirty → every composite misses (and re-records).
         expect(stats.subtreeCacheHits).toBe(0);
@@ -450,12 +450,11 @@ describe('GraphEncoder — subtree-command cache', () => {
     it('encoder.subtreeCacheSize() reports the number of cached composite entries', () => {
         const { ctx, d } = buildFixture();
         const s = scene({
-            target: TARGET,
             root: container([viewport({ x: 0, y: 0, width: 10, height: 10 }, [draw(d)])]),
         });
 
         expect(ctx.encoder().subtreeCacheSize()).toBe(0);
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         // Root container + viewport = 2 composite entries.
         expect(ctx.encoder().subtreeCacheSize()).toBe(2);
     });
@@ -463,9 +462,9 @@ describe('GraphEncoder — subtree-command cache', () => {
     it('Scene.remove evicts the removed subtree and every descendant from the cache', () => {
         const { ctx, d } = buildFixture();
         const inner = viewport({ x: 0, y: 0, width: 10, height: 10 }, [draw(d)]);
-        const s = scene({ target: TARGET, root: container([inner]) });
+        const s = scene({ root: container([inner]) });
 
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         expect(ctx.encoder().subtreeCacheSize()).toBe(2); // root + inner viewport
         s.remove(inner.id);
         // Removal evicts the viewport entry immediately (via structure-changed listener). The
@@ -477,8 +476,8 @@ describe('GraphEncoder — subtree-command cache', () => {
 
     it('clearSubtreeCache() drops every cached entry across every scene', () => {
         const { ctx, d } = buildFixture();
-        const s = scene({ target: TARGET, root: container([draw(d)]) });
-        ctx.submit(s);
+        const s = scene({ root: container([draw(d)]) });
+        ctx.submit(s, TARGET);
         expect(ctx.encoder().subtreeCacheSize()).toBeGreaterThan(0);
         ctx.encoder().clearSubtreeCache();
         expect(ctx.encoder().subtreeCacheSize()).toBe(0);
@@ -487,10 +486,10 @@ describe('GraphEncoder — subtree-command cache', () => {
     it('nested composites: inner cache hit still tees commands into outer re-record', () => {
         const { m, ctx, d } = buildFixture();
         const inner = viewport({ x: 0, y: 0, width: 10, height: 10 }, [draw(d)]);
-        const s = scene({ target: TARGET, root: container([inner]) });
+        const s = scene({ root: container([inner]) });
 
         // Frame 1: everything recorded fresh.
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         const frame1DrawCount = m.passCommands.filter(
             (c) => c.kind === 'draw' || c.kind === 'drawIndexed'
         ).length;
@@ -500,7 +499,7 @@ describe('GraphEncoder — subtree-command cache', () => {
         // should hit the cache; its replayed commands must be teed into the root's new recorder
         // so the root cache entry we save this frame is complete.
         s.markDirty(s.root.id);
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         const stats = ctx.encoder().lastStats();
         expect(stats.subtreeCacheHits).toBeGreaterThan(0); // inner viewport hit
         expect(stats.subtreeCacheMisses).toBeGreaterThan(0); // root re-recorded
@@ -508,7 +507,7 @@ describe('GraphEncoder — subtree-command cache', () => {
         // Frame 3: everything clean → both should hit; and the draw command should still be
         // emitted exactly once.
         const cmdCountBefore = m.passCommands.length;
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         const frame3 = m.passCommands.slice(cmdCountBefore);
         const frame3Draws = frame3.filter((c) => c.kind === 'draw' || c.kind === 'drawIndexed');
         expect(frame3Draws.length).toBe(1);

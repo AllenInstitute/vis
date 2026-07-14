@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Drawable } from '../drawable';
 import { DRAWABLE_BRAND } from '../drawable';
-import type { RenderTarget } from './types';
 import {
     blendconstant,
     container,
@@ -14,17 +13,6 @@ import {
 } from './scene';
 
 // ---- shared fixtures --------------------------------------------------------------------------
-
-const TARGET: RenderTarget = {
-    color: [
-        {
-            view: {} as unknown as GPUTextureView,
-            loadOp: 'clear',
-            storeOp: 'store',
-            clearValue: { r: 0, g: 0, b: 0, a: 1 },
-        },
-    ],
-};
 
 let drawableCounter = 0;
 function fakeDrawable(label?: string): Drawable & { readonly destroyCount: () => number } {
@@ -57,7 +45,7 @@ describe('scene() construction', () => {
         const d2 = draw(fakeDrawable('d2'));
         const inner = container([d1, d2]);
         const root = container([inner]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         expect(s.root).toBe(root);
         expect(s.parents.get(inner.id)).toBe(root.id);
         expect(s.parents.get(d1.id)).toBe(inner.id);
@@ -73,7 +61,7 @@ describe('scene() construction', () => {
 describe('Scene.add / remove / replace', () => {
     it('add(parent, node) attaches and dirties the affected ancestors', () => {
         const root = container([]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         const d = draw(fakeDrawable('d'));
         s.add(root.id, d);
 
@@ -93,7 +81,7 @@ describe('Scene.add / remove / replace', () => {
         const d = draw(fakeDrawable());
         const inner = container([d]);
         const root = container([inner]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         s.clearDirty();
         s.remove(inner.id);
 
@@ -106,13 +94,13 @@ describe('Scene.add / remove / replace', () => {
 
     it('remove() throws when called on the root', () => {
         const root = container([]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         expect(() => s.remove(root.id)).toThrow(/cannot remove the root/);
     });
 
     it('replace() keeps the node id stable and dirties ancestors', () => {
         const root = container([viewport({ x: 0, y: 0, width: 10, height: 10 }, [])]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         const original = s.root.kind === 'container' ? s.root.children[0]! : null;
         expect(original?.kind).toBe('viewport');
         s.clearDirty();
@@ -139,7 +127,7 @@ describe('Scene.markDirty / markSubtreeDirty', () => {
         const leaf = draw(fakeDrawable());
         const mid = container([leaf]);
         const root = container([mid]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         s.clearDirty();
 
         s.markDirty(leaf.id);
@@ -152,7 +140,7 @@ describe('Scene.markDirty / markSubtreeDirty', () => {
         const leaves = [draw(fakeDrawable()), draw(fakeDrawable()), draw(fakeDrawable())];
         const mid = container(leaves);
         const root = container([mid]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         s.clearDirty();
 
         s.markSubtreeDirty(root.id);
@@ -162,7 +150,7 @@ describe('Scene.markDirty / markSubtreeDirty', () => {
     });
 
     it('markDirty throws on an unknown id', () => {
-        const s = scene({ target: TARGET, root: container([]) });
+        const s = scene({ root: container([]) });
         expect(() => s.markDirty('does-not-exist')).toThrow(/not found/);
     });
 });
@@ -172,7 +160,7 @@ describe('Scene.markDirty / markSubtreeDirty', () => {
 describe('Scene events', () => {
     it("fires 'structure-changed' once per add/remove/replace", () => {
         const root = container([]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         const listener = vi.fn();
         s.on('structure-changed', listener);
 
@@ -196,7 +184,7 @@ describe('Scene events', () => {
     });
 
     it('off() / unsubscribe stops further notifications', () => {
-        const s = scene({ target: TARGET, root: container([]) });
+        const s = scene({ root: container([]) });
         const listener = vi.fn();
         const off = s.on('structure-changed', listener);
         off();
@@ -246,7 +234,7 @@ describe('Scene ownership contract', () => {
             draw(a),
             container([draw(b), draw(c)]),
         ]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         // Look up the inner container's id (the second child of root).
         const inner = s.root.kind === 'container' ? s.root.children[1] : undefined;
         if (inner === undefined) throw new Error('inner container missing');
@@ -263,7 +251,7 @@ describe('Scene ownership contract', () => {
         const a = fakeDrawable('a');
         const b = fakeDrawable('b');
         const root = container([draw(a)]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         const aNode = s.root.kind === 'container' ? s.root.children[0] : undefined;
         if (aNode === undefined) throw new Error('a node missing');
 
@@ -275,7 +263,7 @@ describe('Scene ownership contract', () => {
     it('Scene.replace does NOT destroy when the same drawable is re-wrapped', () => {
         const a = fakeDrawable('a');
         const root = container([draw(a)]);
-        const s = scene({ target: TARGET, root });
+        const s = scene({ root });
         const aNode = s.root.kind === 'container' ? s.root.children[0] : undefined;
         if (aNode === undefined) throw new Error('a node missing');
 

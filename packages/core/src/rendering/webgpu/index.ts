@@ -113,6 +113,8 @@ export type { BufferManager } from './memory';
 export { BatchPoolBufferAdapter } from './memory';
 /** `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
 export type { BuiltPipeline } from './pipelines/build';
+/** A `RenderTarget` is the per-submit render-pass destination passed to `ctx.submit(scene, target)`. */
+export type { RenderTarget } from './render-target';
 export type { ScissorSpec, ViewportSpec } from './scene/scene';
 /** A `Scene` is the retained-mode tree of drawables submitted for rendering. */
 export {
@@ -132,7 +134,6 @@ export type {
     ContainerNode,
     DrawableNode,
     NodeId,
-    RenderTarget,
     Scene,
     SceneDescriptor,
     SceneEvent,

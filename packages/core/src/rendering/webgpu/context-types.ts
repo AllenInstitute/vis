@@ -1,4 +1,13 @@
 import type {
+    ExternalTextureSlot,
+    ResourceSlot,
+    SamplerSlot,
+    StorageSlot,
+    StorageTextureSlot,
+    TextureSlot,
+    UniformSlot,
+} from './binding/slot';
+import type {
     BufferResource,
     ExternalTextureResource,
     Resource,
@@ -12,15 +21,7 @@ import type { BufferManager } from './memory/types';
 import type { BindingGraph } from './pipelines/binding-graph';
 import type { BuiltPipeline } from './pipelines/build';
 import type { PipelineStateDescriptor } from './pipelines/pipeline-state';
-import type {
-    ExternalTextureSlot,
-    ResourceSlot,
-    SamplerSlot,
-    StorageSlot,
-    StorageTextureSlot,
-    TextureSlot,
-    UniformSlot,
-} from './binding/slot';
+import type { RenderTarget } from './render-target';
 import type { Scene } from './scene/types';
 import type { WgslShader } from './shaders';
 
@@ -134,8 +135,8 @@ export interface RenderingContext {
     /** Construct (or return the cached) `GraphEncoder` bound to this context. */
     encoder(): GraphEncoder;
 
-    /** Encode + submit `scene` to the device queue in one call. */
-    submit(scene: Scene): GPUCommandBuffer;
+    /** Encode + submit `scene` to `target` on the device queue in one call. */
+    submit(scene: Scene, target: RenderTarget): GPUCommandBuffer;
 
     /** Drop every cached `BuiltPipeline` without disposing the context. */
     disposePipelineCache(): void;

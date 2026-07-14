@@ -8,7 +8,7 @@ import type { BuiltPipeline } from '../pipelines/build';
 import { uniformSlot } from '../binding';
 import type { ResourceSlot } from '../binding/slot';
 import { container, draw, scene } from '../scene/scene';
-import type { RenderTarget } from '../scene/types';
+import type { RenderTarget } from '../render-target';
 import { member, shader, struct } from '../shaders';
 import { makeMockDevice } from '../test/mock-device';
 import {
@@ -257,9 +257,9 @@ describe('RenderingContext — bind-group cache lifecycle', () => {
             bindings: { camera: camRes },
             draw: { kind: 'array', vertexCount: 3 },
         });
-        const s = scene({ target: TARGET, root: container([draw(drawable)]) });
+        const s = scene({ root: container([draw(drawable)]) });
 
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         expect(ctx.stats().bindGroups).toBe(1);
 
         // Mutating + committing the uniform invalidates the entry that referenced it.
@@ -269,7 +269,7 @@ describe('RenderingContext — bind-group cache lifecycle', () => {
         // The per-scene subtree cache would otherwise replay the recorded commands without
         // rebuilding bind groups; clear it so the next submit actually re-invokes the builder.
         ctx.encoder().clearSubtreeCache();
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         expect(ctx.stats().bindGroups).toBe(1);
     });
 
@@ -290,10 +290,9 @@ describe('RenderingContext — bind-group cache lifecycle', () => {
             });
 
         const s = scene({
-            target: TARGET,
             root: container([draw(mkDrawable(camA)), draw(mkDrawable(camB))]),
         });
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
 
         expect(ctx.stats().bindGroups).toBe(2);
     });
@@ -314,10 +313,9 @@ describe('RenderingContext — bind-group cache lifecycle', () => {
                 draw: { kind: 'array', vertexCount: 1 },
             });
         const s = scene({
-            target: TARGET,
             root: container([draw(mkDrawable(camA)), draw(mkDrawable(camB))]),
         });
-        ctx.submit(s);
+        ctx.submit(s, TARGET);
         expect(ctx.stats().bindGroups).toBe(2);
 
         const removed = ctx.sweepBindGroups([camA]);
