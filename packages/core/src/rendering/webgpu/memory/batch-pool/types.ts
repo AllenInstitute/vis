@@ -1,5 +1,5 @@
 import type { Cacheable } from '../../../../shared-priority-cache/priority-cache';
-import type { BufferUsageFlags, PoolStats, BufferManagerConfig, BufferManagerStats } from '../types';
+import type { BufferManagerConfig, BufferManagerStats, BufferUsageFlags, PoolStats } from '../types';
 
 export type BatchPoolBufferManagerConfig = BufferManagerConfig & {
     /**

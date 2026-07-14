@@ -1,5 +1,4 @@
 import type { Cacheable } from '../../../shared-priority-cache/priority-cache';
-import type { ResourceSlot } from '../binding';
 
 /**
  * GPU buffer usage flag-set. WebGPU's `GPUBufferUsageFlags` is the bag of flags from
@@ -7,6 +6,29 @@ import type { ResourceSlot } from '../binding';
  * lib edition in scope.
  */
 export type BufferUsageFlags = GPUBufferUsageFlags;
+
+/**
+ * The slot kinds `acquireForSlot` understands. Mirrors the `ResourceSlot` discriminant without
+ * importing it — the memory module is intentionally independent of the bindings module. A real
+ * `ResourceSlot` satisfies {@link BufferSlot} structurally.
+ */
+export type BufferSlotKind =
+    | 'uniform'
+    | 'storage'
+    | 'texture'
+    | 'storageTexture'
+    | 'sampler'
+    | 'externalTexture';
+
+/**
+ * Minimal structural view of a resource slot that `acquireForSlot` needs: just its debug `name`
+ * and its `kind` (used to derive the required `GPUBufferUsage` bits). Keeps the buffer manager
+ * usable standalone — any object with these fields (including a full `ResourceSlot`) is accepted.
+ */
+export interface BufferSlot {
+    readonly name: string;
+    readonly kind: BufferSlotKind;
+}
 
 /**
  * Optional callbacks for debug overlays, profiling, and telemetry pipelines. Hooks fire after
@@ -130,7 +152,11 @@ export interface BufferManager<Stats extends BufferManagerStats = BufferManagerS
      * usage flag-set is missing required bits. Texture / sampler / external-texture slots
      * (which never round-trip a `BufferHandle`) throw immediately.
      */
-    acquireForSlot(slot: ResourceSlot, sizeBytes: number, usage: BufferUsageFlags): BufferHandle;
+    acquireForSlot(
+        slot: BufferSlot,
+        sizeBytes: number,
+        usage: BufferUsageFlags
+    ): BufferHandle;
 
     /**
      * Non-allocating budget check used at construction sites (`ctx.resource()`,
@@ -200,7 +226,7 @@ export abstract class BufferManagerBase<Stats extends BufferManagerStats = Buffe
 
     abstract acquire(sizeBytes: number, usage: BufferUsageFlags): BufferHandle;
     abstract acquireForSlot(
-        slot: ResourceSlot,
+        slot: BufferSlot,
         sizeBytes: number,
         usage: BufferUsageFlags
     ): BufferHandle;

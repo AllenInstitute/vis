@@ -1,10 +1,10 @@
 import {
     compute,
-    fragment,
-    vertex,
     type DeclarationAttribute,
     type FunctionAttribute,
+    fragment,
     type VariableOrValueAttribute,
+    vertex,
 } from './attributes';
 import type { WgslDataType, WgslSampler, WgslSamplerComparison, WgslTextureDataType } from './wgsl-types';
 import { wgslTypeName } from './wgsl-types';

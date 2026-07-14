@@ -1,17 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
     align,
-    blendSrc,
     type BlendSrcAttribute,
+    blendSrc,
     builtin,
     compute,
     constAttr,
-    diagnostic,
     type DiagnosticAttribute,
+    diagnostic,
     fragment,
+    type InterpolateAttribute,
     id,
     interpolate,
-    type InterpolateAttribute,
     invariant,
     location,
     mustUse,

@@ -1,6 +1,11 @@
 import { DisposedBufferError, InvalidHandleError, OutOfBudgetError } from '../errors';
-import { type BufferHandle, type BufferUsageFlags, type PoolStats, BufferManagerBase } from '../types';
-import type { ResourceSlot } from '../../binding';
+import {
+    type BufferHandle,
+    BufferManagerBase,
+    type BufferSlot,
+    type BufferUsageFlags,
+    type PoolStats,
+} from '../types';
 import { OutOfBucketError } from './errors';
 import {
     type Batch,
@@ -94,7 +99,7 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
     }
 
     acquireForSlot(
-        slot: ResourceSlot,
+        slot: BufferSlot,
         sizeBytes: number,
         usage: BufferUsageFlags
     ): BufferHandle {
@@ -384,11 +389,11 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
 }
 
 /**
- * Map a `ResourceSlot` to the minimum `GPUBufferUsage` bits a backing buffer must carry.
+ * Map a slot requirement to the minimum `GPUBufferUsage` bits a backing buffer must carry.
  * Only buffer-backed slot kinds participate; texture / sampler / external slots throw because
  * they're not buffer-backed and should never reach `acquireForSlot`.
  */
-function requiredUsageFor(slot: ResourceSlot): GPUBufferUsageFlags {
+function requiredUsageFor(slot: BufferSlot): GPUBufferUsageFlags {
     switch (slot.kind) {
         case 'uniform':
             return GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { constant, type Declaration, func, member, struct, uniform } from './declarations';
 import { asSource, isWgslShader, shader } from './shader';
 

@@ -1,3 +1,12 @@
+/**
+ * Public API for the WebGPU renderer subsystem.
+ *
+ * This top-level barrel is the ONLY file at the root of `rendering/webgpu`. It composes the
+ * five module barrels — `foundation`, `shaders`, `memory`, `resources`, `renderer` — into the
+ * curated public surface. Each module is independently importable from its own subpath; this
+ * meta-barrel is the convenience aggregate that external consumers use.
+ */
+
 // ---- Shaders ----------------------------------------------------------------------------------
 
 export type { StructDecl, StructDeclaration, StructMemberDeclaration, WgslShader } from './shaders';
@@ -23,22 +32,10 @@ export type {
     VertexBufferDecl,
     VertexBufferSpec,
     VertexLayoutDeclaration,
-} from './pipelines/vertex-layout';
+} from './renderer';
 /** Buffer grouping + `stepMode` + per-attribute format → `GPUVertexBufferLayout[]`
  *  (see `pipeline({ vertex: { layout } })`) and the typed drawable upload path. */
-export { buffer, isVertexLayout, VERTEX_LAYOUT_BRAND, vertexLayout } from './pipelines/vertex-layout';
-export type { VertexArrayKind, VertexComponentType, VertexFormatInfo } from './shaders/vertex-format';
-/** `GPUVertexFormat` metadata + the natural WGSL-type → format default. */
-export { defaultVertexFormat, VERTEX_FORMAT_INFO, vertexFormatInfo } from './shaders/vertex-format';
-export type {
-    VertexInputAttribute,
-    VertexInputBuiltin,
-    VertexInputBuiltinName,
-    VertexInputInterface,
-} from './shaders/vertex-interface';
-/** The vertex shader *input interface*: ordinary `struct`s + loose `param`s (incl. builtins),
- *  validated up front. Feeds `vertexEntry(...)` and is grouped into buffers by `vertexLayout(...)`. */
-export { isVertexInput, VERTEX_INPUT_BUILTINS, vertexInput } from './shaders/vertex-interface';
+export { buffer, isVertexLayout, VERTEX_LAYOUT_BRAND, vertexLayout } from './renderer';
 export type {
     TypedExternalTextureSlot,
     TypedSamplerSlot,
@@ -46,32 +43,85 @@ export type {
     TypedStorageTextureSlot,
     TypedTextureSlot,
     TypedUniformSlot,
-} from './slot';
-export { slot } from './slot';
+} from './resources';
+export { slot } from './resources';
+export type { VertexArrayKind, VertexComponentType, VertexFormatInfo, 
+    VertexInputAttribute,
+    VertexInputBuiltin,
+    VertexInputBuiltinName,
+    VertexInputInterface,} from './shaders';
+/** `GPUVertexFormat` metadata + the natural WGSL-type → format default. */
+/** The vertex shader *input interface*: ordinary `struct`s + loose `param`s (incl. builtins),
+ *  validated up front. Feeds `vertexEntry(...)` and is grouped into buffers by `vertexLayout(...)`. */
+export { defaultVertexFormat, isVertexInput, VERTEX_FORMAT_INFO, VERTEX_INPUT_BUILTINS, vertexFormatInfo, vertexInput } from './shaders';
 
 // ---- Binding graphs + pipeline state ----------------------------------------------------------
 
-export type { BindingGraph, BindingGroup, GroupSpec } from './pipelines/binding-graph';
-export { bindings, group, isBindingGraph, isBindingGroup } from './pipelines/binding-graph';
-export type {
-    FragmentStateDescriptor,
+export type { BindingGraph, BindingGroup, 
+    FragmentStateDescriptor,GroupSpec, 
     NormalizedPipelineState,
     PipelineStateDescriptor,
-    VertexStateDescriptor,
-} from './pipelines/pipeline-state';
-export { resolveShaderBindings, shaderSlotEntries } from './pipelines/traverse';
+    VertexStateDescriptor,} from './renderer';
+export { bindings, group, isBindingGraph, isBindingGroup, resolveShaderBindings, shaderSlotEntries } from './renderer';
 
 // ---- Rendering context, resources, drawables, scenes ------------------------------------------
 
-/** Device-scoped facade — owns the pipeline cache, buffer manager, and encoder hooks. */
-export { renderingContext } from './context';
+export type { BufferManager } from './memory';
+/** A concrete `BufferManager` for `renderingContext({ bufferManager })`. */
+export { BatchPoolBufferAdapter } from './memory';
+/** `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
+/** A `RenderTarget` is the per-submit render-pass destination passed to `ctx.submit(scene, target)`. */
 export type {
+    ArrayDrawCall,
+    BindingOverrideNode,
+    BlendConstantNode,BuiltPipeline, 
+    CompositeSceneNode,
+    ContainerNode,
+    Drawable,
+    DrawableNode,
+    DrawableReuseSpec,
+    DrawableSpec,
+    DrawCall,EncoderStats, GraphEncoder, 
+    IndexBufferBinding,
+    IndexData,
+    IndexedDrawCall,
+    NodeId,
+    PreBuiltIndexData,
+    PreBuiltVertexData,
+    RawArrayIndexData,
+    RawArraysVertexData,
     RenderingContext,
     RenderingContextSpec,
-    RenderingContextStats,
+    RenderingContextStats,RenderTarget, 
     ResourceFor,
     ResourceInit,
-} from './context-types';
+    Scene,
+    SceneDescriptor,
+    SceneEvent,
+    SceneEventListener,
+    SceneNode,
+    ScissorNode,ScissorSpec, 
+    StencilRefNode,
+    StructureChangedEvent,
+    TypedVertexData,
+    VertexBufferBinding,
+    VertexData,
+    ViewportNode,ViewportSpec, 
+} from './renderer';
+/** Device-scoped facade — owns the pipeline cache, buffer manager, and encoder hooks. */
+/** A `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
+ *  `ctx.drawable({...})`. */
+// Encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
+/** A `Scene` is the retained-mode tree of drawables submitted for rendering. */
+export { 
+    blendconstant,
+    container,DRAWABLE_BRAND, 
+    draw,GRAPH_ENCODER_BRAND, isDrawable, isGraphEncoder, isScene, isSceneNode, 
+    override,renderingContext, SCENE_BRAND, SCENE_NODE_BRAND, 
+    scene,
+    scissor,
+    stencilref,
+    viewport} from './renderer';
 export type {
     BufferResource,
     ExternalTextureResource,
@@ -80,73 +130,8 @@ export type {
     SamplerResource,
     StorageTextureResource,
     TextureResource,
-} from './data/resource';
+} from './resources';
 /** Data-bearing `Resource` family. `ctx.resource(slot, init?)` is the public constructor; the
  *  raw factories are kept private to `RenderingContext` so all construction funnels through one
  *  place (consistent error wording, telemetry). */
-export { isResource, RESOURCE_BRAND } from './data/resource';
-export type {
-    ArrayDrawCall,
-    Drawable,
-    DrawableReuseSpec,
-    DrawableSpec,
-    DrawCall,
-    IndexBufferBinding,
-    IndexData,
-    IndexedDrawCall,
-    PreBuiltIndexData,
-    PreBuiltVertexData,
-    RawArrayIndexData,
-    RawArraysVertexData,
-    TypedVertexData,
-    VertexBufferBinding,
-    VertexData,
-} from './drawable';
-/** A `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
- *  `ctx.drawable({...})`. */
-export { DRAWABLE_BRAND, isDrawable } from './drawable';
-export type { EncoderStats, GraphEncoder } from './encoder/encoder';
-// Encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
-export { GRAPH_ENCODER_BRAND, isGraphEncoder } from './encoder/encoder';
-export type { BufferManager } from './memory';
-/** A concrete `BufferManager` for `renderingContext({ bufferManager })`. */
-export { BatchPoolBufferAdapter } from './memory';
-/** `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. */
-export type { BuiltPipeline } from './pipelines/build';
-/** A `RenderTarget` is the per-submit render-pass destination passed to `ctx.submit(scene, target)`. */
-export type { RenderTarget } from './render-target';
-export type { ScissorSpec, ViewportSpec } from './scene/scene';
-/** A `Scene` is the retained-mode tree of drawables submitted for rendering. */
-export {
-    blendconstant,
-    container,
-    draw,
-    override,
-    scene,
-    scissor,
-    stencilref,
-    viewport,
-} from './scene/scene';
-export type {
-    BindingOverrideNode,
-    BlendConstantNode,
-    CompositeSceneNode,
-    ContainerNode,
-    DrawableNode,
-    NodeId,
-    Scene,
-    SceneDescriptor,
-    SceneEvent,
-    SceneEventListener,
-    SceneNode,
-    ScissorNode,
-    StencilRefNode,
-    StructureChangedEvent,
-    ViewportNode,
-} from './scene/types';
-export {
-    isScene,
-    isSceneNode,
-    SCENE_BRAND,
-    SCENE_NODE_BRAND,
-} from './scene/types';
+export { isResource, RESOURCE_BRAND } from './resources';

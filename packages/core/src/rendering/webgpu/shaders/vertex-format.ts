@@ -1,4 +1,4 @@
-import type { VertexFormat } from '../native-types';
+import type { VertexFormat } from '../foundation';
 import { vec, type WgslNumericScalarType, type WgslVecSize, wgslTypeName } from './wgsl-types';
 
 /** The WGSL component scalar types a vertex format's shader-visible type can have. Alias of

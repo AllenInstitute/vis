@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DisposedBufferError, InvalidHandleError, OutOfBudgetError } from '../errors';
 import type {
-    BufferManager,
     BufferHandle,
+    BufferManager,
+    BufferSlot,
     BufferUsageFlags,
 } from '../types';
-import { uniformSlot, storageSlot, samplerSlot } from '../../binding';
-import { member, struct } from '../../shaders';
 import { BatchPoolBufferManager } from './batch-pool-buffer-manager';
 import { OutOfBucketError } from './errors';
 import type { BatchPoolBufferManagerConfig } from './types';
@@ -499,7 +498,7 @@ describe('BatchPoolBufferManager.acquireForSlot', () => {
     });
 
     it('forwards to acquire when the usage flag-set includes the required bits', () => {
-        const cam = uniformSlot('cam', struct('Camera', [member('view', 'mat4x4f')]));
+        const cam: BufferSlot = { name: 'cam', kind: 'uniform' };
         const h = manager.acquireForSlot(
             cam,
             64,
@@ -510,21 +509,21 @@ describe('BatchPoolBufferManager.acquireForSlot', () => {
     });
 
     it('rejects a uniform slot whose requested usage is missing COPY_DST', () => {
-        const cam = uniformSlot('cam', struct('Camera', [member('view', 'mat4x4f')]));
+        const cam: BufferSlot = { name: 'cam', kind: 'uniform' };
         expect(() => manager.acquireForSlot(cam, 64, GPUBufferUsage.UNIFORM)).toThrow(
             /requires usage bits/
         );
     });
 
     it('rejects a uniform slot whose requested usage is missing UNIFORM', () => {
-        const cam = uniformSlot('cam', struct('Camera', [member('view', 'mat4x4f')]));
+        const cam: BufferSlot = { name: 'cam', kind: 'uniform' };
         expect(() =>
             manager.acquireForSlot(cam, 64, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST)
         ).toThrow(/UNIFORM/i);
     });
 
     it('accepts a storage slot with STORAGE | COPY_DST', () => {
-        const buf = storageSlot('buf', struct('Buf', [member('flag', 'u32')]));
+        const buf: BufferSlot = { name: 'buf', kind: 'storage' };
         const h = manager.acquireForSlot(
             buf,
             4,
@@ -534,7 +533,7 @@ describe('BatchPoolBufferManager.acquireForSlot', () => {
     });
 
     it('throws on non-buffer-backed slot kinds', () => {
-        const s = samplerSlot('s', 'sampler');
+        const s: BufferSlot = { name: 's', kind: 'sampler' };
         expect(() => manager.acquireForSlot(s, 64, 0)).toThrow(/not buffer-backed/);
     });
 });

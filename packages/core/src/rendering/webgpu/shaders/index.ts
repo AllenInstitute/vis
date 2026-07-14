@@ -1,3 +1,9 @@
+/**
+ * @module shaders
+ *
+ * WGSL authoring + codegen: types, attributes, declarations, whole-shader assembly, and the
+ * vertex-format / vertex-input-interface helpers.
+ */
 export type {
     AlignAttribute,
     BlendSrcAttribute,
@@ -82,7 +88,9 @@ export {
 } from './declarations';
 export type { WgslShader } from './shader';
 export { asSource, isWgslShader, shader } from './shader';
-
+// ---- Vertex formats + vertex input interface -------------------------------------------------
+export * from './vertex-format';
+export * from './vertex-interface';
 export type {
     WgslAtomic,
     WgslDataType,

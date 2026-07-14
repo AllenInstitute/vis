@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { align, builtin, id, location, mustUse, size } from './attributes';
 import {
     alias,
     computeEntry,
@@ -18,7 +19,6 @@ import {
     vertexEntry,
     workgroupVar,
 } from './declarations';
-import { align, builtin, id, location, mustUse, size } from './attributes';
 
 describe('constant', () => {
     it('generates const without a type annotation', () => {

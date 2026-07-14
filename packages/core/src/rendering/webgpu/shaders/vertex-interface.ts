@@ -1,5 +1,5 @@
+import { isBranded } from '../foundation';
 import type { BuiltinAttribute, LocationAttribute, VariableOrValueAttribute } from './attributes';
-import { isBranded } from '../brand';
 import {
     type FunctionDeclaration,
     type FunctionParameterDeclaration,
