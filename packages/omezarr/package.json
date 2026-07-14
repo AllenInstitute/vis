@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-omezarr",
-    "version": "0.0.17",
+    "version": "0.1.2",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -53,6 +53,6 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "regl": "2.1.1",
         "zarrita": "0.6.1",
-        "zod": "4.3.6"
+        "zod": "4.4.3"
     }
 }

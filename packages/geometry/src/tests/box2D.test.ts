@@ -82,6 +82,17 @@ describe('box2D', () => {
         expect(size).toStrictEqual([2, 2]);
     });
 
+    test('parameter', () => {
+        // minCorner maps to [0, 0]
+        expect(Box2D.parameter(box, [1, 2])).toStrictEqual([0, 0]);
+        // maxCorner maps to [1, 1]
+        expect(Box2D.parameter(box, [3, 4])).toStrictEqual([1, 1]);
+        // midpoint maps to [0.5, 0.5]
+        expect(Box2D.parameter(box, [2, 3])).toStrictEqual([0.5, 0.5]);
+        // points outside the box are not clamped
+        expect(Box2D.parameter(box, [5, 6])).toStrictEqual([2, 2]);
+    });
+
     test('midpoint', () => {
         const midpoint = Box2D.midpoint(box);
         expect(midpoint).toStrictEqual([2, 3]);

@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.0] - 2026-07-07
 
 ### 🚀 Features
 
@@ -28,11 +28,6 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Allow slices from planes by % rather than slice index - as the number of slices is not constant at all scales in most volumes ([#187](https://github.com/AllenInstitute/vis/pull/187))
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
-
-- Fix name of file on changelog command
-- Make changelog files uppercase
-- Add fmt to changelog production command
-- Do git stuff to make sure it's actually changing the file name
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -62,6 +57,10 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Update or remove dependencies ([#229](https://github.com/AllenInstitute/vis/pull/229))
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 - Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
+- Update documentation for publishing and fix changelog formatting [DT-9260] ([#257](https://github.com/AllenInstitute/vis/pull/257))
+- Remove packageManager since Volta manages the proper version ([#258](https://github.com/AllenInstitute/vis/pull/258))
+- _(deps)_ Bump zod from 4.3.6 to 4.4.3 ([#273](https://github.com/AllenInstitute/vis/pull/273))
+- _(omezarr)_ Update version due to a workspace-imported dependency ([#275](https://github.com/AllenInstitute/vis/pull/275))
 
 ## [0.0.11] - 2025-04-23
 
