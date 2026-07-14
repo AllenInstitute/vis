@@ -34,7 +34,7 @@ export class InvalidHandleError extends Error {
 export class DisposedBufferError extends Error {
     readonly name = 'DisposedBufferError';
     constructor() {
-        super(`BufferAdapter: operation attempted on a disposed buffer.`);
+        super("BufferAdapter: operation attempted on a disposed buffer.");
     }
 }
 

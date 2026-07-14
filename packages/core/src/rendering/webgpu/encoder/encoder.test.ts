@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type vi } from 'vitest';
 import { renderingContext } from '../context';
 import { container, draw, scene, viewport } from '../scene/scene';
 import type { RenderTarget } from '../scene/types';
