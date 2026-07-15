@@ -1,4 +1,3 @@
-
 import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
 import type { Cacheable, CachedVertexBuffer } from '@alleninstitute/vis-core';
