@@ -269,7 +269,7 @@ export function compute(): ComputeAttribute {
     return { compute: true, __gen: () => '@compute' };
 }
 
-export const constructors = {
+const constructors = {
     align,
     blendSrc,
     builtin,
@@ -285,4 +285,6 @@ export const constructors = {
     vertex,
     fragment,
     compute,
-};
+}
+
+export const $a = constructors;

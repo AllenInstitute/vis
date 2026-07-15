@@ -24,6 +24,8 @@ export {
     vertexEntry,
 } from './shaders';
 
+export { $a, $s } from './shaders';
+
 // ---- Declarative vertex inputs ----------------------------------------------------------------
 
 export type { VertexArrayKind, VertexComponentType, VertexFormatInfo, 

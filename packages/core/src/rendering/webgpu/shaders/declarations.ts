@@ -444,7 +444,7 @@ export function computeEntry(
     return func(name, parameters, body, returnType, [compute()]);
 }
 
-export const constructors = {
+const constructors = {
     constant,
     override,
     privateVar,
@@ -461,3 +461,5 @@ export const constructors = {
     fragmentEntry,
     computeEntry,
 };
+
+export const $s = constructors;
