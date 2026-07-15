@@ -70,7 +70,7 @@ export {
     alias,
     computeEntry,
     constant,
-    $s,
+    $d,
     fragmentEntry,
     func,
     member,
@@ -119,6 +119,7 @@ export type {
     WgslVec,
 } from './wgsl-types';
 export {
+    $t,
     atomic,
     bool,
     depthTexture,

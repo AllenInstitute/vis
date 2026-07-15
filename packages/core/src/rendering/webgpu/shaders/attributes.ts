@@ -285,6 +285,6 @@ const constructors = {
     vertex,
     fragment,
     compute,
-}
+};
 
 export const $a = constructors;

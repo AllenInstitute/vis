@@ -24,16 +24,23 @@ export {
     vertexEntry,
 } from './shaders';
 
-export { $a, $s } from './shaders';
+export { $a, $d, $t } from './shaders';
 
-// ---- Declarative vertex inputs ----------------------------------------------------------------
-
-export type { VertexArrayKind, VertexComponentType, VertexFormatInfo, 
+export type {
+    VertexArrayKind,
+    VertexComponentType,
+    VertexFormatInfo,
     VertexInputAttribute,
     VertexInputBuiltin,
     VertexInputBuiltinName,
-    VertexInputInterface,} from './shaders';
-/** `GPUVertexFormat` metadata + the natural WGSL-type → format default. */
-/** The vertex shader *input interface*: ordinary `struct`s + loose `param`s (incl. builtins),
- *  validated up front. Feeds `vertexEntry(...)` and is grouped into buffers by `vertexLayout(...)`. */
-export { defaultVertexFormat, isVertexInput, VERTEX_FORMAT_INFO, VERTEX_INPUT_BUILTINS, vertexFormatInfo, vertexInput } from './shaders';
+    VertexInputInterface,
+} from './shaders';
+
+export {
+    defaultVertexFormat,
+    isVertexInput,
+    VERTEX_FORMAT_INFO,
+    VERTEX_INPUT_BUILTINS,
+    vertexFormatInfo,
+    vertexInput,
+} from './shaders';

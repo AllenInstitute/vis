@@ -462,4 +462,4 @@ const constructors = {
     computeEntry,
 };
 
-export const $s = constructors;
+export const $d = constructors;

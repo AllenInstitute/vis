@@ -62,11 +62,7 @@ function isBuiltinAttr(a: VariableOrValueAttribute): a is BuiltinAttribute {
     return 'builtin' in a;
 }
 function isStructDeclaration(t: unknown): t is StructDeclaration {
-    return (
-        typeof t === 'object' &&
-        t !== null &&
-        (t as { __identType?: unknown }).__identType === 'struct'
-    );
+    return typeof t === 'object' && t !== null && (t as { __identType?: unknown }).__identType === 'struct';
 }
 
 /** Render a `TypeIdentifier` to its WGSL source string (mirror of the private helper in
@@ -116,7 +112,9 @@ export function vertexInput(
         const loc = attrs?.find(isLocationAttr);
         const bi = attrs?.find(isBuiltinAttr);
         if (loc !== undefined && bi !== undefined) {
-            errors.push(`'${leafName}' has both @location and @builtin — a vertex input leaf must declare exactly one.`);
+            errors.push(
+                `'${leafName}' has both @location and @builtin — a vertex input leaf must declare exactly one.`
+            );
             return;
         }
         if (loc === undefined && bi === undefined) {
@@ -142,7 +140,9 @@ export function vertexInput(
         const prior = seenLocations.get((loc as LocationAttribute).location);
         const locNum = (loc as LocationAttribute).location;
         if (prior !== undefined) {
-            errors.push(`duplicate @location(${locNum}) on '${prior}' and '${leafName}' — vertex locations must be unique.`);
+            errors.push(
+                `duplicate @location(${locNum}) on '${prior}' and '${leafName}' — vertex locations must be unique.`
+            );
         } else {
             seenLocations.set(locNum, leafName);
         }

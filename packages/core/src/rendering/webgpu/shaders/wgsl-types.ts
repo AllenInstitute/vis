@@ -466,3 +466,72 @@ export const texture_external: WgslExternalTexture = { kind: 'texture_external' 
 export const texture_depth_multisampled_2d: WgslDepthMultisampledTexture = {
     kind: 'texture_depth_multisampled_2d',
 };
+
+// ---------------------------------------------------------------------------
+// Encapsulated bucket — type constructors + pre-instantiated singletons
+// ---------------------------------------------------------------------------
+
+/**
+ * Grouped WGSL *type* constructors and singletons — the typed counterpart to `$d` (declarations)
+ * and `$a` (attributes). Any member can be passed wherever a `TypeIdentifier` is accepted (e.g.
+ * `$d.member('color', $t.vec4f)`), rendering identically to the equivalent WGSL type string but
+ * with autocomplete, validation, and composability (`$t.fixedArray($t.vec2f, 3)`).
+ */
+export const $t = {
+    // constructors
+    scalar,
+    vec,
+    mat,
+    texture,
+    depthTexture,
+    multisampledTexture,
+    storageTexture,
+    atomic,
+    fixedArray,
+    runtimeArray,
+    // scalar singletons
+    bool,
+    i32,
+    u32,
+    f32,
+    f16,
+    // vec2 / vec3 / vec4
+    vec2i,
+    vec2u,
+    vec2f,
+    vec2h,
+    vec3i,
+    vec3u,
+    vec3f,
+    vec3h,
+    vec4i,
+    vec4u,
+    vec4f,
+    vec4h,
+    // mat (f32)
+    mat2x2f,
+    mat2x3f,
+    mat2x4f,
+    mat3x2f,
+    mat3x3f,
+    mat3x4f,
+    mat4x2f,
+    mat4x3f,
+    mat4x4f,
+    // mat (f16)
+    mat2x2h,
+    mat2x3h,
+    mat2x4h,
+    mat3x2h,
+    mat3x3h,
+    mat3x4h,
+    mat4x2h,
+    mat4x3h,
+    mat4x4h,
+    // samplers
+    sampler,
+    sampler_comparison,
+    // texture singletons
+    texture_external,
+    texture_depth_multisampled_2d,
+};

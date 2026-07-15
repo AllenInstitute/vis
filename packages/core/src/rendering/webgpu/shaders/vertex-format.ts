@@ -32,9 +32,7 @@ export interface VertexFormatInfo {
 /** Derive the shader-visible WGSL type string for a format's component type + vector width,
  *  reusing the WGSL type model (`wgslTypeName`) rather than a hand-maintained table. */
 function wgslTypeFor(componentType: VertexComponentType, components: number): string {
-    return components === 1
-        ? componentType
-        : wgslTypeName(vec(components as WgslVecSize, componentType));
+    return components === 1 ? componentType : wgslTypeName(vec(components as WgslVecSize, componentType));
 }
 
 function info(
