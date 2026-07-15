@@ -1,0 +1,365 @@
+---
+title: Shader Builder
+description: Compose WGSL shaders programmatically with the declarative builder in vis-core's rendering/webgpu/shaders module, from a solid-color triangle to a config-driven point renderer.
+---
+
+The `rendering/webgpu/shaders` module in `@alleninstitute/vis-core` lets you build WGSL
+shaders **as data** instead of hand-writing source strings. You assemble a shader from small,
+composable _declarations_ — structs, uniforms, textures, functions, and entry points — and the
+module generates the WGSL text for you.
+
+This page walks from the simplest possible shader up to a dynamic, config-driven renderer. None
+of it runs on this page; every snippet is copy-pasteable and the **Generated WGSL** panels show
+exactly what each builder produces.
+
+## The mental model
+
+Three ideas are all you need:
+
+1. **Every declaration knows how to render itself.** Each builder returns an object with a
+   `__gen()` method that emits its own slice of WGSL.
+2. **A shader is just a list of declarations.** `shader([...])` stamps the list with a stable
+   `id` and hands you back a `WgslShader`.
+3. **`asSource()` turns it into text.** It calls `__gen()` on each declaration and joins the
+   results with newlines.
+
+```ts
+import { $d, $a, $t, shader, asSource, vertexInput } from '@alleninstitute/vis-core';
+```
+
+Three "buckets" hold the constructors:
+
+- **`$d`** — _declarations_: `struct`, `member`, `uniform`, `texture`, `sampler`, `storage`,
+  `func`, `param`, `returns`, `constant`, `vertexEntry`, `fragmentEntry`, `computeEntry`, and more.
+- **`$a`** — _attributes_: `builtin`, `location`, `interpolate`, `align`, `size`, `invariant`,
+  `blendSrc`, and the rest of the WGSL `@attribute` set.
+- **`$t`** — _types_: the singletons `f32`, `u32`, `vec2f`, `vec4f`, `mat4x4f`, … plus the
+  constructors `vec`, `mat`, `texture`, `sampler`, `fixedArray`, `runtimeArray`, `storageTexture`,
+  and `atomic`.
+
+The top-level `shader`, `asSource`, and `vertexInput` helpers are imported directly (they are not
+part of any bucket). Anywhere a type is expected you may pass **either** a `$t` value **or** a plain
+WGSL type string — `$t.vec4f` and `'vec4f'` generate identical output — so the two are freely
+interchangeable. The snippets below use `$t`, as these constructors provide additional type-safety
+in TypeScript code.
+
+## Level 1 — A solid-color triangle
+
+The smallest useful shader: a vertex stage that positions three hard-coded clip-space points and
+a fragment stage that paints them a flat color. No inputs, no uniforms.
+
+```ts
+import { $d, $a, $t, shader, asSource } from '@alleninstitute/vis-core';
+
+// A module-scope constant holding the three clip-space corners.
+const positions = $d.constant(
+    'positions',
+    'array<vec2f, 3>(vec2f(0.0, 0.5), vec2f(-0.5, -0.5), vec2f(0.5, -0.5))',
+    $t.fixedArray($t.vec2f, 3)
+);
+
+// @vertex: read the builtin vertex index, look up the position, emit clip coordinates.
+const vs = $d.vertexEntry(
+    'vs_main',
+    [$d.param('vertexIndex', $t.u32, [$a.builtin('vertex_index')])],
+    () => 'return vec4f(positions[vertexIndex], 0.0, 1.0);',
+    $d.returns($t.vec4f, [$a.builtin('position')])
+);
+
+// @fragment: return a constant color.
+const fs = $d.fragmentEntry(
+    'fs_main',
+    [],
+    () => 'return vec4f(1.0, 0.4, 0.1, 1.0);',
+    $d.returns($t.vec4f, [$a.location(0)])
+);
+
+const triangle = shader([positions, vs, fs]);
+const wgsl = asSource(triangle);
+```
+
+<details>
+<summary>Generated WGSL</summary>
+
+```wgsl
+const positions: array<vec2f, 3> = array<vec2f, 3>(vec2f(0.0, 0.5), vec2f(-0.5, -0.5), vec2f(0.5, -0.5));
+@vertex fn vs_main(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4f { return vec4f(positions[vertexIndex], 0.0, 1.0); }
+@fragment fn fs_main() -> @location(0) vec4f { return vec4f(1.0, 0.4, 0.1, 1.0); }
+```
+
+</details>
+
+Notice how each builder maps directly onto a WGSL construct: `$a.builtin('vertex_index')` becomes
+`@builtin(vertex_index)`, `$d.returns($t.vec4f, [$a.builtin('position')])` becomes the
+`-> @builtin(position) vec4f` return clause, and the entry-point stage attribute (`@vertex` /
+`@fragment`) is added for you by `vertexEntry` / `fragmentEntry`.
+
+## Level 2 — Structs and uniforms
+
+Most shaders take data from the host. Declare a `struct` for your uniform block, bind it with
+`$d.uniform(name, type, group, binding)`, and reuse struct declarations anywhere a type is
+expected — an inter-stage `VsOut` struct, for example.
+
+```ts
+import { $d, $a, $t, shader, asSource } from '@alleninstitute/vis-core';
+
+const Camera = $d.struct('Camera', [
+    $d.member('view', $t.vec4f), // xy = min corner, zw = max corner
+]);
+
+const VsOut = $d.struct('VsOut', [
+    $d.member('position', $t.vec4f, [$a.builtin('position')]),
+    $d.member('color', $t.vec4f, [$a.location(0)]),
+]);
+
+// group 0, binding 0
+const camera = $d.uniform('camera', Camera, 0, 0);
+
+// A reusable helper function.
+const applyCamera = $d.func(
+    'applyCamera',
+    [$d.param('dataPos', $t.vec2f), $d.param('view', $t.vec4f)],
+    () =>
+        'let size = view.zw - view.xy; let unit = (dataPos - view.xy) / size; return vec4f(unit * 2.0 - 1.0, 0.0, 1.0);',
+    $d.returns($t.vec4f)
+);
+
+const program = shader([Camera, VsOut, camera, applyCamera]);
+const wgsl = asSource(program);
+```
+
+<details>
+<summary>Generated WGSL</summary>
+
+```wgsl
+struct Camera { view: vec4f }
+struct VsOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
+@group(0) @binding(0) var<uniform> camera: Camera;
+fn applyCamera(dataPos: vec2f, view: vec4f) -> vec4f { let size = view.zw - view.xy; let unit = (dataPos - view.xy) / size; return vec4f(unit * 2.0 - 1.0, 0.0, 1.0); }
+```
+
+</details>
+
+Because `Camera` and `VsOut` are ordinary values, you can pass them anywhere a type identifier is
+accepted — as the uniform's type, as a function parameter type, or as an entry point's return
+type — and the generator emits the struct's name.
+
+## Level 3 — Declarative vertex inputs
+
+Buffer-backed vertex attributes have rules: every leaf needs exactly one `@location` or
+`@builtin`, and locations must be unique. `vertexInput(...)` validates all of that up front and
+hands back the classified attributes plus a convenience `entry(...)` for the vertex stage.
+
+```ts
+import { $d, $a, $t, shader, asSource, vertexInput } from '@alleninstitute/vis-core';
+
+const Vertex = $d.struct('Vertex', [
+    $d.member('position', $t.vec2f, [$a.location(0)]),
+    $d.member('color', $t.vec4f, [$a.location(1)]),
+]);
+
+const input = vertexInput([Vertex]);
+
+// input.attributes -> [{ name: 'position', location: 0, wgslType: 'vec2f', struct: 'Vertex' },
+//                      { name: 'color',    location: 1, wgslType: 'vec4f', struct: 'Vertex' }]
+// Use these to build your GPUVertexBufferLayout without repeating yourself.
+
+const VsOut = $d.struct('VsOut', [
+    $d.member('position', $t.vec4f, [$a.builtin('position')]),
+    $d.member('color', $t.vec4f, [$a.location(0)]),
+]);
+
+const vs = input.entry(
+    'vs_main',
+    () => 'var out: VsOut; out.position = vec4f(v.position, 0.0, 1.0); out.color = v.color; return out;',
+    $d.returns(VsOut)
+);
+
+// Drop the interface's struct declarations in alongside your own.
+const program = shader([...input.structs, VsOut, vs]);
+const wgsl = asSource(program);
+```
+
+<details>
+<summary>Generated WGSL</summary>
+
+```wgsl
+struct Vertex { @location(0) position: vec2f, @location(1) color: vec4f }
+struct VsOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
+@vertex fn vs_main(v: Vertex) -> VsOut { var out: VsOut; out.position = vec4f(v.position, 0.0, 1.0); out.color = v.color; return out; }
+```
+
+</details>
+
+If two members claim the same `@location`, or a leaf has neither a `@location` nor a `@builtin`,
+`vertexInput(...)` throws with a message pointing at the offending field — so mistakes surface at
+build time rather than as a silent pipeline error.
+
+## Level 4 — Textures and samplers
+
+Sampled resources follow the same pattern as uniforms: declare them with a group/binding and use
+them by name in a function body.
+
+```ts
+import { $d, $a, $t, shader, asSource } from '@alleninstitute/vis-core';
+
+const albedo = $d.texture('albedo', $t.texture('2d', 'f32'), 0, 0);
+const albedoSampler = $d.sampler('albedoSampler', $t.sampler, 0, 1);
+
+const fs = $d.fragmentEntry(
+    'fs_main',
+    [$d.param('uv', $t.vec2f, [$a.location(0)])],
+    () => 'return textureSample(albedo, albedoSampler, uv);',
+    $d.returns($t.vec4f, [$a.location(0)])
+);
+
+const program = shader([albedo, albedoSampler, fs]);
+const wgsl = asSource(program);
+```
+
+<details>
+<summary>Generated WGSL</summary>
+
+```wgsl
+@group(0) @binding(0) var albedo: texture_2d<f32>;
+@group(0) @binding(1) var albedoSampler: sampler;
+@fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f { return textureSample(albedo, albedoSampler, uv); }
+```
+
+</details>
+
+## Level 5 — Config-driven shaders
+
+The real payoff: because declarations are plain data, you can **generate** them. Here a single
+function turns a runtime configuration into a complete shader whose vertex layout, uniform block,
+and body all adapt to the list of columns you pass in.
+
+```ts
+import { $d, $a, $t, shader, asSource, type WgslShader } from '@alleninstitute/vis-core';
+
+type PointConfig = {
+    /** Name of the vec2 position column. */
+    position: string;
+    /** Quantitative columns, each gets a vertex attribute and a `<col>_range` uniform. */
+    quantitative: string[];
+};
+
+function buildPointShader(cfg: PointConfig): WgslShader {
+    const Vertex = $d.struct('Vertex', [
+        $d.member('vIndex', $t.u32, [$a.builtin('vertex_index')]),
+        $d.member(cfg.position, $t.vec2f, [$a.location(0)]),
+        ...cfg.quantitative.map((col, i) => $d.member(col, $t.f32, [$a.location(i + 1)])),
+    ]);
+
+    const Uniforms = $d.struct('Uniforms', [
+        $d.member('view', $t.vec4f),
+        ...cfg.quantitative.map((col) => $d.member(`${col}_range`, $t.vec2f)),
+    ]);
+
+    const VsOut = $d.struct('VsOut', [
+        $d.member('position', $t.vec4f, [$a.builtin('position')]),
+        $d.member('color', $t.vec4f, [$a.location(0)]),
+    ]);
+
+    return shader([
+        Vertex,
+        Uniforms,
+        VsOut,
+        $d.uniform('unis', Uniforms, 0, 0),
+        $d.vertexEntry(
+            'vs_main',
+            [$d.param('v', Vertex)],
+            () =>
+                `var out: VsOut; out.position = vec4f(v.${cfg.position}, 0.0, 1.0); out.color = vec4f(1.0); return out;`,
+            $d.returns(VsOut)
+        ),
+        $d.fragmentEntry(
+            'fs_main',
+            [$d.param('v', VsOut)],
+            () => 'return v.color;',
+            $d.returns($t.vec4f, [$a.location(0)])
+        ),
+    ]);
+}
+
+const wgsl = asSource(buildPointShader({ position: 'xy', quantitative: ['size', 'opacity'] }));
+```
+
+<details>
+<summary>Generated WGSL (position: 'xy', quantitative: ['size', 'opacity'])</summary>
+
+```wgsl
+struct Vertex { @builtin(vertex_index) vIndex: u32, @location(0) xy: vec2f, @location(1) size: f32, @location(2) opacity: f32 }
+struct Uniforms { view: vec4f, size_range: vec2f, opacity_range: vec2f }
+struct VsOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
+@group(0) @binding(0) var<uniform> unis: Uniforms;
+@vertex fn vs_main(v: Vertex) -> VsOut { var out: VsOut; out.position = vec4f(v.xy, 0.0, 1.0); out.color = vec4f(1.0); return out; }
+@fragment fn fs_main(v: VsOut) -> @location(0) vec4f { return v.color; }
+```
+
+</details>
+
+Change the config and the whole shader — struct fields, binding layout, and generated
+expressions — updates in lockstep. For a fully worked example that adds categorical color tables,
+gradient lookups, spatial filtering, and highlighting on top of this pattern, see
+[`example.test.ts`](https://github.com/AllenInstitute/vis/blob/main/packages/core/src/rendering/webgpu/shaders/example.test.ts)
+in the `vis` repository.
+
+## Constructor reference
+
+### `$d` — declaration constructors
+
+| Constructor                                      | Emits                                              |
+| ------------------------------------------------ | -------------------------------------------------- |
+| `constant(name, init, type?)`                    | `const name: type = init;`                         |
+| `override(name, type?, init?, attrs?)`           | `var<override> name: type = init;`                 |
+| `privateVar(name, type?, init?)`                 | `var<private> name: type = init;`                  |
+| `workgroupVar(name, type)`                       | `var<workgroup> name: type;`                       |
+| `uniform(name, type, group, binding)`            | `@group @binding var<uniform> name: type;`         |
+| `texture(name, type, group, binding)`            | `@group @binding var name: type;`                  |
+| `sampler(name, type, group, binding)`            | `@group @binding var name: type;`                  |
+| `storage(name, type, group, binding, access?)`   | `@group @binding var<storage, access> name: type;` |
+| `struct(name, members)`                          | `struct name { ... }`                              |
+| `member(name, type, attrs?)`                     | a struct field                                     |
+| `param(name, type, attrs?)`                      | a function parameter                               |
+| `returns(type, attrs?)`                          | a function return clause                           |
+| `func(name, params, body, ret?, attrs?)`         | `fn name(...) -> ret { ... }`                      |
+| `vertexEntry` / `fragmentEntry` / `computeEntry` | a `func` with the stage attribute                  |
+
+### `$a` — attribute constructors
+
+| Constructor                     | Emits                              |
+| ------------------------------- | ---------------------------------- |
+| `builtin(name)`                 | `@builtin(name)`                   |
+| `location(n)`                   | `@location(n)`                     |
+| `interpolate(type, sampling?)`  | `@interpolate(type, sampling)`     |
+| `align(n)`                      | `@align(n)`                        |
+| `size(n)`                       | `@size(n)`                         |
+| `invariant()`                   | `@invariant`                       |
+| `blendSrc(0 \| 1)`              | `@blend_src(n)`                    |
+| `id(n)`                         | `@id(n)`                           |
+| `mustUse()`                     | `@must_use`                        |
+| `diagnostic(severity, message)` | `@diagnostic(severity, "message")` |
+| `workgroupSize(x, y?, z?)`      | `@workgroup_size(...)`             |
+
+### `$t` — type constructors and singletons
+
+Any of these can be passed wherever a WGSL type is expected; they render identically to the
+equivalent type string.
+
+| Member                                      | Emits                                     |
+| ------------------------------------------- | ----------------------------------------- |
+| `f32`, `u32`, `i32`, `f16`, `bool`          | scalar types                              |
+| `vec2f` … `vec4h`                           | vector singletons (`vec{2,3,4}{i,u,f,h}`) |
+| `mat2x2f` … `mat4x4h`                       | matrix singletons                         |
+| `vec(size, component)`                      | `vecN<...>` from parts                    |
+| `mat(cols, rows, component)`                | `matCxR<...>` from parts                  |
+| `texture(dimension, component)`             | `texture_<dim><component>`                |
+| `sampler`, `sampler_comparison`             | sampler singletons                        |
+| `storageTexture(dimension, format, access)` | `texture_storage_...`                     |
+| `fixedArray(element, size)`                 | `array<T, N>`                             |
+| `runtimeArray(element)`                     | `array<T>`                                |
+| `atomic(component)`                         | `atomic<T>`                               |
+
+For the complete, authoritative surface see the module source under
+[`packages/core/src/rendering/webgpu/shaders`](https://github.com/AllenInstitute/vis/tree/main/packages/core/src/rendering/webgpu/shaders).
