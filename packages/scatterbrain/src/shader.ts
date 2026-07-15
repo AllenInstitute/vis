@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/noUnusedTemplateLiteral: not at all helpful*/
 
 import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';

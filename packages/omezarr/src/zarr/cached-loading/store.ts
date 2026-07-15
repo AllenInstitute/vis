@@ -85,7 +85,6 @@ export type CachingMultithreadedFetchStoreOptions = {
 type PromiseResolve<T> = (t: T) => void;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// biome-ignore lint/suspicious/noExplicitAny: This is aligned with the standard Promise API
 type PromiseReject = (reason: any) => void;
 
 type PendingRequest<T> = {
@@ -113,7 +112,6 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      * enable us to restrict what types of messages can be sent to workers
      * for a given store instance.
      */
-    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
     #workerPool: RequestHandler<any, any>;
 
     /**
@@ -150,7 +148,6 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      */
     #scoreFn: (h: CacheKey) => number;
 
-    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
     constructor(url: string | URL, handler: RequestHandler<any, any>, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);

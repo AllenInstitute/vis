@@ -25,37 +25,31 @@ export class Logger {
 
     debug(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('debug')) {
-            // biome-ignore lint/suspicious/noConsole: This is a logger
             console.debug(this.formatMessage('debug', message), ...optionalParams);
         }
     }
 
     dir(obj: unknown, ...optionalParams: unknown[]) {
         if (this.shouldLog('debug')) {
-            // biome-ignore lint/suspicious/noConsole: This is a logger
             console.log(this.formatMessage('debug', 'See object below'), ...optionalParams);
-            // biome-ignore lint/suspicious/noConsole: This is a logger
             console.dir(obj);
         }
     }
 
     info(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('info')) {
-            // biome-ignore lint/suspicious/noConsole: This is a logger
             console.info(this.formatMessage('info', message), ...optionalParams);
         }
     }
 
     warn(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('warn')) {
-            // biome-ignore lint/suspicious/noConsole: This is a logger
             console.warn(this.formatMessage('warn', message), ...optionalParams);
         }
     }
 
     error(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('error')) {
-            // biome-ignore lint/suspicious/noConsole: This is a logger
             console.error(this.formatMessage('error', message), ...optionalParams);
         }
     }

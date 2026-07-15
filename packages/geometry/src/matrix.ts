@@ -37,7 +37,6 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         // making an array of a specific length, just as we expect
     };
     const map = <T>(vec: Vec<Dim, T>, fn: (t: T, i: number) => T): Vec<Dim, T> => {
-        // biome-ignore lint/suspicious/noExplicitAny: <map doesnt change the length...>
         return vec.map(fn) as any; // sorry TS - you tried. we can see this is fine though
     };
     const zeros: () => mColumn = () => fill(0);

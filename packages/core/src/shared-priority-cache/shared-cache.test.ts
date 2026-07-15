@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: <tests> */
 import { beforeEach, describe, expect, test } from 'vitest';
 import { FakeStore, type Payload, PayloadFactory, PromiseFarm } from './test-utils';
 import { SharedPriorityCache } from './shared-cache';
