@@ -1,31 +1,3 @@
-/**
- * This file defines TypeScript types and helper functions for representing WGSL shader attributes in a type-safe way.
- * Each attribute is represented as an object with a specific shape, and includes a __gen method that generates the
- * corresponding WGSL syntax for that attribute. The file also includes type guards for each attribute type, as well as
- * constructors that validate input and create the attribute objects.
- *
- * Summary of Attributes:
- *   - align(x: i32 | u32 that is a power of 2 > 0) [can only be applied to a member of a struct]
- *   - binding(num >= 0) [can only be applied to a Resource variable]
- *   - blend_src(0 | 1) [only valid in specific feature-triggered scenarios; must be on a struct member with @location]
- *   - builtin(builtin-name) [only valid on a struct member, entrypoint argument, or entrypoint return type]
- *   - const [only allowed on non-user-defined functions; not relevant to our use case]
- *   - diagnostic(ShaderSeverityControlName, string)
- *   - group(num >= 0) [can only be applied to a Resource variable]
- *   - id(num >= 0) [can only be applied to an override variable with a scalar type]
- *   - interpolate(ShaderIntroplationType, ShaderInterpolationSamplingType?) [can only be applied to declarations with a @location attribute]
- *   - invariant [can only be applied to a @builtin(position) declaration; only has effect if applied to vertex position output]
- *   - location(num >= 0) [structure members or entrypoint inputs/outputs only; numeric scalar or vector declarations only; not allowed in compute shaders]
- *   - must_use [function declarations with return types only]
- *   - size(num >= 1) [only applicable to struct members with a size known at shader creation time]
- *   - workgroup_size(x: u32 >= 1, [y?: u32 >= 1, [z?: u32 >= 1]]) [only on compute shader entry points]
- *
- *   Shader Stage indicator attributes:
- *     - vertex
- *     - fragment
- *     - compute
- */
-
 /// TYPES
 
 type ShaderSeverityControlName = 'error' | 'warning' | 'info' | 'off';
@@ -97,13 +69,9 @@ export type AlignAttribute = DeclarationAttribute & {
 };
 
 /*
- * NOTE: The `binding` attribute is intentionally omitted from the public API for now,
- * as its usage is handled by setting the `binding` property on a Resource variable
- * declaration.
- **/
-// export type BindingAttribute = DeclarationAttribute & {
-//     binding: number;
-// };
+ * The `binding` attribute is intentionally omitted from the public API; its value is set via the
+ * `binding` property on a Resource variable declaration.
+ */
 
 export type BlendSrcAttribute = DeclarationAttribute & {
     blend_src: 0 | 1;
@@ -122,13 +90,9 @@ export type DiagnosticAttribute = DeclarationAttribute & {
 };
 
 /*
- * NOTE: The `group` attribute is intentionally omitted from the public API for now,
- * as its usage is handled by setting the `group` property on a Resource variable
- * declaration.
- **/
-// export type GroupAttribute = DeclarationAttribute & {
-//     group: number;
-// };
+ * The `group` attribute is intentionally omitted from the public API; its value is set via the
+ * `group` property on a Resource variable declaration.
+ */
 
 export type IdAttribute = DeclarationAttribute & {
     id: number;
@@ -199,16 +163,9 @@ export function align(n: number): AlignAttribute {
 }
 
 /*
- * NOTE: The `binding` attribute is intentionally omitted from the public API for now,
- * as its usage is handled by setting the `binding` property on a Resource variable
- * declaration.
- **/
-// export function binding(n: number): BindingAttribute {
-//     if (n < 0) {
-//         throw new Error('Binding number must be a non-negative integer');
-//     }
-//     return { binding: n, __gen: () => `@binding(${n})` };
-// }
+ * The `binding` attribute is intentionally omitted from the public API; its value is set via the
+ * `binding` property on a Resource variable declaration.
+ */
 
 export function blendSrc(value: 0 | 1): BlendSrcAttribute {
     if (value !== 0 && value !== 1) {
@@ -239,16 +196,9 @@ export function diagnostic(severity: ShaderSeverityControlName, message: string)
 }
 
 /*
- * NOTE: The `group` attribute is intentionally omitted from the public API for now,
- * as its usage is handled by setting the `group` property on a Resource variable
- * declaration.
- **/
-// export function group(n: number): GroupAttribute {
-//     if (n < 0) {
-//         throw new Error('Group number must be a non-negative integer');
-//     }
-//     return { group: n, __gen: () => `@group(${n})` };
-// }
+ * The `group` attribute is intentionally omitted from the public API; its value is set via the
+ * `group` property on a Resource variable declaration.
+ */
 
 export function id(n: number): IdAttribute {
     if (n < 0) {

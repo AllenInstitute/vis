@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { builtin, location } from './attributes';
 import {
     constant,
     fragmentEntry,
@@ -11,7 +12,6 @@ import {
     uniform,
     vertexEntry,
 } from './declarations';
-import { builtin, location } from './attributes';
 import { asSource, shader } from './shader';
 
 // ─── example: point-renderer shader ───────────────────────────────────────
