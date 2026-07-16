@@ -1,3 +1,4 @@
+/* oxlint-disable no-console -- these are tests */
 import { beforeEach, describe, expect, test } from 'vitest';
 import { AsyncPriorityCache, type Cacheable } from './priority-cache';
 import { FakeStore, type Payload, PayloadFactory, PromiseFarm } from './test-utils';

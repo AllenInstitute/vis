@@ -25,31 +25,37 @@ export class Logger {
 
     debug(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('debug')) {
+            // oxlint-disable-next-line no-console -- this is a logger
             console.debug(this.formatMessage('debug', message), ...optionalParams);
         }
     }
 
     dir(obj: unknown, ...optionalParams: unknown[]) {
         if (this.shouldLog('debug')) {
+            // oxlint-disable-next-line no-console -- this is a logger
             console.log(this.formatMessage('debug', 'See object below'), ...optionalParams);
+            // oxlint-disable-next-line no-console -- this is a logger
             console.dir(obj);
         }
     }
 
     info(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('info')) {
+            // oxlint-disable-next-line no-console -- this is a logger
             console.info(this.formatMessage('info', message), ...optionalParams);
         }
     }
 
     warn(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('warn')) {
+            // oxlint-disable-next-line no-console -- this is a logger
             console.warn(this.formatMessage('warn', message), ...optionalParams);
         }
     }
 
     error(message: string, ...optionalParams: unknown[]) {
         if (this.shouldLog('error')) {
+            // oxlint-disable-next-line no-console -- this is a logger
             console.error(this.formatMessage('error', message), ...optionalParams);
         }
     }

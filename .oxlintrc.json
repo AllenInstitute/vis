@@ -29,6 +29,7 @@
         "import/no-self-import": "error",
         "import/no-duplicates": "error",
         "import/no-named-as-default": "error",
+        "no-console": "error",
         "typescript/no-explicit-any": "error"
     }
 }

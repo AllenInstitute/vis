@@ -41,10 +41,12 @@ class Whatever implements RequestHandler<FetchMessage, FetchResponseMessage> {
             signal.addEventListener('abort', () => {
                 this.log.push({ request: message, response: undefined, status: 'cancelled' });
                 if (!this.promises.mockReject(p, 'cancel')) {
+                    // oxlint-disable-next-line no-console -- provides test outcome context
                     console.log('fake promise could not be found to reject...');
                 }
             });
         } else {
+            // oxlint-disable-next-line no-console -- provides test outcome context
             console.warn('warning - test request had no abort signal!');
         }
 
@@ -123,6 +125,7 @@ describe('basics', () => {
             const B = await b;
             // we know a is toast... do it this way for shortness:
             a.then(
+                // oxlint-disable-next-line no-console -- provides test outcome context
                 (x) => console.log('a should be cancelled, but instead its', x),
                 () => {}
             );
@@ -130,6 +133,7 @@ describe('basics', () => {
             expect(pool.log).toHaveLength(1);
             expect(pool.log[0].status).toEqual('resolved');
         } catch (reason) {
+            // oxlint-disable-next-line no-console -- provides test outcome context
             console.error('b was aborted - this is a bug! ', reason);
             expect(false).toBeTruthy();
         }
