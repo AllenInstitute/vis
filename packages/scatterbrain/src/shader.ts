@@ -133,11 +133,13 @@ export type RenderProps = {
     };
 };
 export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) {
+    // oxlint-disable-next-line typescript/no-explicit-any -- regl prop types are dynamic and cannot be given explicitly here
     const prop = (p: string) => regl.prop<any, string>(p);
     const { quantitativeColumns, categoricalColumns, categoricalTable, gradientTable, positionColumn } = config;
     const ranges = reduce(
         quantitativeColumns,
         (unis, col) => ({ ...unis, [rangeFor(col)]: prop(rangeFor(col)) }),
+        // oxlint-disable-next-line typescript/no-explicit-any -- regl dynamic variable types are dynamic and cannot be given explicitly here
         {} as Record<string, REGL.DynamicVariable<any>>
     );
     const { vs, fs } = buildShaders(config);
@@ -156,6 +158,7 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
         vert: vs,
         frag: fs,
         attributes: [positionColumn, ...categoricalColumns, ...quantitativeColumns].reduce(
+            // oxlint-disable-next-line typescript/no-explicit-any -- regl prop types are dynamic and cannot be given explicitly here
             (attribs, col) => ({ ...attribs, [col]: regl.prop<any, string>(col) }),
             {}
         ),

@@ -134,6 +134,7 @@ export function buildRGBTileRenderCommand(regl: REGL.Regl) {
     return (p: RGBTileRenderProps) => cmd(p);
 }
 
+// oxlint-disable-next-line typescript/no-explicit-any -- uniform types cannot be given explicitly due to dynamic nature of uniforms in these shaders
 type ReglUniforms = REGL.MaybeDynamicUniforms<any, REGL.DefaultContext, TileRenderProps>;
 
 /**
@@ -187,6 +188,7 @@ export function buildTileRenderCommand(regl: REGL.Regl, numChannels: number) {
             gl_FragColor = vec4(color, 1.0);
         }`;
 
+    // oxlint-disable-next-line typescript/no-explicit-any -- uniform types cannot be given explicitly due to dynamic nature of uniforms in these shaders
     const cmd = regl<any, { pos: REGL.BufferData }, TileRenderProps>({
         vert: tileVert,
         frag,

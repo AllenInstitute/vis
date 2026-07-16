@@ -4,7 +4,9 @@ import { FETCH_RESPONSE_MESSAGE_TYPE, type FetchMessage, type FetchResponseMessa
 import { PromiseFarm } from '@alleninstitute/vis-core/src/shared-priority-cache/test-utils';
 
 type SpyLog = {
+    // oxlint-disable-next-line typescript/no-explicit-any -- typing improvements for Messages are a future enhancement
     request: any;
+    // oxlint-disable-next-line typescript/no-explicit-any -- typing improvements for Messages are a future enhancement
     response: any;
     status: 'cancelled' | 'failed' | 'resolved';
 };

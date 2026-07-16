@@ -37,6 +37,7 @@ function MatrixLib<Dim extends 2 | 3 | 4>(N: Dim) {
         // making an array of a specific length, just as we expect
     };
     const map = <T>(vec: Vec<Dim, T>, fn: (t: T, i: number) => T): Vec<Dim, T> => {
+        // oxlint-disable-next-line typescript/no-explicit-any -- map doesn't change the length, so this is safe
         return vec.map(fn) as any; // sorry TS - you tried. we can see this is fine though
     };
     const zeros: () => mColumn = () => fill(0);

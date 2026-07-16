@@ -112,6 +112,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      * enable us to restrict what types of messages can be sent to workers
      * for a given store instance.
      */
+    // oxlint-disable-next-line typescript/no-explicit-any -- end-to-end Message-based type constraints are a future enhancement
     #workerPool: RequestHandler<any, any>;
 
     /**
@@ -148,6 +149,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      */
     #scoreFn: (h: CacheKey) => number;
 
+    // oxlint-disable-next-line typescript/no-explicit-any -- end-to-end Message-based type constraints are a future enhancement
     constructor(url: string | URL, handler: RequestHandler<any, any>, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);
