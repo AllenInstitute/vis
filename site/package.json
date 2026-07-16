@@ -50,6 +50,7 @@
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-omezarr": "workspace:*",
         "@alleninstitute/vis-scatterbrain": "workspace:*",
+        "@alleninstitute/vis-tiff": "workspace:*",
         "@astrojs/check": "0.9.6",
         "@astrojs/mdx": "4.3.13",
         "@astrojs/react": "4.4.2",
