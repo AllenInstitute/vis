@@ -11,12 +11,7 @@
             "version": "18"
         }
     },
-    "ignorePatterns": [
-        "build",
-        "dist",
-        "node_modules",
-        "*.d.ts",
-    ],
+    "ignorePatterns": ["build", "dist", "node_modules", "*.d.ts"],
     "rules": {
         "import/no-cycle": "error",
         "import/no-self-import": "error",
