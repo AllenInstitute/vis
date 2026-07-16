@@ -16,13 +16,6 @@
         "dist",
         "node_modules",
         "*.d.ts",
-        "graphql.schema.json",
-        "cms-graphql.schema.json",
-        "sips-graphql.schema.json",
-        "generated-schema-types.ts",
-        "cms-generated-schema-types.ts",
-        "sips-generated-schema-types.ts",
-        "src/applications/ppdc/**/gen.*"
     ],
     "rules": {
         "import/no-cycle": "error",
