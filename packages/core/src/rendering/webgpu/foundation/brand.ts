@@ -5,9 +5,6 @@
  */
 export function isBranded<B extends symbol>(value: unknown, brand: B): value is { readonly brand: B } {
     return (
-        typeof value === 'object' &&
-        value !== null &&
-        'brand' in value &&
-        (value as { brand: unknown }).brand === brand
+        typeof value === 'object' && value !== null && 'brand' in value && (value as { brand: unknown }).brand === brand
     );
 }

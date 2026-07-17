@@ -75,9 +75,7 @@ describe('constAttr', () => {
 
 describe('diagnostic', () => {
     it.each(['error', 'warning', 'info', 'off'] as const)('generates @diagnostic for severity "%s"', (severity) => {
-        expect(diagnostic(severity, 'diagnostic message').gen()).toBe(
-            `@diagnostic(${severity}, "diagnostic message")`
-        );
+        expect(diagnostic(severity, 'diagnostic message').gen()).toBe(`@diagnostic(${severity}, "diagnostic message")`);
     });
 
     it('throws for an invalid severity', () => {

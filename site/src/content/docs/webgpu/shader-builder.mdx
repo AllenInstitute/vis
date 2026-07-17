@@ -52,24 +52,24 @@ mix all three.
 - **Buckets** keep the import list short and make call sites self-documenting
   (`decls.struct`, `attrs.location`, `types.vec4f`):
 
-  ```ts
-  import { decls, attrs, types } from '@alleninstitute/vis-core';
-  ```
+    ```ts
+    import { decls, attrs, types } from '@alleninstitute/vis-core';
+    ```
 
 - **Direct named imports** pull in only the constructors you actually use, so call sites lose the
   bucket prefix entirely:
 
-  ```ts
-  import { struct, member, uniform, location, vec2f, vec4f } from '@alleninstitute/vis-core';
-  ```
+    ```ts
+    import { struct, member, uniform, location, vec2f, vec4f } from '@alleninstitute/vis-core';
+    ```
 
 - **Aliased buckets** rename the buckets to whatever format works best for your code; for example,
   a single letter alias allows for terse, dense call sites:
   (`d.struct`, `a.location`, `t.vec4f`):
 
-  ```ts
-  import { decls as d, attrs as a, types as t } from '@alleninstitute/vis-core';
-  ```
+    ```ts
+    import { decls as d, attrs as a, types as t } from '@alleninstitute/vis-core';
+    ```
 
 One caveat for direct imports: the bare names `texture` and `sampler` are the **declaration**
 constructors (equivalent to `decls.texture` / `decls.sampler`). The matching WGSL _type_
@@ -135,7 +135,20 @@ expected — an inter-stage `VsOut` struct, for example. This example uses **dir
 so the constructors appear without a bucket prefix.
 
 ```ts
-import { struct, member, uniform, func, param, returns, builtin, location, vec2f, vec4f, shader, asSource } from '@alleninstitute/vis-core';
+import {
+    struct,
+    member,
+    uniform,
+    func,
+    param,
+    returns,
+    builtin,
+    location,
+    vec2f,
+    vec4f,
+    shader,
+    asSource,
+} from '@alleninstitute/vis-core';
 
 const Camera = struct('Camera', [
     member('view', vec4f), // xy = min corner, zw = max corner
@@ -309,12 +322,7 @@ function buildPointShader(cfg: PointConfig): WgslShader {
                 `var out: VsOut; out.position = vec4f(v.${cfg.position}, 0.0, 1.0); out.color = vec4f(1.0); return out;`,
             d.returns(VsOut)
         ),
-        d.fragmentEntry(
-            'fs_main',
-            [d.param('v', VsOut)],
-            () => 'return v.color;',
-            d.returns(t.vec4f, [a.location(0)])
-        ),
+        d.fragmentEntry('fs_main', [d.param('v', VsOut)], () => 'return v.color;', d.returns(t.vec4f, [a.location(0)])),
     ]);
 }
 
@@ -335,8 +343,8 @@ struct VsOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
 
 </details>
 
-Variations to the config are reflected directly in the resulting shader: struct fields, binding layout, 
-and expressions generate in alignment to the config inputs. For a fully worked example that adds categorical 
+Variations to the config are reflected directly in the resulting shader: struct fields, binding layout,
+and expressions generate in alignment to the config inputs. For a fully worked example that adds categorical
 color tables, gradient lookups, spatial filtering, and highlighting on top of this pattern, see
 [`example.test.ts`](https://github.com/AllenInstitute/vis/blob/main/packages/core/src/rendering/webgpu/shaders/example.test.ts)
 in the `vis` repository.
