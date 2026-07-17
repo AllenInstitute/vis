@@ -5,7 +5,6 @@ import { isHeartbeatMessage, isWorkerMessageWithId, type WorkerMessage, type Wor
 type PromiseResolve<T extends WorkerMessageWithId> = (t: T) => void;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// biome-ignore lint/suspicious/noExplicitAny: This is aligned with the standard Promise API
 type PromiseReject = (reason: any) => void;
 
 type MessageValidator<T> = TypeGuardFunction<unknown, T>;

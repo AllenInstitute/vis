@@ -300,7 +300,7 @@ describe('async cache', () => {
             expect(cache.isCached(cacheKey({ id: 1 }, 'color'))).toBeFalsy();
             expect(cache.isCached(cacheKey({ id: 1 }, 'position'))).toBeFalsy();
         });
-        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task: ', async () => {
+        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task:', async () => {
             // a nice edge-case.
             // real-world version: imagine a 1-channel ome-zarr image, in which the user wants to render with a 3-channel (RGB) shader
             // they want a grayscale version, so they want to map that singular data-channel to each color, like so:
@@ -331,7 +331,7 @@ describe('async cache', () => {
             expect(renderedData.data.color.pretend).toEqual(clr);
             expect(renderedData.data.position.pretend).toEqual(clr);
         });
-        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task (and also the promises beneath are the same promise): ', async () => {
+        it('handles the case in which the same cache-key is requested by multiple semantic-keys within the same task (and also the promises beneath are the same promise):', async () => {
             // same as above, but internally returns the same promise twice...
             const clr: vec3 = [255, 0, 0];
             const { fetchers, spies } = fetchTheSameThingTwiceOnePromise(1, clr, [1, 2, 3]);

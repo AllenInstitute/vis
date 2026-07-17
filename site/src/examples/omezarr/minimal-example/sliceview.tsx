@@ -7,8 +7,7 @@ import {
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn } from '@alleninstitute/vis-core';
-import { useCallback, useState } from 'react';
-import { useContext, useEffect, useRef } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { renderServerContext } from '../../common/react/render-server-provider';
 type Props = {

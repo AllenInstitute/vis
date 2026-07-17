@@ -101,7 +101,6 @@ export function OmezarrViewer({
         };
     }, [server, settings.camera.screenSize]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: I want to run an effect when I want to run an effect
     useEffect(() => {
         // when the user changes the slide (orthoVal?), erase our stashed copy of the rendered image
         if (server && stash.current) {

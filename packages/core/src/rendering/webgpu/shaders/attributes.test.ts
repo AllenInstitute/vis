@@ -62,6 +62,7 @@ describe('builtin', () => {
     });
 
     it('throws for an invalid builtin name', () => {
+        // oxlint-disable-next-line typescript/no-explicit-any -- deliberately passing an invalid name to test error handling
         expect(() => builtin('not_a_builtin' as any)).toThrow();
     });
 });
