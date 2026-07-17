@@ -24,7 +24,7 @@ export {
     vertexEntry,
 } from './shaders';
 
-export { $a, $d, $t } from './shaders';
+export { attrs, decls, types } from './shaders';
 
 export type {
     VertexArrayKind,

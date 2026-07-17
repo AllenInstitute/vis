@@ -17,31 +17,64 @@ exactly what each builder produces.
 Three ideas are all you need:
 
 1. **Every declaration knows how to render itself.** Each builder returns an object with a
-   `__gen()` method that emits its own slice of WGSL.
+   `gen()` method that emits its own slice of WGSL.
 2. **A shader is just a list of declarations.** `shader([...])` stamps the list with a stable
    `id` and hands you back a `WgslShader`.
-3. **`asSource()` turns it into text.** It calls `__gen()` on each declaration and joins the
+3. **`asSource()` turns it into text.** It calls `gen()` on each declaration and joins the
    results with newlines.
 
 ```ts
-import { $d, $a, $t, shader, asSource, vertexInput } from '@alleninstitute/vis-core';
+import { decls, attrs, types, shader, asSource, vertexInput } from '@alleninstitute/vis-core';
 ```
 
 Three "buckets" hold the constructors:
 
-- **`$d`** — _declarations_: `struct`, `member`, `uniform`, `texture`, `sampler`, `storage`,
+- **`decls`** — _declarations_: `struct`, `member`, `uniform`, `texture`, `sampler`, `storage`,
   `func`, `param`, `returns`, `constant`, `vertexEntry`, `fragmentEntry`, `computeEntry`, and more.
-- **`$a`** — _attributes_: `builtin`, `location`, `interpolate`, `align`, `size`, `invariant`,
+- **`attrs`** — _attributes_: `builtin`, `location`, `interpolate`, `align`, `size`, `invariant`,
   `blendSrc`, and the rest of the WGSL `@attribute` set.
-- **`$t`** — _types_: the singletons `f32`, `u32`, `vec2f`, `vec4f`, `mat4x4f`, … plus the
+- **`types`** — _types_: the singletons `f32`, `u32`, `vec2f`, `vec4f`, `mat4x4f`, … plus the
   constructors `vec`, `mat`, `texture`, `sampler`, `fixedArray`, `runtimeArray`, `storageTexture`,
   and `atomic`.
 
 The top-level `shader`, `asSource`, and `vertexInput` helpers are imported directly (they are not
-part of any bucket). Anywhere a type is expected you may pass **either** a `$t` value **or** a plain
-WGSL type string — `$t.vec4f` and `'vec4f'` generate identical output — so the two are freely
-interchangeable. The snippets below use `$t`, as these constructors provide additional type-safety
-in TypeScript code.
+part of any bucket). Anywhere a type is expected you may pass **either** a `types` value **or** a plain
+WGSL type string — `types.vec4f` and `'vec4f'` generate identical output — so the two are freely
+interchangeable. The snippets below prefer the `types` constructors, as they provide additional
+type-safety in TypeScript code.
+
+## Import styles
+
+The buckets are a convenience, not a requirement — **every constructor is also a top-level export**.
+Pick whichever style reads best; they are fully interchangeable and the examples below deliberately
+mix all three.
+
+- **Buckets** keep the import list short and make call sites self-documenting
+  (`decls.struct`, `attrs.location`, `types.vec4f`):
+
+  ```ts
+  import { decls, attrs, types } from '@alleninstitute/vis-core';
+  ```
+
+- **Direct named imports** pull in only the constructors you actually use, so call sites lose the
+  bucket prefix entirely:
+
+  ```ts
+  import { struct, member, uniform, location, vec2f, vec4f } from '@alleninstitute/vis-core';
+  ```
+
+- **Aliased buckets** rename the buckets to whatever format works best for your code; for example,
+  a single letter alias allows for terse, dense call sites:
+  (`d.struct`, `a.location`, `t.vec4f`):
+
+  ```ts
+  import { decls as d, attrs as a, types as t } from '@alleninstitute/vis-core';
+  ```
+
+One caveat for direct imports: the bare names `texture` and `sampler` are the **declaration**
+constructors (equivalent to `decls.texture` / `decls.sampler`). The matching WGSL _type_
+constructors live only on the bucket — reach for `types.texture(...)` / `types.sampler` (or an
+aliased `t.texture(...)`) to avoid the name clash.
 
 ## Level 1 — A solid-color triangle
 
@@ -49,29 +82,29 @@ The smallest useful shader: a vertex stage that positions three hard-coded clip-
 a fragment stage that paints them a flat color. No inputs, no uniforms.
 
 ```ts
-import { $d, $a, $t, shader, asSource } from '@alleninstitute/vis-core';
+import { decls, attrs, types, shader, asSource } from '@alleninstitute/vis-core';
 
 // A module-scope constant holding the three clip-space corners.
-const positions = $d.constant(
+const positions = decls.constant(
     'positions',
     'array<vec2f, 3>(vec2f(0.0, 0.5), vec2f(-0.5, -0.5), vec2f(0.5, -0.5))',
-    $t.fixedArray($t.vec2f, 3)
+    types.fixedArray(types.vec2f, 3)
 );
 
 // @vertex: read the builtin vertex index, look up the position, emit clip coordinates.
-const vs = $d.vertexEntry(
+const vs = decls.vertexEntry(
     'vs_main',
-    [$d.param('vertexIndex', $t.u32, [$a.builtin('vertex_index')])],
+    [decls.param('vertexIndex', types.u32, [attrs.builtin('vertex_index')])],
     () => 'return vec4f(positions[vertexIndex], 0.0, 1.0);',
-    $d.returns($t.vec4f, [$a.builtin('position')])
+    decls.returns(types.vec4f, [attrs.builtin('position')])
 );
 
 // @fragment: return a constant color.
-const fs = $d.fragmentEntry(
+const fs = decls.fragmentEntry(
     'fs_main',
     [],
     () => 'return vec4f(1.0, 0.4, 0.1, 1.0);',
-    $d.returns($t.vec4f, [$a.location(0)])
+    decls.returns(types.vec4f, [attrs.location(0)])
 );
 
 const triangle = shader([positions, vs, fs]);
@@ -89,39 +122,40 @@ const positions: array<vec2f, 3> = array<vec2f, 3>(vec2f(0.0, 0.5), vec2f(-0.5, 
 
 </details>
 
-Notice how each builder maps directly onto a WGSL construct: `$a.builtin('vertex_index')` becomes
-`@builtin(vertex_index)`, `$d.returns($t.vec4f, [$a.builtin('position')])` becomes the
+Notice how each builder maps directly onto a WGSL construct: `attrs.builtin('vertex_index')` becomes
+`@builtin(vertex_index)`, `decls.returns(types.vec4f, [attrs.builtin('position')])` becomes the
 `-> @builtin(position) vec4f` return clause, and the entry-point stage attribute (`@vertex` /
 `@fragment`) is added for you by `vertexEntry` / `fragmentEntry`.
 
 ## Level 2 — Structs and uniforms
 
 Most shaders take data from the host. Declare a `struct` for your uniform block, bind it with
-`$d.uniform(name, type, group, binding)`, and reuse struct declarations anywhere a type is
-expected — an inter-stage `VsOut` struct, for example.
+`uniform(name, type, group, binding)`, and reuse struct declarations anywhere a type is
+expected — an inter-stage `VsOut` struct, for example. This example uses **direct named imports**,
+so the constructors appear without a bucket prefix.
 
 ```ts
-import { $d, $a, $t, shader, asSource } from '@alleninstitute/vis-core';
+import { struct, member, uniform, func, param, returns, builtin, location, vec2f, vec4f, shader, asSource } from '@alleninstitute/vis-core';
 
-const Camera = $d.struct('Camera', [
-    $d.member('view', $t.vec4f), // xy = min corner, zw = max corner
+const Camera = struct('Camera', [
+    member('view', vec4f), // xy = min corner, zw = max corner
 ]);
 
-const VsOut = $d.struct('VsOut', [
-    $d.member('position', $t.vec4f, [$a.builtin('position')]),
-    $d.member('color', $t.vec4f, [$a.location(0)]),
+const VsOut = struct('VsOut', [
+    member('position', vec4f, [builtin('position')]),
+    member('color', vec4f, [location(0)]),
 ]);
 
 // group 0, binding 0
-const camera = $d.uniform('camera', Camera, 0, 0);
+const camera = uniform('camera', Camera, 0, 0);
 
 // A reusable helper function.
-const applyCamera = $d.func(
+const applyCamera = func(
     'applyCamera',
-    [$d.param('dataPos', $t.vec2f), $d.param('view', $t.vec4f)],
+    [param('dataPos', vec2f), param('view', vec4f)],
     () =>
         'let size = view.zw - view.xy; let unit = (dataPos - view.xy) / size; return vec4f(unit * 2.0 - 1.0, 0.0, 1.0);',
-    $d.returns($t.vec4f)
+    returns(vec4f)
 );
 
 const program = shader([Camera, VsOut, camera, applyCamera]);
@@ -151,11 +185,11 @@ Buffer-backed vertex attributes have rules: every leaf needs exactly one `@locat
 hands back the classified attributes plus a convenience `entry(...)` for the vertex stage.
 
 ```ts
-import { $d, $a, $t, shader, asSource, vertexInput } from '@alleninstitute/vis-core';
+import { decls, attrs, types, shader, asSource, vertexInput } from '@alleninstitute/vis-core';
 
-const Vertex = $d.struct('Vertex', [
-    $d.member('position', $t.vec2f, [$a.location(0)]),
-    $d.member('color', $t.vec4f, [$a.location(1)]),
+const Vertex = decls.struct('Vertex', [
+    decls.member('position', types.vec2f, [attrs.location(0)]),
+    decls.member('color', types.vec4f, [attrs.location(1)]),
 ]);
 
 const input = vertexInput([Vertex]);
@@ -164,15 +198,15 @@ const input = vertexInput([Vertex]);
 //                      { name: 'color',    location: 1, wgslType: 'vec4f', struct: 'Vertex' }]
 // Use these to build your GPUVertexBufferLayout without repeating yourself.
 
-const VsOut = $d.struct('VsOut', [
-    $d.member('position', $t.vec4f, [$a.builtin('position')]),
-    $d.member('color', $t.vec4f, [$a.location(0)]),
+const VsOut = decls.struct('VsOut', [
+    decls.member('position', types.vec4f, [attrs.builtin('position')]),
+    decls.member('color', types.vec4f, [attrs.location(0)]),
 ]);
 
 const vs = input.entry(
     'vs_main',
     () => 'var out: VsOut; out.position = vec4f(v.position, 0.0, 1.0); out.color = v.color; return out;',
-    $d.returns(VsOut)
+    decls.returns(VsOut)
 );
 
 // Drop the interface's struct declarations in alongside your own.
@@ -201,16 +235,16 @@ Sampled resources follow the same pattern as uniforms: declare them with a group
 them by name in a function body.
 
 ```ts
-import { $d, $a, $t, shader, asSource } from '@alleninstitute/vis-core';
+import { decls, attrs, types, shader, asSource } from '@alleninstitute/vis-core';
 
-const albedo = $d.texture('albedo', $t.texture('2d', 'f32'), 0, 0);
-const albedoSampler = $d.sampler('albedoSampler', $t.sampler, 0, 1);
+const albedo = decls.texture('albedo', types.texture('2d', 'f32'), 0, 0);
+const albedoSampler = decls.sampler('albedoSampler', types.sampler, 0, 1);
 
-const fs = $d.fragmentEntry(
+const fs = decls.fragmentEntry(
     'fs_main',
-    [$d.param('uv', $t.vec2f, [$a.location(0)])],
+    [decls.param('uv', types.vec2f, [attrs.location(0)])],
     () => 'return textureSample(albedo, albedoSampler, uv);',
-    $d.returns($t.vec4f, [$a.location(0)])
+    decls.returns(types.vec4f, [attrs.location(0)])
 );
 
 const program = shader([albedo, albedoSampler, fs]);
@@ -232,10 +266,12 @@ const wgsl = asSource(program);
 
 The real payoff: because declarations are plain data, you can **generate** them. Here a single
 function turns a runtime configuration into a complete shader whose vertex layout, uniform block,
-and body all adapt to the list of columns you pass in.
+and body all adapt to the list of columns you pass in. Generator code tends to repeat the bucket
+name on every line, so this example **aliases the buckets** to `d`, `a`, and `t` to keep the
+call sites tight.
 
 ```ts
-import { $d, $a, $t, shader, asSource, type WgslShader } from '@alleninstitute/vis-core';
+import { decls as d, attrs as a, types as t, shader, asSource, type WgslShader } from '@alleninstitute/vis-core';
 
 type PointConfig = {
     /** Name of the vec2 position column. */
@@ -245,39 +281,39 @@ type PointConfig = {
 };
 
 function buildPointShader(cfg: PointConfig): WgslShader {
-    const Vertex = $d.struct('Vertex', [
-        $d.member('vIndex', $t.u32, [$a.builtin('vertex_index')]),
-        $d.member(cfg.position, $t.vec2f, [$a.location(0)]),
-        ...cfg.quantitative.map((col, i) => $d.member(col, $t.f32, [$a.location(i + 1)])),
+    const Vertex = d.struct('Vertex', [
+        d.member('vIndex', t.u32, [a.builtin('vertex_index')]),
+        d.member(cfg.position, t.vec2f, [a.location(0)]),
+        ...cfg.quantitative.map((col, i) => d.member(col, t.f32, [a.location(i + 1)])),
     ]);
 
-    const Uniforms = $d.struct('Uniforms', [
-        $d.member('view', $t.vec4f),
-        ...cfg.quantitative.map((col) => $d.member(`${col}_range`, $t.vec2f)),
+    const Uniforms = d.struct('Uniforms', [
+        d.member('view', t.vec4f),
+        ...cfg.quantitative.map((col) => d.member(`${col}_range`, t.vec2f)),
     ]);
 
-    const VsOut = $d.struct('VsOut', [
-        $d.member('position', $t.vec4f, [$a.builtin('position')]),
-        $d.member('color', $t.vec4f, [$a.location(0)]),
+    const VsOut = d.struct('VsOut', [
+        d.member('position', t.vec4f, [a.builtin('position')]),
+        d.member('color', t.vec4f, [a.location(0)]),
     ]);
 
     return shader([
         Vertex,
         Uniforms,
         VsOut,
-        $d.uniform('unis', Uniforms, 0, 0),
-        $d.vertexEntry(
+        d.uniform('unis', Uniforms, 0, 0),
+        d.vertexEntry(
             'vs_main',
-            [$d.param('v', Vertex)],
+            [d.param('v', Vertex)],
             () =>
                 `var out: VsOut; out.position = vec4f(v.${cfg.position}, 0.0, 1.0); out.color = vec4f(1.0); return out;`,
-            $d.returns(VsOut)
+            d.returns(VsOut)
         ),
-        $d.fragmentEntry(
+        d.fragmentEntry(
             'fs_main',
-            [$d.param('v', VsOut)],
+            [d.param('v', VsOut)],
             () => 'return v.color;',
-            $d.returns($t.vec4f, [$a.location(0)])
+            d.returns(t.vec4f, [a.location(0)])
         ),
     ]);
 }
@@ -299,15 +335,20 @@ struct VsOut { @builtin(position) position: vec4f, @location(0) color: vec4f }
 
 </details>
 
-Change the config and the whole shader — struct fields, binding layout, and generated
-expressions — updates in lockstep. For a fully worked example that adds categorical color tables,
-gradient lookups, spatial filtering, and highlighting on top of this pattern, see
+Variations to the config are reflected directly in the resulting shader: struct fields, binding layout, 
+and expressions generate in alignment to the config inputs. For a fully worked example that adds categorical 
+color tables, gradient lookups, spatial filtering, and highlighting on top of this pattern, see
 [`example.test.ts`](https://github.com/AllenInstitute/vis/blob/main/packages/core/src/rendering/webgpu/shaders/example.test.ts)
 in the `vis` repository.
 
 ## Constructor reference
 
-### `$d` — declaration constructors
+Every constructor below is reachable two ways: on its bucket (`decls.struct`, `attrs.location`,
+`types.vec4f`) **and** as a bare top-level export (`struct`, `location`, `vec4f`) you can import
+directly. The one exception is `texture` / `sampler`: the bare names are the declaration
+constructors, so use `types.texture(...)` / `types.sampler` for the type versions.
+
+### `decls` — declaration constructors
 
 | Constructor                                      | Emits                                              |
 | ------------------------------------------------ | -------------------------------------------------- |
@@ -326,7 +367,7 @@ in the `vis` repository.
 | `func(name, params, body, ret?, attrs?)`         | `fn name(...) -> ret { ... }`                      |
 | `vertexEntry` / `fragmentEntry` / `computeEntry` | a `func` with the stage attribute                  |
 
-### `$a` — attribute constructors
+### `attrs` — attribute constructors
 
 | Constructor                     | Emits                              |
 | ------------------------------- | ---------------------------------- |
@@ -342,7 +383,7 @@ in the `vis` repository.
 | `diagnostic(severity, message)` | `@diagnostic(severity, "message")` |
 | `workgroupSize(x, y?, z?)`      | `@workgroup_size(...)`             |
 
-### `$t` — type constructors and singletons
+### `types` — type constructors and singletons
 
 Any of these can be passed wherever a WGSL type is expected; they render identically to the
 equivalent type string.

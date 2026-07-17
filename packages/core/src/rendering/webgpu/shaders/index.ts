@@ -29,7 +29,7 @@ export {
     builtin,
     compute,
     constAttr,
-    $a,
+    attrs,
     diagnostic,
     fragment,
     id,
@@ -70,7 +70,7 @@ export {
     alias,
     computeEntry,
     constant,
-    $d,
+    decls,
     fragmentEntry,
     func,
     member,
@@ -119,7 +119,7 @@ export type {
     WgslVec,
 } from './wgsl-types';
 export {
-    $t,
+    types,
     atomic,
     bool,
     depthTexture,

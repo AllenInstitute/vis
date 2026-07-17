@@ -40,7 +40,7 @@ export const VERTEX_INPUT_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Ver
 /** A validated vertex shader input interface: the entry parameter list, the struct declarations it
  *  references (for top-level emission), and the classified `@location` / `@builtin` leaves. */
 export interface VertexInputInterface {
-    readonly __brand: typeof VERTEX_INPUT_BRAND;
+    readonly brand: typeof VERTEX_INPUT_BRAND;
     /** Parameters to hand to the vertex entry function's signature. */
     readonly params: readonly FunctionParameterDeclaration[];
     /** Struct declarations referenced by the interface (drop these into `shader([...])`). */
@@ -62,7 +62,7 @@ function isBuiltinAttr(a: VariableOrValueAttribute): a is BuiltinAttribute {
     return 'builtin' in a;
 }
 function isStructDeclaration(t: unknown): t is StructDeclaration {
-    return typeof t === 'object' && t !== null && (t as { __identType?: unknown }).__identType === 'struct';
+    return typeof t === 'object' && t !== null && (t as { identType?: unknown }).identType === 'struct';
 }
 
 /** Render a `TypeIdentifier` to its WGSL source string (mirror of the private helper in
@@ -178,7 +178,7 @@ export function vertexInput(
     }
 
     return {
-        __brand: VERTEX_INPUT_BRAND,
+        brand: VERTEX_INPUT_BRAND,
         params,
         structs,
         attributes,

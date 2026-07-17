@@ -472,12 +472,12 @@ export const texture_depth_multisampled_2d: WgslDepthMultisampledTexture = {
 // ---------------------------------------------------------------------------
 
 /**
- * Grouped WGSL *type* constructors and singletons — the typed counterpart to `$d` (declarations)
- * and `$a` (attributes). Any member can be passed wherever a `TypeIdentifier` is accepted (e.g.
- * `$d.member('color', $t.vec4f)`), rendering identically to the equivalent WGSL type string but
- * with autocomplete, validation, and composability (`$t.fixedArray($t.vec2f, 3)`).
+ * Grouped WGSL *type* constructors and singletons — the typed counterpart to `decls` (declarations)
+ * and `attrs` (attributes). Any member can be passed wherever a `TypeIdentifier` is accepted (e.g.
+ * `decls.member('color', types.vec4f)`), rendering identically to the equivalent WGSL type string but
+ * with autocomplete, validation, and composability (`types.fixedArray(types.vec2f, 3)`).
  */
-export const $t = {
+export const types = {
     // constructors
     scalar,
     vec,

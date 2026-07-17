@@ -77,7 +77,7 @@ describe('asSource', () => {
         const F = func('f', [], () => '');
         const s = shader([S, U, F]);
         const src = asSource(s);
-        expect(src).toBe(`${S.__gen()}\n${U.__gen()}\n${F.__gen()}`);
+        expect(src).toBe(`${S.gen()}\n${U.gen()}\n${F.gen()}`);
     });
 
     it('throws for an invalid shader object', () => {

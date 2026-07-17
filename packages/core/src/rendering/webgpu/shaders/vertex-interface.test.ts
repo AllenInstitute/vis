@@ -33,7 +33,7 @@ describe('vertexInput — mixed interface', () => {
             () => 'return vec4f(0.0, 0.0, 0.0, 1.0);',
             returns('vec4f', [builtin('position')])
         );
-        const src = fn.__gen();
+        const src = fn.gen();
         expect(src).toContain('@vertex');
         expect(src).toContain('fn vs_main(');
         expect(src).toContain(': VertexIn'); // struct param, auto-named
