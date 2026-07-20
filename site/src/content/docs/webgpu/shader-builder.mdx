@@ -41,7 +41,8 @@ The top-level `shader`, `asSource`, and `vertexInput` helpers are imported direc
 part of any bucket). Anywhere a type is expected you may pass **either** a `types` value **or** a plain
 WGSL type string — `types.vec4f` and `'vec4f'` generate identical output — so the two are freely
 interchangeable. The snippets below prefer the `types` constructors, as they provide additional
-type-safety in TypeScript code.
+type-safety in TypeScript code and validate their inputs at runtime — see
+[Type safety](#type-safety) for exactly what is and isn't checked.
 
 ## Import styles
 
@@ -348,6 +349,133 @@ and expressions generate in alignment to the config inputs. For a fully worked e
 color tables, gradient lookups, spatial filtering, and highlighting on top of this pattern, see
 [`example.test.ts`](https://github.com/AllenInstitute/vis/blob/main/packages/core/src/rendering/webgpu/shaders/example.test.ts)
 in the `vis` repository.
+
+## Type safety
+
+The builder generates WGSL text; it is **not** a WGSL compiler. Understanding where its guarantees
+stop is the difference between catching a mistake at your keyboard and chasing a
+`createShaderModule` error at runtime. Checking happens in three layers:
+
+1. **Compile-time (TypeScript)** — using the `types` bucket limits type data to what WGSL will accept.
+2. **Runtime (Zod)** — the `types` constructors re-check their arguments and throw on bad input,
+   even when the compiler was bypassed.
+3. **Not checked at all** — anything below the level of a single type node: raw type strings, shader
+   body text, host-data correspondence, and WGSL's own semantic rules.
+
+### Layer 1 — What the `types` bucket checks at compile time
+
+Every `types` constructor accepts only the values WGSL actually allows for that position, encoded as
+narrow TypeScript unions. The component-type domains are split by role, so illegal combinations
+don't type-check:
+
+- `vec(size, component)` — `size` is `2 | 3 | 4`; `component` excludes `bool` (there is no
+  `vec3<bool>` component in a buffer-facing type).
+- `mat(cols, rows, component)` — `cols`/`rows` are `2 | 3 | 4`; `component` is `f32 | f16` only.
+- `texture(dimension, component)` — sampled-texture components are `f32 | i32 | u32`.
+- `atomic(component)` — `i32 | u32` only.
+- Texture **dimension** domains differ per texture class: depth textures reject `1d`, storage
+  textures reject `cube` / `cube_array`.
+- `storageTexture(dimension, format, access)` — `format` is restricted to the spec's storage texel
+  formats, `access` to `read | write | read_write`.
+
+```ts
+import { types } from '@alleninstitute/vis-core';
+
+types.vec(3, 'f32'); // ok
+types.vec(3, 'bool'); // compile error: 'bool' is not a WgslNumericScalarType
+types.mat(4, 4, 'i32'); // compile error: 'i32' is not a WgslFloatScalarType
+types.depthTexture('1d'); // compile error: '1d' is not a WgslDepthTextureDimension
+```
+
+The pre-instantiated singletons (`types.vec4f`, `types.mat4x4f`, …) carry their exact variant type,
+and composition is checked too: `types.fixedArray(types.vec2f, 3)` only accepts a real
+`WgslDataType` as its element.
+
+### Layer 2 — What the `types` bucket checks at runtime
+
+The constructors don't stop at the type system: `scalar`, `vec`, `mat`, `texture`, `depthTexture`,
+`multisampledTexture`, `storageTexture`, and `atomic` run their Zod schema on the constructed object
+and **throw** if it's invalid. This matters precisely when the compiler *can't* see the value — a
+cast to `any`, a plain-JavaScript caller, or a value read from untyped/external configuration:
+
+```ts
+import { types } from '@alleninstitute/vis-core';
+
+types.vec(5 as any, 'f32'); // throws at runtime: 5 is not a valid vec size
+types.storageTexture('cube' as any, 'rgba8unorm', 'write'); // throws: invalid storage dimension
+```
+
+For well-typed call sites this is redundant with Layer 1 — but it turns "silently builds a
+malformed type" into "throws immediately at the call site", which is the useful behavior when data
+crosses a boundary the compiler doesn't cover.
+
+Three cases are trusted by construction and are **not** re-validated:
+
+- `fixedArray(element, size)` validates only `size` (it must be a positive integer); it does not
+  re-walk the `element`, which is assumed to have already come from a validating constructor.
+- `runtimeArray(element)` performs no runtime check — same rationale.
+- The pre-instantiated singletons are plain literals authored by the library, so they are trusted as
+  correct.
+
+Attribute constructors (`attrs.align`, `attrs.blendSrc`, `attrs.builtin`, `attrs.location`, …) and
+`vertexInput(...)` validate at runtime as well, throwing on out-of-range values, unknown builtin
+names, duplicate `@location`s, and leaves that carry neither a `@location` nor a `@builtin`.
+
+### Layer 3 — What is *not* checked
+
+Everything below is outside the builder's reach. None of it produces a TypeScript error **or** a
+runtime throw — it surfaces only when the driver compiles the generated WGSL (or worse, as a wrong
+result).
+
+- **Raw type strings.** Anywhere a type is accepted, a plain `string` is also accepted and passed
+  through verbatim. This is the deliberate escape hatch that makes `types` opt-in — and it bypasses
+  both checking layers:
+
+    ```ts
+    import { member } from '@alleninstitute/vis-core';
+
+    member('x', 'vec9000<banana>'); // compiles, runs, and emits invalid WGSL
+    ```
+
+- **Struct ↔ host-data correspondence.** `struct<TsShape>(name, fields)` accepts a phantom
+  TypeScript shape, but nothing checks that the shape's keys and types line up with the `member`
+  fields you actually declared — the generic and the field list can freely disagree. (The phantom is
+  a hook for a future typed-slot API; in this module it is inert.)
+- **WGSL semantic and layout rules.** Struct `@align` / `@size` legality, whether `f16` usage
+  requires an `enable f16;` directive, storage texel formats that need an optional WebGPU feature,
+  the rule that runtime-sized arrays are only valid in storage, texture component/format
+  compatibility, and whether a type is even host-representable (nothing rejects a `sampler` placed
+  inside a uniform block) are all unenforced.
+- **Cross-declaration consistency.** The Zod parse validates a *single* type node's internal shape.
+  It does not relate declarations to one another — matching group/binding numbers, a uniform's type
+  agreeing with the resource you bind, and so on are your responsibility.
+- **Shader body text.** Function bodies are opaque `() => string` thunks. Nothing inside them is
+  parsed or type-checked.
+
+### Is it type-safe? A per-part summary
+
+| Shader part                              | Compile-time | Runtime      | Notes                                                    |
+| ---------------------------------------- | ------------ | ------------ | ------------------------------------------------------- |
+| A `types` value (e.g. `types.vec(...)`)  | ✅ checked   | ✅ throws    | narrow domains + Zod parse                              |
+| `fixedArray` size / `runtimeArray`       | ✅ checked   | ⚠️ partial   | only `fixedArray` size is parsed; elements trusted      |
+| A raw type string (`'vec4f'`, anything)  | ❌           | ❌           | passed through verbatim — the escape hatch              |
+| Attribute values (`location`, `align`, …)| ✅ checked   | ✅ throws    | via `attrs` constructors                                |
+| Vertex-input wiring                      | —            | ✅ throws    | unique `@location`, exactly one location/builtin        |
+| Struct ↔ host-data shape                 | ❌           | ❌           | phantom `TsShape`, currently inert                      |
+| WGSL semantics / memory layout           | ❌           | ❌           | not modeled                                             |
+| Cross-declaration consistency            | ❌           | ❌           | per-node validation only                                |
+| Shader body source                       | ❌           | ❌           | opaque `() => string`                                   |
+
+The practical takeaway: prefer the `types` constructors over raw strings wherever you can — you get
+both layers of checking for free — and treat the remaining rows as your own responsibility, ideally
+verified by actually building the pipeline in a test.
+
+#### Future Developments
+
+Future enhancements may improve the overall type safety and validation of the shader builder, at which
+time this document will be updated to reflect those improvements. However, not all of these limitations
+can necessarily be addressed, due to the nature of the cross-language/cross-environment boundary between
+TypeScript and WebGPU/graphics drivers, so some limitations will likely always exist.
 
 ## Constructor reference
 
