@@ -395,7 +395,7 @@ and composition is checked too: `types.fixedArray(types.vec2f, 3)` only accepts 
 
 The constructors don't stop at the type system: `scalar`, `vec`, `mat`, `texture`, `depthTexture`,
 `multisampledTexture`, `storageTexture`, and `atomic` run their Zod schema on the constructed object
-and **throw** if it's invalid. This matters precisely when the compiler *can't* see the value — a
+and **throw** if it's invalid. This matters precisely when the compiler _can't_ see the value — a
 cast to `any`, a plain-JavaScript caller, or a value read from untyped/external configuration:
 
 ```ts
@@ -421,7 +421,7 @@ Attribute constructors (`attrs.align`, `attrs.blendSrc`, `attrs.builtin`, `attrs
 `vertexInput(...)` validate at runtime as well, throwing on out-of-range values, unknown builtin
 names, duplicate `@location`s, and leaves that carry neither a `@location` nor a `@builtin`.
 
-### Layer 3 — What is *not* checked
+### Layer 3 — What is _not_ checked
 
 Everything below is outside the builder's reach. None of it produces a TypeScript error **or** a
 runtime throw — it surfaces only when the driver compiles the generated WGSL (or worse, as a wrong
@@ -446,7 +446,7 @@ result).
   the rule that runtime-sized arrays are only valid in storage, texture component/format
   compatibility, and whether a type is even host-representable (nothing rejects a `sampler` placed
   inside a uniform block) are all unenforced.
-- **Cross-declaration consistency.** The Zod parse validates a *single* type node's internal shape.
+- **Cross-declaration consistency.** The Zod parse validates a _single_ type node's internal shape.
   It does not relate declarations to one another — matching group/binding numbers, a uniform's type
   agreeing with the resource you bind, and so on are your responsibility.
 - **Shader body text.** Function bodies are opaque `() => string` thunks. Nothing inside them is
@@ -454,17 +454,17 @@ result).
 
 ### Is it type-safe? A per-part summary
 
-| Shader part                              | Compile-time | Runtime      | Notes                                                    |
-| ---------------------------------------- | ------------ | ------------ | ------------------------------------------------------- |
-| A `types` value (e.g. `types.vec(...)`)  | ✅ checked   | ✅ throws    | narrow domains + Zod parse                              |
-| `fixedArray` size / `runtimeArray`       | ✅ checked   | ⚠️ partial   | only `fixedArray` size is parsed; elements trusted      |
-| A raw type string (`'vec4f'`, anything)  | ❌           | ❌           | passed through verbatim — the escape hatch              |
-| Attribute values (`location`, `align`, …)| ✅ checked   | ✅ throws    | via `attrs` constructors                                |
-| Vertex-input wiring                      | —            | ✅ throws    | unique `@location`, exactly one location/builtin        |
-| Struct ↔ host-data shape                 | ❌           | ❌           | phantom `TsShape`, currently inert                      |
-| WGSL semantics / memory layout           | ❌           | ❌           | not modeled                                             |
-| Cross-declaration consistency            | ❌           | ❌           | per-node validation only                                |
-| Shader body source                       | ❌           | ❌           | opaque `() => string`                                   |
+| Shader part                               | Compile-time | Runtime    | Notes                                              |
+| ----------------------------------------- | ------------ | ---------- | -------------------------------------------------- |
+| A `types` value (e.g. `types.vec(...)`)   | ✅ checked   | ✅ throws  | narrow domains + Zod parse                         |
+| `fixedArray` size / `runtimeArray`        | ✅ checked   | ⚠️ partial | only `fixedArray` size is parsed; elements trusted |
+| A raw type string (`'vec4f'`, anything)   | ❌           | ❌         | passed through verbatim — the escape hatch         |
+| Attribute values (`location`, `align`, …) | ✅ checked   | ✅ throws  | via `attrs` constructors                           |
+| Vertex-input wiring                       | —            | ✅ throws  | unique `@location`, exactly one location/builtin   |
+| Struct ↔ host-data shape                  | ❌           | ❌         | phantom `TsShape`, currently inert                 |
+| WGSL semantics / memory layout            | ❌           | ❌         | not modeled                                        |
+| Cross-declaration consistency             | ❌           | ❌         | per-node validation only                           |
+| Shader body source                        | ❌           | ❌         | opaque `() => string`                              |
 
 The practical takeaway: prefer the `types` constructors over raw strings wherever you can — you get
 both layers of checking for free — and treat the remaining rows as your own responsibility, ideally
