@@ -53,12 +53,14 @@
         "access": "public"
     },
     "devDependencies": {
-        "@types/lodash": "4.17.24"
+        "@types/lodash": "4.17.24",
+        "@webgpu/types": "0.1.71"
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
         "lodash": "4.18.1",
         "regl": "2.1.1",
-        "uuid": "14.0.1"
+        "uuid": "14.0.1",
+        "zod": "4.4.3"
     }
 }

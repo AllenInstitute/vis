@@ -23,3 +23,5 @@ export {
 } from './workers/messages';
 
 export { WorkerPool, type WorkerInit } from './workers/worker-pool';
+
+export * from './rendering/webgpu';

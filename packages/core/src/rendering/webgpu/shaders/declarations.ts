@@ -1,33 +1,33 @@
-/**
- * This file defines the various types of declarations that can be used in our shader generation system,
- * including variables, constants, structs, and functions. Each declaration type includes a __gen method
- * that generates the corresponding WGSL code for that declaration.
- */
-
 import {
     compute,
-    fragment,
-    vertex,
     type DeclarationAttribute,
     type FunctionAttribute,
+    fragment,
     type VariableOrValueAttribute,
+    vertex,
 } from './attributes';
+import type { WgslDataType, WgslSampler, WgslSamplerComparison, WgslTextureDataType } from './wgsl-types';
+import { wgslTypeName } from './wgsl-types';
 
 function renderAttrs(attrs: DeclarationAttribute[] | undefined): string {
-    return attrs && attrs.length > 0 ? attrs.map((attr) => `${attr.__gen()}`).join(' ') + ' ' : '';
+    return attrs && attrs.length > 0 ? attrs.map((attr) => `${attr.gen()}`).join(' ') + ' ' : '';
 }
 
 function renderTypeIdentifier(type: TypeIdentifier): string {
     if (typeof type === 'string') {
         return type;
     }
-    return type.name;
+    if (!('kind' in type)) {
+        // StructDeclaration or AliasDeclaration — both extend IdentifierDeclaration
+        return type.name;
+    }
+    return wgslTypeName(type as WgslDataType);
 }
 
 /// TYPES
 
 export type DeclarationGenerator = {
-    __gen: () => string;
+    readonly gen: () => string;
 };
 
 export type IdentifierDeclaration = {
@@ -36,50 +36,70 @@ export type IdentifierDeclaration = {
 
 export type StructMemberDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        type: TypeIdentifier;
-        attributes?: VariableOrValueAttribute[];
+        readonly type: TypeIdentifier;
+        readonly attributes?: VariableOrValueAttribute[];
     };
 
 export type StructDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'struct';
-        name: string;
-        fields: StructMemberDeclaration[];
+        readonly identType: 'struct';
+        readonly name: string;
+        readonly fields: StructMemberDeclaration[];
     };
+
+/**
+ * `StructDecl<TsShape>` is a `StructDeclaration` annotated with a phantom TypeScript
+ * shape describing the host-side representation of the struct's contents.
+ *
+ * The phantom is consumed by typed slot factories (e.g. `slot.uniform<T>`) so that
+ * downstream resources can expose strongly-typed `set(values)` APIs without runtime
+ * cost. When `TsShape` is `unknown` (the default), the struct behaves like an
+ * untyped `StructDeclaration` and slots fall back to `unknown`-keyed updates.
+ *
+ * Example:
+ * ```ts
+ * type MyUniforms = { time: number; color: readonly number[] };
+ * const U = struct<MyUniforms>('U', [member('time', 'f32'), member('color', 'vec3f')]);
+ * const u = slot.uniform('u', U); // `u` carries `MyUniforms` through to `set()`
+ * ```
+ */
+export type StructDecl<TsShape = unknown> = StructDeclaration & {
+    readonly __tsShape?: TsShape;
+};
 
 export type AliasDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'alias';
-        aliasedType: TypeIdentifier;
+        readonly identType: 'alias';
+        readonly aliasedType: TypeIdentifier;
     };
 
-export type WgslType = string; // TODO: enumerate builtins someday, eg. 'vec2i' | 'vec3f' ...
+export type WgslType = string | WgslDataType;
 
 export type TypeIdentifier = WgslType | StructDeclaration | AliasDeclaration;
 
 export type FunctionParameterDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        type: TypeIdentifier;
-        attributes?: VariableOrValueAttribute[];
+        readonly type: TypeIdentifier;
+        readonly attributes?: VariableOrValueAttribute[];
     };
 
 export type FunctionReturnTypeDeclaration = DeclarationGenerator & {
-    type: TypeIdentifier;
-    attributes?: VariableOrValueAttribute[];
+    readonly type: TypeIdentifier;
+    readonly attributes?: VariableOrValueAttribute[];
 };
 
 export type FunctionDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'function';
-        parameters: FunctionParameterDeclaration[];
-        body: () => string;
-        returnType?: FunctionReturnTypeDeclaration;
-        attributes?: FunctionAttribute[];
+        readonly identType: 'function';
+        readonly parameters: FunctionParameterDeclaration[];
+        readonly body: () => string;
+        readonly returnType?: FunctionReturnTypeDeclaration;
+        readonly attributes?: FunctionAttribute[];
     };
 
 export type ConstValueDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'value';
+        readonly identType: 'value';
         readonly assignmentType: 'const';
         readonly type?: TypeIdentifier;
         readonly initializer: unknown;
@@ -87,7 +107,7 @@ export type ConstValueDeclaration = IdentifierDeclaration &
 
 export type OverrideValueDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'value';
+        readonly identType: 'value';
         readonly assignmentType: 'override';
         readonly attributes?: VariableOrValueAttribute[];
     } & (
@@ -108,7 +128,7 @@ export type ValueDeclaration = ConstValueDeclaration | OverrideValueDeclaration;
 
 export type PrivateVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'variable';
+        readonly identType: 'variable';
         readonly assignmentType: 'private';
         readonly type?: TypeIdentifier;
         readonly initializer?: unknown;
@@ -116,7 +136,7 @@ export type PrivateVariableDeclaration = IdentifierDeclaration &
 
 export type WorkgroupVariableDeclaration = IdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'variable';
+        readonly identType: 'variable';
         readonly assignmentType: 'workgroup';
         readonly type: TypeIdentifier;
     };
@@ -132,7 +152,7 @@ export type ResourceIdentifierDeclaration = {
 export type UniformVariableDeclaration = IdentifierDeclaration &
     ResourceIdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'variable';
+        readonly identType: 'variable';
         readonly assignmentType: 'uniform';
         readonly type: TypeIdentifier;
         readonly attributes?: VariableOrValueAttribute[];
@@ -141,25 +161,25 @@ export type UniformVariableDeclaration = IdentifierDeclaration &
 export type TextureVariableDeclaration = IdentifierDeclaration &
     ResourceIdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'variable';
+        readonly identType: 'variable';
         readonly assignmentType: 'texture';
-        readonly type: `texture_${string}`;
+        readonly type: WgslTextureDataType | `texture_${string}`;
         readonly attributes?: VariableOrValueAttribute[];
     };
 
 export type SamplerVariableDeclaration = IdentifierDeclaration &
     ResourceIdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'variable';
+        readonly identType: 'variable';
         readonly assignmentType: 'sampler';
-        readonly type: 'sampler' | 'sampler_comparison';
+        readonly type: WgslSampler | WgslSamplerComparison | 'sampler' | 'sampler_comparison';
         readonly attributes?: VariableOrValueAttribute[];
     };
 
 export type StorageVariableDeclaration = IdentifierDeclaration &
     ResourceIdentifierDeclaration &
     DeclarationGenerator & {
-        __identType: 'variable';
+        readonly identType: 'variable';
         readonly assignmentType: 'storage';
         readonly type: TypeIdentifier;
         readonly accessMode?: 'read' | 'write' | 'read_write';
@@ -178,12 +198,12 @@ export type Declaration = ValueDeclaration | StructDeclaration | ResourceDeclara
 
 export function constant(name: string, initializer: unknown, type?: TypeIdentifier): ConstValueDeclaration {
     return {
-        __identType: 'value',
+        identType: 'value',
         assignmentType: 'const',
         name,
         ...(type !== undefined && { type }),
         initializer,
-        __gen: () => `const ${name}${type !== undefined ? `: ${renderTypeIdentifier(type)}` : ''} = ${initializer};`,
+        gen: () => `const ${name}${type !== undefined ? `: ${renderTypeIdentifier(type)}` : ''} = ${initializer};`,
     };
 }
 
@@ -196,48 +216,48 @@ export function override(
     if (type === undefined && initializer === undefined) {
         throw new Error('Override declaration must have at least a type or an initializer');
     }
-    const __gen = () =>
+    const gen = () =>
         `${renderAttrs(attributes)}var<override> ${name}${type !== undefined ? `: ${renderTypeIdentifier(type)}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''};`;
     if (type === undefined) {
         return {
-            __identType: 'value',
+            identType: 'value',
             assignmentType: 'override',
             name,
             initializer,
             ...(attributes !== undefined && { attributes }),
-            __gen,
+            gen,
         };
     }
     return {
-        __identType: 'value' as const,
+        identType: 'value' as const,
         assignmentType: 'override' as const,
         name,
         type,
         ...(initializer !== undefined && { initializer }),
         ...(attributes !== undefined && { attributes }),
-        __gen,
+        gen,
     };
 }
 
 export function privateVar(name: string, type?: TypeIdentifier, initializer?: unknown): PrivateVariableDeclaration {
     return {
-        __identType: 'variable',
+        identType: 'variable',
         assignmentType: 'private',
         name,
         ...(type !== undefined && { type }),
         ...(initializer !== undefined && { initializer }),
-        __gen: () =>
+        gen: () =>
             `var<private> ${name}${type !== undefined ? `: ${renderTypeIdentifier(type)}` : ''}${initializer !== undefined ? ` = ${initializer}` : ''};`,
     };
 }
 
 export function workgroupVar(name: string, type: TypeIdentifier): WorkgroupVariableDeclaration {
     return {
-        __identType: 'variable',
+        identType: 'variable',
         assignmentType: 'workgroup',
         name,
         type,
-        __gen: () => `var<workgroup> ${name}: ${renderTypeIdentifier(type)};`,
+        gen: () => `var<workgroup> ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
 
@@ -249,53 +269,53 @@ export function uniform(
     attributes?: VariableOrValueAttribute[]
 ): UniformVariableDeclaration {
     return {
-        __identType: 'variable',
+        identType: 'variable',
         assignmentType: 'uniform',
         name,
         type,
         group,
         binding,
         ...(attributes !== undefined && { attributes }),
-        __gen: () =>
+        gen: () =>
             `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<uniform> ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
 
 export function texture(
     name: string,
-    type: `texture_${string}`,
+    type: WgslTextureDataType | `texture_${string}`,
     group: number,
     binding: number,
     attributes?: VariableOrValueAttribute[]
 ): TextureVariableDeclaration {
     return {
-        __identType: 'variable',
+        identType: 'variable',
         assignmentType: 'texture',
         name,
         type,
         group,
         binding,
         ...(attributes !== undefined && { attributes }),
-        __gen: () =>
+        gen: () =>
             `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
 
 export function sampler(
     name: string,
-    type: 'sampler' | 'sampler_comparison',
+    type: WgslSampler | WgslSamplerComparison | 'sampler' | 'sampler_comparison',
     group: number,
     binding: number,
     attributes?: VariableOrValueAttribute[]
 ): SamplerVariableDeclaration {
     return {
-        __identType: 'variable',
+        identType: 'variable',
         assignmentType: 'sampler',
         name,
         type,
         group,
         binding,
-        __gen: () =>
+        gen: () =>
             `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var ${name}: ${renderTypeIdentifier(type)};`,
         ...(attributes !== undefined && { attributes }),
     };
@@ -310,7 +330,7 @@ export function storage(
     attributes?: VariableOrValueAttribute[]
 ): StorageVariableDeclaration {
     return {
-        __identType: 'variable',
+        identType: 'variable',
         assignmentType: 'storage',
         name,
         type,
@@ -318,7 +338,7 @@ export function storage(
         binding,
         ...(accessMode !== undefined && { accessMode }),
         ...(attributes !== undefined && { attributes }),
-        __gen: () =>
+        gen: () =>
             `${renderAttrs(attributes)}@group(${group}) @binding(${binding}) var<storage${accessMode !== undefined ? `, ${accessMode}` : ''}> ${name}: ${renderTypeIdentifier(type)};`,
     };
 }
@@ -332,25 +352,25 @@ export function member(
         name,
         type,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}${name}: ${renderTypeIdentifier(type)}`,
+        gen: () => `${renderAttrs(attributes)}${name}: ${renderTypeIdentifier(type)}`,
     };
 }
 
-export function struct(name: string, fields: StructMemberDeclaration[]): StructDeclaration {
+export function struct<TsShape = unknown>(name: string, fields: StructMemberDeclaration[]): StructDecl<TsShape> {
     return {
-        __identType: 'struct',
+        identType: 'struct',
         name,
         fields,
-        __gen: () => `struct ${name} { ${fields.map((f) => f.__gen()).join(', ')} }`,
+        gen: () => `struct ${name} { ${fields.map((f) => f.gen()).join(', ')} }`,
     };
 }
 
 export function alias(name: string, aliasedType: TypeIdentifier): AliasDeclaration {
     return {
-        __identType: 'alias',
+        identType: 'alias',
         name,
         aliasedType,
-        __gen: () => `alias ${name} = ${renderTypeIdentifier(aliasedType)};`,
+        gen: () => `alias ${name} = ${renderTypeIdentifier(aliasedType)};`,
     };
 }
 
@@ -363,7 +383,7 @@ export function param(
         name,
         type,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}${name}: ${renderTypeIdentifier(type)}`,
+        gen: () => `${renderAttrs(attributes)}${name}: ${renderTypeIdentifier(type)}`,
     };
 }
 
@@ -371,7 +391,7 @@ export function returns(type: TypeIdentifier, attributes?: VariableOrValueAttrib
     return {
         type,
         ...(attributes !== undefined && { attributes }),
-        __gen: () => `${renderAttrs(attributes)}${renderTypeIdentifier(type)}`,
+        gen: () => `${renderAttrs(attributes)}${renderTypeIdentifier(type)}`,
     };
 }
 
@@ -383,15 +403,15 @@ export function func(
     attributes?: FunctionAttribute[]
 ): FunctionDeclaration {
     return {
-        __identType: 'function',
+        identType: 'function',
         name,
         parameters,
         body,
         ...(returnType !== undefined && { returnType }),
         ...(attributes !== undefined && { attributes }),
-        __gen: () => {
-            const params = parameters.map((p) => p.__gen()).join(', ');
-            const ret = returnType ? ` -> ${returnType.__gen()}` : '';
+        gen: () => {
+            const params = parameters.map((p) => p.gen()).join(', ');
+            const ret = returnType ? ` -> ${returnType.gen()}` : '';
             return `${renderAttrs(attributes)}fn ${name}(${params})${ret} { ${body()} }`;
         },
     };
@@ -424,7 +444,7 @@ export function computeEntry(
     return func(name, parameters, body, returnType, [compute()]);
 }
 
-export const constructors = {
+const constructors = {
     constant,
     override,
     privateVar,
@@ -441,3 +461,5 @@ export const constructors = {
     fragmentEntry,
     computeEntry,
 };
+
+export const decls = constructors;
