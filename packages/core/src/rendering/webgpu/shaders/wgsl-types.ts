@@ -351,52 +351,39 @@ export function wgslTypeName(type: WgslDataType): string {
 // Constructor functions
 // ---------------------------------------------------------------------------
 
-export const scalar = (type: WgslScalarType): WgslScalar => ({ kind: 'scalar', type });
+export const scalar = (type: WgslScalarType): WgslScalar => WgslScalarSchema.parse({ kind: 'scalar', type });
 
-export const vec = (size: WgslVecSize, componentType: WgslNumericScalarType): WgslVec => ({
-    kind: 'vec',
-    size,
-    componentType,
-});
+export const vec = (size: WgslVecSize, componentType: WgslNumericScalarType): WgslVec =>
+    WgslVecSchema.parse({ kind: 'vec', size, componentType });
 
-export const mat = (cols: WgslMatDim, rows: WgslMatDim, componentType: WgslFloatScalarType): WgslMat => ({
-    kind: 'mat',
-    cols,
-    rows,
-    componentType,
-});
+export const mat = (cols: WgslMatDim, rows: WgslMatDim, componentType: WgslFloatScalarType): WgslMat =>
+    WgslMatSchema.parse({ kind: 'mat', cols, rows, componentType });
 
-export const texture = (dimension: WgslTextureDimension, componentType: WgslSampledType): WgslTexture => ({
-    kind: 'texture',
-    dimension,
-    componentType,
-});
+export const texture = (dimension: WgslTextureDimension, componentType: WgslSampledType): WgslTexture =>
+    WgslTextureSchema.parse({ kind: 'texture', dimension, componentType });
 
-export const depthTexture = (dimension: WgslDepthTextureDimension): WgslDepthTexture => ({
-    kind: 'texture_depth',
-    dimension,
-});
+export const depthTexture = (dimension: WgslDepthTextureDimension): WgslDepthTexture =>
+    WgslDepthTextureSchema.parse({ kind: 'texture_depth', dimension });
 
-export const multisampledTexture = (componentType: WgslSampledType): WgslMultisampledTexture => ({
-    kind: 'texture_multisampled_2d',
-    componentType,
-});
+export const multisampledTexture = (componentType: WgslSampledType): WgslMultisampledTexture =>
+    WgslMultisampledTextureSchema.parse({ kind: 'texture_multisampled_2d', componentType });
 
 export const storageTexture = (
     dimension: WgslStorageTextureDimension,
     format: WgslTexelFormat,
     access: WgslStorageAccessMode
-): WgslStorageTexture => ({ kind: 'texture_storage', dimension, format, access });
+): WgslStorageTexture => WgslStorageTextureSchema.parse({ kind: 'texture_storage', dimension, format, access });
 
-export const atomic = (componentType: WgslAtomicInnerType): WgslAtomic => ({
-    kind: 'atomic',
-    componentType,
-});
+export const atomic = (componentType: WgslAtomicInnerType): WgslAtomic =>
+    WgslAtomicSchema.parse({ kind: 'atomic', componentType });
 
+// Only `size` is validated here: `WgslFixedArraySchema` carries a recursive `z.lazy` `elementType`,
+// so a full-object `.parse()` would re-validate the entire nested element tree on every wrap.
+// The element type already came from a validating constructor.
 export const fixedArray = (elementType: WgslDataType, size: number): WgslFixedArray => ({
     kind: 'array',
     elementType,
-    size,
+    size: WgslFixedArraySchema.shape.size.parse(size),
 });
 
 export const runtimeArray = (elementType: WgslDataType): WgslRuntimeArray => ({
