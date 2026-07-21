@@ -110,11 +110,7 @@ export interface RenderingContext {
      * context's device. Identical inputs return the same instance; differing state (after
      * canonical normalization) produces a distinct entry.
      */
-    pipeline(
-        graph: BindingGraph,
-        shader: WgslShader,
-        state: PipelineStateDescriptor
-    ): BuiltPipeline;
+    pipeline(graph: BindingGraph, shader: WgslShader, state: PipelineStateDescriptor): BuiltPipeline;
 
     /**
      * Construct a data-bearing `Resource` for `slot`. Dispatches on `slot.kind`; requires a

@@ -85,13 +85,7 @@ export function applyPassCommand(pass: GPURenderPassEncoder, cmd: PassCommand): 
             pass.draw(cmd.vertexCount, cmd.instanceCount, cmd.firstVertex, cmd.firstInstance);
             return;
         case 'drawIndexed':
-            pass.drawIndexed(
-                cmd.indexCount,
-                cmd.instanceCount,
-                cmd.firstIndex,
-                cmd.baseVertex,
-                cmd.firstInstance
-            );
+            pass.drawIndexed(cmd.indexCount, cmd.instanceCount, cmd.firstIndex, cmd.baseVertex, cmd.firstInstance);
             return;
     }
 }

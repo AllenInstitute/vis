@@ -25,6 +25,10 @@ export default defineConfig({
                     autogenerate: { directory: 'examples' },
                 },
                 {
+                    label: 'WebGPU',
+                    autogenerate: { directory: 'webgpu' },
+                },
+                {
                     label: 'Packages',
                     autogenerate: { directory: 'packages' },
                 },

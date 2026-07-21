@@ -1,13 +1,4 @@
 import type { BufferManager } from '../memory';
-import type {
-    ExternalTextureSlot,
-    ResourceSlot,
-    SamplerSlot,
-    StorageSlot,
-    StorageTextureSlot,
-    TextureSlot,
-    UniformSlot,
-} from '../resources';
 import {
     makeBufferResource,
     makeExternalTextureResource,
@@ -15,6 +6,13 @@ import {
     makeSlotReflectionCache,
     makeStorageTextureResource,
     makeTextureResource,
+    type ExternalTextureSlot,
+    type ResourceSlot,
+    type SamplerSlot,
+    type StorageSlot,
+    type StorageTextureSlot,
+    type TextureSlot,
+    type UniformSlot,
     type Resource,
     type SlotReflectionCache,
 } from '../resources';
@@ -32,10 +30,7 @@ import { type GraphEncoder, makeGraphEncoder } from './encoder/encoder';
 import type { BindingGraph } from './pipelines/binding-graph';
 import { type BuiltPipeline, buildPipeline } from './pipelines/build';
 import { pipelineFingerprint } from './pipelines/fingerprint';
-import {
-    normalizePipelineState,
-    type PipelineStateDescriptor,
-} from './pipelines/pipeline-state';
+import { normalizePipelineState, type PipelineStateDescriptor } from './pipelines/pipeline-state';
 import { resolveShaderBindings } from './pipelines/traverse';
 import type { RenderTarget } from './render-target';
 import type { Scene } from './scene/types';
@@ -96,25 +91,14 @@ export class RenderingContextImpl implements RenderingContext {
      * context's device. Identical inputs return the same instance; differing state (after
      * canonical normalization) produces a distinct entry.
      */
-    pipeline(
-        graph: BindingGraph,
-        shader: WgslShader,
-        state: PipelineStateDescriptor
-    ): BuiltPipeline {
+    pipeline(graph: BindingGraph, shader: WgslShader, state: PipelineStateDescriptor): BuiltPipeline {
         this.assertNotDisposed();
         const normalizedState = normalizePipelineState(state);
         const slotIndex = resolveShaderBindings(graph, shader);
         const fingerprint = pipelineFingerprint(shader, slotIndex, normalizedState);
         const cached = this._pipelineCache.get(fingerprint);
         if (cached !== undefined) return cached;
-        const built = buildPipeline(
-            this.device,
-            graph,
-            shader,
-            normalizedState,
-            slotIndex,
-            fingerprint
-        );
+        const built = buildPipeline(this.device, graph, shader, normalizedState, slotIndex, fingerprint);
         this._pipelineCache.set(fingerprint, built);
         return built;
     }

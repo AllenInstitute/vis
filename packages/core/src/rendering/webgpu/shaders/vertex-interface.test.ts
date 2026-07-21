@@ -21,20 +21,19 @@ describe('vertexInput — mixed interface', () => {
             { name: 'color', location: 1, wgslType: 'vec4f', struct: 'VertexIn' },
             { name: 'instanceOffset', location: 2, wgslType: 'vec3f' },
         ]);
-        expect(vin.builtins).toEqual([
-            { name: 'vertIdx', builtin: 'vertex_index', wgslType: 'u32' },
-        ]);
+        expect(vin.builtins).toEqual([{ name: 'vertIdx', builtin: 'vertex_index', wgslType: 'u32' }]);
         // The referenced struct is surfaced for top-level emission.
         expect(vin.structs).toEqual([VertexIn]);
     });
 
     it('feeds vertexEntry a signature containing the struct + loose params', () => {
-        const vin = vertexInput([
-            VertexIn,
-            param('vertIdx', 'u32', [builtin('vertex_index')]),
-        ]);
-        const fn = vin.entry('vs_main', () => 'return vec4f(0.0, 0.0, 0.0, 1.0);', returns('vec4f', [builtin('position')]));
-        const src = fn.__gen();
+        const vin = vertexInput([VertexIn, param('vertIdx', 'u32', [builtin('vertex_index')])]);
+        const fn = vin.entry(
+            'vs_main',
+            () => 'return vec4f(0.0, 0.0, 0.0, 1.0);',
+            returns('vec4f', [builtin('position')])
+        );
+        const src = fn.gen();
         expect(src).toContain('@vertex');
         expect(src).toContain('fn vs_main(');
         expect(src).toContain(': VertexIn'); // struct param, auto-named
@@ -49,9 +48,9 @@ describe('vertexInput — validation', () => {
     });
 
     it('rejects a leaf with both @location and @builtin', () => {
-        expect(() =>
-            vertexInput([param('bad', 'u32', [location(0), builtin('vertex_index')])])
-        ).toThrow(/both @location and @builtin/);
+        expect(() => vertexInput([param('bad', 'u32', [location(0), builtin('vertex_index')])])).toThrow(
+            /both @location and @builtin/
+        );
     });
 
     it('rejects a non-input builtin like position', () => {
@@ -62,14 +61,12 @@ describe('vertexInput — validation', () => {
 
     it('rejects duplicate @location across the whole interface (struct + loose param)', () => {
         const Dup = struct('Dup', [member('a', 'vec3f', [location(0)])]);
-        expect(() => vertexInput([Dup, param('b', 'vec2f', [location(0)])])).toThrow(
-            /duplicate @location\(0\)/
-        );
+        expect(() => vertexInput([Dup, param('b', 'vec2f', [location(0)])])).toThrow(/duplicate @location\(0\)/);
     });
 
     it('aggregates multiple problems into one error', () => {
-        expect(() =>
-            vertexInput([param('x', 'f32'), param('y', 'f32', [builtin('position')])])
-        ).toThrow(/neither @location[\s\S]*only vertex_index/);
+        expect(() => vertexInput([param('x', 'f32'), param('y', 'f32', [builtin('position')])])).toThrow(
+            /neither @location[\s\S]*only vertex_index/
+        );
     });
 });

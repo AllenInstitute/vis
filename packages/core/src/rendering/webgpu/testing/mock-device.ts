@@ -208,12 +208,7 @@ export function makeMockDevice(): MockDevice {
                 data instanceof ArrayBuffer
                     ? new Uint8Array(data.slice(0))
                     : ArrayBuffer.isView(data)
-                      ? new Uint8Array(
-                            data.buffer.slice(
-                                data.byteOffset,
-                                data.byteOffset + data.byteLength
-                            )
-                        )
+                      ? new Uint8Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength))
                       : new Uint8Array(0);
             const entry: WriteBufferCall = {
                 buffer,
@@ -255,40 +250,26 @@ export function makeMockDevice(): MockDevice {
                 setBindGroup: vi.fn((index: number, bindGroup: GPUBindGroup) =>
                     passCommands.push({ kind: 'setBindGroup', index, bindGroup })
                 ),
-                setVertexBuffer: vi.fn(
-                    (slot: number, buffer: GPUBuffer, offset?: number, size?: number) =>
-                        passCommands.push({
-                            kind: 'setVertexBuffer',
-                            slot,
-                            buffer,
-                            offset: offset ?? 0,
-                            size: size ?? buffer.size,
-                        })
+                setVertexBuffer: vi.fn((slot: number, buffer: GPUBuffer, offset?: number, size?: number) =>
+                    passCommands.push({
+                        kind: 'setVertexBuffer',
+                        slot,
+                        buffer,
+                        offset: offset ?? 0,
+                        size: size ?? buffer.size,
+                    })
                 ),
-                setIndexBuffer: vi.fn(
-                    (
-                        buffer: GPUBuffer,
-                        format: GPUIndexFormat,
-                        offset?: number,
-                        size?: number
-                    ) =>
-                        passCommands.push({
-                            kind: 'setIndexBuffer',
-                            buffer,
-                            format,
-                            offset: offset ?? 0,
-                            size: size ?? buffer.size,
-                        })
+                setIndexBuffer: vi.fn((buffer: GPUBuffer, format: GPUIndexFormat, offset?: number, size?: number) =>
+                    passCommands.push({
+                        kind: 'setIndexBuffer',
+                        buffer,
+                        format,
+                        offset: offset ?? 0,
+                        size: size ?? buffer.size,
+                    })
                 ),
                 setViewport: vi.fn(
-                    (
-                        x: number,
-                        y: number,
-                        width: number,
-                        height: number,
-                        minDepth: number,
-                        maxDepth: number
-                    ) =>
+                    (x: number, y: number, width: number, height: number, minDepth: number, maxDepth: number) =>
                         passCommands.push({
                             kind: 'setViewport',
                             x,
@@ -299,23 +280,15 @@ export function makeMockDevice(): MockDevice {
                             maxDepth,
                         })
                 ),
-                setScissorRect: vi.fn(
-                    (x: number, y: number, width: number, height: number) =>
-                        passCommands.push({ kind: 'setScissorRect', x, y, width, height })
+                setScissorRect: vi.fn((x: number, y: number, width: number, height: number) =>
+                    passCommands.push({ kind: 'setScissorRect', x, y, width, height })
                 ),
                 setStencilReference: vi.fn((value: number) =>
                     passCommands.push({ kind: 'setStencilReference', value })
                 ),
-                setBlendConstant: vi.fn((color: GPUColor) =>
-                    passCommands.push({ kind: 'setBlendConstant', color })
-                ),
+                setBlendConstant: vi.fn((color: GPUColor) => passCommands.push({ kind: 'setBlendConstant', color })),
                 draw: vi.fn(
-                    (
-                        vertexCount: number,
-                        instanceCount?: number,
-                        firstVertex?: number,
-                        firstInstance?: number
-                    ) =>
+                    (vertexCount: number, instanceCount?: number, firstVertex?: number, firstInstance?: number) =>
                         passCommands.push({
                             kind: 'draw',
                             vertexCount,

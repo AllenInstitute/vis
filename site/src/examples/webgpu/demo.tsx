@@ -34,8 +34,8 @@ export function WebGpuShapesDemo() {
     if (!supported) {
         return (
             <Notice>
-                WebGPU isn’t available in this browser. Try a recent Chrome or Edge (or enable the
-                WebGPU flag in your browser’s settings).
+                WebGPU isn’t available in this browser. Try a recent Chrome or Edge (or enable the WebGPU flag in your
+                browser’s settings).
             </Notice>
         );
     }

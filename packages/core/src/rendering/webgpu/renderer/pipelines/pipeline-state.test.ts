@@ -43,11 +43,11 @@ describe('PipelineStateDescriptorSchema', () => {
 
     it('rejects malformed input', () => {
         expect(() =>
-            // biome-ignore lint/suspicious/noExplicitAny: deliberate invalid input
+            // oxlint-disable-next-line typescript/no-explicit-any deliberate invalid input
             PipelineStateDescriptorSchema.parse({ primitive: { topology: 'bogus' } } as any)
         ).toThrow(ZodError);
         expect(() =>
-            // biome-ignore lint/suspicious/noExplicitAny: deliberate invalid input
+            // oxlint-disable-next-line typescript/no-explicit-any deliberate invalid input
             PipelineStateDescriptorSchema.parse({ fragment: {} } as any)
         ).toThrow(ZodError); // fragment.targets required when fragment is present
     });
@@ -103,7 +103,7 @@ describe('normalizePipelineState()', () => {
 
     it('throws on malformed input', () => {
         expect(() =>
-            // biome-ignore lint/suspicious/noExplicitAny: deliberate invalid input
+            // oxlint-disable-next-line typescript/no-explicit-any deliberate invalid input
             normalizePipelineState({ depthStencil: { format: 'not-a-format' } } as any)
         ).toThrow(ZodError);
     });

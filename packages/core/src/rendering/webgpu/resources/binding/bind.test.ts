@@ -10,7 +10,7 @@ describe('bindShader', () => {
         const bindings: BindingMap = new Map([[u, { group: 0, binding: 0 }]]);
         const bound = bindShader(s, bindings);
         expect(bound.declarations[0]).not.toBe(u);
-        expect(bound.declarations[0].__gen()).toBe('@group(0) @binding(0) var<uniform> u: U;');
+        expect(bound.declarations[0].gen()).toBe('@group(0) @binding(0) var<uniform> u: U;');
     });
 
     it('passes through non-Resource declarations by reference', () => {

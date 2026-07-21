@@ -9,16 +9,7 @@
  */
 
 import * as webgpu from '@alleninstitute/vis-core/src/rendering/webgpu';
-import {
-    identity,
-    lookAt,
-    type Mat4,
-    multiplyAll,
-    perspective,
-    rotationAxis,
-    translation,
-    type Vec3,
-} from './camera';
+import { identity, lookAt, type Mat4, multiplyAll, perspective, rotationAxis, translation, type Vec3 } from './camera';
 import { cube, dodecahedron, type Mesh, tetrahedron } from './geometry';
 import { buildShaderProgram, type InstanceUniforms } from './shader';
 

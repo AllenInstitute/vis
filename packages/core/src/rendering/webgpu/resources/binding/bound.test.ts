@@ -2,14 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ShaderStageFlag } from '../../foundation';
 import { sampler, storage, texture, uniform } from '../../shaders';
 import { bind, toBindGroupLayoutEntry } from './bound';
-import {
-    externalTextureSlot,
-    samplerSlot,
-    storageSlot,
-    storageTextureSlot,
-    textureSlot,
-    uniformSlot,
-} from './slot';
+import { externalTextureSlot, samplerSlot, storageSlot, storageTextureSlot, textureSlot, uniformSlot } from './slot';
 
 describe('bind', () => {
     it('returns a frozen object', () => {
@@ -32,42 +25,40 @@ describe('bind', () => {
         expect(b.binding).toBe(5);
     });
 
-    it('uniform: __gen() byte-matches the equivalent raw $s.uniform output', () => {
+    it('uniform: gen() byte-matches the equivalent raw $s.uniform output', () => {
         const r = uniformSlot('unis', 'Uniforms');
-        expect(bind(r, 0, 0).__gen()).toBe(uniform('unis', 'Uniforms', 0, 0).__gen());
+        expect(bind(r, 0, 0).gen()).toBe(uniform('unis', 'Uniforms', 0, 0).gen());
     });
 
-    it('storage: __gen() byte-matches the equivalent raw $s.storage output (with accessMode)', () => {
+    it('storage: gen() byte-matches the equivalent raw $s.storage output (with accessMode)', () => {
         const r = storageSlot('buf', 'BufType', { accessMode: 'read_write' });
-        expect(bind(r, 1, 2).__gen()).toBe(storage('buf', 'BufType', 1, 2, 'read_write').__gen());
+        expect(bind(r, 1, 2).gen()).toBe(storage('buf', 'BufType', 1, 2, 'read_write').gen());
     });
 
-    it('storage: __gen() byte-matches when accessMode is omitted', () => {
+    it('storage: gen() byte-matches when accessMode is omitted', () => {
         const r = storageSlot('buf', 'BufType');
-        expect(bind(r, 0, 0).__gen()).toBe(storage('buf', 'BufType', 0, 0).__gen());
+        expect(bind(r, 0, 0).gen()).toBe(storage('buf', 'BufType', 0, 0).gen());
     });
 
-    it('texture: __gen() byte-matches the equivalent raw $s.texture output', () => {
+    it('texture: gen() byte-matches the equivalent raw $s.texture output', () => {
         const r = textureSlot('colorMap', 'texture_2d<f32>');
-        expect(bind(r, 0, 1).__gen()).toBe(texture('colorMap', 'texture_2d<f32>', 0, 1).__gen());
+        expect(bind(r, 0, 1).gen()).toBe(texture('colorMap', 'texture_2d<f32>', 0, 1).gen());
     });
 
-    it('storageTexture: __gen() emits a `var` declaration with the supplied type', () => {
+    it('storageTexture: gen() emits a `var` declaration with the supplied type', () => {
         const r = storageTextureSlot('img', 'texture_storage_2d<rgba8unorm, write>', 'rgba8unorm');
         // delegates to $s.texture under the hood — the type identifier carries format/access.
-        expect(bind(r, 0, 3).__gen()).toBe(
-            texture('img', 'texture_storage_2d<rgba8unorm, write>', 0, 3).__gen()
-        );
+        expect(bind(r, 0, 3).gen()).toBe(texture('img', 'texture_storage_2d<rgba8unorm, write>', 0, 3).gen());
     });
 
-    it('sampler: __gen() byte-matches the equivalent raw $s.sampler output', () => {
+    it('sampler: gen() byte-matches the equivalent raw $s.sampler output', () => {
         const r = samplerSlot('samp', 'sampler');
-        expect(bind(r, 0, 2).__gen()).toBe(sampler('samp', 'sampler', 0, 2).__gen());
+        expect(bind(r, 0, 2).gen()).toBe(sampler('samp', 'sampler', 0, 2).gen());
     });
 
-    it('externalTexture: __gen() emits a texture_external var declaration', () => {
+    it('externalTexture: gen() emits a texture_external var declaration', () => {
         const r = externalTextureSlot('vid');
-        expect(bind(r, 0, 0).__gen()).toBe(texture('vid', 'texture_external', 0, 0).__gen());
+        expect(bind(r, 0, 0).gen()).toBe(texture('vid', 'texture_external', 0, 0).gen());
     });
 });
 

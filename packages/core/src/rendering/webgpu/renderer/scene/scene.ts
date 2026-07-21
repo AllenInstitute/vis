@@ -25,7 +25,7 @@ import {
 /** Compose a `ContainerNode`. Pass-through grouping. */
 export function container(children: readonly SceneNode[], label?: string): ContainerNode {
     return Object.freeze({
-        __brand: SCENE_NODE_BRAND,
+        brand: SCENE_NODE_BRAND,
         id: uuidv4(),
         kind: 'container' as const,
         children: Object.freeze([...children]) as readonly SceneNode[],
@@ -46,7 +46,7 @@ export interface ViewportSpec {
 
 export function viewport(spec: ViewportSpec, children: readonly SceneNode[]): ViewportNode {
     return Object.freeze({
-        __brand: SCENE_NODE_BRAND,
+        brand: SCENE_NODE_BRAND,
         id: uuidv4(),
         kind: 'viewport' as const,
         x: spec.x,
@@ -71,7 +71,7 @@ export interface ScissorSpec {
 
 export function scissor(spec: ScissorSpec, children: readonly SceneNode[]): ScissorNode {
     return Object.freeze({
-        __brand: SCENE_NODE_BRAND,
+        brand: SCENE_NODE_BRAND,
         id: uuidv4(),
         kind: 'scissor' as const,
         x: spec.x,
@@ -83,13 +83,9 @@ export function scissor(spec: ScissorSpec, children: readonly SceneNode[]): Scis
     });
 }
 
-export function stencilref(
-    value: number,
-    children: readonly SceneNode[],
-    label?: string
-): StencilRefNode {
+export function stencilref(value: number, children: readonly SceneNode[], label?: string): StencilRefNode {
     return Object.freeze({
-        __brand: SCENE_NODE_BRAND,
+        brand: SCENE_NODE_BRAND,
         id: uuidv4(),
         kind: 'stencilref' as const,
         value,
@@ -104,7 +100,7 @@ export function blendconstant(
     label?: string
 ): BlendConstantNode {
     return Object.freeze({
-        __brand: SCENE_NODE_BRAND,
+        brand: SCENE_NODE_BRAND,
         id: uuidv4(),
         kind: 'blendconstant' as const,
         color,
@@ -121,13 +117,13 @@ export function override(
     if (!(overrides instanceof Map)) {
         throw new Error(
             'override(...): bindings must be supplied as a Map<ResourceSlot, Resource>. ' +
-            'Record<slotName, Resource> is not supported on Scene nodes because the ' +
-            'scene has no pipeline context.'
+                'Record<slotName, Resource> is not supported on Scene nodes because the ' +
+                'scene has no pipeline context.'
         );
     }
     const map: ReadonlyMap<ResourceSlot, Resource> = new Map(overrides);
     return Object.freeze({
-        __brand: SCENE_NODE_BRAND,
+        brand: SCENE_NODE_BRAND,
         id: uuidv4(),
         kind: 'override' as const,
         overrides: map,
@@ -145,7 +141,7 @@ export function override(
  */
 export function draw(drawable: Drawable, label?: string): DrawableNode {
     return Object.freeze({
-        __brand: SCENE_NODE_BRAND,
+        brand: SCENE_NODE_BRAND,
         id: uuidv4(),
         kind: 'draw' as const,
         drawable,
@@ -172,7 +168,7 @@ export function childrenOf(node: SceneNode): readonly SceneNode[] {
 // ---- Scene implementation ---------------------------------------------------------------------
 
 class SceneImpl implements Scene {
-    readonly __brand: typeof SCENE_BRAND = SCENE_BRAND;
+    readonly brand: typeof SCENE_BRAND = SCENE_BRAND;
     readonly id: string;
     private _root: SceneNode;
     private readonly _parents: Map<NodeId, NodeId> = new Map();
@@ -299,21 +295,16 @@ class SceneImpl implements Scene {
         // The "kept-children" path (rebranded.children === existing.children) is a no-op here.
         const removedNodeIds: NodeId[] = [];
         if (existing.kind !== 'draw') {
-            const keptChildren =
-                rebranded.kind !== 'draw' && rebranded.children === existing.children;
+            const keptChildren = rebranded.kind !== 'draw' && rebranded.children === existing.children;
             if (!keptChildren) {
                 for (const c of existing.children) this.collectDescendantIds(c, removedNodeIds, true);
             }
         }
         // Reindex: drop the old node's children index entries, re-add the new node's.
         if (existing.kind !== 'draw') this.unindexChildrenOnly(existing);
-        // If we replaced a DrawableNode with a different Drawable, release the old one. 
+        // If we replaced a DrawableNode with a different Drawable, release the old one.
         // Same-drawable replacements (e.g. relabel) are a no-op.
-        if (
-            existing.kind === 'draw' &&
-            rebranded.kind === 'draw' &&
-            existing.drawable !== rebranded.drawable
-        ) {
+        if (existing.kind === 'draw' && rebranded.kind === 'draw' && existing.drawable !== rebranded.drawable) {
             asManagedDrawable(existing.drawable).destroy();
         }
         // Update _nodes for the rebranded id (same id, different node object).

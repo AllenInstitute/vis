@@ -18,4 +18,7 @@ export {
     type WorkerMessage,
     type WorkerMessageWithId,
 } from './workers/messages';
-export { type WorkerInit, WorkerPool } from './workers/worker-pool';
+
+export { WorkerPool, type WorkerInit } from './workers/worker-pool';
+
+export * from './rendering/webgpu';

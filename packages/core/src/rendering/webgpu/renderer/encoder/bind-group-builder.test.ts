@@ -143,7 +143,15 @@ describe('sweepBindGroupCache — selective invalidation', () => {
         const rB = fakeResource();
         const store = makeStore();
 
-        build(device, pipeline, fakeDrawable([[s0, rA], [s1, rB]]), store);
+        build(
+            device,
+            pipeline,
+            fakeDrawable([
+                [s0, rA],
+                [s1, rB],
+            ]),
+            store
+        );
         expect(store.cache.size).toBe(1);
 
         expect(sweepBindGroupCache(store, [rA])).toBe(1);
@@ -179,10 +187,7 @@ describe('sweepBindGroupCache — selective invalidation', () => {
 // ---- integration fixtures ---------------------------------------------------------------------
 
 type CameraShape = { view: readonly number[]; proj: readonly number[] };
-const cameraStruct = struct<CameraShape>('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const cameraStruct = struct<CameraShape>('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 function pipelineFixture() {
     const cam = uniformSlot('camera', cameraStruct);
@@ -226,8 +231,8 @@ function makeRecordingBM(device: GPUDevice): BufferManager {
     };
     return {
         acquire: vi.fn(make),
-        acquireForSlot: vi.fn(
-            (_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) => make(sizeBytes, usage)
+        acquireForSlot: vi.fn((_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) =>
+            make(sizeBytes, usage)
         ),
         precheck: vi.fn(() => true),
         release: vi.fn(),

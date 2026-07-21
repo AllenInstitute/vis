@@ -1,10 +1,11 @@
 import type { VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode } from '../../foundation';
 import { isBranded } from '../../foundation';
-import type { VertexInputAttribute, VertexInputInterface } from '../../shaders';
 import {
     defaultVertexFormat,
     type VertexArrayKind,
     vertexFormatInfo,
+    type VertexInputAttribute,
+    type VertexInputInterface,
 } from '../../shaders';
 
 // ---- Resolved layout data types --------------------------------------------------------------
@@ -29,7 +30,7 @@ export const VERTEX_LAYOUT_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Ve
  *  `vertexLayout(...)`, consumed by pipeline state (`deriveVertexBufferLayouts`) and the typed
  *  drawable upload (`interleaveVertexBuffer`). */
 export interface VertexLayoutDeclaration {
-    readonly __brand: typeof VERTEX_LAYOUT_BRAND;
+    readonly brand: typeof VERTEX_LAYOUT_BRAND;
     readonly buffers: readonly VertexBufferDecl[];
 }
 
@@ -51,10 +52,7 @@ export interface VertexBufferSpec {
 }
 
 /** Ergonomic `VertexBufferSpec` constructor: `buffer('instance', [2, [3, 'unorm8x4']])`. */
-export function buffer(
-    stepMode: VertexStepMode,
-    attributes: readonly VertexAttributeRef[]
-): VertexBufferSpec {
+export function buffer(stepMode: VertexStepMode, attributes: readonly VertexAttributeRef[]): VertexBufferSpec {
     return { stepMode, attributes };
 }
 
@@ -76,10 +74,7 @@ function refParts(ref: VertexAttributeRef): readonly [number, VertexFormat | und
  * multiple of 4; `stepMode` is omitted when `'vertex'` (the default) so a derived layout is
  * byte-for-byte identical to the hand-written equivalent, keeping the pipeline fingerprint stable.
  */
-export function vertexLayout(
-    vin: VertexInputInterface,
-    specs: readonly VertexBufferSpec[]
-): VertexLayoutDeclaration {
+export function vertexLayout(vin: VertexInputInterface, specs: readonly VertexBufferSpec[]): VertexLayoutDeclaration {
     const byLocation = new Map<number, VertexInputAttribute>();
     for (const a of vin.attributes) byLocation.set(a.location, a);
 
@@ -142,7 +137,7 @@ export function vertexLayout(
         throw new Error(`vertexLayout: invalid layout:\n  - ${errors.join('\n  - ')}`);
     }
 
-    return { __brand: VERTEX_LAYOUT_BRAND, buffers };
+    return { brand: VERTEX_LAYOUT_BRAND, buffers };
 }
 
 // ---- Packing + derivation --------------------------------------------------------------------
@@ -209,12 +204,7 @@ export function deriveVertexBufferLayouts(layout: VertexLayoutDeclaration): Vert
  *  supply pre-encoded integers — floats are not auto-quantized. */
 export type VertexAttrData = ArrayLike<number>;
 
-function writeComponent(
-    dv: DataView,
-    byteOffset: number,
-    kind: VertexArrayKind,
-    value: number
-): void {
+function writeComponent(dv: DataView, byteOffset: number, kind: VertexArrayKind, value: number): void {
     switch (kind) {
         case 'u8':
             dv.setUint8(byteOffset, value);

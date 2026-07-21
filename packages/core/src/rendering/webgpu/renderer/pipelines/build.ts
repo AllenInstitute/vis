@@ -112,10 +112,7 @@ function buildBindGroupLayouts(
         return [];
     }
 
-    const perDepth: Array<{ slot: ResourceSlot; binding: number }[]> = Array.from(
-        { length: maxDepth + 1 },
-        () => []
-    );
+    const perDepth: Array<{ slot: ResourceSlot; binding: number }[]> = Array.from({ length: maxDepth + 1 }, () => []);
     for (const e of entries) {
         perDepth[e.group]?.push({ slot: e.slot, binding: e.binding });
     }
@@ -126,14 +123,14 @@ function buildBindGroupLayouts(
         const bglEntries: BindGroupLayoutEntry[] = slots.map((s) => {
             // Bind each slot at its assigned (group, binding) so `toBindGroupLayoutEntry` can read
             // metadata off the `BoundSlot`. Identity of the original slot is preserved via the
-            // wrapper's spread; only `__gen()` differs.
+            // wrapper's spread; only `gen()` differs.
             const idx = slotIndex.get(s.slot);
             if (idx === undefined) {
                 // Defensive: `shaderSlotEntries` and `resolveShaderBindings` walk the same
                 // declarations, so this should be unreachable. Keep the check as a tripwire.
                 throw new Error(
                     `pipeline: slot '${s.slot.name}' was reported by shaderSlotEntries but is ` +
-                        "absent from resolveShaderBindings output (internal inconsistency)."
+                        'absent from resolveShaderBindings output (internal inconsistency).'
                 );
             }
             const bound: BoundSlot = bindSlot(s.slot, idx.group, idx.binding);

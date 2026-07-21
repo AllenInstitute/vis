@@ -28,16 +28,16 @@ describe('isResource', () => {
         expect(isResourceSlot(42)).toBe(false);
         expect(isResourceSlot('uniform')).toBe(false);
         expect(isResourceSlot({})).toBe(false);
-        expect(isResourceSlot({ __brand: 'not-it' })).toBe(false);
+        expect(isResourceSlot({ brand: 'not-it' })).toBe(false);
         expect(isResourceSlot({ name: 'u', kind: 'uniform' })).toBe(false);
     });
 });
 
-describe('Resource.__gen (unbound)', () => {
+describe('Resource.gen (unbound)', () => {
     it('throws a useful error mentioning the resource name', () => {
         const u = uniformSlot('myUniform', 'MyType');
-        expect(() => u.__gen()).toThrow(/myUniform/);
-        expect(() => u.__gen()).toThrow(/bound/);
+        expect(() => u.gen()).toThrow(/myUniform/);
+        expect(() => u.gen()).toThrow(/bound/);
     });
 
     it.each([
@@ -48,13 +48,13 @@ describe('Resource.__gen (unbound)', () => {
         ['sampler', () => samplerSlot('samp', 'sampler')],
         ['externalTexture', () => externalTextureSlot('ext')],
     ] as const)('throws for unbound %s resource', (_, build) => {
-        expect(() => build().__gen()).toThrow();
+        expect(() => build().gen()).toThrow();
     });
 });
 
 describe('Resource constructors', () => {
     it('attach the brand symbol', () => {
-        expect(uniformSlot('u', 'U').__brand).toBe(RESOURCE_SLOT_BRAND);
+        expect(uniformSlot('u', 'U').brand).toBe(RESOURCE_SLOT_BRAND);
     });
 
     it('preserve provided fields', () => {

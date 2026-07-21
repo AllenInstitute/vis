@@ -32,10 +32,7 @@ export type InstanceUniforms = { model: Float32Array; color: readonly number[] }
 /** Build the shader program + binding graph + slots + vertex layout used by the renderer. */
 export function buildShaderProgram() {
     const Camera = struct<CameraUniforms>('Camera', [member('viewProj', 'mat4x4f')]);
-    const Instance = struct<InstanceUniforms>('Instance', [
-        member('model', 'mat4x4f'),
-        member('color', 'vec4f'),
-    ]);
+    const Instance = struct<InstanceUniforms>('Instance', [member('model', 'mat4x4f'), member('color', 'vec4f')]);
 
     // Shared camera (binding 0) + per-shape instance (binding 1), both in group 0.
     const cameraSlot = slot.uniform<CameraUniforms>('camera', Camera);

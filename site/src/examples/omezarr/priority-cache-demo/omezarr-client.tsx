@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/correctness/useExhaustiveDependencies: <this is a demo, but not a demo of correct react-hook useage!> */
 import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
 import { Box2D, PLANE_XY, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
 import {
@@ -8,10 +7,10 @@ import {
     type RenderSettings,
     type RenderSettingsChannels,
     nextSliceStep,
+    decoderFactory,
 } from '@alleninstitute/vis-omezarr';
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { zoom, pan } from '../../common/camera';
-import { decoderFactory } from '@alleninstitute/vis-omezarr';
 import { SharedCacheContext } from '../../common/react/priority-cache-provider';
 import { buildConnectedRenderer } from './render-utils';
 
@@ -122,7 +121,7 @@ export function OmeZarrView(props: Props) {
             setRenderer(renderer);
             load(props.res);
         }
-    }, [cnvs.current, props.res]);
+    }, [props.res]);
 
     useEffect(() => {
         if (omezarr && cnvs.current && renderer) {

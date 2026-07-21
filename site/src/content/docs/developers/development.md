@@ -33,7 +33,7 @@ pnpm run build
 
 ### Linter/Formatting
 
-We use [Biome](https://biomejs.dev) for linting and formatting.
+We use [oxlint](https://oxc.rs/docs/guide/usage/linter.html) for linting and [oxfmt](https://oxc.rs/docs/guide/usage/formatter.html) for formatting.
 
 To run the linter, use the following command:
 

@@ -1,11 +1,5 @@
 import { DisposedBufferError, InvalidHandleError, OutOfBudgetError } from '../errors';
-import {
-    type BufferHandle,
-    BufferManagerBase,
-    type BufferSlot,
-    type BufferUsageFlags,
-    type PoolStats,
-} from '../types';
+import { type BufferHandle, BufferManagerBase, type BufferSlot, type BufferUsageFlags, type PoolStats } from '../types';
 import { OutOfBucketError } from './errors';
 import {
     type Batch,
@@ -98,11 +92,7 @@ export class BatchPoolBufferManager extends BufferManagerBase<BatchPoolBufferMan
         return this.#mintHandle(entry, pool, sizeBytes);
     }
 
-    acquireForSlot(
-        slot: BufferSlot,
-        sizeBytes: number,
-        usage: BufferUsageFlags
-    ): BufferHandle {
+    acquireForSlot(slot: BufferSlot, sizeBytes: number, usage: BufferUsageFlags): BufferHandle {
         const required = requiredUsageFor(slot);
         if ((usage & required) !== required) {
             throw new Error(

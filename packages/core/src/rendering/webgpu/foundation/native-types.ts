@@ -44,13 +44,7 @@ export const StencilOperationSchema = z.enum([
 ]);
 export type StencilOperation = z.infer<typeof StencilOperationSchema>;
 
-export const BlendOperationSchema = z.enum([
-    'add',
-    'subtract',
-    'reverse-subtract',
-    'min',
-    'max',
-]);
+export const BlendOperationSchema = z.enum(['add', 'subtract', 'reverse-subtract', 'min', 'max']);
 export type BlendOperation = z.infer<typeof BlendOperationSchema>;
 
 export const BlendFactorSchema = z.enum([
@@ -80,23 +74,10 @@ export type BufferBindingType = z.infer<typeof BufferBindingTypeSchema>;
 export const SamplerBindingTypeSchema = z.enum(['filtering', 'non-filtering', 'comparison']);
 export type SamplerBindingType = z.infer<typeof SamplerBindingTypeSchema>;
 
-export const TextureSampleTypeSchema = z.enum([
-    'float',
-    'unfilterable-float',
-    'depth',
-    'sint',
-    'uint',
-]);
+export const TextureSampleTypeSchema = z.enum(['float', 'unfilterable-float', 'depth', 'sint', 'uint']);
 export type TextureSampleType = z.infer<typeof TextureSampleTypeSchema>;
 
-export const TextureViewDimensionSchema = z.enum([
-    '1d',
-    '2d',
-    '2d-array',
-    'cube',
-    'cube-array',
-    '3d',
-]);
+export const TextureViewDimensionSchema = z.enum(['1d', '2d', '2d-array', 'cube', 'cube-array', '3d']);
 export type TextureViewDimension = z.infer<typeof TextureViewDimensionSchema>;
 
 export const StorageTextureAccessSchema = z.enum(['write-only', 'read-only', 'read-write']);
@@ -268,7 +249,7 @@ export enum ShaderStageFlag {
     VERTEX = 0x1,
     FRAGMENT = 0x2,
     COMPUTE = 0x4,
-};
+}
 
 /** ColorWrite flags: RED = 0x1, GREEN = 0x2, BLUE = 0x4, ALPHA = 0x8, ALL = 0xF */
 export const ColorWriteFlagsSchema = z.number().int().nonnegative();
@@ -278,8 +259,8 @@ export enum ColorWriteFlag {
     GREEN = 0x2,
     BLUE = 0x4,
     ALPHA = 0x8,
-    ALL = 0xF,
-};
+    ALL = 0xf,
+}
 
 // ---- Bind Group Layout Entry types ----
 
@@ -402,7 +383,7 @@ export type VertexBufferLayout = z.infer<typeof VertexBufferLayoutSchema>;
 // ---- Compile-time drift guards ---------------------------------------------------------------
 
 /**
- * Assert that `T` is assignable to its ambient global counterpart `U`. Purely type-level (erased at 
+ * Assert that `T` is assignable to its ambient global counterpart `U`. Purely type-level (erased at
  * build) — used only by `WebGpuEnumParity` below.
  */
 type AssertAssignable<T extends U, U> = T;
@@ -412,7 +393,7 @@ type AssertAssignable<T extends U, U> = T;
  * ambient WebGPU global type. If a schema's literals ever drift from the WebGPU spec (a typo, a value
  * removed from the ambient types, etc.) this tuple fails to type-check here — surfacing the mismatch
  * at build time instead of silently at `createRenderPipeline`. The Zod schemas remain the runtime
- * source of truth (no runtime enums are available from ambient sources); these guards only keep them 
+ * source of truth (no runtime enums are available from ambient sources); these guards only keep them
  * honest.
  */
 type WebGpuEnumParity = [
@@ -439,4 +420,3 @@ type WebGpuEnumParity = [
 
 // Reference the guard tuple so it participates in type-checking (and isn't flagged as unused).
 export type __WebGpuEnumParity = WebGpuEnumParity;
-

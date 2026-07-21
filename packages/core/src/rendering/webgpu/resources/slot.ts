@@ -1,11 +1,5 @@
 import type { TextureFormat } from '../foundation';
-import type {
-    StructDecl,
-    TypeIdentifier,
-    WgslSampler,
-    WgslSamplerComparison,
-    WgslTextureDataType,
-} from '../shaders';
+import type { StructDecl, TypeIdentifier, WgslSampler, WgslSamplerComparison, WgslTextureDataType } from '../shaders';
 import {
     type ExternalTextureSlot,
     type ExternalTextureSlotOptions,

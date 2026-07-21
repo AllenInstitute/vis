@@ -11,7 +11,7 @@ export type NodeId = string;
 export const SCENE_NODE_BRAND: unique symbol = Symbol.for('vis-core.webgpu.SceneNode');
 
 interface SceneNodeBase {
-    readonly __brand: typeof SCENE_NODE_BRAND;
+    readonly brand: typeof SCENE_NODE_BRAND;
     readonly id: NodeId;
     readonly label?: string;
 }
@@ -136,7 +136,7 @@ export const SCENE_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Scene');
  * `plan`.
  */
 export interface Scene {
-    readonly __brand: typeof SCENE_BRAND;
+    readonly brand: typeof SCENE_BRAND;
     readonly id: string;
     /** Current scene root. Replaced wholesale by `replace(root.id, newRoot)`. */
     readonly root: SceneNode;

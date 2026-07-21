@@ -4,7 +4,9 @@ import {
     isResource,
     makeRawBufferResource,
     type RawBufferResource,
-    type Resource,samplerSlot, uniformSlot 
+    type Resource,
+    samplerSlot,
+    uniformSlot,
 } from '../resources';
 import { member, shader, struct } from '../shaders';
 import { makeMockDevice, makeRecordingBufferManager } from '../testing';
@@ -25,10 +27,7 @@ type Camera = {
     proj: readonly number[];
 };
 
-const cameraStruct = struct<Camera>('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const cameraStruct = struct<Camera>('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 function pipelineFixture() {
     const cam = uniformSlot('camera', cameraStruct);
@@ -151,9 +150,7 @@ describe('ctx.drawable() — raw-arrays vertex / index path', () => {
         const { bm } = makeRecordingBM(m.device);
         // Precheck returns true for the camera-uniform allocation (so `ctx.resource(cam)`
         // succeeds), then returns false for the vertex allocation.
-        (bm.precheck as ReturnType<typeof vi.fn>)
-            .mockReturnValueOnce(true)
-            .mockReturnValueOnce(false);
+        (bm.precheck as ReturnType<typeof vi.fn>).mockReturnValueOnce(true).mockReturnValueOnce(false);
         const ctx = renderingContext({ device: m.device, bufferManager: bm });
         const { cam, samp, graph, sh } = pipelineFixture();
         const pipeline = ctx.pipeline(graph, sh, colorState());
@@ -198,7 +195,7 @@ describe('ctx.drawable() — binding validation', () => {
         ).toThrow(/missing binding for slot 'linear'/);
     });
 
-    it('throws when a binding\'s kind does not match the slot kind', () => {
+    it("throws when a binding's kind does not match the slot kind", () => {
         const m = makeMockDevice();
         const { bm } = makeRecordingBM(m.device);
         const ctx = renderingContext({ device: m.device, bufferManager: bm });
@@ -281,10 +278,7 @@ describe('ctx.drawable() — pre-built vertex / index path', () => {
         // Hand-roll a vertex buffer outside the drawable path so we can verify it's NOT
         // re-allocated when supplied pre-built.
         const vHandle = bm.acquire(64, GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST);
-        const vRes = makeRawBufferResource(
-            vHandle,
-            GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-        );
+        const vRes = makeRawBufferResource(vHandle, GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST);
         const allocsBefore = acquired.length;
         expect(vRes.refcount).toBe(1);
 
@@ -322,10 +316,7 @@ describe('ctx.drawable() — pre-built vertex / index path', () => {
 
         // Build a handle with only UNIFORM usage — wrong for vertex.
         const wrongHandle = bm.acquire(64, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
-        const wrongRes = makeRawBufferResource(
-            wrongHandle,
-            GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        );
+        const wrongRes = makeRawBufferResource(wrongHandle, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
         const preBuilt: ReadonlyMap<number, RawBufferResource> = new Map([[0, wrongRes]]);
 
         expect(() =>

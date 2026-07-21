@@ -2,10 +2,11 @@ import type {
     BufferResource,
     ExternalTextureResource,
     RawBufferResource,
-    Resource,ResourceSlot, 
+    Resource,
+    ResourceSlot,
     SamplerResource,
     StorageTextureResource,
-    TextureResource
+    TextureResource,
 } from '../../resources';
 import type { Drawable } from '../drawable';
 import type { BuiltPipeline } from '../pipelines/build';
@@ -122,11 +123,7 @@ export function buildBindGroupsForDraw(args: BindGroupBuildArgs): ResolvedBindGr
 /** Record which resources composed `key` so `sweepBindGroupCache` can find and drop the entry
  *  when any of them is mutated or destroyed. `resources` is deduped first (a resource bound to
  *  two slots of the same group must not be double-counted). */
-function indexBindGroupKey(
-    store: BindGroupCacheStore,
-    key: string,
-    resources: readonly Resource[]
-): void {
+function indexBindGroupKey(store: BindGroupCacheStore, key: string, resources: readonly Resource[]): void {
     const unique = resources.length > 1 ? Array.from(new Set(resources)) : resources;
     store.keyToResources.set(key, unique);
     for (const r of unique) {
@@ -144,10 +141,7 @@ function indexBindGroupKey(
  *  forward index (`key → resources`) are cleaned so no stale entries linger. Returns the number
  *  of `GPUBindGroup`s actually removed from the cache. Bind groups not touched by these
  *  resources are left intact, so the next submit only rebuilds what changed. */
-export function sweepBindGroupCache(
-    store: BindGroupCacheStore,
-    invalidatedResources: readonly Resource[]
-): number {
+export function sweepBindGroupCache(store: BindGroupCacheStore, invalidatedResources: readonly Resource[]): number {
     if (invalidatedResources.length === 0) return 0;
     let removed = 0;
     for (const r of invalidatedResources) {
@@ -196,11 +190,7 @@ function resolveBinding(
     return { resource: own, fromOverride: false };
 }
 
-function makeBindGroupEntry(
-    binding: number,
-    resource: Resource,
-    slot: ResourceSlot
-): GPUBindGroupEntry {
+function makeBindGroupEntry(binding: number, resource: Resource, slot: ResourceSlot): GPUBindGroupEntry {
     switch (resource.kind) {
         case 'uniform':
         case 'storage': {

@@ -1,4 +1,4 @@
-import type { BufferUsageFlags } from "../types";
+import type { BufferUsageFlags } from '../types';
 
 /**
  * Thrown by `acquire()` when the requested `sizeBytes` exceeds the largest configured bucket.

@@ -29,7 +29,7 @@ export type ResourceInvalidateHook = (resource: Resource) => void;
  *  memory-management surface (see `ResourceLifecycle`, which is internal). Includes slot-less
  *  variants such as `RawBufferResource` (used for vertex/index buffers in `Drawable`). */
 interface ResourceIdentity {
-    readonly __brand: typeof RESOURCE_BRAND;
+    readonly brand: typeof RESOURCE_BRAND;
     /** Globally-unique identity (UUIDv4), stable for the resource's lifetime. Distinguishes
      *  two resources that share a slot + `version` in the bind-group cache key. */
     readonly id: string;
@@ -218,10 +218,7 @@ export function makeSlotReflectionCache(): SlotReflectionCache {
  * When a `cache` is supplied the result is memoized on it (checking `has` so a cached
  * `undefined` still short-circuits); without a cache the reflection is recomputed each call.
  */
-function reflectSlot(
-    slot: UniformSlot | StorageSlot,
-    cache?: SlotReflectionCache
-): VariableDefinition | undefined {
+function reflectSlot(slot: UniformSlot | StorageSlot, cache?: SlotReflectionCache): VariableDefinition | undefined {
     if (cache?.has(slot)) return cache.get(slot);
     const def = computeSlotDef(slot);
     cache?.set(slot, def);
@@ -238,7 +235,7 @@ function computeSlotDef(slot: UniformSlot | StorageSlot): VariableDefinition | u
                 ? `storage, ${slot.accessMode}`
                 : 'storage'
             : 'uniform';
-    const wgsl = `${t.__gen()};\n@group(0) @binding(0) var<${addressSpace}> __slot: ${t.name};`;
+    const wgsl = `${t.gen()};\n@group(0) @binding(0) var<${addressSpace}> __slot: ${t.name};`;
     const defs = makeShaderDataDefinitions(wgsl);
     return slot.kind === 'storage' ? defs.storages.__slot : defs.uniforms.__slot;
 }
@@ -247,8 +244,8 @@ function isStructDeclaration(t: unknown): t is StructDeclaration {
     return (
         typeof t === 'object' &&
         t !== null &&
-        '__identType' in t &&
-        (t as { __identType: unknown }).__identType === 'struct'
+        'identType' in t &&
+        (t as { identType: unknown }).identType === 'struct'
     );
 }
 
@@ -303,7 +300,7 @@ function createManagedResource<Fields extends object>(
     };
 
     resource = {
-        __brand: RESOURCE_BRAND,
+        brand: RESOURCE_BRAND,
         id: uuidv4(),
         ...makeFields(ctl),
         get version(): number {
@@ -432,11 +429,7 @@ export function makeSamplerResource(
     onInvalidate?: ResourceInvalidateHook
 ): SamplerResource & ResourceLifecycle {
     const sampler =
-        init === undefined
-            ? device.createSampler()
-            : isGPUSampler(init)
-              ? init
-              : device.createSampler(init);
+        init === undefined ? device.createSampler() : isGPUSampler(init) ? init : device.createSampler(init);
 
     // GPUSampler has no `.destroy()` — the reference is simply dropped on teardown.
     return createManagedResource(
@@ -537,5 +530,3 @@ function isGPUSampler(v: unknown): v is GPUSampler {
         !('magFilter' in v)
     );
 }
-
-

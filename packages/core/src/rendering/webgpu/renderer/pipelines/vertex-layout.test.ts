@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { defaultVertexFormat, location, member, param, shader, struct, VERTEX_FORMAT_INFO, vertexInput } from '../../shaders';
+import {
+    defaultVertexFormat,
+    location,
+    member,
+    param,
+    shader,
+    struct,
+    VERTEX_FORMAT_INFO,
+    vertexInput,
+} from '../../shaders';
 import { pipelineFingerprint } from './fingerprint';
 import { normalizePipelineState } from './pipeline-state';
 import {
@@ -15,10 +24,7 @@ import {
 /** position (vec3f, loc 0) + color (vec4f, loc 1). */
 function posColorInput() {
     return vertexInput([
-        struct('VertexIn', [
-            member('position', 'vec3f', [location(0)]),
-            member('color', 'vec4f', [location(1)]),
-        ]),
+        struct('VertexIn', [member('position', 'vec3f', [location(0)]), member('color', 'vec4f', [location(1)])]),
     ]);
 }
 
@@ -79,10 +85,7 @@ describe('vertexLayout — multi-buffer + instancing', () => {
             param('offset', 'vec3f', [location(1)]),
             param('tint', 'vec4f', [location(2)]),
         ]);
-        const layout = vertexLayout(vin, [
-            buffer('vertex', [0]),
-            buffer('instance', [1, [2, 'unorm8x4']]),
-        ]);
+        const layout = vertexLayout(vin, [buffer('vertex', [0]), buffer('instance', [1, [2, 'unorm8x4']])]);
         expect(deriveVertexBufferLayouts(layout)).toEqual([
             { arrayStride: 12, attributes: [{ format: 'float32x3', offset: 0, shaderLocation: 0 }] },
             {
@@ -100,23 +103,19 @@ describe('vertexLayout — multi-buffer + instancing', () => {
 describe('vertexLayout — validation', () => {
     it('throws when an interface attribute is left unassigned', () => {
         const vin = posColorInput();
-        expect(() => vertexLayout(vin, [buffer('vertex', [0])])).toThrow(
-            /@location\(1\) \('color'\) is not assigned/
-        );
+        expect(() => vertexLayout(vin, [buffer('vertex', [0])])).toThrow(/@location\(1\) \('color'\) is not assigned/);
     });
 
     it('throws when a location is placed in more than one buffer', () => {
         const vin = posColorInput();
-        expect(() =>
-            vertexLayout(vin, [buffer('vertex', [0, 1]), buffer('instance', [1])])
-        ).toThrow(/assigned to more than one buffer/);
+        expect(() => vertexLayout(vin, [buffer('vertex', [0, 1]), buffer('instance', [1])])).toThrow(
+            /assigned to more than one buffer/
+        );
     });
 
     it('throws when referencing a location not in the interface', () => {
         const vin = posColorInput();
-        expect(() => vertexLayout(vin, [buffer('vertex', [0, 1, 9])])).toThrow(
-            /@location\(9\) is not declared/
-        );
+        expect(() => vertexLayout(vin, [buffer('vertex', [0, 1, 9])])).toThrow(/@location\(9\) is not declared/);
     });
 
     it('throws when an override format is WGSL-type-incompatible', () => {
@@ -161,11 +160,7 @@ describe('pipeline-state integration', () => {
             slots,
             normalizePipelineState({ vertex: { layout: vertexLayout(vin, [buffer('vertex', [0, 1])]) } })
         );
-        const manual = pipelineFingerprint(
-            sh,
-            slots,
-            normalizePipelineState({ vertex: { buffers: [handWritten] } })
-        );
+        const manual = pipelineFingerprint(sh, slots, normalizePipelineState({ vertex: { buffers: [handWritten] } }));
         expect(declared).toBe(manual);
     });
 });
@@ -194,14 +189,12 @@ describe('interleaveVertexBuffer — typed packing', () => {
         const layout = vertexLayout(vin, [buffer('vertex', [0, 1])]);
         const [buf] = layout.buffers;
         if (buf === undefined) throw new Error('unreachable');
-        expect(() =>
-            interleaveVertexBuffer(buf, { position: [1, 2, 3], color: [1, 2, 3, 4, 5, 6, 7, 8] })
-        ).toThrow(/share a vertex count/);
+        expect(() => interleaveVertexBuffer(buf, { position: [1, 2, 3], color: [1, 2, 3, 4, 5, 6, 7, 8] })).toThrow(
+            /share a vertex count/
+        );
     });
 
     it('packVertexBuffer rejects an empty buffer', () => {
-        expect(() => packVertexBuffer({ stepMode: 'vertex', attributes: [] })).toThrow(
-            /at least one attribute/
-        );
+        expect(() => packVertexBuffer({ stepMode: 'vertex', attributes: [] })).toThrow(/at least one attribute/);
     });
 });

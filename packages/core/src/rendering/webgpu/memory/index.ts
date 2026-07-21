@@ -5,7 +5,6 @@
  */
 // Base API
 
-
 // Batch Pool implementation
 export { BatchPoolBufferManager as BatchPoolBufferAdapter } from './batch-pool/batch-pool-buffer-manager';
 export { OutOfBucketError } from './batch-pool/errors';

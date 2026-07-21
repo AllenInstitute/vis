@@ -12,13 +12,7 @@ export type BufferUsageFlags = GPUBufferUsageFlags;
  * importing it — the memory module is intentionally independent of the bindings module. A real
  * `ResourceSlot` satisfies {@link BufferSlot} structurally.
  */
-export type BufferSlotKind =
-    | 'uniform'
-    | 'storage'
-    | 'texture'
-    | 'storageTexture'
-    | 'sampler'
-    | 'externalTexture';
+export type BufferSlotKind = 'uniform' | 'storage' | 'texture' | 'storageTexture' | 'sampler' | 'externalTexture';
 
 /**
  * Minimal structural view of a resource slot that `acquireForSlot` needs: just its debug `name`
@@ -152,11 +146,7 @@ export interface BufferManager<Stats extends BufferManagerStats = BufferManagerS
      * usage flag-set is missing required bits. Texture / sampler / external-texture slots
      * (which never round-trip a `BufferHandle`) throw immediately.
      */
-    acquireForSlot(
-        slot: BufferSlot,
-        sizeBytes: number,
-        usage: BufferUsageFlags
-    ): BufferHandle;
+    acquireForSlot(slot: BufferSlot, sizeBytes: number, usage: BufferUsageFlags): BufferHandle;
 
     /**
      * Non-allocating budget check used at construction sites (`ctx.resource()`,
@@ -201,9 +191,9 @@ export interface BufferManager<Stats extends BufferManagerStats = BufferManagerS
  * Base abstract class for all buffer managers. Provides common functionality and enforces the
  * `BufferManager` interface.
  */
-export abstract class BufferManagerBase<Stats extends BufferManagerStats = BufferManagerStats>
-    implements BufferManager<Stats>
-{
+export abstract class BufferManagerBase<
+    Stats extends BufferManagerStats = BufferManagerStats,
+> implements BufferManager<Stats> {
     protected device: GPUDevice;
     protected maxBytes: number;
     protected idleFrameLimit: number;
@@ -214,9 +204,7 @@ export abstract class BufferManagerBase<Stats extends BufferManagerStats = Buffe
             throw new Error('BufferManagerBase: maxBytes must be > 0.');
         }
         if (!(config.idleFrameLimit >= 0) || !Number.isInteger(config.idleFrameLimit)) {
-            throw new Error(
-                'BufferManagerBase: idleFrameLimit must be a non-negative integer.'
-            );
+            throw new Error('BufferManagerBase: idleFrameLimit must be a non-negative integer.');
         }
         this.device = config.device;
         this.maxBytes = config.maxBytes;
@@ -225,11 +213,7 @@ export abstract class BufferManagerBase<Stats extends BufferManagerStats = Buffe
     }
 
     abstract acquire(sizeBytes: number, usage: BufferUsageFlags): BufferHandle;
-    abstract acquireForSlot(
-        slot: BufferSlot,
-        sizeBytes: number,
-        usage: BufferUsageFlags
-    ): BufferHandle;
+    abstract acquireForSlot(slot: BufferSlot, sizeBytes: number, usage: BufferUsageFlags): BufferHandle;
     abstract precheck(budgetCost: number): boolean;
     abstract release(handle: BufferHandle): void;
     abstract endFrame(): void;

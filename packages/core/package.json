@@ -54,7 +54,7 @@
     },
     "devDependencies": {
         "@types/lodash": "4.17.24",
-        "@webgpu/types": "0.1.70"
+        "@webgpu/types": "0.1.71"
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",

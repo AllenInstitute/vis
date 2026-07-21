@@ -61,7 +61,7 @@ const SHADER_BUILTINS: ShaderBuiltins[] = [
 ];
 
 export type DeclarationAttribute = {
-    __gen: () => string;
+    gen: () => string;
 };
 
 export type AlignAttribute = DeclarationAttribute & {
@@ -159,7 +159,7 @@ export function align(n: number): AlignAttribute {
     if (n <= 0 || (n & (n - 1)) !== 0) {
         throw new Error('Alignment must be a positive power of 2');
     }
-    return { align: n, __gen: () => `@align(${n})` };
+    return { align: n, gen: () => `@align(${n})` };
 }
 
 /*
@@ -171,18 +171,18 @@ export function blendSrc(value: 0 | 1): BlendSrcAttribute {
     if (value !== 0 && value !== 1) {
         throw new Error('blend_src value must be either 0 or 1');
     }
-    return { blend_src: value, __gen: () => `@blend_src(${value})` };
+    return { blend_src: value, gen: () => `@blend_src(${value})` };
 }
 
 export function builtin(name: ShaderBuiltins): BuiltinAttribute {
     if (!SHADER_BUILTINS.includes(name)) {
         throw new Error(`Invalid builtin name: ${name}`);
     }
-    return { builtin: name, __gen: () => `@builtin(${name})` };
+    return { builtin: name, gen: () => `@builtin(${name})` };
 }
 
 export function constAttr(): ConstAttribute {
-    return { const: true, __gen: () => '@const' };
+    return { const: true, gen: () => '@const' };
 }
 
 export function diagnostic(severity: ShaderSeverityControlName, message: string): DiagnosticAttribute {
@@ -192,7 +192,7 @@ export function diagnostic(severity: ShaderSeverityControlName, message: string)
     if (typeof message !== 'string' || message.length === 0) {
         throw new Error('Diagnostic message must be a non-empty string');
     }
-    return { diagnostic: [severity, message], __gen: () => `@diagnostic(${severity}, "${message}")` };
+    return { diagnostic: [severity, message], gen: () => `@diagnostic(${severity}, "${message}")` };
 }
 
 /*
@@ -204,7 +204,7 @@ export function id(n: number): IdAttribute {
     if (n < 0) {
         throw new Error('ID number must be a non-negative integer');
     }
-    return { id: n, __gen: () => `@id(${n})` };
+    return { id: n, gen: () => `@id(${n})` };
 }
 
 export function interpolate(
@@ -219,30 +219,30 @@ export function interpolate(
     }
     return {
         interpolate: samplingType !== undefined ? [type, samplingType] : [type],
-        __gen: () => `@interpolate(${type}${samplingType !== undefined ? `, ${samplingType}` : ''})`,
+        gen: () => `@interpolate(${type}${samplingType !== undefined ? `, ${samplingType}` : ''})`,
     };
 }
 
 export function invariant(): InvariantAttribute {
-    return { invariant: true, __gen: () => '@invariant' };
+    return { invariant: true, gen: () => '@invariant' };
 }
 
 export function location(n: number): LocationAttribute {
     if (n < 0) {
         throw new Error('Location number must be a non-negative integer');
     }
-    return { location: n, __gen: () => `@location(${n})` };
+    return { location: n, gen: () => `@location(${n})` };
 }
 
 export function mustUse(): MustUseAttribute {
-    return { must_use: true, __gen: () => '@must_use' };
+    return { must_use: true, gen: () => '@must_use' };
 }
 
 export function size(n: number): SizeAttribute {
     if (n <= 0) {
         throw new Error('Size must be a positive number');
     }
-    return { size: n, __gen: () => `@size(${n})` };
+    return { size: n, gen: () => `@size(${n})` };
 }
 
 export function workgroupSize(
@@ -254,22 +254,22 @@ export function workgroupSize(
     if (!sizes.every((n) => typeof n === 'number' && n > 0)) {
         throw new Error('Workgroup size dimensions must be positive numbers');
     }
-    return { workgroup_size: sizes, __gen: () => `@workgroup_size(${sizes.join(', ')})` };
+    return { workgroup_size: sizes, gen: () => `@workgroup_size(${sizes.join(', ')})` };
 }
 
 export function vertex(): VertexAttribute {
-    return { vertex: true, __gen: () => '@vertex' };
+    return { vertex: true, gen: () => '@vertex' };
 }
 
 export function fragment(): FragmentAttribute {
-    return { fragment: true, __gen: () => '@fragment' };
+    return { fragment: true, gen: () => '@fragment' };
 }
 
 export function compute(): ComputeAttribute {
-    return { compute: true, __gen: () => '@compute' };
+    return { compute: true, gen: () => '@compute' };
 }
 
-export const constructors = {
+const constructors = {
     align,
     blendSrc,
     builtin,
@@ -286,3 +286,5 @@ export const constructors = {
     fragment,
     compute,
 };
+
+export const attrs = constructors;

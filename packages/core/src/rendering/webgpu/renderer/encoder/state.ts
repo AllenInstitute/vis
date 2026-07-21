@@ -144,10 +144,7 @@ export interface ActiveStateSnapshot {
 }
 
 /** Compare two index-buffer states for full equality. `undefined` vs `undefined` is true. */
-export function indexBuffersEqual(
-    a: IndexBufferState | undefined,
-    b: IndexBufferState | undefined
-): boolean {
+export function indexBuffersEqual(a: IndexBufferState | undefined, b: IndexBufferState | undefined): boolean {
     if (a === undefined && b === undefined) return true;
     if (a === undefined || b === undefined) return false;
     return (
@@ -183,10 +180,7 @@ export function scissorsEqual(a: ScissorValue | undefined, b: ScissorValue | und
     return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-export function blendConstantsEqual(
-    a: BlendConstantValue | undefined,
-    b: BlendConstantValue | undefined
-): boolean {
+export function blendConstantsEqual(a: BlendConstantValue | undefined, b: BlendConstantValue | undefined): boolean {
     if (a === undefined && b === undefined) return true;
     if (a === undefined || b === undefined) return false;
     return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
@@ -204,10 +198,7 @@ export function normalizeBlendConstant(
     return [dict.r, dict.g, dict.b, dict.a];
 }
 
-function bindGroupMapsEqual(
-    a: ReadonlyMap<number, GPUBindGroup>,
-    b: ReadonlyMap<number, GPUBindGroup>
-): boolean {
+function bindGroupMapsEqual(a: ReadonlyMap<number, GPUBindGroup>, b: ReadonlyMap<number, GPUBindGroup>): boolean {
     if (a.size !== b.size) return false;
     for (const [k, v] of a) {
         if (b.get(k) !== v) return false;
@@ -215,10 +206,7 @@ function bindGroupMapsEqual(
     return true;
 }
 
-function vertexBufferMapsEqual(
-    a: ReadonlyMap<number, BufferHandle>,
-    b: ReadonlyMap<number, BufferHandle>
-): boolean {
+function vertexBufferMapsEqual(a: ReadonlyMap<number, BufferHandle>, b: ReadonlyMap<number, BufferHandle>): boolean {
     if (a.size !== b.size) return false;
     for (const [k, v] of a) {
         const other = b.get(k);
@@ -238,10 +226,7 @@ function vertexBufferMapsEqual(
  * `vertexBuffers` / `indexBuffer` by `(handle.gpu, offset, size[, format])` so two slices of one
  * slab buffer compare unequal; state-node values structurally.
  */
-export function activeStateSnapshotsEqual(
-    a: ActiveStateSnapshot,
-    b: ActiveStateSnapshot
-): boolean {
+export function activeStateSnapshotsEqual(a: ActiveStateSnapshot, b: ActiveStateSnapshot): boolean {
     if (a === b) return true;
     // Pipelines compared by reference — the per-context pipeline cache guarantees one
     // `BuiltPipeline` instance per fingerprint, so `===` is the tightest sound predicate.

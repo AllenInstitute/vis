@@ -18,10 +18,7 @@ import type {
     StencilRefNode,
     ViewportNode,
 } from '../scene/types';
-import {
-    type BindGroupCacheStore,
-    buildBindGroupsForDraw,
-} from './bind-group-builder';
+import { type BindGroupCacheStore, buildBindGroupsForDraw } from './bind-group-builder';
 import { applyPassCommand, type PassCommand } from './pass-commands';
 import {
     ActiveState,
@@ -83,7 +80,7 @@ export const GRAPH_ENCODER_BRAND: unique symbol = Symbol.for('vis-core.webgpu.Gr
 
 /** The persistent encoder — bound to a single `RenderingContext`, reusable across frames. */
 export interface GraphEncoder {
-    readonly __brand: typeof GRAPH_ENCODER_BRAND;
+    readonly brand: typeof GRAPH_ENCODER_BRAND;
     readonly id: string;
     /** Encode + submit `scene` to `target` on the device queue. */
     submit(scene: Scene, target: RenderTarget): GPUCommandBuffer;
@@ -106,17 +103,14 @@ export interface GraphEncoder {
  * `cacheStore` is passed separately because the `GPUBindGroup` cache is a private field of the
  * context (not part of the public `RenderingContext` interface); the context threads its own
  * store in when it calls this factory. */
-export function makeGraphEncoder(
-    rc: RenderingContext,
-    cacheStore: BindGroupCacheStore
-): GraphEncoder {
+export function makeGraphEncoder(rc: RenderingContext, cacheStore: BindGroupCacheStore): GraphEncoder {
     const id = uuidv4();
     let stats: EncoderStats = ZERO_STATS;
     // Per-scene subtree cache, weakly keyed so a scene is retained solely by its owner — never
     // by the encoder. When a scene is collected, its cache entry goes with it. Boxed so
     // `clearSubtreeCache()` can swap in a fresh WeakMap (WeakMap has no `clear`).
     const perSceneBox: { map: WeakMap<Scene, PerSceneCache> } = { map: new WeakMap() };
-    
+
     // Subscription bookkeeping so `clearSubtreeCache()` can detach the `structure-changed`
     // listeners we registered on every scene we've seen. This must NOT strongly retain any
     // scene: we hold a `WeakRef` (the listener closure captures only the per-scene cache Map,
@@ -210,7 +204,7 @@ export function makeGraphEncoder(
     const subtreeCacheSize = (): number => totalCacheEntries;
 
     return Object.freeze({
-        __brand: GRAPH_ENCODER_BRAND,
+        brand: GRAPH_ENCODER_BRAND,
         id,
         submit,
         encode,

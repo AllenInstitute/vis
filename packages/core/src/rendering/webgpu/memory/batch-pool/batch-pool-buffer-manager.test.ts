@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DisposedBufferError, InvalidHandleError, OutOfBudgetError } from '../errors';
-import type {
-    BufferHandle,
-    BufferManager,
-    BufferSlot,
-    BufferUsageFlags,
-} from '../types';
+import type { BufferHandle, BufferManager, BufferSlot, BufferUsageFlags } from '../types';
 import { BatchPoolBufferManager } from './batch-pool-buffer-manager';
 import { OutOfBucketError } from './errors';
 import type { BatchPoolBufferManagerConfig } from './types';
@@ -499,36 +494,26 @@ describe('BatchPoolBufferManager.acquireForSlot', () => {
 
     it('forwards to acquire when the usage flag-set includes the required bits', () => {
         const cam: BufferSlot = { name: 'cam', kind: 'uniform' };
-        const h = manager.acquireForSlot(
-            cam,
-            64,
-            GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        );
+        const h = manager.acquireForSlot(cam, 64, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
         expect(h.bucketSize).toBe(256);
         expect(h.usage).toBe(GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
     });
 
     it('rejects a uniform slot whose requested usage is missing COPY_DST', () => {
         const cam: BufferSlot = { name: 'cam', kind: 'uniform' };
-        expect(() => manager.acquireForSlot(cam, 64, GPUBufferUsage.UNIFORM)).toThrow(
-            /requires usage bits/
-        );
+        expect(() => manager.acquireForSlot(cam, 64, GPUBufferUsage.UNIFORM)).toThrow(/requires usage bits/);
     });
 
     it('rejects a uniform slot whose requested usage is missing UNIFORM', () => {
         const cam: BufferSlot = { name: 'cam', kind: 'uniform' };
-        expect(() =>
-            manager.acquireForSlot(cam, 64, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST)
-        ).toThrow(/UNIFORM/i);
+        expect(() => manager.acquireForSlot(cam, 64, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST)).toThrow(
+            /UNIFORM/i
+        );
     });
 
     it('accepts a storage slot with STORAGE | COPY_DST', () => {
         const buf: BufferSlot = { name: 'buf', kind: 'storage' };
-        const h = manager.acquireForSlot(
-            buf,
-            4,
-            GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        );
+        const h = manager.acquireForSlot(buf, 4, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
         expect(h.usage).toBe(GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
     });
 

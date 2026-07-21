@@ -1,8 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Arrays, ArraysOptions } from 'webgpu-utils';
-import { createBufferLayoutsFromArrays } from 'webgpu-utils';
+import { createBufferLayoutsFromArrays, type Arrays, type ArraysOptions } from 'webgpu-utils';
 import { isBranded } from '../foundation';
-import type { ResourceSlot } from '../resources';
 import {
     asManaged,
     type BufferResource,
@@ -10,14 +8,11 @@ import {
     makeRawBufferResource,
     type RawBufferResource,
     type Resource,
+    type ResourceSlot,
 } from '../resources';
 import type { RenderingContext } from './context-types';
 import type { BuiltPipeline } from './pipelines/build';
-import {
-    interleaveVertexBuffer,
-    type VertexAttrData,
-    type VertexLayoutDeclaration,
-} from './pipelines/vertex-layout';
+import { interleaveVertexBuffer, type VertexAttrData, type VertexLayoutDeclaration } from './pipelines/vertex-layout';
 
 // ---- Brand & identity -------------------------------------------------------------------------
 
@@ -71,7 +66,7 @@ export interface Drawable {
     /** Optional debug label. Threaded through error messages. */
     readonly label?: string;
     /** Brand for `isDrawable`. */
-    readonly __brand: typeof DRAWABLE_BRAND;
+    readonly brand: typeof DRAWABLE_BRAND;
     /** The pipeline this drawable will render with. */
     readonly pipeline: BuiltPipeline;
     /** Vertex buffers keyed by the **buffer slot index** (i.e. the index into
@@ -111,10 +106,7 @@ export function asManagedDrawable(drawable: Drawable): ManagedDrawable {
 
 /** Map<bufferSlot, pre-built BufferResource | RawBufferResource>. The keys are slot indices
  *  into `pipeline.state.vertex.buffers`; the drawable takes its own reference to each. */
-export type PreBuiltVertexData = ReadonlyMap<
-    number,
-    BufferResource<unknown> | RawBufferResource
->;
+export type PreBuiltVertexData = ReadonlyMap<number, BufferResource<unknown> | RawBufferResource>;
 
 /**
  * Raw-arrays vertex input. The drawable runs `webgpu-utils.createBufferLayoutsFromArrays` on
@@ -233,11 +225,7 @@ export function buildDrawable(
     track: (drawable: ManagedDrawable) => void
 ): ManagedDrawable {
     // ---- Vertex buffers ---------------------------------------------------
-    const vertexBuffers = resolveVertexData(
-        ctx,
-        spec.vertex,
-        spec.label ?? spec.pipeline.fingerprint
-    );
+    const vertexBuffers = resolveVertexData(ctx, spec.vertex, spec.label ?? spec.pipeline.fingerprint);
 
     // ---- Index buffer (optional) ------------------------------------------
     const indexBuffer =
@@ -297,7 +285,7 @@ function makeFrozenDrawable(
     let disposed = false;
 
     const drawable: ManagedDrawable = {
-        __brand: DRAWABLE_BRAND,
+        brand: DRAWABLE_BRAND,
         id: uuidv4(),
         ...(args.label !== undefined && { label: args.label }),
         pipeline: args.pipeline,
@@ -403,10 +391,7 @@ function resolveVertexData(
     // `createBufferLayoutsFromArrays` returns the **layouts only** and the corresponding typed
     // arrays. We never call `createBuffersAndAttributesFromArrays` because that creates GPU
     // buffers — the buffer manager owns all GPU buffer creation in this architecture.
-    const { bufferLayouts, typedArrays } = createBufferLayoutsFromArrays(
-        input.arrays,
-        input.options
-    );
+    const { bufferLayouts, typedArrays } = createBufferLayoutsFromArrays(input.arrays, input.options);
 
     for (let i = 0; i < bufferLayouts.length; i++) {
         const layout = bufferLayouts[i];
@@ -426,11 +411,7 @@ function resolveVertexData(
         // Always include `handle.offset` so a future slab manager works transparently.
         ctx.device.queue.writeBuffer(handle.gpu, handle.offset, data);
         const slotIndex = input.bufferSlots?.[i] ?? i;
-        const resource = makeRawBufferResource(
-            handle,
-            usage,
-            `${labelForErrors}.vertex[${slotIndex}]`
-        );
+        const resource = makeRawBufferResource(handle, usage, `${labelForErrors}.vertex[${slotIndex}]`);
         out.set(slotIndex, { resource });
     }
 
@@ -472,11 +453,7 @@ function resolveTypedVertexData(
     return out;
 }
 
-function resolveIndexData(
-    ctx: RenderingContext,
-    input: IndexData,
-    labelForErrors: string
-): IndexBufferBinding {
+function resolveIndexData(ctx: RenderingContext, input: IndexData, labelForErrors: string): IndexBufferBinding {
     if (isPreBuiltIndex(input)) {
         assertBufferLikeUsage(input.resource, GPUBufferUsage.INDEX, 'index', labelForErrors);
         return {
@@ -505,11 +482,7 @@ function resolveIndexData(
     // Cast through `BufferSource` — the WebGPU types model `writeBuffer`'s data param as
     // `GPUAllowSharedBufferSource`, which the union `Uint16Array | Uint32Array` does not
     // narrow to cleanly without a non-shared `<ArrayBuffer>` annotation.
-    ctx.device.queue.writeBuffer(
-        handle.gpu,
-        handle.offset,
-        typedArray as unknown as BufferSource
-    );
+    ctx.device.queue.writeBuffer(handle.gpu, handle.offset, typedArray as unknown as BufferSource);
     const resource = makeRawBufferResource(handle, usage, `${labelForErrors}.index`);
     return { resource, format };
 }
@@ -526,8 +499,7 @@ function normalizeIndexArray(input: RawArrayIndexData): {
     }
     // Plain array → default to uint32 unless explicitly overridden to uint16.
     const fmt: GPUIndexFormat = input.format ?? 'uint32';
-    const typedArray =
-        fmt === 'uint16' ? new Uint16Array(input.data) : new Uint32Array(input.data);
+    const typedArray = fmt === 'uint16' ? new Uint16Array(input.data) : new Uint32Array(input.data);
     return { typedArray, format: fmt };
 }
 
@@ -607,15 +579,12 @@ function mergeBindingsForReuse(
     const out = new Map<ResourceSlot, Resource>();
     const overridesMap = overrides instanceof Map ? overrides : undefined;
     const overridesRecord =
-        overrides !== undefined && !(overrides instanceof Map)
-            ? (overrides as Record<string, Resource>)
-            : undefined;
+        overrides !== undefined && !(overrides instanceof Map) ? (overrides as Record<string, Resource>) : undefined;
 
     for (const slot of newPipeline.slotIndex.keys()) {
         let candidate: Resource | undefined;
         if (overridesMap !== undefined) candidate = overridesMap.get(slot);
-        if (candidate === undefined && overridesRecord !== undefined)
-            candidate = overridesRecord[slot.name];
+        if (candidate === undefined && overridesRecord !== undefined) candidate = overridesRecord[slot.name];
         if (candidate === undefined) candidate = base.get(slot);
         if (candidate === undefined) {
             // Decref whatever we've already shared before throwing.

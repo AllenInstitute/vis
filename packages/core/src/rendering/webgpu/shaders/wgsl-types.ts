@@ -351,52 +351,39 @@ export function wgslTypeName(type: WgslDataType): string {
 // Constructor functions
 // ---------------------------------------------------------------------------
 
-export const scalar = (type: WgslScalarType): WgslScalar => ({ kind: 'scalar', type });
+export const scalar = (type: WgslScalarType): WgslScalar => WgslScalarSchema.parse({ kind: 'scalar', type });
 
-export const vec = (size: WgslVecSize, componentType: WgslNumericScalarType): WgslVec => ({
-    kind: 'vec',
-    size,
-    componentType,
-});
+export const vec = (size: WgslVecSize, componentType: WgslNumericScalarType): WgslVec =>
+    WgslVecSchema.parse({ kind: 'vec', size, componentType });
 
-export const mat = (cols: WgslMatDim, rows: WgslMatDim, componentType: WgslFloatScalarType): WgslMat => ({
-    kind: 'mat',
-    cols,
-    rows,
-    componentType,
-});
+export const mat = (cols: WgslMatDim, rows: WgslMatDim, componentType: WgslFloatScalarType): WgslMat =>
+    WgslMatSchema.parse({ kind: 'mat', cols, rows, componentType });
 
-export const texture = (dimension: WgslTextureDimension, componentType: WgslSampledType): WgslTexture => ({
-    kind: 'texture',
-    dimension,
-    componentType,
-});
+export const texture = (dimension: WgslTextureDimension, componentType: WgslSampledType): WgslTexture =>
+    WgslTextureSchema.parse({ kind: 'texture', dimension, componentType });
 
-export const depthTexture = (dimension: WgslDepthTextureDimension): WgslDepthTexture => ({
-    kind: 'texture_depth',
-    dimension,
-});
+export const depthTexture = (dimension: WgslDepthTextureDimension): WgslDepthTexture =>
+    WgslDepthTextureSchema.parse({ kind: 'texture_depth', dimension });
 
-export const multisampledTexture = (componentType: WgslSampledType): WgslMultisampledTexture => ({
-    kind: 'texture_multisampled_2d',
-    componentType,
-});
+export const multisampledTexture = (componentType: WgslSampledType): WgslMultisampledTexture =>
+    WgslMultisampledTextureSchema.parse({ kind: 'texture_multisampled_2d', componentType });
 
 export const storageTexture = (
     dimension: WgslStorageTextureDimension,
     format: WgslTexelFormat,
     access: WgslStorageAccessMode
-): WgslStorageTexture => ({ kind: 'texture_storage', dimension, format, access });
+): WgslStorageTexture => WgslStorageTextureSchema.parse({ kind: 'texture_storage', dimension, format, access });
 
-export const atomic = (componentType: WgslAtomicInnerType): WgslAtomic => ({
-    kind: 'atomic',
-    componentType,
-});
+export const atomic = (componentType: WgslAtomicInnerType): WgslAtomic =>
+    WgslAtomicSchema.parse({ kind: 'atomic', componentType });
 
+// Only `size` is validated here: `WgslFixedArraySchema` carries a recursive `z.lazy` `elementType`,
+// so a full-object `.parse()` would re-validate the entire nested element tree on every wrap.
+// The element type already came from a validating constructor.
 export const fixedArray = (elementType: WgslDataType, size: number): WgslFixedArray => ({
     kind: 'array',
     elementType,
-    size,
+    size: WgslFixedArraySchema.shape.size.parse(size),
 });
 
 export const runtimeArray = (elementType: WgslDataType): WgslRuntimeArray => ({
@@ -465,4 +452,73 @@ export const texture_external: WgslExternalTexture = { kind: 'texture_external' 
 // eslint-disable-next-line camelcase
 export const texture_depth_multisampled_2d: WgslDepthMultisampledTexture = {
     kind: 'texture_depth_multisampled_2d',
+};
+
+// ---------------------------------------------------------------------------
+// Encapsulated bucket — type constructors + pre-instantiated singletons
+// ---------------------------------------------------------------------------
+
+/**
+ * Grouped WGSL *type* constructors and singletons — the typed counterpart to `decls` (declarations)
+ * and `attrs` (attributes). Any member can be passed wherever a `TypeIdentifier` is accepted (e.g.
+ * `decls.member('color', types.vec4f)`), rendering identically to the equivalent WGSL type string but
+ * with autocomplete, validation, and composability (`types.fixedArray(types.vec2f, 3)`).
+ */
+export const types = {
+    // constructors
+    scalar,
+    vec,
+    mat,
+    texture,
+    depthTexture,
+    multisampledTexture,
+    storageTexture,
+    atomic,
+    fixedArray,
+    runtimeArray,
+    // scalar singletons
+    bool,
+    i32,
+    u32,
+    f32,
+    f16,
+    // vec2 / vec3 / vec4
+    vec2i,
+    vec2u,
+    vec2f,
+    vec2h,
+    vec3i,
+    vec3u,
+    vec3f,
+    vec3h,
+    vec4i,
+    vec4u,
+    vec4f,
+    vec4h,
+    // mat (f32)
+    mat2x2f,
+    mat2x3f,
+    mat2x4f,
+    mat3x2f,
+    mat3x3f,
+    mat3x4f,
+    mat4x2f,
+    mat4x3f,
+    mat4x4f,
+    // mat (f16)
+    mat2x2h,
+    mat2x3h,
+    mat2x4h,
+    mat3x2h,
+    mat3x3h,
+    mat3x4h,
+    mat4x2h,
+    mat4x3h,
+    mat4x4h,
+    // samplers
+    sampler,
+    sampler_comparison,
+    // texture singletons
+    texture_external,
+    texture_depth_multisampled_2d,
 };

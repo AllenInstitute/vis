@@ -8,10 +8,7 @@ import { bindings, group } from './pipelines/binding-graph';
 import { buffer, vertexLayout } from './pipelines/vertex-layout';
 
 type CameraShape = { view: readonly number[]; proj: readonly number[] };
-const cameraStruct = struct<CameraShape>('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const cameraStruct = struct<CameraShape>('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 const colorState = () => ({
     primitive: { topology: 'triangle-list' as const },
@@ -34,15 +31,9 @@ describe('ctx.drawable() — typed vertex input', () => {
 
         const vin = vertexInput([
             struct('Geo', [member('position', 'vec3f', [location(0)])]), // stride 12
-            struct('Inst', [
-                member('offset', 'vec3f', [location(1)]),
-                member('tint', 'vec4f', [location(2)]),
-            ]), // stride 16 (tint overridden to unorm8x4)
+            struct('Inst', [member('offset', 'vec3f', [location(1)]), member('tint', 'vec4f', [location(2)])]), // stride 16 (tint overridden to unorm8x4)
         ]);
-        const layout = vertexLayout(vin, [
-            buffer('vertex', [0]),
-            buffer('instance', [1, [2, 'unorm8x4']]),
-        ]);
+        const layout = vertexLayout(vin, [buffer('vertex', [0]), buffer('instance', [1, [2, 'unorm8x4']])]);
 
         const pipeline = ctx.pipeline(graph, sh, { ...colorState(), vertex: { layout } });
         const camRes = ctx.resource(cam);

@@ -38,7 +38,9 @@ const format = navigator.gpu.getPreferredCanvasFormat();
 context.configure({ device, format, alphaMode: 'opaque' });
 
 const bufferManager = new webgpu.BatchPoolBufferAdapter({
-    device, maxBytes: 32 * 1024 * 1024, idleFrameLimit: 60,
+    device,
+    maxBytes: 32 * 1024 * 1024,
+    idleFrameLimit: 60,
     sizeBuckets: [256, 1024, 4096, 16384, 65536],
 });
 const ctx = webgpu.renderingContext({ device, bufferManager });
@@ -51,7 +53,11 @@ assigned by `bindings(group(...), shader)`. The vertex input is declared once wi
 turned into a `GPUVertexBufferLayout` by `vertexLayout` — the same declaration drives both the WGSL
 `@location` inputs and the pipeline's vertex state.
 
-<Code code={shaderCode} lang="ts" title="shader.ts" />
+<Code
+    code={shaderCode}
+    lang="ts"
+    title="shader.ts"
+/>
 
 ### Resources, drawables, and the render loop
 
@@ -60,10 +66,14 @@ with `commit`. `ctx.drawable(...)` binds a pipeline to its vertex/index data and
 frame the loop spins every shape's model matrix, commits it, and submits a `scene` whose color
 attachment is the canvas's current texture (a fresh view each frame) plus a depth attachment:
 
-<Code code={rendererCode} lang="ts" title="renderer.ts" />
+<Code
+    code={rendererCode}
+    lang="ts"
+    title="renderer.ts"
+/>
 
 <Aside type="tip">
-The shared camera uniform is bound into all three drawables, while each shape gets its own instance
-uniform (model matrix + color). The fragment shader reconstructs a flat per-face normal from
-screen-space derivatives (`dpdx`/`dpdy`), so the meshes only need to carry positions.
+    The shared camera uniform is bound into all three drawables, while each shape gets its own instance uniform (model
+    matrix + color). The fragment shader reconstructs a flat per-face normal from screen-space derivatives
+    (`dpdx`/`dpdy`), so the meshes only need to carry positions.
 </Aside>

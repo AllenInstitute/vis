@@ -2,7 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BufferHandle, BufferManager, BufferManagerStats } from '../../memory';
 import { member, struct } from '../../shaders';
 import { makeMockDevice } from '../../testing';
-import { externalTextureSlot, samplerSlot, storageSlot, storageTextureSlot, textureSlot, uniformSlot } from '../binding';
+import {
+    externalTextureSlot,
+    samplerSlot,
+    storageSlot,
+    storageTextureSlot,
+    textureSlot,
+    uniformSlot,
+} from '../binding';
 import {
     isResource,
     makeBufferResource,
@@ -20,10 +27,7 @@ type Camera = {
     proj: readonly number[];
 };
 
-const cameraStruct = struct<Camera>('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const cameraStruct = struct<Camera>('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 /**
  * Minimal recording `BufferManager`. Hands out monotonically-allocated handles backed by the
@@ -37,9 +41,7 @@ function makeRecordingBufferManager(device: GPUDevice): {
 } {
     const issued: BufferHandle[] = [];
     const released: BufferHandle[] = [];
-    const stats = vi.fn(
-        (): BufferManagerStats => ({ residentBytes: 0, leasedBytes: 0, freeBytes: 0 })
-    );
+    const stats = vi.fn((): BufferManagerStats => ({ residentBytes: 0, leasedBytes: 0, freeBytes: 0 }));
     const acquire = vi.fn((sizeBytes: number, usage: GPUBufferUsageFlags) => {
         const gpu = device.createBuffer({ size: sizeBytes, usage });
         const handle: BufferHandle = {
@@ -62,9 +64,8 @@ function makeRecordingBufferManager(device: GPUDevice): {
         issued.push(handle);
         return handle;
     });
-    const acquireForSlot = vi.fn(
-        (_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) =>
-            acquire(sizeBytes, usage)
+    const acquireForSlot = vi.fn((_slot: unknown, sizeBytes: number, usage: GPUBufferUsageFlags) =>
+        acquire(sizeBytes, usage)
     );
     const bm: BufferManager = {
         acquire,
@@ -305,7 +306,7 @@ describe('SamplerResource', () => {
 describe('TextureResource', () => {
     it('wraps a GPUTexture and creates a view when none is supplied', () => {
         const slot = textureSlot('tex', 'texture_2d<f32>');
-        const createView = vi.fn(() => ({ __mockKind: 'textureView' as const } as unknown as GPUTextureView));
+        const createView = vi.fn(() => ({ __mockKind: 'textureView' as const }) as unknown as GPUTextureView);
         const destroy = vi.fn();
         const texture = { createView, destroy } as unknown as GPUTexture;
         const r = makeTextureResource(slot, { texture });
@@ -363,13 +364,13 @@ describe('isResource', () => {
         const cam = uniformSlot('camera', cameraStruct);
         const buf = makeBufferResource<Camera>(cam, bm, undefined);
         expect(isResource(buf)).toBe(true);
-        expect(buf.__brand).toBe(RESOURCE_BRAND);
+        expect(buf.brand).toBe(RESOURCE_BRAND);
     });
 
     it('returns false for plain objects', () => {
         expect(isResource(null)).toBe(false);
         expect(isResource(undefined)).toBe(false);
         expect(isResource({})).toBe(false);
-        expect(isResource({ __brand: 'wrong' })).toBe(false);
+        expect(isResource({ brand: 'wrong' })).toBe(false);
     });
 });

@@ -6,10 +6,7 @@ import { pipelineFingerprint } from './fingerprint';
 import { normalizePipelineState, type PipelineStateDescriptor } from './pipeline-state';
 import { resolveShaderBindings } from './traverse';
 
-const camStruct = struct('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const camStruct = struct('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 function setup() {
     const cam = uniformSlot('camera', camStruct);
@@ -34,9 +31,7 @@ describe('pipelineFingerprint()', () => {
         const b = setup();
         // Two distinct calls to shader() produce different uuid ids → different fingerprints.
         const state = normalizePipelineState({});
-        expect(pipelineFingerprint(a.sh, a.slotIndex, state)).not.toBe(
-            pipelineFingerprint(b.sh, b.slotIndex, state)
-        );
+        expect(pipelineFingerprint(a.sh, a.slotIndex, state)).not.toBe(pipelineFingerprint(b.sh, b.slotIndex, state));
     });
 
     it('changes when slot binding indices differ', () => {
@@ -46,9 +41,7 @@ describe('pipelineFingerprint()', () => {
         const slot = uniformSlot('slot', camStruct);
         const slotIndexA = new Map([[slot, { group: 0, binding: 0 }]]);
         const slotIndexB = new Map([[slot, { group: 0, binding: 1 }]]);
-        expect(pipelineFingerprint(sh, slotIndexA, state)).not.toBe(
-            pipelineFingerprint(sh, slotIndexB, state)
-        );
+        expect(pipelineFingerprint(sh, slotIndexA, state)).not.toBe(pipelineFingerprint(sh, slotIndexB, state));
     });
 
     it('changes when any state field differs', () => {
@@ -58,11 +51,7 @@ describe('pipelineFingerprint()', () => {
             slotIndex,
             normalizePipelineState({ primitive: { topology: 'triangle-list' } })
         );
-        const b = pipelineFingerprint(
-            sh,
-            slotIndex,
-            normalizePipelineState({ primitive: { topology: 'line-list' } })
-        );
+        const b = pipelineFingerprint(sh, slotIndex, normalizePipelineState({ primitive: { topology: 'line-list' } }));
         expect(a).not.toBe(b);
     });
 
@@ -76,23 +65,15 @@ describe('pipelineFingerprint()', () => {
             multisample: { count: 4 },
             primitive: { cullMode: 'back', topology: 'triangle-list' },
         };
-        expect(
-            pipelineFingerprint(sh, slotIndex, normalizePipelineState(stateA))
-        ).toBe(pipelineFingerprint(sh, slotIndex, normalizePipelineState(stateB)));
+        expect(pipelineFingerprint(sh, slotIndex, normalizePipelineState(stateA))).toBe(
+            pipelineFingerprint(sh, slotIndex, normalizePipelineState(stateB))
+        );
     });
 
     it('changes when entry point names differ (via normalize)', () => {
         const { sh, slotIndex } = setup();
-        const a = pipelineFingerprint(
-            sh,
-            slotIndex,
-            normalizePipelineState({ vertex: { entryPoint: 'a' } })
-        );
-        const b = pipelineFingerprint(
-            sh,
-            slotIndex,
-            normalizePipelineState({ vertex: { entryPoint: 'b' } })
-        );
+        const a = pipelineFingerprint(sh, slotIndex, normalizePipelineState({ vertex: { entryPoint: 'a' } }));
+        const b = pipelineFingerprint(sh, slotIndex, normalizePipelineState({ vertex: { entryPoint: 'b' } }));
         expect(a).not.toBe(b);
     });
 });

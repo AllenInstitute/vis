@@ -45,23 +45,38 @@ export type {
     TypedUniformSlot,
 } from './resources';
 export { slot } from './resources';
-export type { VertexArrayKind, VertexComponentType, VertexFormatInfo, 
+export type {
+    VertexArrayKind,
+    VertexComponentType,
+    VertexFormatInfo,
     VertexInputAttribute,
     VertexInputBuiltin,
     VertexInputBuiltinName,
-    VertexInputInterface,} from './shaders';
+    VertexInputInterface,
+} from './shaders';
 /** `GPUVertexFormat` metadata + the natural WGSL-type → format default. */
 /** The vertex shader *input interface*: ordinary `struct`s + loose `param`s (incl. builtins),
  *  validated up front. Feeds `vertexEntry(...)` and is grouped into buffers by `vertexLayout(...)`. */
-export { defaultVertexFormat, isVertexInput, VERTEX_FORMAT_INFO, VERTEX_INPUT_BUILTINS, vertexFormatInfo, vertexInput } from './shaders';
+export {
+    defaultVertexFormat,
+    isVertexInput,
+    VERTEX_FORMAT_INFO,
+    VERTEX_INPUT_BUILTINS,
+    vertexFormatInfo,
+    vertexInput,
+} from './shaders';
 
 // ---- Binding graphs + pipeline state ----------------------------------------------------------
 
-export type { BindingGraph, BindingGroup, 
-    FragmentStateDescriptor,GroupSpec, 
+export type {
+    BindingGraph,
+    BindingGroup,
+    FragmentStateDescriptor,
+    GroupSpec,
     NormalizedPipelineState,
     PipelineStateDescriptor,
-    VertexStateDescriptor,} from './renderer';
+    VertexStateDescriptor,
+} from './renderer';
 export { bindings, group, isBindingGraph, isBindingGroup, resolveShaderBindings, shaderSlotEntries } from './renderer';
 
 // ---- Rendering context, resources, drawables, scenes ------------------------------------------
@@ -74,14 +89,17 @@ export { BatchPoolBufferAdapter } from './memory';
 export type {
     ArrayDrawCall,
     BindingOverrideNode,
-    BlendConstantNode,BuiltPipeline, 
+    BlendConstantNode,
+    BuiltPipeline,
     CompositeSceneNode,
     ContainerNode,
     Drawable,
     DrawableNode,
     DrawableReuseSpec,
     DrawableSpec,
-    DrawCall,EncoderStats, GraphEncoder, 
+    DrawCall,
+    EncoderStats,
+    GraphEncoder,
     IndexBufferBinding,
     IndexData,
     IndexedDrawCall,
@@ -92,7 +110,8 @@ export type {
     RawArraysVertexData,
     RenderingContext,
     RenderingContextSpec,
-    RenderingContextStats,RenderTarget, 
+    RenderingContextStats,
+    RenderTarget,
     ResourceFor,
     ResourceInit,
     Scene,
@@ -100,28 +119,40 @@ export type {
     SceneEvent,
     SceneEventListener,
     SceneNode,
-    ScissorNode,ScissorSpec, 
+    ScissorNode,
+    ScissorSpec,
     StencilRefNode,
     StructureChangedEvent,
     TypedVertexData,
     VertexBufferBinding,
     VertexData,
-    ViewportNode,ViewportSpec, 
+    ViewportNode,
+    ViewportSpec,
 } from './renderer';
 /** Device-scoped facade — owns the pipeline cache, buffer manager, and encoder hooks. */
 /** A `Drawable` is a pipeline + resource set + draw-call descriptor. Construct via
  *  `ctx.drawable({...})`. */
 // Encoder / submit live on `RenderingContext` (ctx.encoder() + ctx.submit(scene)).
 /** A `Scene` is the retained-mode tree of drawables submitted for rendering. */
-export { 
+export {
     blendconstant,
-    container,DRAWABLE_BRAND, 
-    draw,GRAPH_ENCODER_BRAND, isDrawable, isGraphEncoder, isScene, isSceneNode, 
-    override,renderingContext, SCENE_BRAND, SCENE_NODE_BRAND, 
+    container,
+    DRAWABLE_BRAND,
+    draw,
+    GRAPH_ENCODER_BRAND,
+    isDrawable,
+    isGraphEncoder,
+    isScene,
+    isSceneNode,
+    override,
+    renderingContext,
+    SCENE_BRAND,
+    SCENE_NODE_BRAND,
     scene,
     scissor,
     stencilref,
-    viewport} from './renderer';
+    viewport,
+} from './renderer';
 export type {
     BufferResource,
     ExternalTextureResource,
@@ -135,3 +166,4 @@ export type {
  *  raw factories are kept private to `RenderingContext` so all construction funnels through one
  *  place (consistent error wording, telemetry). */
 export { isResource, RESOURCE_BRAND } from './resources';
+export { attrs, decls, types } from './shaders';

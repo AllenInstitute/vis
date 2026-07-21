@@ -18,17 +18,11 @@ import type {
 /** Brand symbol used by `isResourceSlot` to discriminate `ResourceSlot` objects at runtime. */
 export const RESOURCE_SLOT_BRAND = Symbol.for('vis-core.webgpu.ResourceSlot');
 
-export type ResourceSlotKind =
-    | 'uniform'
-    | 'storage'
-    | 'texture'
-    | 'storageTexture'
-    | 'sampler'
-    | 'externalTexture';
+export type ResourceSlotKind = 'uniform' | 'storage' | 'texture' | 'storageTexture' | 'sampler' | 'externalTexture';
 
 /** Fields common to every `ResourceSlot` variant. */
 interface ResourceSlotCommon {
-    readonly __brand: typeof RESOURCE_SLOT_BRAND;
+    readonly brand: typeof RESOURCE_SLOT_BRAND;
     readonly kind: ResourceSlotKind;
     readonly name: string;
     /**
@@ -40,9 +34,9 @@ interface ResourceSlotCommon {
     readonly attributes?: VariableOrValueAttribute[];
     /**
      * Throws unless this slot has been bound to a `{group, binding}` (see `bind()` /
-     * `bindShader()`). After binding, the bound wrapper's `__gen()` returns the WGSL declaration.
+     * `bindShader()`). After binding, the bound wrapper's `gen()` returns the WGSL declaration.
      */
-    __gen(): string;
+    gen(): string;
 }
 
 export interface UniformSlot extends ResourceSlotCommon {
@@ -129,18 +123,14 @@ export type UniformSlotOptions = {
     minBindingSize?: number;
 };
 
-export function uniformSlot(
-    name: string,
-    type: TypeIdentifier,
-    options: UniformSlotOptions = {}
-): UniformSlot {
+export function uniformSlot(name: string, type: TypeIdentifier, options: UniformSlotOptions = {}): UniformSlot {
     return {
-        __brand: RESOURCE_SLOT_BRAND,
+        brand: RESOURCE_SLOT_BRAND,
         kind: 'uniform',
         name,
         type,
         ...options,
-        __gen: unboundGen(name),
+        gen: unboundGen(name),
     };
 }
 
@@ -152,18 +142,14 @@ export type StorageSlotOptions = {
     minBindingSize?: number;
 };
 
-export function storageSlot(
-    name: string,
-    type: TypeIdentifier,
-    options: StorageSlotOptions = {}
-): StorageSlot {
+export function storageSlot(name: string, type: TypeIdentifier, options: StorageSlotOptions = {}): StorageSlot {
     return {
-        __brand: RESOURCE_SLOT_BRAND,
+        brand: RESOURCE_SLOT_BRAND,
         kind: 'storage',
         name,
         type,
         ...options,
-        __gen: unboundGen(name),
+        gen: unboundGen(name),
     };
 }
 
@@ -181,12 +167,12 @@ export function textureSlot(
     options: TextureSlotOptions = {}
 ): TextureSlot {
     return {
-        __brand: RESOURCE_SLOT_BRAND,
+        brand: RESOURCE_SLOT_BRAND,
         kind: 'texture',
         name,
         type,
         ...options,
-        __gen: unboundGen(name),
+        gen: unboundGen(name),
     };
 }
 
@@ -204,13 +190,13 @@ export function storageTextureSlot(
     options: StorageTextureSlotOptions = {}
 ): StorageTextureSlot {
     return {
-        __brand: RESOURCE_SLOT_BRAND,
+        brand: RESOURCE_SLOT_BRAND,
         kind: 'storageTexture',
         name,
         type,
         format,
         ...options,
-        __gen: unboundGen(name),
+        gen: unboundGen(name),
     };
 }
 
@@ -226,12 +212,12 @@ export function samplerSlot(
     options: SamplerSlotOptions = {}
 ): SamplerSlot {
     return {
-        __brand: RESOURCE_SLOT_BRAND,
+        brand: RESOURCE_SLOT_BRAND,
         kind: 'sampler',
         name,
         type,
         ...options,
-        __gen: unboundGen(name),
+        gen: unboundGen(name),
     };
 }
 
@@ -240,15 +226,12 @@ export type ExternalTextureSlotOptions = {
     attributes?: VariableOrValueAttribute[];
 };
 
-export function externalTextureSlot(
-    name: string,
-    options: ExternalTextureSlotOptions = {}
-): ExternalTextureSlot {
+export function externalTextureSlot(name: string, options: ExternalTextureSlotOptions = {}): ExternalTextureSlot {
     return {
-        __brand: RESOURCE_SLOT_BRAND,
+        brand: RESOURCE_SLOT_BRAND,
         kind: 'externalTexture',
         name,
         ...options,
-        __gen: unboundGen(name),
+        gen: unboundGen(name),
     };
 }

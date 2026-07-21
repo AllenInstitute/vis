@@ -10,10 +10,7 @@ import { resolveShaderBindings } from './traverse';
 
 // ----- helpers ------------------------------------------------------------
 
-const cameraStruct = struct('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const cameraStruct = struct('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 const minimalFragmentState = {
     targets: [{ format: 'bgra8unorm' as const }],
@@ -46,9 +43,7 @@ describe('RenderingContext.pipeline() — happy path', () => {
         expect(m.calls.createRenderPipeline).toHaveBeenCalledTimes(1);
 
         expect(built.bindGroupLayouts).toHaveLength(1);
-        expect((built.bindGroupLayouts[0] as unknown as MockGpuBindGroupLayout).__mockKind).toBe(
-            'bindGroupLayout'
-        );
+        expect((built.bindGroupLayouts[0] as unknown as MockGpuBindGroupLayout).__mockKind).toBe('bindGroupLayout');
     });
 
     it('builds one BGL per depth for nested groups (indexed by depth)', () => {
@@ -251,7 +246,7 @@ describe('RenderingContext.pipeline() — error propagation', () => {
             ctx.pipeline(
                 graph,
                 sh,
-                // biome-ignore lint/suspicious/noExplicitAny: deliberate invalid input
+                // oxlint-disable-next-line typescript/no-explicit-any deliberate invalid input
                 { primitive: { topology: 'bogus' } } as any
             )
         ).toThrow();
@@ -423,8 +418,6 @@ describe('RenderingContext.pipeline() — cache', () => {
         expect(ctx.pipelineCount).toBe(0);
         expect(ctx.disposed).toBe(true);
         expect(() => ctx.pipeline(graph, sh, mkColorPipelineState())).toThrow(/ctx-A/);
-        expect(() => ctx.pipeline(graph, sh, mkColorPipelineState())).toThrow(
-            /use-after-dispose/
-        );
+        expect(() => ctx.pipeline(graph, sh, mkColorPipelineState())).toThrow(/use-after-dispose/);
     });
 });

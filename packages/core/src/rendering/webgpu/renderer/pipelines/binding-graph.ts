@@ -77,12 +77,7 @@ const DEFAULT_GROUP_DEPTH_LIMIT = 4;
  * nor a `BindingGroup`). Used by `group()` to detect the optional first-arg-as-spec overload.
  */
 function isGroupSpec(value: unknown): value is GroupSpec {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        !isResourceSlot(value) &&
-        !isBindingGroup(value)
-    );
+    return typeof value === 'object' && value !== null && !isResourceSlot(value) && !isBindingGroup(value);
 }
 
 /**
@@ -165,10 +160,7 @@ export function bindings(root: BindingGroup, ...shaders: readonly WgslShader[]):
         throw new Error('bindings: at least one shader is required');
     }
 
-    const slotIndex = new Map<
-        ResourceSlot,
-        { group: number; binding: number; owner: BindingGroup }
-    >();
+    const slotIndex = new Map<ResourceSlot, { group: number; binding: number; owner: BindingGroup }>();
     const groupDepth = new Map<BindingGroup, number>();
     const allGroups: BindingGroup[] = [];
 
@@ -228,7 +220,7 @@ export function bindings(root: BindingGroup, ...shaders: readonly WgslShader[]):
                     `bindings: shader (id='${sh.id}') declares slot '${decl.name}' but it is not ` +
                         "present in the supplied group tree (rooted at '" +
                         (root.label ?? '<unlabeled>') +
-                        "').",
+                        "')."
                 );
             }
         }

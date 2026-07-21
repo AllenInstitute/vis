@@ -8,10 +8,7 @@ import { bindings, group } from './pipelines/binding-graph';
 
 // ----- helpers ------------------------------------------------------------
 
-const cameraStruct = struct('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const cameraStruct = struct('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 function fixture() {
     const cam = uniformSlot('camera', cameraStruct);

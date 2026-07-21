@@ -3,11 +3,7 @@ import type { WgslShader } from '../../shaders';
 import type { BindingGraph, BindingGroup } from './binding-graph';
 
 /** Resolve a single slot's `(group, binding)` from the graph or throw if it is not present. */
-function resolveSlot(
-    slot: ResourceSlot,
-    graph: BindingGraph,
-    shaderId: string
-): { group: number; binding: number } {
+function resolveSlot(slot: ResourceSlot, graph: BindingGraph, shaderId: string): { group: number; binding: number } {
     const entry = graph._slotIndex.get(slot);
     if (entry === undefined) {
         throw new Error(

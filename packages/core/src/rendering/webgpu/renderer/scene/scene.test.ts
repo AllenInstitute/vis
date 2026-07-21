@@ -1,16 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Drawable } from '../drawable';
 import { DRAWABLE_BRAND } from '../drawable';
-import {
-    blendconstant,
-    container,
-    draw,
-    override,
-    scene,
-    scissor,
-    stencilref,
-    viewport,
-} from './scene';
+import { blendconstant, container, draw, override, scene, scissor, stencilref, viewport } from './scene';
 
 // ---- shared fixtures --------------------------------------------------------------------------
 
@@ -19,7 +10,7 @@ function fakeDrawable(label?: string): Drawable & { readonly destroyCount: () =>
     drawableCounter += 1;
     let destroyCalls = 0;
     const d = {
-        __brand: DRAWABLE_BRAND,
+        brand: DRAWABLE_BRAND,
         id: `drawable-${drawableCounter}`,
         ...(label !== undefined && { label }),
         pipeline: {} as Drawable['pipeline'],
@@ -213,13 +204,8 @@ describe('node factories', () => {
         expect(bc.kind).toBe('blendconstant');
     });
 
-    it("override only accepts Map<ResourceSlot, Resource> (not a record)", () => {
-        expect(() =>
-            override(
-                {} as unknown as ReadonlyMap<never, never>,
-                []
-            )
-        ).toThrow(/Map<ResourceSlot, Resource>/);
+    it('override only accepts Map<ResourceSlot, Resource> (not a record)', () => {
+        expect(() => override({} as unknown as ReadonlyMap<never, never>, [])).toThrow(/Map<ResourceSlot, Resource>/);
     });
 });
 
@@ -230,10 +216,7 @@ describe('Scene ownership contract', () => {
         const a = fakeDrawable('a');
         const b = fakeDrawable('b');
         const c = fakeDrawable('c');
-        const root = container([
-            draw(a),
-            container([draw(b), draw(c)]),
-        ]);
+        const root = container([draw(a), container([draw(b), draw(c)])]);
         const s = scene({ root });
         // Look up the inner container's id (the second child of root).
         const inner = s.root.kind === 'container' ? s.root.children[1] : undefined;

@@ -38,7 +38,7 @@ describe('group()', () => {
 
     it('throws when a child is neither a ResourceSlot nor a BindingGroup', () => {
         expect(() =>
-            // biome-ignore lint/suspicious/noExplicitAny: deliberate invalid input
+            // oxlint-disable-next-line typescript/no-explicit-any deliberate invalid input
             group({ label: 'g' }, { not: 'a slot' } as any)
         ).toThrow(/neither a ResourceSlot nor a BindingGroup/);
     });
@@ -92,11 +92,11 @@ describe('bindings()', () => {
 
     it('throws when the root is not a BindingGroup', () => {
         const sh = shader([]);
-        // biome-ignore lint/suspicious/noExplicitAny: deliberate invalid input
+        // oxlint-disable-next-line typescript/no-explicit-any deliberate invalid input
         expect(() => bindings({} as any, sh)).toThrow(/must be a BindingGroup/);
     });
 
-    it("throws when a shader declares a slot that is not present in the supplied tree", () => {
+    it('throws when a shader declares a slot that is not present in the supplied tree', () => {
         const present = uniformSlot('here', 'H');
         const absent = uniformSlot('missing', 'M');
         const root = group(present);
@@ -107,7 +107,7 @@ describe('bindings()', () => {
     it("ignores non-ResourceSlot declarations in the shader's declarations array", () => {
         const u = uniformSlot('u', 'U');
         const root = group(u);
-        const extra = { __gen: () => '// noop' };
+        const extra = { gen: () => '// noop' };
         const sh = shader([u, extra]);
         expect(() => bindings(root, sh)).not.toThrow();
     });

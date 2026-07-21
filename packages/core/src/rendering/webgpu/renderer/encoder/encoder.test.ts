@@ -17,10 +17,7 @@ import { container, draw, scene, viewport } from '../scene/scene';
 // ---- fixtures ---------------------------------------------------------------------------------
 
 type CameraShape = { view: readonly number[]; proj: readonly number[] };
-const cameraStruct = struct<CameraShape>('Camera', [
-    member('view', 'mat4x4f'),
-    member('proj', 'mat4x4f'),
-]);
+const cameraStruct = struct<CameraShape>('Camera', [member('view', 'mat4x4f'), member('proj', 'mat4x4f')]);
 
 function pipelineFixture() {
     const cam = uniformSlot('camera', cameraStruct);
@@ -512,9 +509,7 @@ describe('GraphEncoder — subtree-command cache', () => {
 
         // Frame 1: everything recorded fresh.
         ctx.submit(s, TARGET);
-        const frame1DrawCount = m.passCommands.filter(
-            (c) => c.kind === 'draw' || c.kind === 'drawIndexed'
-        ).length;
+        const frame1DrawCount = m.passCommands.filter((c) => c.kind === 'draw' || c.kind === 'drawIndexed').length;
         expect(frame1DrawCount).toBe(1);
 
         // Frame 2: mark ONLY the root container dirty. The inner viewport is still clean and
@@ -537,4 +532,3 @@ describe('GraphEncoder — subtree-command cache', () => {
         expect(frame3Stats.subtreeCacheMisses).toBe(0);
     });
 });
-
