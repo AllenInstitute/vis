@@ -242,10 +242,7 @@ function computeSlotDef(slot: UniformSlot | StorageSlot): VariableDefinition | u
 
 function isStructDeclaration(t: unknown): t is StructDeclaration {
     return (
-        typeof t === 'object' &&
-        t !== null &&
-        'identType' in t &&
-        (t as { identType: unknown }).identType === 'struct'
+        typeof t === 'object' && t !== null && 'identType' in t && (t as { identType: unknown }).identType === 'struct'
     );
 }
 
