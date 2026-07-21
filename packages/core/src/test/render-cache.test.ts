@@ -248,8 +248,8 @@ describe('async cache', () => {
             // expect everything to have been rendered, regardless of all this cache nonsense
             expect(rendered.length).toEqual(7); // id=0...5, 99
             // spot check the last two rendered things:
-            rendered[rendered.length - 2].data.color[1] = 99;
-            rendered[rendered.length - 1].data.position[2] = 0; // 3*(i=0)
+            expect(rendered[rendered.length - 2].data.color.pretend[1]).toEqual(99);
+            expect(rendered[rendered.length - 1].data.position.pretend[2]).toEqual(0); // 3*(i=0)
         });
         it('evicts data after the soft limit is hit, while prioritizing Least-recently used entries', async () => {
             // each of our tasks requests two chunks of data

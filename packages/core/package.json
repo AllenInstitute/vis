@@ -36,7 +36,7 @@
         "dist"
     ],
     "scripts": {
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc --build",
         "build": "parcel build --no-cache",
         "dev": "parcel watch --port 1235",
         "test": "vitest --watch",
@@ -61,6 +61,7 @@
         "lodash": "4.18.1",
         "regl": "2.1.1",
         "uuid": "14.0.1",
-        "zod": "4.4.3"
+        "webgpu-utils": "^2.1.1",
+        "zod": "4.3.6"
     }
 }
