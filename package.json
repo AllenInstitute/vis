@@ -17,7 +17,7 @@
     },
     "devDependencies": {
         "oxfmt": "0.56.0",
-        "oxlint": "1.73.0",
+        "oxlint": "1.75.0",
         "prettier": "3.8.4",
         "prettier-plugin-astro": "0.14.1",
         "@parcel/packager-ts": "2.16.4",
