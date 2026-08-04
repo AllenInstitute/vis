@@ -1,9 +1,8 @@
 import { entries, flatMap, keys, map, values } from 'lodash';
 import { buildPipeline } from './build';
 import { genQuery, indexExprType, looksLikeIndexExpr } from './gen';
-import type { Tables, ITable, PredLst, FilterShaderQueryContext, VarName, FilteredTable, RunFilterArgs, PredExpr, Given, GivenTable, SelectedTable, BufferTables, SimplePredExpr, OP, VOP, IndexedReference, RunIndexedFilterArgs, PredicateExpr, TsType } from './types';
+import type { Tables, ITable, PredLst, FilterShaderQueryContext, VarName, FilteredTable, RunFilterArgs, PredExpr, Given, GivenTable, SelectedTable, BufferTables, SimplePredExpr, OP, VOP, IndexedReference, RunIndexedFilterArgs, PredicateExpr, TsType, FT, Sel } from './types';
 import * as wgh from 'webgpu-utils'
-
 
 export class FilterTable<Ts extends Tables, T extends ITable, Params extends Record<string, number | number[]>> {
   private predicates: PredLst;
@@ -22,6 +21,20 @@ export class FilterTable<Ts extends Tables, T extends ITable, Params extends Rec
     return new FilterTable<Ts, T, typeof pred extends
       PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }>(this.ctx, [...this.predicates, { OP: 'or', pred }]);
   }
+  andOpen<Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>): FilteredTable<Ts, T, typeof pred extends
+    PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }> {
+      return new FilterTable<Ts, T, typeof pred extends
+        PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }>(this.ctx, [...this.predicates, { OP: 'and (', pred }]);
+  }
+  orOpen<Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>): FilteredTable<Ts, T, typeof pred extends
+    PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }> {
+      return new FilterTable<Ts, T, typeof pred extends
+        PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }>(this.ctx, [...this.predicates, { OP: 'or (', pred }]);
+    }
+  close() {
+    return new FilterTable<Ts, T, Params>(this.ctx,[...this.predicates,{OP:')'}])
+  }
+
   // build vs. buildIndexed are nearly identical - this function builds either
   // and does a little TS trickery to help us not repeat the body of the builder
   private buildHelper<Indexed extends boolean>(device: GPUDevice, label: string, indexed: Indexed): { shader: string, pipeline: ReturnType<typeof buildPipeline>, run: (args: Indexed extends true ? RunIndexedFilterArgs<Ts, Params> : RunFilterArgs<Ts, Params>) => GPUBuffer[] } {
@@ -29,9 +42,10 @@ export class FilterTable<Ts extends Tables, T extends ITable, Params extends Rec
     const Q = genQuery(this.ctx, this.predicates, wgSize, indexed);
     console.dir(Q)
     const pipe = buildPipeline(device, Q.shader, 'main', label);
+    const withPreds = this.predicates.filter(p => 'pred' in p)
     const safeLookups = omitUnreferencedColumns(
-      [this.ctx.firstPred, ...map(this.predicates, p => p.pred)],
-      this.ctx.tables, this.ctx.from, this.ctx.select, Q.bindingLookups);
+      [this.ctx.firstPred, ...map(withPreds, p => p.pred)],
+      this.ctx.tables, this.ctx.from, this.ctx.selections, Q.bindingLookups);
 
     const runner = (args: Indexed extends true ? RunIndexedFilterArgs<Ts, Params> : RunFilterArgs<Ts, Params>) => {
       const { enc, parameters, sets } = args;
@@ -130,7 +144,7 @@ function references(pred: SimplePredExpr, tables: Tables, from: string) {
     return [{ table: from, column: lhs }]
   }
 }
-function omitUnreferencedColumns(preds: SimplePredExpr[], tables: Tables, from: string, select: string, bindings: Record<string, Record<string, number>>) {
+function omitUnreferencedColumns(preds: SimplePredExpr[], tables: Tables, from: string, select: readonly Sel[], bindings: Record<string, Record<string, number>>) {
   // for each table, for each column
   // find its binding in the defs
   // if we cant - we need to omit it at the point at which we create a bindgroup for it
@@ -148,14 +162,17 @@ function omitUnreferencedColumns(preds: SimplePredExpr[], tables: Tables, from: 
     const b = bindings[table]![column]!;
     keep(table, column, b)
   }
-  if (select !== `$index`) {
-    const projected = looksLikeIndexExpr(select, tables, from);
-    if (projected) {
-      keep(projected.from, projected.index_field, bindings[projected.from]![projected.index_field]!)
-      keep(projected.fTable, projected.selection, bindings[projected.fTable]![projected.selection]!)
-    } else {
-      const b = bindings[from]![select]!;
-      keep(from, select, b);
+  for (const S of select) {
+    const select = S.selection;
+    if (select !== `$index`) {
+      const projected = looksLikeIndexExpr(select, tables, from);
+      if (projected) {
+        keep(projected.from, projected.index_field, bindings[projected.from]![projected.index_field]!)
+        keep(projected.fTable, projected.selection, bindings[projected.fTable]![projected.selection]!)
+      } else {
+        const b = bindings[from]![select]!;
+        keep(from, select, b);
+      }
     }
   }
 
@@ -174,15 +191,77 @@ function mapTablesToBindings<Ts extends Tables>(tables: BufferTables<Ts>, lookup
   }).filter(x => x !== undefined)
 }
 
+
+type SelCtx<Ts extends Tables, Tbl extends keyof Ts> = {
+  tables: Ts
+  tbl:Tbl
+  selections: ReadonlyArray<Sel>
+}
+class Selection<Ts extends Tables,Tbl extends keyof Ts> {
+  constructor(readonly ctx:SelCtx<Ts,Tbl>) {
+
+  }
+  select<Ti extends keyof Ts[Tbl], O extends keyof Ts, oF extends keyof Ts[O]>(f: Ti | '$index' | IndexedReference<Ts[Tbl], Ti, Ts, O, oF>) {
+    const { tables, tbl,selections } = this.ctx;
+    const additionalSelection = {
+      selection: f as string,
+      type: f === '$index' ?
+        'u32' :
+        indexExprType(f as string, tables, tbl as string) ?? tables[tbl]![f]! as FT
+    } as const;
+    const yay = [...selections, additionalSelection];
+    return new Selection<Ts, Tbl>({
+      ...this.ctx, selections: yay})
+  }
+  where<Ti extends keyof Ts[Tbl],
+    O extends keyof Ts,
+    F extends keyof Ts[O],
+    Param extends VarName>(pred: PredExpr<Ts[Tbl], Ti, Ts, O, F, Param>) {
+
+      const { tbl, tables: ts,selections } = this.ctx;
+
+      return new FilterTable<Ts, Ts[Tbl], typeof pred extends
+        PredicateExpr<Ts[Tbl], Ti, Param> ? { [k in Param]: TsType<Ts[Tbl][Ti]> } : { [k in Param]: TsType<Ts[O][F]> }>({
+        firstPred: pred,
+        from: tbl as string,
+        selections,
+        tables: ts,
+        uniformName: 'unis',
+        uniformTypeName: 'Parameters',
+      })
+    }
+}
+
 export function given<Ts extends Tables>(ts: Ts): Given<Ts> {
   return {
     from: <Tbl extends keyof Ts>(tbl: Tbl): GivenTable<Ts[Tbl], Ts> => {
       type T = Ts[Tbl];
       return {
         select: <Ti extends keyof T, O extends keyof Ts, oF extends keyof Ts[O]>(
-          f: Ti | '$index' | IndexedReference<T, Ti, Ts, O, oF>
+          f0: Ti | '$index' | IndexedReference<T, Ti, Ts, O, oF>
         ): SelectedTable<T, Ts> => {
+          const firstSelection = {
+            selection: f0 as string,
+            type: f0 === '$index' ?
+              'u32' :
+              indexExprType(f0 as string, ts, tbl as string) ?? ts[tbl]![f0]!,
+          }
           return {
+            select:  <Ti extends keyof T, O extends keyof Ts, oF extends keyof Ts[O]>(
+              f: Ti | '$index' | IndexedReference<T, Ti, Ts, O, oF>
+            ): SelectedTable<T, Ts> => {
+              const second = {
+                selection: f as string,
+                type: f === '$index' ?
+                  'u32' :
+                  indexExprType(f as string, ts, tbl as string) ?? ts[tbl]![f]!,
+              }
+              return new Selection<Ts, Tbl>({
+                selections: [firstSelection, second],
+                tables: ts,
+                tbl
+              });
+            },
             where: <Ti extends keyof T,
               O extends keyof Ts,
               F extends keyof Ts[O],
@@ -191,14 +270,10 @@ export function given<Ts extends Tables>(ts: Ts): Given<Ts> {
                 PredicateExpr<T, Ti, Param> ? { [k in Param]: TsType<T[Ti]> } : { [k in Param]: TsType<Ts[O][F]> }>({
                 firstPred: pred,
                 from: tbl as string,
-                select: f as string,
-                selectType: f === '$index' ?
-                  'u32' :
-                  indexExprType(f as string, ts, tbl as string) ?? ts[tbl]![f]!,
+                  selections: [],
                 tables: ts,
                 uniformName: 'unis',
                 uniformTypeName: 'Parameters',
-                selectedField: f as string // I promise!
               })
             }
           }

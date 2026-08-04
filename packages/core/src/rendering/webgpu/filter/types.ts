@@ -72,6 +72,7 @@ export type RunIndexedFilterArgs<Ts extends Tables, Params extends Record<string
     }[]
     enc: GPUCommandEncoder,
 }
+
 export type FilteredTable<Ts extends Tables, T extends ITable, Params extends Record<string, number | number[]>> = {
   and: <Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>) => FilteredTable<Ts, T,
     typeof pred extends
@@ -79,20 +80,26 @@ export type FilteredTable<Ts extends Tables, T extends ITable, Params extends Re
   or: <Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>) => FilteredTable<Ts, T,
     typeof pred extends
       PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }>;
-    build: (device: GPUDevice, label: string) => {
-        shader: string,
-        pipeline: { pipeline: GPUComputePipeline, defs: wgh.ShaderDataDefinitions },
-        run: (args: RunFilterArgs<Ts, Params>) => readonly GPUBuffer[]
-    };
-    buildIndexed: (device: GPUDevice, label: string) => {
-        shader: string,
-        pipeline: { pipeline: GPUComputePipeline, defs: wgh.ShaderDataDefinitions },
-        run: (args: RunIndexedFilterArgs<Ts, Params>) => readonly GPUBuffer[]
-    }
-    // todo: buildIndexed
+  build: (device: GPUDevice, label: string) => {
+      shader: string,
+      pipeline: { pipeline: GPUComputePipeline, defs: wgh.ShaderDataDefinitions },
+      run: (args: RunFilterArgs<Ts, Params>) => readonly GPUBuffer[]
+  };
+  buildIndexed: (device: GPUDevice, label: string) => {
+    shader: string,
+    pipeline: { pipeline: GPUComputePipeline, defs: wgh.ShaderDataDefinitions },
+    run: (args: RunIndexedFilterArgs<Ts, Params>) => readonly GPUBuffer[]
+  };
+  andOpen: <Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>) => FilteredTable<Ts, T,
+    typeof pred extends
+      PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }>;
+  orOpen: <Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>) => FilteredTable<Ts, T,
+    typeof pred extends
+      PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }>;
+  close: ()=>FilteredTable<Ts,T,Params>
 }
 export type SimplePredExpr = `${string} ${OP | VOP} ${string}`
-export type PredLst = readonly { OP: 'and' | 'or', pred: SimplePredExpr }[]
+export type PredLst = readonly ({ OP: 'and' | 'or' | 'and (' | 'or (', pred: SimplePredExpr }|{OP:')'})[]
 
 
 // a ts type for the wgsl type...
@@ -109,10 +116,12 @@ export type Given<Ts extends Tables> = {
 }
 export type GivenTable<T extends ITable, Ts extends Tables> = {
     select: <Ti extends keyof T, O extends keyof Ts, oF extends keyof Ts[O]>(f: Ti | '$index' | IndexedReference<T, Ti, Ts, O, oF>) => SelectedTable<T, Ts>
-    // project: <Ti extends keyof T, O extends keyof Ts, oF extends keyof Ts[O]>(f: IndexedReference<T, Ti, Ts, O, oF>) => SelectedTable<T, Ts>
 }
 
+export type Sel = { selection: string, type: FT };
+
 export type SelectedTable<T extends ITable, Ts extends Tables> = {
+  select: <Ti extends keyof T, O extends keyof Ts, oF extends keyof Ts[O]>(f: Ti | '$index' | IndexedReference<T, Ti, Ts, O, oF>) => SelectedTable<T, Ts>
   where: <Ti extends keyof T,
     O extends keyof Ts,
     F extends keyof Ts[O],
@@ -124,12 +133,10 @@ export type SelectedTable<T extends ITable, Ts extends Tables> = {
 }
 export type FilterShaderQueryContext<Ts extends Tables> = {
     // hmmm name too silly
-    from: string;
-    select: string,
-    selectType: FT,
-    tables: Ts;
-    selectedField: string;
-    firstPred: SimplePredExpr;
-    uniformName: string;
-    uniformTypeName: string;
+  from: string;
+  tables: Ts;
+  selections: ReadonlyArray<Sel>;
+  firstPred: SimplePredExpr;
+  uniformName: string;
+  uniformTypeName: string;
 }
