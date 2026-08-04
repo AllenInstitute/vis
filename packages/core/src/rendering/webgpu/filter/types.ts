@@ -44,7 +44,10 @@ export type IndexedPredicateExpr<T extends ITable, Ti extends keyof T, Ts extend
     keyof T extends string ? O extends string ? F extends string ?
     Ti extends string ?
     FType<T, Ti> extends 'u32' ?
-    keyof Ts[O] extends string ? `${O}[${keyof T}].${F} ${OP} ${Param}` :
+  keyof Ts[O] extends string ?
+  (FType<Ts[O], F> extends VT<infer N> ?
+      `${O}[${keyof T}].${F} ${VOP} ${Param}` :
+      `${O}[${keyof T}].${F} ${OP} ${Param}`) :
     never : never : never : never : never : never
 
 export type PredExpr<T extends ITable, Ti extends keyof T, Ts extends Tables, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName> =
