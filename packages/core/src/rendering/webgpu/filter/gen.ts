@@ -1,180 +1,206 @@
-
 // generate the interesting bits of the filter-shader
 
-import entries from "lodash/entries";
-import { OPS, type Elem, type FilterShaderQueryContext, type FT, type ITable, type OP, type PredLst, type Sel, type SimplePredExpr, type Tables, type VOP } from "./types";
-import { keys, map, reduce, values } from "lodash";
+import entries from 'lodash/entries';
+import {
+    OPS,
+    type Elem,
+    type FilterShaderQueryContext,
+    type FT,
+    type ITable,
+    type OP,
+    type PredLst,
+    type Sel,
+    type SimplePredExpr,
+    type Tables,
+    type VOP,
+} from './types';
+import { keys, map, reduce, values } from 'lodash';
 
 function isVecOp(s: OP | VOP): s is VOP {
-  return s.startsWith('a')
+    return s.startsWith('a');
 }
 function parseVecOp(op: VOP) {
-  const aggregation = op.substring(0, 3)
-  const sop = op.substring(4).split(')')[0]
-  console.log('parsed vec op',aggregation,sop,op)
-  return [aggregation, sop] as ['any' | 'all', OP];
+    const aggregation = op.substring(0, 3);
+    const sop = op.substring(4).split(')')[0];
+    return [aggregation, sop] as ['any' | 'all', OP];
 }
 function isScalarOp(s: OP | VOP): s is OP {
-  return (OPS as readonly string[]).includes(s)
+    return (OPS as readonly string[]).includes(s);
 }
 // dont export this - its only legit if we know a bunch of stuff about the string
 function fieldType(s: string, table: ITable) {
-  return table[s]
+    return table[s];
 }
 export function indexExprType(s: string, tables: Tables, from: string) {
-  const ext = looksLikeIndexExpr(s, tables, from)
-  return ext ? ext.type : undefined;
+    const ext = looksLikeIndexExpr(s, tables, from);
+    return ext ? ext.type : undefined;
 }
 export function looksLikeIndexExpr(s: string, tables: Tables, from: string) {
-  // if(s.match(/[a].[b]\[.\]\.$0/))
-  // todo: i am on a plane and I dont remember regex and I dont wanna buy wifi
-  // table[field_of_from].field_of_table
-  const [tbl, rest] = s.split('[')
-  if (tbl && rest) {
-    const [index_field, selection] = rest.split('].')
-    if (index_field && selection) {
-
-      if (tables[tbl] && tables[from] && tables[from][index_field] && tables[tbl][selection]) {
-        // return the expected type
-        return {
-          fTable: tbl,
-          selection,
-          index_field,
-          from,
-          type: tables[tbl][selection]
+    // if(s.match(/[a].[b]\[.\]\.$0/))
+    // todo: i am on a plane and I dont remember regex and I dont wanna buy wifi
+    // table[field_of_from].field_of_table
+    const [tbl, rest] = s.split('[');
+    if (tbl && rest) {
+        const [index_field, selection] = rest.split('].');
+        if (index_field && selection) {
+            if (tables[tbl] && tables[from] && tables[from][index_field] && tables[tbl][selection]) {
+                // return the expected type
+                return {
+                    fTable: tbl,
+                    selection,
+                    index_field,
+                    from,
+                    type: tables[tbl][selection],
+                };
+            }
         }
-      }
     }
-  }
-  return false;
+    return false;
 }
 function genRef(ctx: FilterShaderQueryContext<Tables>, operand: string, indexing: string = 'element') {
-  const indexed = looksLikeIndexExpr(operand, ctx.tables, ctx.from)
-  if (operand === '$index') {
-    return indexing;
-  }
-  if (indexed) {
-    return `${indexed.fTable}_${indexed.selection}[${indexed.from}_${indexed.index_field}[${indexing}]]`
-  } else if (operand in ctx.tables[ctx.from]!) {
-    return `${ctx.from}_${operand}[${indexing}]`
-  }
-  // todo...
-  return operand;
+    const indexed = looksLikeIndexExpr(operand, ctx.tables, ctx.from);
+    if (operand === '$index') {
+        return indexing;
+    }
+    if (indexed) {
+        return `${indexed.fTable}_${indexed.selection}[${indexed.from}_${indexed.index_field}[${indexing}]]`;
+    } else if (operand in ctx.tables[ctx.from]!) {
+        return `${ctx.from}_${operand}[${indexing}]`;
+    }
+    // todo...
+    return operand;
 }
 function genPred(ctx: FilterShaderQueryContext<Tables>, p: SimplePredExpr) {
-  const [lhs, op, rhs] = p.split(' ') as [string, OP | VOP, string]
-  // TODO! handle non-PARAMETER rhs exprs
-  const param = `${ctx.uniformName}.${rhs}`
-  if (isVecOp(op)) {
-    console.log('generating predicate for vector op!!',op,)
-    const [agg, sop] = parseVecOp(op)
-    const str = `${agg}(${genRef(ctx, lhs)} ${sop} ${param})` // any / all are built-in wgsl fns over vectors of booleans
-    console.log('resulting vecop....',str)
-    return str
-  }
-  return `${genRef(ctx, lhs)} ${op} ${param}`
+    const [lhs, op, rhs] = p.split(' ') as [string, OP | VOP, string];
+    // TODO! handle non-PARAMETER rhs exprs
+    const param = `${ctx.uniformName}.${rhs}`;
+    if (isVecOp(op)) {
+        const [agg, sop] = parseVecOp(op);
+        const str = `${agg}(${genRef(ctx, lhs)} ${sop} ${param})`; // any / all are built-in wgsl fns over vectors of booleans
+        return str;
+    }
+    return `${genRef(ctx, lhs)} ${op} ${param}`;
 }
 function handlePredElem(ctx: FilterShaderQueryContext<Tables>, e: Elem<PredLst>) {
-  switch (e.OP) {
-    case 'and (':
-      return `&& (${genPred(ctx, e.pred)}`
-    case 'or (':
-        return `|| (${genPred(ctx, e.pred)}`
-    case ')':
-      return ')';
-    case 'and':
-      return `&& ${genPred(ctx, e.pred)}`
-    case 'or':
-      return `|| ${genPred(ctx, e.pred)}`
-  }
+    switch (e.OP) {
+        case 'and (':
+            return `&& (${genPred(ctx, e.pred)}`;
+        case 'or (':
+            return `|| (${genPred(ctx, e.pred)}`;
+        case ')':
+            return ')';
+        case 'and':
+            return `&& ${genPred(ctx, e.pred)}`;
+        case 'or':
+            return `|| ${genPred(ctx, e.pred)}`;
+    }
 }
 export function generatePredicateExpr(ctx: FilterShaderQueryContext<Tables>, exprs: [SimplePredExpr, ...PredLst]) {
-  // return exprs.map(e => typeof e === 'string' ? genPred(ctx, e) : `${e.OP === 'and' ? ' && ' : ' || '} ${genPred(ctx, e.pred)}`).join('\n');
-  return exprs.map(e => typeof e === 'string' ? genPred(ctx, e) : handlePredElem(ctx,e)).join('\n')
+    // return exprs.map(e => typeof e === 'string' ? genPred(ctx, e) : `${e.OP === 'and' ? ' && ' : ' || '} ${genPred(ctx, e.pred)}`).join('\n');
+    return exprs.map((e) => (typeof e === 'string' ? genPred(ctx, e) : handlePredElem(ctx, e))).join('\n');
 }
 function extractPred(p: SimplePredExpr | Elem<PredLst>): SimplePredExpr | undefined {
-  return typeof p === 'string' ? p : ('pred' in p ? p.pred : undefined)
+    return typeof p === 'string' ? p : 'pred' in p ? p.pred : undefined;
 }
 export function genUniformParameterStruct(tables: Tables, from: string, exprs: [SimplePredExpr, ...PredLst]) {
-  // extract the parameter name and expected type from each predicate
-  // the type must be the same as that of the lhs
-  // to know that, we need the tables...
+    // extract the parameter name and expected type from each predicate
+    // the type must be the same as that of the lhs
+    // to know that, we need the tables...
 
-  // first - create a map from param name to expected type -
-  // this is helpful because we can re-use the same parameter, and we dont want it to show up twice
-  // in the uniform param struct.
-  const fields = reduce(exprs, (acc, cur: SimplePredExpr | Elem<PredLst>) => {
-    const info = extractPredicateInfo(tables, from, extractPred(cur));
-    return info === undefined ? acc : { ...acc, [info[0]]: info[1] }
-  }, {} as Record<string, FT>)
+    // first - create a map from param name to expected type -
+    // this is helpful because we can re-use the same parameter, and we dont want it to show up twice
+    // in the uniform param struct.
+    const fields = reduce(
+        exprs,
+        (acc, cur: SimplePredExpr | Elem<PredLst>) => {
+            const info = extractPredicateInfo(tables, from, extractPred(cur));
+            return info === undefined ? acc : { ...acc, [info[0]]: info[1] };
+        },
+        {} as Record<string, FT>
+    );
 
-  const decls = entries(fields).map(([param, type]) => `${param}:${type}`).join(',\n')
+    const decls = entries(fields)
+        .map(([param, type]) => `${param}:${type}`)
+        .join(',\n');
 
-  // const decls = reduce(exprs,
-  //   (acc: string, cur: SimplePredExpr | Elem<PredLst>) => (acc + `\n ${extractPredSubjectType(tables, from, extractPred(cur)) ?? 'ERROR!!'},`), 'struct Parameters {'
-  // ) + '};\n';
-  return `struct Parameters {
+    // const decls = reduce(exprs,
+    //   (acc: string, cur: SimplePredExpr | Elem<PredLst>) => (acc + `\n ${extractPredSubjectType(tables, from, extractPred(cur)) ?? 'ERROR!!'},`), 'struct Parameters {'
+    // ) + '};\n';
+    return `struct Parameters {
     ${decls}
   };
-  `
+  `;
 }
 function extractPredicateInfo(tables: Tables, from: string, expr: SimplePredExpr | undefined) {
-  if (expr === undefined) {
+    if (expr === undefined) {
+        return undefined;
+    }
+    const [lhs, _op, rhs] = expr.split(' ') as [string, OP | VOP, string];
+    let lhsType = indexExprType(lhs, tables, from) || fieldType(lhs, tables[from]!);
+    if (lhsType) {
+        return [rhs, lhsType] as const;
+    }
     return undefined;
-  }
-  const [lhs, _op, rhs] = expr.split(' ') as [string, OP | VOP, string]
-  let lhsType = indexExprType(lhs, tables, from) || fieldType(lhs, tables[from]!)
-  if (lhsType) {
-    return [rhs,lhsType] as const
-  }
-  return undefined;
 }
 function extractPredSubjectType(tables: Tables, from: string, expr: SimplePredExpr | undefined) {
-  if (expr === undefined) {
-    return ''; // this is ok
-  }
-  const [lhs, _op, rhs] = expr.split(' ') as [string, OP | VOP, string]
-  let lhsType = indexExprType(lhs, tables, from) || fieldType(lhs, tables[from]!)
-  if (lhsType) {
-    return `${rhs}:${lhsType}`
-  }
-  // todo - handle Error!
-  return undefined
+    if (expr === undefined) {
+        return ''; // this is ok
+    }
+    const [lhs, _op, rhs] = expr.split(' ') as [string, OP | VOP, string];
+    let lhsType = indexExprType(lhs, tables, from) || fieldType(lhs, tables[from]!);
+    if (lhsType) {
+        return `${rhs}:${lhsType}`;
+    }
+    // todo - handle Error!
+    return undefined;
 }
 // we also need to generate a storage buffer per field per table...
 // todo - someday support row-major tables - structs vs. parallel arrays
-export function generateTableBindings(tableName: string, table: Record<string, FT>, group: number, bindingStart: number = 0) {
-  const cols = entries(table)
-  let bindingLookup = cols.reduce((acc, [f, _t], index) => ({ ...acc, [f]: index + bindingStart }), {} as Record<string, number>);
-  const decls = cols.map(([f, t], index) => `@group(${group}) @binding(${index + bindingStart}) var<storage,read> ${tableName}_${f}: array<${t}>;`).join('\n');
-  return { decls, numBindings: cols.length, bindingLookup }
+export function generateTableBindings(
+    tableName: string,
+    table: Record<string, FT>,
+    group: number,
+    bindingStart: number = 0
+) {
+    const cols = entries(table);
+    let bindingLookup = cols.reduce(
+        (acc, [f, _t], index) => ({ ...acc, [f]: index + bindingStart }),
+        {} as Record<string, number>
+    );
+    const decls = cols
+        .map(
+            ([f, t], index) =>
+                `@group(${group}) @binding(${index + bindingStart}) var<storage,read> ${tableName}_${f}: array<${t}>;`
+        )
+        .join('\n');
+    return { decls, numBindings: cols.length, bindingLookup };
 }
 
 function generateOutputStructure(selections: ReadonlyArray<Sel>) {
-  // the names of the values in the structure dont matter at all -
-  const structName = `OutputStruct`
-  const fields = selections.map((s, i) => `field_${i.toFixed(0)}: ${s.type},`).join('\n');
-  const decl = `struct ${structName} {\n ${fields} \n };`;
-  const initializers = selections.map((s) => s.selection).join(', ');// === '$index' ? 'tmp - 1' : `${s.selection}[tmp - 1]`).join(', ');
-  const construct = `${structName}(${initializers})`
+    // the names of the values in the structure dont matter at all -
+    const structName = `OutputStruct`;
+    const fields = selections.map((s, i) => `field_${i.toFixed(0)}: ${s.type},`).join('\n');
+    const decl = `struct ${structName} {\n ${fields} \n };`;
+    const initializers = selections.map((s) => s.selection).join(', '); // === '$index' ? 'tmp - 1' : `${s.selection}[tmp - 1]`).join(', ');
+    const construct = `${structName}(${initializers})`;
 
-  return {structName,decl,construct}
+    return { structName, decl, construct };
 }
 
 export function generateShader(params: {
-  workgroupSize: number,
-  inputBindings: string,
-  predicateExpr: string,
-  uniformStruct: { name: string, typeName: string, decl: string },
-  indexed: boolean,
-  selections: ReadonlyArray<Sel>
+    workgroupSize: number;
+    inputBindings: string;
+    predicateExpr: string;
+    uniformStruct: { name: string; typeName: string; decl: string };
+    indexed: boolean;
+    selections: ReadonlyArray<Sel>;
 }) {
-  const { inputBindings, predicateExpr, uniformStruct, selections, workgroupSize, indexed } = params;
-  // const selectExpr = select.expr === '$index' ? 'tmp - 1' :
-  //   `${select.expr}[tmp - 1]`
-  // const selectExpr = select.expr;
-  const {structName, decl, construct } = generateOutputStructure(selections);
-  const host = /*wgsl*/`
+    const { inputBindings, predicateExpr, uniformStruct, selections, workgroupSize, indexed } = params;
+    // const selectExpr = select.expr === '$index' ? 'tmp - 1' :
+    //   `${select.expr}[tmp - 1]`
+    // const selectExpr = select.expr;
+    const { structName, decl, construct } = generateOutputStructure(selections);
+    const host = /*wgsl*/ `
 
     ${uniformStruct.decl}
     ${decl}
@@ -187,9 +213,7 @@ export function generateShader(params: {
     // result count and results are in group1, as they change at the same rate as the input buffers
     @group(1) @binding(0) var<storage,read_write> used: array<atomic<u32>,1>;
     @group(1) @binding(1) var<storage, read_write> passing: array<${structName}>;
-    ${indexed ?
-      '@group(1) @binding(2) var<storage, read_write> elements: array<u32>;' :
-      ''};
+    ${indexed ? '@group(1) @binding(2) var<storage, read_write> elements: array<u32>;' : ''};
 
     // input bindings (find-replace injected...)
     ${inputBindings}
@@ -223,41 +247,45 @@ export function generateShader(params: {
                 }
             }
         }
-    }`
+    }`;
 
-  return host;
+    return host;
 }
 
-export function genQuery<Ts extends Tables>(ctx: FilterShaderQueryContext<Ts>, predicates: PredLst, wgSize: number, indexed: boolean) {
-  // const bindings = generateTableBindings(ctx.from as string, ctx.tables[ctx.from]!, 1)
-  // for now, assume all tables will be used somehow
-  // future - allow specification of which tables go in which groups
-  // const bindings = map(keys(ctx.tables), (t) => generateTableBindings(t, ctx.tables[t]!, 1))
-  let bindingStart = 3;
-  let bindings: string = ''
-  const bindingLookups: Record<string, Record<string, number>> = {}
-  for (const t of keys(ctx.tables)) {
-    const binding = generateTableBindings(t, ctx.tables[t]!, 1, bindingStart)
-    bindings += `\n //${t}\n${binding.decls}\n`;
-    bindingStart += binding.numBindings
-    bindingLookups[t] = binding.bindingLookup
-  }
-  const predicate = generatePredicateExpr(ctx, [ctx.firstPred, ...predicates])
-  const paramsDecl = genUniformParameterStruct(ctx.tables, ctx.from, [ctx.firstPred, ...predicates]);
-  return {
-    shader: generateShader(
-      {
-        workgroupSize: wgSize,
-        inputBindings: bindings,
-        predicateExpr: predicate,
-        indexed,
-        selections: ctx.selections.map(s=>({selection: genRef(ctx,s.selection,'tmp - 1'), type: s.type})),
-        // select: {
-        //   expr: genRef(ctx, ctx.select, 'tmp - 1'),
-        //   type: ctx.selectType,
-        // },
-        uniformStruct: { name: ctx.uniformName, typeName: ctx.uniformTypeName, decl: paramsDecl }
-      }),
-    bindingLookups
-  }
+export function genQuery<Ts extends Tables>(
+    ctx: FilterShaderQueryContext<Ts>,
+    predicates: PredLst,
+    wgSize: number,
+    indexed: boolean
+) {
+    // const bindings = generateTableBindings(ctx.from as string, ctx.tables[ctx.from]!, 1)
+    // for now, assume all tables will be used somehow
+    // future - allow specification of which tables go in which groups
+    // const bindings = map(keys(ctx.tables), (t) => generateTableBindings(t, ctx.tables[t]!, 1))
+    let bindingStart = 3;
+    let bindings: string = '';
+    const bindingLookups: Record<string, Record<string, number>> = {};
+    for (const t of keys(ctx.tables)) {
+        const binding = generateTableBindings(t, ctx.tables[t]!, 1, bindingStart);
+        bindings += `\n //${t}\n${binding.decls}\n`;
+        bindingStart += binding.numBindings;
+        bindingLookups[t] = binding.bindingLookup;
+    }
+    const predicate = generatePredicateExpr(ctx, [ctx.firstPred, ...predicates]);
+    const paramsDecl = genUniformParameterStruct(ctx.tables, ctx.from, [ctx.firstPred, ...predicates]);
+    return {
+        shader: generateShader({
+            workgroupSize: wgSize,
+            inputBindings: bindings,
+            predicateExpr: predicate,
+            indexed,
+            selections: ctx.selections.map((s) => ({ selection: genRef(ctx, s.selection, 'tmp - 1'), type: s.type })),
+            // select: {
+            //   expr: genRef(ctx, ctx.select, 'tmp - 1'),
+            //   type: ctx.selectType,
+            // },
+            uniformStruct: { name: ctx.uniformName, typeName: ctx.uniformTypeName, decl: paramsDecl },
+        }),
+        bindingLookups,
+    };
 }
