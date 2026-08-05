@@ -55,9 +55,10 @@ export type PredExpr<T extends ITable, Ti extends keyof T, Ts extends Tables, O 
     PredicateExpr<T, Ti, Param>;
 
 
-export type RunFilterArgs<Ts extends Tables, Params extends Record<string, number | number[]>> = {
-    parameters: Params,
-    sets: {
+export type RunFilterArgs<Ts extends Tables> = {
+    parameters: GPUBuffer,
+  sets: {
+        resultCounter:GPUBuffer,
         rowCount: number,
         tables: BufferTables<Ts>,
         results: GPUBuffer,
@@ -65,9 +66,10 @@ export type RunFilterArgs<Ts extends Tables, Params extends Record<string, numbe
     enc: GPUCommandEncoder,
 }
 
-export type RunIndexedFilterArgs<Ts extends Tables, Params extends Record<string, number | number[]>> = {
-    parameters: Params,
-    sets: {
+export type RunIndexedFilterArgs<Ts extends Tables> = {
+    parameters: GPUBuffer,
+  sets: {
+        resultCounter:GPUBuffer,
         rowCount: number,
         elements: GPUBuffer,
         tables: BufferTables<Ts>,
@@ -85,13 +87,15 @@ export type FilteredTable<Ts extends Tables, T extends ITable, Params extends Re
       PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }>;
   build: (device: GPUDevice, label: string) => {
       shader: string,
+      serializeParameters: (parameters: Params,buffer?:ArrayBuffer) => ArrayBuffer,
       pipeline: { pipeline: GPUComputePipeline, defs: wgh.ShaderDataDefinitions },
-      run: (args: RunFilterArgs<Ts, Params>) => readonly GPUBuffer[]
+      run: (args: RunFilterArgs<Ts>) => void
   };
   buildIndexed: (device: GPUDevice, label: string) => {
     shader: string,
+    serializeParameters: (parameters: Params) => ArrayBuffer,
     pipeline: { pipeline: GPUComputePipeline, defs: wgh.ShaderDataDefinitions },
-    run: (args: RunIndexedFilterArgs<Ts, Params>) => readonly GPUBuffer[]
+    run: (args: RunIndexedFilterArgs<Ts>) => void
   };
   andOpen: <Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>) => FilteredTable<Ts, T,
     typeof pred extends

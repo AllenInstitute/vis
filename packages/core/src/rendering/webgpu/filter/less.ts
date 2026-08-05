@@ -1,8 +1,33 @@
 import { entries, flatMap, keys, map, values } from 'lodash';
-import { buildPipeline } from './build';
+import { buildFilterPipeline } from './build';
 import { genQuery, indexExprType, looksLikeIndexExpr } from './gen';
 import type { Tables, ITable, PredLst, FilterShaderQueryContext, VarName, FilteredTable, RunFilterArgs, PredExpr, Given, GivenTable, SelectedTable, BufferTables, SimplePredExpr, OP, VOP, IndexedReference, RunIndexedFilterArgs, PredicateExpr, TsType, FT, Sel } from './types';
 import * as wgh from 'webgpu-utils'
+
+
+// so, because and and or cannot be mixed without parens in WGSL
+// we need a structure to provide grouping
+// there are a lot of ways we could do this, but I think the easiest
+// that isnt too limiting is CNF, which means the AND of a bunch of clauses,
+// each clause being 1 or more predicates, combined via ORs
+// that would be nice, and would make it hard to produce shaders that cant compile
+// but - its very long-winded in terms of connecting the types up...
+// so lets use a simpler system...
+// function clause() {
+
+// }
+// class Clause<Ts extends Tables, T extends ITable, Params extends Record<string, number | number[]>, Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName> {
+//   constructor(pred: PredExpr<T, Ti, Ts, O, F, Param>) {
+
+//   }
+//   or<Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>): FilteredTable<Ts, T, typeof pred extends
+//     PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }> {
+//     return new Clause<Ts, T, typeof pred extends
+//   PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> },
+
+//   }
+// }
+
 
 export class FilterTable<Ts extends Tables, T extends ITable, Params extends Record<string, number | number[]>> {
   private predicates: PredLst;
@@ -37,64 +62,61 @@ export class FilterTable<Ts extends Tables, T extends ITable, Params extends Rec
 
   // build vs. buildIndexed are nearly identical - this function builds either
   // and does a little TS trickery to help us not repeat the body of the builder
-  private buildHelper<Indexed extends boolean>(device: GPUDevice, label: string, indexed: Indexed): { shader: string, pipeline: ReturnType<typeof buildPipeline>, run: (args: Indexed extends true ? RunIndexedFilterArgs<Ts, Params> : RunFilterArgs<Ts, Params>) => GPUBuffer[] } {
+  private buildHelper<Indexed extends boolean>(device: GPUDevice, label: string, indexed: Indexed): {
+    shader: string,
+    serializeParameters: (parameters:Params,buffer?:ArrayBuffer)=>ArrayBuffer,
+    pipeline: ReturnType<typeof buildFilterPipeline>,
+    run: (args: Indexed extends true ? RunIndexedFilterArgs<Ts> : RunFilterArgs<Ts>) => void
+  } {
     const wgSize = 64
     const Q = genQuery(this.ctx, this.predicates, wgSize, indexed);
     console.dir(Q)
-    const pipe = buildPipeline(device, Q.shader, 'main', label);
+    const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
     const withPreds = this.predicates.filter(p => 'pred' in p)
     const safeLookups = omitUnreferencedColumns(
       [this.ctx.firstPred, ...map(withPreds, p => p.pred)],
       this.ctx.tables, this.ctx.from, this.ctx.selections, Q.bindingLookups);
 
-    const runner = (args: Indexed extends true ? RunIndexedFilterArgs<Ts, Params> : RunFilterArgs<Ts, Params>) => {
-      const { enc, parameters, sets } = args;
-      // TODO - a buffer pool would be nice
-      const uniDef = pipe.defs.structs[this.ctx.uniformTypeName]!
-      const unis = wgh.makeStructuredView(pipe.defs.structs[this.ctx.uniformTypeName]!)
+    const uniDef = pipe.defs.structs[this.ctx.uniformTypeName]!
+    const serializeParameters = (parameters: Params, buffer?:ArrayBuffer) => {
+      const unis = wgh.makeStructuredView(uniDef,buffer)
+      unis.set(parameters);
+      return unis.arrayBuffer;
+    }
 
-      const resultCounters = args.sets.map((s) => {
-        const counterStorage = device.createBuffer({
-          size: 4,
-          usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
-        });
-        device.queue.writeBuffer(counterStorage, 0, new Uint32Array([0]))
-        return counterStorage;
+    const runner = (args: Indexed extends true ? RunIndexedFilterArgs<Ts> : RunFilterArgs<Ts>) => {
+      const { enc, parameters, sets } = args;
+      // here, we zero out the result counters
+      // TODO - consider not doing this - if we didnt do that:
+      // 1. we could potentially accumulate results onto results that had previously been captured in the results buffer
+      // 2. we technically could invoke this whole thing in an open compute pass...? right?
+      args.sets.forEach((s) => {
+        device.queue.writeBuffer(s.resultCounter, 0, new Uint32Array([0]))
       })
-      const bindings = indexed ? (args as RunIndexedFilterArgs<Ts, Params>).sets.map((s, i) => {
-        const counter = resultCounters[i]!
+      const bindings = indexed ? (args as RunIndexedFilterArgs<Ts>).sets.map((s, i) => {
         return device.createBindGroup({
           layout: pipe.pipeline.getBindGroupLayout(1), entries: [
             { binding: 2, resource: s.elements },
             { binding: 1, resource: s.results },
-            { binding: 0, resource: counter },
+            { binding: 0, resource: s.resultCounter },
             ...mapTablesToBindings(s.tables, safeLookups),
           ]
         });
       }) : args.sets.map((s, i) => {
-        const counter = resultCounters[i]!
         return device.createBindGroup({
           layout: pipe.pipeline.getBindGroupLayout(1), entries: [
             { binding: 1, resource: s.results },
-            { binding: 0, resource: counter },
+            { binding: 0, resource: s.resultCounter },
             ...mapTablesToBindings(s.tables, safeLookups),
           ]
         });
       })
 
-      const ubo = device.createBuffer({
-        size: uniDef.size,
-        label: `${label} uniform buffer`,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM
-      });
-      unis.set(parameters);
-      console.log('setting uni params:', parameters)
-      device.queue.writeBuffer(ubo, 0, unis.arrayBuffer);
-      console.log('serialized params:', unis.arrayBuffer)
+
       const bg0 = device.createBindGroup({
         layout: pipe.pipeline.getBindGroupLayout(0),
         entries: [
-          { binding: 0, resource: ubo },
+          { binding: 0, resource: parameters },
         ]
       })
 
@@ -111,13 +133,10 @@ export class FilterTable<Ts extends Tables, T extends ITable, Params extends Rec
         pass.dispatchWorkgroups(dispatchCount);
       }
       pass.end();
-      // leave encoder open - done!
-      // return the counter-buffers we allocated so they can be read...hmm
-      // maybe we force the caller to give us the buffers? blerg
-      return resultCounters;
     }
     return {
       pipeline: pipe,
+      serializeParameters,
       shader: Q.shader,
       run: runner
     }

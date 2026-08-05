@@ -10,7 +10,8 @@ function isVecOp(s: OP | VOP): s is VOP {
 }
 function parseVecOp(op: VOP) {
   const aggregation = op.substring(0, 3)
-  const sop = op.substring(3).split(')')[1]
+  const sop = op.substring(4).split(')')[0]
+  console.log('parsed vec op',aggregation,sop,op)
   return [aggregation, sop] as ['any' | 'all', OP];
 }
 function isScalarOp(s: OP | VOP): s is OP {
@@ -65,8 +66,11 @@ function genPred(ctx: FilterShaderQueryContext<Tables>, p: SimplePredExpr) {
   // TODO! handle non-PARAMETER rhs exprs
   const param = `${ctx.uniformName}.${rhs}`
   if (isVecOp(op)) {
+    console.log('generating predicate for vector op!!',op,)
     const [agg, sop] = parseVecOp(op)
-    return `${agg}(${genRef(ctx, lhs)} ${sop} ${param})` // any / all are built-in wgsl fns over vectors of booleans
+    const str = `${agg}(${genRef(ctx, lhs)} ${sop} ${param})` // any / all are built-in wgsl fns over vectors of booleans
+    console.log('resulting vecop....',str)
+    return str
   }
   return `${genRef(ctx, lhs)} ${op} ${param}`
 }
