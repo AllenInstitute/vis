@@ -1,10 +1,8 @@
 import { given } from '@alleninstitute/vis-core';
 
 export async function init() {
-    console.log('begin experiment');
     const adapter = await navigator.gpu?.requestAdapter();
     if (!adapter) {
-        console.error('no webGPU adapter here buddy');
         return;
     }
     const canTimestamp = adapter.features.has('timestamp-query');
@@ -18,7 +16,6 @@ export async function init() {
         requiredFeatures: [...(canTimestamp ? ['timestamp-query' as const] : [])],
     });
     if (!device) {
-        console.error('no webGPU here buddy');
         return;
     }
 
@@ -55,7 +52,8 @@ function generateFakeDataset(device: GPUDevice, edges: number, cells: number): g
     const start = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const end = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const str = generateFake(device, (r) => 1.0 + r * 22.0, edges, 'f32');
-    return { cells: { position: positions, subclass, gene_x }, edges: { start, end, str } };
+    return { cells: { position: positions, subclass, gene_x },
+      edges: { start, end, str } };
 }
 
 export function setupDemo(device: GPUDevice, edges: number, cells: number) {
@@ -111,11 +109,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         params: Parameters<(typeof filter)['serializeParameters']>[0],
         onFilterComplete: (rows: Array<RowType>) => void
     ) => {
-        if (!params) {
-            //
-            console.error('who the heck called me?');
-            return;
-        }
+
         device.queue.writeBuffer(paramBuffer, 0, filter.serializeParameters(params));
         const enc = device.createCommandEncoder();
         filter.run({
@@ -138,7 +132,6 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
             const usedCopy = new Uint32Array(arr);
             const usedElems = usedCopy[0]!;
             usedReader.unmap();
-            console.log('passing:', usedElems);
             resultReader.mapAsync(GPUMapMode.READ).then(() => {
                 const resultsArr = resultReader.getMappedRange(0, Math.max(16, usedElems * outputSizeBytes));
                 const copy = new Uint32Array(resultsArr.byteLength / 4);
