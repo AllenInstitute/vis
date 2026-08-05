@@ -1,5 +1,5 @@
 import * as lo from 'lodash';
-const { entries, flatMap, map }=lo
+const { entries, flatMap, map } = lo;
 import { buildFilterPipeline } from './build';
 import { genQuery, indexExprType, looksLikeIndexExpr } from './gen';
 import type {
