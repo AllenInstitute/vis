@@ -154,7 +154,7 @@ export function setupDemo(device: GPUDevice, edges:number,cells:number) {
       usedReader.unmap();
       console.log("passing:", usedElems);
       resultReader.mapAsync(GPUMapMode.READ).then(() => {
-        const resultsArr = resultReader.getMappedRange();
+        const resultsArr = resultReader.getMappedRange(0,Math.max(16,usedElems*outputSizeBytes));
         const copy = new Uint32Array(resultsArr.byteLength / 4);
         copy.set(new Uint32Array(resultsArr));
         // console.log("RESULTS!", copy);
