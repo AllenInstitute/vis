@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ChangeEvent } from 'react';
 import { init,setupDemo } from './filter';
 const NCELLS = 100000
 const NEDGES = 100000
 
-let runner: any = null;
+let runner: ReturnType<typeof setupDemo>;
 init().then(d=>runner=setupDemo(d!, NEDGES, NCELLS))
 
 export function Demo() {
@@ -25,14 +25,21 @@ export function Demo() {
         setRows(rows)
       })
     }
-  }, [runner,params])
+  }, [params])
 
-  const handleSubmit = (e)=> {
+  const handleSubmit = (e: ChangeEvent<unknown>)=> {
       // Prevent the browser from reloading the page
     e.preventDefault();
-    const newValue = JSON.parse(e.target.postContent.value)
-    setParams(newValue)
-    // params = newValue;
+    if ('postContent' in e.target && typeof e.target.postContent === 'object' && e.target.postContent!==null) {
+      const { postContent } = e.target
+      if ('value' in postContent) {
+        const { value } = postContent;
+        if (typeof value === 'string') {
+          const newValue = JSON.parse(value)
+          setParams(newValue)
+        }
+      }
+    }
   }
 
   return (<div>
