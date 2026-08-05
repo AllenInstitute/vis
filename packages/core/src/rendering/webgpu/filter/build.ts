@@ -1,7 +1,7 @@
 import { map } from 'lodash';
 import * as wgh from 'webgpu-utils';
 // assuming we generated a shader, can we build a pipeline?
-export function buildPipeline(dev: GPUDevice, code: string, entryPoint: string, label: string) {
+export function buildFilterPipeline(dev: GPUDevice, code: string, entryPoint: string, label: string) {
     const module = dev.createShaderModule({
         code,
         label,
