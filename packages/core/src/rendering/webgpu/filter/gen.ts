@@ -1,6 +1,5 @@
 // generate the interesting bits of the filter-shader
 
-import entries from 'lodash/entries';
 import {
     OPS,
     type Elem,
@@ -14,7 +13,9 @@ import {
     type Tables,
     type VOP,
 } from './types';
-import { keys, map, reduce, values } from 'lodash';
+import keys from 'lodash/keys';
+import reduce from 'lodash/reduce';
+import entries from 'lodash/entries';
 
 function isVecOp(s: OP | VOP): s is VOP {
     return s.startsWith('a');
@@ -24,9 +25,7 @@ function parseVecOp(op: VOP) {
     const sop = op.substring(4).split(')')[0];
     return [aggregation, sop] as ['any' | 'all', OP];
 }
-function isScalarOp(s: OP | VOP): s is OP {
-    return (OPS as readonly string[]).includes(s);
-}
+
 // dont export this - its only legit if we know a bunch of stuff about the string
 function fieldType(s: string, table: ITable) {
     return table[s];

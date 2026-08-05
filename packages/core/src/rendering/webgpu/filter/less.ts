@@ -1,4 +1,5 @@
-import { entries, flatMap, keys, map, values } from 'lodash';
+import * as lo from 'lodash';
+const { entries, flatMap, map }=lo
 import { buildFilterPipeline } from './build';
 import { genQuery, indexExprType, looksLikeIndexExpr } from './gen';
 import type {
