@@ -1,10 +1,10 @@
-import { useCallback, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
 import { init, setupDemo } from './filter';
 const NCELLS = 100000;
 const NEDGES = 100000;
 
 let runner: ReturnType<typeof setupDemo>;
-init().then((d) => (runner = setupDemo(d!, NEDGES, NCELLS)));
+
 
 export function Demo() {
     const [rows, setRows] = useState<Array<readonly number[]>>([]);
@@ -15,6 +15,10 @@ export function Demo() {
         fromClass: 3,
         toClass: 4,
     });
+
+  useEffect(() => {
+    init().then((d) => (runner = setupDemo(d!, NEDGES, NCELLS)));
+  },[])
 
     const clickme = useCallback(() => {
         if (runner) {
