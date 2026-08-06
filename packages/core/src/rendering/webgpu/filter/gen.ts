@@ -1,7 +1,6 @@
 // generate the interesting bits of the filter-shader
 
 import {
-    OPS,
     type Elem,
     type FilterShaderQueryContext,
     type FT,
@@ -13,9 +12,7 @@ import {
     type Tables,
     type VOP,
 } from './types';
-import keys from 'lodash/keys';
-import reduce from 'lodash/reduce';
-import entries from 'lodash/entries';
+
 
 function isVecOp(s: OP | VOP): s is VOP {
     return s.startsWith('a');
@@ -109,8 +106,7 @@ export function genUniformParameterStruct(tables: Tables, from: string, exprs: [
     // first - create a map from param name to expected type -
     // this is helpful because we can re-use the same parameter, and we dont want it to show up twice
     // in the uniform param struct.
-    const fields = reduce(
-        exprs,
+    const fields = exprs.reduce(
         (acc, cur: SimplePredExpr | Elem<PredLst>) => {
             const info = extractPredicateInfo(tables, from, extractPred(cur));
             return info === undefined ? acc : { ...acc, [info[0]]: info[1] };
@@ -118,7 +114,7 @@ export function genUniformParameterStruct(tables: Tables, from: string, exprs: [
         {} as Record<string, FT>
     );
 
-    const decls = entries(fields)
+    const decls = Object.entries(fields)
         .map(([param, type]) => `${param}:${type}`)
         .join(',\n');
 
@@ -141,18 +137,7 @@ function extractPredicateInfo(tables: Tables, from: string, expr: SimplePredExpr
     }
     return undefined;
 }
-function extractPredSubjectType(tables: Tables, from: string, expr: SimplePredExpr | undefined) {
-    if (expr === undefined) {
-        return ''; // this is ok
-    }
-    const [lhs, _op, rhs] = expr.split(' ') as [string, OP | VOP, string];
-    let lhsType = indexExprType(lhs, tables, from) || fieldType(lhs, tables[from]!);
-    if (lhsType) {
-        return `${rhs}:${lhsType}`;
-    }
-    // todo - handle Error!
-    return undefined;
-}
+
 // we also need to generate a storage buffer per field per table...
 // todo - someday support row-major tables - structs vs. parallel arrays
 export function generateTableBindings(
@@ -161,7 +146,7 @@ export function generateTableBindings(
     group: number,
     bindingStart: number = 0
 ) {
-    const cols = entries(table);
+    const cols = Object.entries(table);
     let bindingLookup = cols.reduce(
         (acc, [f, _t], index) => ({ ...acc, [f]: index + bindingStart }),
         {} as Record<string, number>
@@ -264,7 +249,7 @@ export function genQuery<Ts extends Tables>(
     let bindingStart = 3;
     let bindings: string = '';
     const bindingLookups: Record<string, Record<string, number>> = {};
-    for (const t of keys(ctx.tables)) {
+    for (const t of Object.keys(ctx.tables)) {
         const binding = generateTableBindings(t, ctx.tables[t]!, 1, bindingStart);
         bindings += `\n //${t}\n${binding.decls}\n`;
         bindingStart += binding.numBindings;
@@ -279,10 +264,6 @@ export function genQuery<Ts extends Tables>(
             predicateExpr: predicate,
             indexed,
             selections: ctx.selections.map((s) => ({ selection: genRef(ctx, s.selection, 'tmp - 1'), type: s.type })),
-            // select: {
-            //   expr: genRef(ctx, ctx.select, 'tmp - 1'),
-            //   type: ctx.selectType,
-            // },
             uniformStruct: { name: ctx.uniformName, typeName: ctx.uniformTypeName, decl: paramsDecl },
         }),
         bindingLookups,
