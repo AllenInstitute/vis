@@ -5,10 +5,10 @@ const NEDGES = 100000;
 
 let runner: ReturnType<typeof setupDemo>;
 
-
 export function Demo() {
     const [rows, setRows] = useState<Array<readonly number[]>>([]);
     const [duration, setDuration] = useState<number>(Number.NaN);
+    const [gpuDuration, setGpuDuration] = useState<number>(Number.NaN);
     const [params, setParams] = useState<Parameters<ReturnType<typeof setupDemo>>[0]>({
         minCorner: [0, 0],
         maxCorner: [1, 1],
@@ -16,15 +16,17 @@ export function Demo() {
         toClass: 4,
     });
 
-  useEffect(() => {
-    init().then((d) => (runner = setupDemo(d!, NEDGES, NCELLS)));
-  },[])
+    useEffect(() => {
+        init().then((d) => (runner = setupDemo(d!, NEDGES, NCELLS)));
+    }, []);
 
     const clickme = useCallback(() => {
         if (runner) {
             const start = performance.now();
-            runner(params, (rows) => {
-                setDuration(performance.now() - start);
+            runner(params, (rows, gpuTime) => {
+                const wallTime = performance.now() - start;
+                setGpuDuration(gpuTime);
+                setDuration(wallTime - gpuTime);
                 setRows(rows);
             });
         }
@@ -67,9 +69,12 @@ export function Demo() {
             <p>
                 {rows.length} passing results out of {NEDGES} rows in the edges table:
             </p>
-            <p>(filtering + gpu to cpu transfer + promise resolution delay) took ~ {duration} ms</p>
+            <p>
+                filtering took (compute + overhead) ~ {gpuDuration.toFixed(3)} + {duration.toFixed(3)} (
+                {(gpuDuration + duration).toFixed(4)} ms total)
+            </p>
 
-            <button onClick={clickme}>again!</button>
+            <button onClick={clickme}>run!</button>
             <table>
                 {rows.map((row, i) => (
                     <tr key={i}>

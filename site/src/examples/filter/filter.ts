@@ -52,8 +52,7 @@ function generateFakeDataset(device: GPUDevice, edges: number, cells: number): g
     const start = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const end = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const str = generateFake(device, (r) => 1.0 + r * 22.0, edges, 'f32');
-    return { cells: { position: positions, subclass, gene_x },
-      edges: { start, end, str } };
+    return { cells: { position: positions, subclass, gene_x }, edges: { start, end, str } };
 }
 
 export function setupDemo(device: GPUDevice, edges: number, cells: number) {
@@ -93,7 +92,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
     });
     const dataset = generateFakeDataset(device, edges, cells);
 
-    const results = generateFake(device, (r) => 0, edges * (outputSizeBytes / 4), 'u32');
+    const results = generateFake(device, (_r) => 0, edges * (outputSizeBytes / 4), 'u32');
     const resultCounter = generateFake(device, (r) => r, 1, 'u32');
 
     const resultReader = device.createBuffer({
@@ -105,15 +104,34 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
     });
 
+    // filter-timing query buffers //
+    const querySet = device.createQuerySet({
+        type: 'timestamp',
+        count: 2,
+    });
+
+    const resolveBuffer = device.createBuffer({
+        size: querySet.count * 8,
+        usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+    });
+    const queryResultBuffer = device.createBuffer({
+        size: resolveBuffer.size,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
+
     const doFilter = (
         params: Parameters<(typeof filter)['serializeParameters']>[0],
-        onFilterComplete: (rows: Array<RowType>) => void
+        onFilterComplete: (rows: Array<RowType>, gpuTime: number) => void
     ) => {
-
         device.queue.writeBuffer(paramBuffer, 0, filter.serializeParameters(params));
         const enc = device.createCommandEncoder();
         filter.run({
             enc,
+            timestampWrites: {
+                querySet,
+                beginningOfPassWriteIndex: 0,
+                endOfPassWriteIndex: 1,
+            },
             parameters: paramBuffer,
             sets: [
                 {
@@ -124,14 +142,21 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
                 },
             ],
         });
+        enc.resolveQuerySet(querySet, 0, querySet.count, resolveBuffer, 0);
+        enc.copyBufferToBuffer(resolveBuffer, 0, queryResultBuffer, 0, queryResultBuffer.size);
         enc.copyBufferToBuffer(results, resultReader, edges * outputSizeBytes);
         enc.copyBufferToBuffer(resultCounter, usedReader);
         device.queue.submit([enc.finish()]);
-        usedReader.mapAsync(GPUMapMode.READ).then(() => {
+        usedReader.mapAsync(GPUMapMode.READ).then(async () => {
             const arr = usedReader.getMappedRange();
             const usedCopy = new Uint32Array(arr);
             const usedElems = usedCopy[0]!;
             usedReader.unmap();
+            await queryResultBuffer.mapAsync(GPUMapMode.READ); // .then(() => {
+            const times = new BigUint64Array(queryResultBuffer.getMappedRange());
+            const gpuTime = Number(times[1]! - times[0]!); // holy crap these are in nanoseconds?? daaamn
+            queryResultBuffer.unmap();
+            // console.log('SORT OP TOOK: ',gpuTime/1_000_000,'ms')
             resultReader.mapAsync(GPUMapMode.READ).then(() => {
                 const resultsArr = resultReader.getMappedRange(0, Math.max(16, usedElems * outputSizeBytes));
                 const copy = new Uint32Array(resultsArr.byteLength / 4);
@@ -144,7 +169,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
                 for (let row = 0; row < usedElems; row++) {
                     rows.push(extractRow(row, dv));
                 }
-                onFilterComplete(rows);
+                onFilterComplete(rows, gpuTime / 1_000_000); // divide by 1 million to get to milliseconds from nanoseconds
             });
         });
     };

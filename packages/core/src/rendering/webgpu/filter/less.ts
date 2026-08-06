@@ -161,7 +161,7 @@ export class FilterTable<Ts extends Tables, T extends ITable, Params extends Rec
         };
 
         const runner = (args: Indexed extends true ? RunIndexedFilterArgs<Ts> : RunFilterArgs<Ts>) => {
-            const { enc, parameters, sets } = args;
+            const { enc, parameters, sets, timestampWrites } = args;
             // here, we zero out the result counters
             // TODO - consider not doing this - if we didnt do that:
             // 1. we could potentially accumulate results onto results that had previously been captured in the results buffer
@@ -197,9 +197,14 @@ export class FilterTable<Ts extends Tables, T extends ITable, Params extends Rec
                 entries: [{ binding: 0, resource: parameters }],
             });
 
-            const pass = enc.beginComputePass({
-                label,
-            });
+            const pass = enc.beginComputePass(
+                timestampWrites
+                    ? {
+                          label,
+                          timestampWrites,
+                      }
+                    : { label }
+            );
             pass.setPipeline(pipe.pipeline);
             pass.setBindGroup(0, bg0);
             for (let i = 0; i < sets.length; i++) {

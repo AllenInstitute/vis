@@ -120,6 +120,7 @@ export type RunFilterArgs<Ts extends Tables> = {
         results: GPUBuffer;
     }[];
     enc: GPUCommandEncoder;
+    timestampWrites?: GPUComputePassTimestampWrites;
 };
 
 export type RunIndexedFilterArgs<Ts extends Tables> = {
@@ -132,6 +133,7 @@ export type RunIndexedFilterArgs<Ts extends Tables> = {
         results: GPUBuffer;
     }[];
     enc: GPUCommandEncoder;
+    timestampWrites?: GPUComputePassTimestampWrites;
 };
 
 export type FilteredTable<Ts extends Tables, T extends ITable, Params extends Record<string, number | number[]>> = {

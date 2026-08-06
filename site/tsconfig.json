@@ -6,8 +6,6 @@
         "baseUrl": "./",
         "jsx": "react-jsx",
         "jsxImportSource": "react",
-        "types": [
-          "@webgpu/types",
-        ]
+        "types": ["@webgpu/types"]
     }
 }
