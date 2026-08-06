@@ -32,9 +32,12 @@ export function indexExprType(s: string, tables: Tables, from: string) {
     return ext ? ext.type : undefined;
 }
 export function looksLikeIndexExpr(s: string, tables: Tables, from: string) {
-    // if(s.match(/[a].[b]\[.\]\.$0/))
-    // todo: i am on a plane and I dont remember regex and I dont wanna buy wifi
-    // table[field_of_from].field_of_table
+
+  // the goal here is to parse an expr that looks like:
+  // someTable[someColumn].someOtherColumn
+  // could I have used Regex? yes, and perhaps that would be more elegant!
+  // for now, this works, and its not too long
+
     const [tbl, rest] = s.split('[');
     if (tbl && rest) {
         const [index_field, selection] = rest.split('].');
