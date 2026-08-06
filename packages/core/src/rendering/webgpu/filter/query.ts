@@ -20,7 +20,7 @@ import type {
     RunIndexedFilterArgs,
     PredicateExpr,
     TsType,
-    FT,
+    WgslType,
     Sel,
 } from './types';
 import * as wgh from 'webgpu-utils';
@@ -321,7 +321,7 @@ class Selection<Ts extends Tables, Tbl extends keyof Ts> {
             type:
                 f === '$index'
                     ? 'u32'
-                    : (indexExprType(f as string, tables, tbl as string) ?? (tables[tbl]![f]! as FT)),
+                    : (indexExprType(f as string, tables, tbl as string) ?? (tables[tbl]![f]! as WgslType)),
         } as const;
         const yay = [...selections, additionalSelection];
         return new Selection<Ts, Tbl>({

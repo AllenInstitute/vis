@@ -3,7 +3,7 @@
 import {
     type Elem,
     type FilterShaderQueryContext,
-    type FT,
+    type WgslType,
     type ITable,
     type OP,
     type PredLst,
@@ -54,16 +54,15 @@ export function looksLikeIndexExpr(s: string, tables: Tables, from: string) {
     return false;
 }
 function genRef(ctx: FilterShaderQueryContext<Tables>, operand: string, indexing: string = 'element') {
-    const indexed = looksLikeIndexExpr(operand, ctx.tables, ctx.from);
     if (operand === '$index') {
         return indexing;
     }
+    const indexed = looksLikeIndexExpr(operand, ctx.tables, ctx.from);
     if (indexed) {
         return `${indexed.fTable}_${indexed.selection}[${indexed.from}_${indexed.index_field}[${indexing}]]`;
     } else if (operand in ctx.tables[ctx.from]!) {
         return `${ctx.from}_${operand}[${indexing}]`;
     }
-    // todo...
     return operand;
 }
 function genPred(ctx: FilterShaderQueryContext<Tables>, p: SimplePredExpr) {
@@ -92,35 +91,24 @@ function handlePredElem(ctx: FilterShaderQueryContext<Tables>, e: Elem<PredLst>)
     }
 }
 export function generatePredicateExpr(ctx: FilterShaderQueryContext<Tables>, exprs: [SimplePredExpr, ...PredLst]) {
-    // return exprs.map(e => typeof e === 'string' ? genPred(ctx, e) : `${e.OP === 'and' ? ' && ' : ' || '} ${genPred(ctx, e.pred)}`).join('\n');
     return exprs.map((e) => (typeof e === 'string' ? genPred(ctx, e) : handlePredElem(ctx, e))).join('\n');
 }
 function extractPred(p: SimplePredExpr | Elem<PredLst>): SimplePredExpr | undefined {
     return typeof p === 'string' ? p : 'pred' in p ? p.pred : undefined;
 }
 export function genUniformParameterStruct(tables: Tables, from: string, exprs: [SimplePredExpr, ...PredLst]) {
-    // extract the parameter name and expected type from each predicate
-    // the type must be the same as that of the lhs
-    // to know that, we need the tables...
-
-    // first - create a map from param name to expected type -
-    // this is helpful because we can re-use the same parameter, and we dont want it to show up twice
-    // in the uniform param struct.
     const fields = exprs.reduce(
         (acc, cur: SimplePredExpr | Elem<PredLst>) => {
             const info = extractPredicateInfo(tables, from, extractPred(cur));
             return info === undefined ? acc : { ...acc, [info[0]]: info[1] };
         },
-        {} as Record<string, FT>
+        {} as Record<string, WgslType>
     );
 
     const decls = Object.entries(fields)
         .map(([param, type]) => `${param}:${type}`)
         .join(',\n');
 
-    // const decls = reduce(exprs,
-    //   (acc: string, cur: SimplePredExpr | Elem<PredLst>) => (acc + `\n ${extractPredSubjectType(tables, from, extractPred(cur)) ?? 'ERROR!!'},`), 'struct Parameters {'
-    // ) + '};\n';
     return `struct Parameters {
     ${decls}
   };
@@ -142,7 +130,7 @@ function extractPredicateInfo(tables: Tables, from: string, expr: SimplePredExpr
 // todo - someday support row-major tables - structs vs. parallel arrays
 export function generateTableBindings(
     tableName: string,
-    table: Record<string, FT>,
+    table: Record<string, WgslType>,
     group: number,
     bindingStart: number = 0
 ) {
@@ -180,14 +168,11 @@ export function generateShader(params: {
     selections: ReadonlyArray<Sel>;
 }) {
     const { inputBindings, predicateExpr, uniformStruct, selections, workgroupSize, indexed } = params;
-    // const selectExpr = select.expr === '$index' ? 'tmp - 1' :
-    //   `${select.expr}[tmp - 1]`
-    // const selectExpr = select.expr;
-    const { structName, decl, construct } = generateOutputStructure(selections);
+    const { structName, decl:outputStructDecl, construct } = generateOutputStructure(selections);
     const host = /*wgsl*/ `
 
     ${uniformStruct.decl}
-    ${decl}
+    ${outputStructDecl}
     var<workgroup> results: array<u32,${workgroupSize}>;
     var<workgroup> count: atomic<u32>;
 
