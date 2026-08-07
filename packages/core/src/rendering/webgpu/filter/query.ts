@@ -1,5 +1,3 @@
-import * as lo from 'lodash';
-const { entries, flatMap, map } = lo;
 import { buildFilterPipeline } from './build';
 import { genQuery, indexExprType, looksLikeIndexExpr } from './gen';
 import type {
@@ -22,7 +20,7 @@ import type {
     RunIndexedFilterArgs,
     PredicateExpr,
     TsType,
-    FT,
+    WgslType,
     Sel,
 } from './types';
 import * as wgh from 'webgpu-utils';
@@ -146,7 +144,7 @@ export class FilterTable<Ts extends Tables, T extends ITable, Params extends Rec
         const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
         const withPreds = this.predicates.filter((p) => 'pred' in p);
         const safeLookups = omitUnreferencedColumns(
-            [this.ctx.firstPred, ...map(withPreds, (p) => p.pred)],
+            [this.ctx.firstPred, ...withPreds.map((p) => p.pred)],
             this.ctx.tables,
             this.ctx.from,
             this.ctx.selections,
@@ -237,7 +235,7 @@ function collectReferencedColumns(
     tables: Tables,
     from: string
 ): { table: string; column: string }[] {
-    return flatMap(preds, (p) => references(p, tables, from));
+    return preds.flatMap((p) => references(p, tables, from));
 }
 function references(pred: SimplePredExpr, tables: Tables, from: string) {
     const [lhs, _op, _rhs] = pred.split(' ') as [string, OP | VOP, string];
@@ -296,8 +294,8 @@ function mapTablesToBindings<Ts extends Tables>(
     tables: BufferTables<Ts>,
     lookups: Record<string, Record<string, number>>
 ) {
-    return flatMap(entries(tables), ([name, table]) => {
-        return map(entries(table), ([field, buffer]) => {
+    return Object.entries(tables).flatMap(([name, table]) => {
+        return Object.entries(table).map(([field, buffer]) => {
             const b = lookups[name]?.[field];
             if (b) {
                 return { resource: buffer, binding: b };
@@ -323,7 +321,7 @@ class Selection<Ts extends Tables, Tbl extends keyof Ts> {
             type:
                 f === '$index'
                     ? 'u32'
-                    : (indexExprType(f as string, tables, tbl as string) ?? (tables[tbl]![f]! as FT)),
+                    : (indexExprType(f as string, tables, tbl as string) ?? (tables[tbl]![f]! as WgslType)),
         } as const;
         const yay = [...selections, additionalSelection];
         return new Selection<Ts, Tbl>({

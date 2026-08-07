@@ -1,10 +1,9 @@
 // generate the interesting bits of the filter-shader
 
 import {
-    OPS,
     type Elem,
     type FilterShaderQueryContext,
-    type FT,
+    type WgslType,
     type ITable,
     type OP,
     type PredLst,
@@ -13,9 +12,7 @@ import {
     type Tables,
     type VOP,
 } from './types';
-import keys from 'lodash/keys';
-import reduce from 'lodash/reduce';
-import entries from 'lodash/entries';
+
 
 function isVecOp(s: OP | VOP): s is VOP {
     return s.startsWith('a');
@@ -35,9 +32,12 @@ export function indexExprType(s: string, tables: Tables, from: string) {
     return ext ? ext.type : undefined;
 }
 export function looksLikeIndexExpr(s: string, tables: Tables, from: string) {
-    // if(s.match(/[a].[b]\[.\]\.$0/))
-    // todo: i am on a plane and I dont remember regex and I dont wanna buy wifi
-    // table[field_of_from].field_of_table
+
+  // the goal here is to parse an expr that looks like:
+  // someTable[someColumn].someOtherColumn
+  // could I have used Regex? yes, and perhaps that would be more elegant!
+  // for now, this works, and its not too long
+
     const [tbl, rest] = s.split('[');
     if (tbl && rest) {
         const [index_field, selection] = rest.split('].');
@@ -57,16 +57,15 @@ export function looksLikeIndexExpr(s: string, tables: Tables, from: string) {
     return false;
 }
 function genRef(ctx: FilterShaderQueryContext<Tables>, operand: string, indexing: string = 'element') {
-    const indexed = looksLikeIndexExpr(operand, ctx.tables, ctx.from);
     if (operand === '$index') {
         return indexing;
     }
+    const indexed = looksLikeIndexExpr(operand, ctx.tables, ctx.from);
     if (indexed) {
         return `${indexed.fTable}_${indexed.selection}[${indexed.from}_${indexed.index_field}[${indexing}]]`;
     } else if (operand in ctx.tables[ctx.from]!) {
         return `${ctx.from}_${operand}[${indexing}]`;
     }
-    // todo...
     return operand;
 }
 function genPred(ctx: FilterShaderQueryContext<Tables>, p: SimplePredExpr) {
@@ -95,36 +94,24 @@ function handlePredElem(ctx: FilterShaderQueryContext<Tables>, e: Elem<PredLst>)
     }
 }
 export function generatePredicateExpr(ctx: FilterShaderQueryContext<Tables>, exprs: [SimplePredExpr, ...PredLst]) {
-    // return exprs.map(e => typeof e === 'string' ? genPred(ctx, e) : `${e.OP === 'and' ? ' && ' : ' || '} ${genPred(ctx, e.pred)}`).join('\n');
     return exprs.map((e) => (typeof e === 'string' ? genPred(ctx, e) : handlePredElem(ctx, e))).join('\n');
 }
 function extractPred(p: SimplePredExpr | Elem<PredLst>): SimplePredExpr | undefined {
     return typeof p === 'string' ? p : 'pred' in p ? p.pred : undefined;
 }
 export function genUniformParameterStruct(tables: Tables, from: string, exprs: [SimplePredExpr, ...PredLst]) {
-    // extract the parameter name and expected type from each predicate
-    // the type must be the same as that of the lhs
-    // to know that, we need the tables...
-
-    // first - create a map from param name to expected type -
-    // this is helpful because we can re-use the same parameter, and we dont want it to show up twice
-    // in the uniform param struct.
-    const fields = reduce(
-        exprs,
+    const fields = exprs.reduce(
         (acc, cur: SimplePredExpr | Elem<PredLst>) => {
             const info = extractPredicateInfo(tables, from, extractPred(cur));
             return info === undefined ? acc : { ...acc, [info[0]]: info[1] };
         },
-        {} as Record<string, FT>
+        {} as Record<string, WgslType>
     );
 
-    const decls = entries(fields)
+    const decls = Object.entries(fields)
         .map(([param, type]) => `${param}:${type}`)
         .join(',\n');
 
-    // const decls = reduce(exprs,
-    //   (acc: string, cur: SimplePredExpr | Elem<PredLst>) => (acc + `\n ${extractPredSubjectType(tables, from, extractPred(cur)) ?? 'ERROR!!'},`), 'struct Parameters {'
-    // ) + '};\n';
     return `struct Parameters {
     ${decls}
   };
@@ -141,27 +128,16 @@ function extractPredicateInfo(tables: Tables, from: string, expr: SimplePredExpr
     }
     return undefined;
 }
-function extractPredSubjectType(tables: Tables, from: string, expr: SimplePredExpr | undefined) {
-    if (expr === undefined) {
-        return ''; // this is ok
-    }
-    const [lhs, _op, rhs] = expr.split(' ') as [string, OP | VOP, string];
-    let lhsType = indexExprType(lhs, tables, from) || fieldType(lhs, tables[from]!);
-    if (lhsType) {
-        return `${rhs}:${lhsType}`;
-    }
-    // todo - handle Error!
-    return undefined;
-}
+
 // we also need to generate a storage buffer per field per table...
 // todo - someday support row-major tables - structs vs. parallel arrays
 export function generateTableBindings(
     tableName: string,
-    table: Record<string, FT>,
+    table: Record<string, WgslType>,
     group: number,
     bindingStart: number = 0
 ) {
-    const cols = entries(table);
+    const cols = Object.entries(table);
     let bindingLookup = cols.reduce(
         (acc, [f, _t], index) => ({ ...acc, [f]: index + bindingStart }),
         {} as Record<string, number>
@@ -195,14 +171,11 @@ export function generateShader(params: {
     selections: ReadonlyArray<Sel>;
 }) {
     const { inputBindings, predicateExpr, uniformStruct, selections, workgroupSize, indexed } = params;
-    // const selectExpr = select.expr === '$index' ? 'tmp - 1' :
-    //   `${select.expr}[tmp - 1]`
-    // const selectExpr = select.expr;
-    const { structName, decl, construct } = generateOutputStructure(selections);
+    const { structName, decl:outputStructDecl, construct } = generateOutputStructure(selections);
     const host = /*wgsl*/ `
 
     ${uniformStruct.decl}
-    ${decl}
+    ${outputStructDecl}
     var<workgroup> results: array<u32,${workgroupSize}>;
     var<workgroup> count: atomic<u32>;
 
@@ -264,7 +237,7 @@ export function genQuery<Ts extends Tables>(
     let bindingStart = 3;
     let bindings: string = '';
     const bindingLookups: Record<string, Record<string, number>> = {};
-    for (const t of keys(ctx.tables)) {
+    for (const t of Object.keys(ctx.tables)) {
         const binding = generateTableBindings(t, ctx.tables[t]!, 1, bindingStart);
         bindings += `\n //${t}\n${binding.decls}\n`;
         bindingStart += binding.numBindings;
@@ -279,10 +252,6 @@ export function genQuery<Ts extends Tables>(
             predicateExpr: predicate,
             indexed,
             selections: ctx.selections.map((s) => ({ selection: genRef(ctx, s.selection, 'tmp - 1'), type: s.type })),
-            // select: {
-            //   expr: genRef(ctx, ctx.select, 'tmp - 1'),
-            //   type: ctx.selectType,
-            // },
             uniformStruct: { name: ctx.uniformName, typeName: ctx.uniformTypeName, decl: paramsDecl },
         }),
         bindingLookups,
