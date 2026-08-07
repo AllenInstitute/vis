@@ -123,8 +123,8 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         params: Parameters<(typeof filter)['serializeParameters']>[0],
         onFilterComplete: (rows: Array<RowType>, gpuTime: number) => void
     ) => {
-        const serialized = filter.serializeParameters(params)
-        device.queue.writeBuffer(paramBuffer, 0, serialized,0,serialized.byteLength);
+        const serialized = filter.serializeParameters(params);
+        device.queue.writeBuffer(paramBuffer, 0, serialized, 0, serialized.byteLength);
         const enc = device.createCommandEncoder();
         filter.run({
             enc,
@@ -145,8 +145,8 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         });
         enc.resolveQuerySet(querySet, 0, querySet.count, resolveBuffer, 0);
         enc.copyBufferToBuffer(resolveBuffer, 0, queryResultBuffer, 0, queryResultBuffer.size);
-        enc.copyBufferToBuffer(results,0, resultReader,0, edges * outputSizeBytes);
-        enc.copyBufferToBuffer(resultCounter,0, usedReader,0,usedReader.size);
+        enc.copyBufferToBuffer(results, 0, resultReader, 0, edges * outputSizeBytes);
+        enc.copyBufferToBuffer(resultCounter, 0, usedReader, 0, usedReader.size);
         device.queue.submit([enc.finish()]);
         usedReader.mapAsync(GPUMapMode.READ).then(async () => {
             const arr = usedReader.getMappedRange();

@@ -22,8 +22,8 @@ export function Demo() {
 
     const clickme = useCallback(() => {
         if (runner) {
-          const start = performance.now();
-            runner(params, (rows, gpuTime:number) => {
+            const start = performance.now();
+            runner(params, (rows, gpuTime: number) => {
                 const wallTime = performance.now() - start;
                 setGpuDuration(gpuTime);
                 setDuration(wallTime - gpuTime);

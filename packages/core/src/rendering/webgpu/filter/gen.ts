@@ -13,7 +13,6 @@ import {
     type VOP,
 } from './types';
 
-
 function isVecOp(s: OP | VOP): s is VOP {
     return s.startsWith('a');
 }
@@ -32,11 +31,10 @@ export function indexExprType(s: string, tables: Tables, from: string) {
     return ext ? ext.type : undefined;
 }
 export function looksLikeIndexExpr(s: string, tables: Tables, from: string) {
-
-  // the goal here is to parse an expr that looks like:
-  // someTable[someColumn].someOtherColumn
-  // could I have used Regex? yes, and perhaps that would be more elegant!
-  // for now, this works, and its not too long
+    // the goal here is to parse an expr that looks like:
+    // someTable[someColumn].someOtherColumn
+    // could I have used Regex? yes, and perhaps that would be more elegant!
+    // for now, this works, and its not too long
 
     const [tbl, rest] = s.split('[');
     if (tbl && rest) {
@@ -171,7 +169,7 @@ export function generateShader(params: {
     selections: ReadonlyArray<Sel>;
 }) {
     const { inputBindings, predicateExpr, uniformStruct, selections, workgroupSize, indexed } = params;
-    const { structName, decl:outputStructDecl, construct } = generateOutputStructure(selections);
+    const { structName, decl: outputStructDecl, construct } = generateOutputStructure(selections);
     const host = /*wgsl*/ `
 
     ${uniformStruct.decl}

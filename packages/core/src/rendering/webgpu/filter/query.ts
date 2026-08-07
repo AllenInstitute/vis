@@ -26,29 +26,6 @@ import type {
 } from './types';
 import * as wgh from 'webgpu-utils';
 
-// so, because and and or cannot be mixed without parens in WGSL
-// we need a structure to provide grouping
-// there are a lot of ways we could do this, but I think the easiest
-// that isnt too limiting is CNF, which means the AND of a bunch of clauses,
-// each clause being 1 or more predicates, combined via ORs
-// that would be nice, and would make it hard to produce shaders that cant compile
-// but - its very long-winded in terms of connecting the types up...
-// so lets use a simpler system...
-// function clause() {
-
-// }
-// class Clause<Ts extends Tables, T extends ITable, Params extends Record<string, number | number[]>, Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName> {
-//   constructor(pred: PredExpr<T, Ti, Ts, O, F, Param>) {
-
-//   }
-//   or<Ti extends keyof T, O extends keyof Ts, F extends keyof Ts[O], Param extends VarName>(pred: PredExpr<T, Ti, Ts, O, F, Param>): FilteredTable<Ts, T, typeof pred extends
-//     PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> }> {
-//     return new Clause<Ts, T, typeof pred extends
-//   PredicateExpr<T, Ti, Param> ? Params & { [k in Param]: TsType<T[Ti]> } : Params & { [k in Param]: TsType<Ts[O][F]> },
-
-//   }
-// }
-
 export class FilterTable<Ts extends Tables, T extends ITable, Params extends Record<string, number | number[]>> {
     private predicates: PredLst;
     private ctx: FilterShaderQueryContext<Ts>;
@@ -295,15 +272,17 @@ function mapTablesToBindings<Ts extends Tables>(
     tables: BufferTables<Ts>,
     lookups: Record<string, Record<string, number>>
 ) {
-    return entries(tables).flatMap(([name, table]) => {
-        return entries(table).map(([field, buffer]) => {
-            const b = lookups[name]?.[field];
-            if (b) {
-                return { resource: buffer, binding: b };
-            }
-            return undefined;
-        });
-    }).filter((x) => x !== undefined);
+    return entries(tables)
+        .flatMap(([name, table]) => {
+            return entries(table).map(([field, buffer]) => {
+                const b = lookups[name]?.[field];
+                if (b) {
+                    return { resource: buffer, binding: b };
+                }
+                return undefined;
+            });
+        })
+        .filter((x) => x !== undefined);
 }
 
 type SelCtx<Ts extends Tables, Tbl extends keyof Ts> = {
