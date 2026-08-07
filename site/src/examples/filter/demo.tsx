@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
 import { init, setupDemo } from './filter';
 const NCELLS = 100000;
-const NEDGES = 100000;
+const NEDGES = 1000000;
 
 let runner: ReturnType<typeof setupDemo>;
 
@@ -22,7 +22,8 @@ export function Demo() {
 
     const clickme = useCallback(() => {
         if (runner) {
-            const start = performance.now();
+          const start = performance.now();
+            // @ts-expect-error I dont care about this
             runner(params, (rows, gpuTime) => {
                 const wallTime = performance.now() - start;
                 setGpuDuration(gpuTime);
