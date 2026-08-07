@@ -1,0 +1,44 @@
+---
+title: WebGPU filter
+tableOfContents: false
+---
+
+given a pretend table of cells, with columns for position, subclass and a pretend "gene_x",
+and a table of connections between those cells (given by indexes start and end), with an associated strength, the following demo applies a simple filter via a WebGPU compute shader.
+the shader is generated using a short, SQL-like builder-style api:
+
+```ts
+.given({
+    cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
+    edges: { start: 'u32', end: 'u32', str: 'f32' },
+})
+.from('edges')
+.select('$index')
+.select('cells[start].gene_x')
+.select('cells[start].subclass')
+.select('cells[end].subclass')
+.where('cells[end].subclass == toClass')
+.andOpen('cells[start].subclass == fromClass')
+.and('cells[start].position all(>=) minCorner')
+.and('cells[start].position all(<) maxCorner')
+.close()
+```
+
+As you can see, for an edge to pass the predicate and be included in the results, its starting cell must be within the box from `minCorner` to `maxCorner`, and the `subclass` of the cell at the `start` and `end` of the edge must match `fromClass` and `toClass` respectively. Note also the multiple `select` statements - the requested fields will be packed into the result buffer in the requested order, and displayed in the table after you press the `run!` button.
+
+<h3> why is this cool? </h3>
+This is cool for a few reasons! 1. the above SQL-query is mostly typesafe, and it expands to quite a lot more
+(boilerplate) code that we dont want to write over and over again. 2. WebGPU lets us apply the predicates in parallel -
+we can run these queries in a browser, without blocking the main thread, with a substantial performance benefit
+(assuming there is enough data to actually justify the GPU overhead) vs. a javascript for-loop. 3. This process converts
+column-major data into row-major data - which might be helpful for data-download purposes. 4. We can use this to drive
+more sophisticated rendering pipelines - by doing a preliminary filter via a compute shader, we can connect the results
+to a rendering pass (the data never has to leave the GPU).
+<br />
+<h4> Live Demo </h4>
+once built, you can set the parameters of the filter operation dynamically - do so by editing the JSON below - be
+warned, this is just a demo, so if you make a syntax mistake, nothing will update!
+
+import { Demo } from '../../../examples/filter/demo.tsx';
+
+<Demo client:only="react" />
