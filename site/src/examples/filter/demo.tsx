@@ -23,8 +23,7 @@ export function Demo() {
     const clickme = useCallback(() => {
         if (runner) {
           const start = performance.now();
-            // @ts-expect-error I dont care about this
-            runner(params, (rows, gpuTime) => {
+            runner(params, (rows, gpuTime:number) => {
                 const wallTime = performance.now() - start;
                 setGpuDuration(gpuTime);
                 setDuration(wallTime - gpuTime);

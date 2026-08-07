@@ -1,3 +1,4 @@
+import entries from 'lodash/entries';
 import { buildFilterPipeline } from './build';
 import { genQuery, indexExprType, looksLikeIndexExpr } from './gen';
 import type {
@@ -294,8 +295,8 @@ function mapTablesToBindings<Ts extends Tables>(
     tables: BufferTables<Ts>,
     lookups: Record<string, Record<string, number>>
 ) {
-    return Object.entries(tables).flatMap(([name, table]) => {
-        return Object.entries(table).map(([field, buffer]) => {
+    return entries(tables).flatMap(([name, table]) => {
+        return entries(table).map(([field, buffer]) => {
             const b = lookups[name]?.[field];
             if (b) {
                 return { resource: buffer, binding: b };
