@@ -53,7 +53,7 @@ export type BufferTables<Ts extends Tables> = {
 };
 export type ArrayBufferTables<Ts extends Tables> = {
     [k in keyof Ts]: {
-         [c in keyof Ts[k]]: {
+        [c in keyof Ts[k]]: {
             buffer: ArrayBuffer;
         };
     };
@@ -153,7 +153,7 @@ export type RunFilterArgs<Ts extends Tables> = {
     sets: {
         resultCounter: GPUBuffer;
         rowCount: number;
-      tables: BufferTables<Ts>;
+        tables: BufferTables<Ts>;
         results: GPUBuffer;
     }[];
     enc: GPUCommandEncoder;
