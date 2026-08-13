@@ -523,9 +523,9 @@ export function given<Ts extends Tables>(tables: Ts) {
                     kind: 'from field',
                     from: from as string,
                     field: k,
-                  type: undefined as unknown as WgslType,
-                  /* oxlint-disabletypescript/no-explicit-any */
-                } as unknown as any
+                    type: undefined as unknown as WgslType,
+                    /* oxlint-disabletypescript/no-explicit-any */
+                } as unknown as any;
             }
             function table<Other extends Exclude<keyof Ts, From>>(t: Other) {
                 return {
