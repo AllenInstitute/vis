@@ -1,5 +1,5 @@
 import { buildFilterPipeline } from './build';
-import { assembleQuery } from './gen';
+import { assembleQuery, setupExprBuilder } from './gen';
 import * as wgh from 'webgpu-utils';
 import type {
     alpha,
@@ -85,41 +85,9 @@ class AndGroup<Params extends Record<string, string | number | number[]>> {
     }
 }
 
-function isVecOp(s: OP | VOP): s is VOP {
-    return s.startsWith('a');
-}
-function parseVecOp(op: VOP) {
-    const aggregation = op.substring(0, 3);
-    const sop = op.substring(4).split(')')[0];
-    return [aggregation, sop] as ['any' | 'all', OP];
-}
 
-function setupExprBuilder(from: string) {
-    function toWgsl(ast: AST, indexing: string, uniName: string): string {
-        switch (ast.kind) {
-            case 'from field': {
-                const [column, swizzle] = ast.field.split('.');
-                return swizzle ? `${ast.from}_${column}[${indexing}].${swizzle}` : `${ast.from}_${column}[${indexing}]`;
-            }
-            case 'table at field':
-                const subExpr =
-                    typeof ast.atExpr === 'string'
-                        ? `[${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: 'u32' }, indexing, uniName)}]`
-                        : `[${toWgsl(ast.atExpr, indexing, uniName)}]`;
-                const [column, swizzle] = ast.field.split('.');
-                const sel: string = `${ast.table}_${column}${subExpr}`;
-                return swizzle ? `${sel}.${swizzle}` : sel;
-            case 'predicate':
-                const { lhs, op, rhs } = ast;
-                if (isVecOp(op)) {
-                    const [agg, sop] = parseVecOp(op);
-                    return `${agg}(${toWgsl(lhs, indexing, uniName)} ${sop} ${uniName}.${rhs})`;
-                }
-                return `${toWgsl(lhs, indexing, uniName)} ${op} ${uniName}.${rhs}`;
-        }
-    }
-    return toWgsl;
-}
+
+
 
 function compilePredicate<Params extends Record<string, string | number | number[]>>(
     toWgsl: ReturnType<typeof setupExprBuilder>,
