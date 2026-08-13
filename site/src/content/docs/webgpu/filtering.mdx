@@ -8,20 +8,21 @@ and a table of connections between those cells (given by indexes start and end),
 the shader is generated using a short, SQL-like builder-style api:
 
 ```ts
-const {table,clause,select,all} = given({
+const { table, clause, select, all } = given({
     cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
     edges: { start: 'u32', end: 'u32', str: 'f32' },
-})
-.from('edges')
+}).from('edges');
 const filter = select('$index')
-  .select(table('cells').at('start').dot('gene_x'))
-  .select(table('cells').at('start').dot('subclass'))
-  .select(table('cells').at('end').dot('subclass'))
-  .where(all(clause(table('cells').at('end').dot('subclass'), '==', 'toClass'))
-    .and(clause(table('cells').at('start').dot('subclass'), '==', 'fromClass'))
-    .and(clause(table('cells').at('start').dot('position'), 'all(>=)', 'minCorner'))
-    .and(clause(table('cells').at('start').dot('position'), 'all(<)', 'maxCorner')))
-  .build(device);
+    .select(table('cells').at('start').dot('gene_x'))
+    .select(table('cells').at('start').dot('subclass'))
+    .select(table('cells').at('end').dot('subclass'))
+    .where(
+        all(clause(table('cells').at('end').dot('subclass'), '==', 'toClass'))
+            .and(clause(table('cells').at('start').dot('subclass'), '==', 'fromClass'))
+            .and(clause(table('cells').at('start').dot('position'), 'all(>=)', 'minCorner'))
+            .and(clause(table('cells').at('start').dot('position'), 'all(<)', 'maxCorner'))
+    )
+    .build(device);
 ```
 
 As you can see, for an edge to pass the predicate and be included in the results, its starting cell must be within the box from `minCorner` to `maxCorner`, and the `subclass` of the cell at the `start` and `end` of the edge must match `fromClass` and `toClass` respectively. Note also the multiple `select` statements - the requested fields will be packed into the result buffer in the requested order, and displayed in the table after you press the `run!` button.
