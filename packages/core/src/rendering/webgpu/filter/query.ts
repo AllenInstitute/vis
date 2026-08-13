@@ -28,8 +28,10 @@ import type {
     ArrayBufferTables,
 } from './types';
 import * as lo from 'lodash';
+import { logger } from '~/src/logger';
 const { mapValues } = lo;
 
+/* oxlint-disable no-console, typescript/no-explicit-any*/
 const entries = <T extends {}>(r: T): ReadonlyArray<[keyof T, T[keyof T]]> => Object.entries(r) as any;
 
 function predicate<S extends VLen, L extends ScalarType | VectorType<S>, P extends `${alpha}${string}`>(
@@ -68,8 +70,8 @@ class Clause<Params extends Record<string, string | number | number[]>> {
 }
 
 class AndGroup<Params extends Record<string, string | number | number[]>> {
-    ands: Clause<Record<string, any>>[];
-    constructor(clauses: Clause<Record<string, any>>[]) {
+    ands: Clause<Parameters>[];
+    constructor(clauses: Clause<Parameters>[]) {
         this.ands = clauses;
     }
     and<GroupParams extends Record<string, string | number | number[]>>(clause: Clause<GroupParams>) {
@@ -102,7 +104,7 @@ function setupExprBuilder(from: string) {
             case 'table at field':
                 const subExpr =
                     typeof ast.atExpr === 'string'
-                        ? `[${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: undefined as any }, indexing, uniName)}]`
+                        ? `[${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: 'u32' }, indexing, uniName)}]`
                         : `[${toWgsl(ast.atExpr, indexing, uniName)}]`;
                 const [column, swizzle] = ast.field.split('.');
                 const sel: string = `${ast.table}_${column}${subExpr}`;
@@ -172,7 +174,7 @@ function mapTablesToBindings<Ts extends Tables>(
                 if (b) {
                     return { resource: buffer as GPUBuffer, binding: b };
                 }
-                console.log('omit ', name, field, ' its not referenced!');
+                // console.log('omit ', name, field, ' its not referenced!');
                 return undefined;
             });
         })
@@ -375,12 +377,12 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                         let failBytes = 0;
                         for (let i = 0; i < expected.buffer.byteLength; i++) {
                             if (dv.getUint8(i) !== ex.getUint8(i)) {
-                                console.error('filter validation failed at byte: ', i);
+                                logger.error('filter validation failed at byte: ', i);
                                 failBytes += 1;
                             }
                         }
                         if (failBytes === 0) {
-                            console.log('validation success');
+                            logger.info('validation success');
                         }
                     })
                     .finally(() => {
@@ -521,8 +523,9 @@ export function given<Ts extends Tables>(tables: Ts) {
                     kind: 'from field',
                     from: from as string,
                     field: k,
-                    type: undefined as unknown as any,
-                } as any;
+                  type: undefined as unknown as WgslType,
+                  /* oxlint-disabletypescript/no-explicit-any */
+                } as unknown as any
             }
             function table<Other extends Exclude<keyof Ts, From>>(t: Other) {
                 return {
