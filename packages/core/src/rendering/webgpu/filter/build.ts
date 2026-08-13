@@ -1,4 +1,4 @@
-import * as wgh from 'webgpu-utils';
+import * as wgh from 'webgpu-utils'
 // assuming we generated a shader, can we build a pipeline?
 export function buildFilterPipeline(dev: GPUDevice, code: string, entryPoint: string, label: string) {
     const module = dev.createShaderModule({
@@ -6,23 +6,23 @@ export function buildFilterPipeline(dev: GPUDevice, code: string, entryPoint: st
         label,
     });
 
-    const defs = wgh.makeShaderDataDefinitions(code);
+    const defs = wgh.makeShaderDataDefinitions(code)
     const desc: wgh.PipelineDescriptor = {
         compute: {
             entryPoint,
-        },
+        }
     };
     const layouts = wgh.makeBindGroupLayoutDescriptors(defs, desc);
     const pipeLayout: GPUPipelineLayout = dev.createPipelineLayout({
-        bindGroupLayouts: layouts.map((d) => dev.createBindGroupLayout(d)),
-    });
+        bindGroupLayouts: layouts.map((d)=>dev.createBindGroupLayout(d))
+    })
     const pipeline = dev.createComputePipeline({
         label,
         compute: {
             module,
-            entryPoint,
+            entryPoint
         },
-        layout: pipeLayout,
+        layout: pipeLayout
     });
-    return { defs, pipeline };
+    return { defs, pipeline }
 }
