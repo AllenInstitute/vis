@@ -38,7 +38,7 @@ function generateFake(dev: GPUDevice, each: (p: number) => number, count: number
 
 const tableLayout = {
     cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
-    edges: { start: 'u32', end: 'u32', str: 'f32' },
+    edges: { start: 'u32', end: 'u32'},
 } as const;
 type gpuDataset = {
     cells: { [k in keyof (typeof tableLayout)['cells']]: GPUBuffer };
@@ -52,22 +52,32 @@ function generateFakeDataset(device: GPUDevice, edges: number, cells: number): g
     const start = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const end = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const str = generateFake(device, (r) => 1.0 + r * 22.0, edges, 'f32');
-    return { cells: { position: positions, subclass, gene_x }, edges: { start, end, str } };
+    return { cells: { position: positions, subclass, gene_x }, edges: { start, end, } };
 }
 
 export function setupDemo(device: GPUDevice, edges: number, cells: number) {
-    const filter = given(tableLayout)
-        .from('edges')
-        .select('$index')
-        .select('cells[start].gene_x')
-        .select('cells[start].subclass')
-        .select('cells[end].subclass')
-        .where('cells[end].subclass == toClass')
-        .andOpen('cells[start].subclass == fromClass')
-        .and('cells[start].position all(>=) minCorner')
-        .and('cells[start].position all(<) maxCorner')
-        .close()
-        .build(device, 'testing');
+  const {all,any,column,table,select,clause } = given(tableLayout)
+    .from('edges');
+
+  const filter = select('$index')
+    .select(table('cells').at('start').dot('gene_x'))
+    .select(table('cells').at('start').dot('subclass'))
+    .select(table('cells').at('end').dot('subclass'))
+    .where(all(clause(table('cells').at('end').dot('subclass'), '==', 'toClass'))
+      .and(clause(table('cells').at('start').dot('subclass'), '==', 'fromClass'))
+      .and(clause(table('cells').at('start').dot('position'), 'all(>=)', 'minCorner'))
+      .and(clause(table('cells').at('start').dot('position'), 'all(<)', 'maxCorner'))).build(device);
+  // .select('$index')
+      //   .select()
+        // .select('cells[start].gene_x')
+        // .select('cells[start].subclass')
+        // .select('cells[end].subclass')
+        // .where('cells[end].subclass == toClass')
+        // .andOpen('cells[start].subclass == fromClass')
+        // .and('cells[start].position all(>=) minCorner')
+        // .and('cells[start].position all(<) maxCorner')
+        // .close()
+        // .build(device, 'testing');
     const outputSizeBytes = 16;
 
     type RowType = readonly [number, number, number, number];
@@ -146,7 +156,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         enc.resolveQuerySet(querySet, 0, querySet.count, resolveBuffer, 0);
         enc.copyBufferToBuffer(resolveBuffer, 0, queryResultBuffer, 0, queryResultBuffer.size);
         enc.copyBufferToBuffer(results, 0, resultReader, 0, edges * outputSizeBytes);
-        enc.copyBufferToBuffer(resultCounter, 0, usedReader, 0, usedReader.size);
+        enc.copyBufferToBuffer(resultCounter, 0, usedReader, 0, resultCounter.size);
         device.queue.submit([enc.finish()]);
         usedReader.mapAsync(GPUMapMode.READ).then(async () => {
             const arr = usedReader.getMappedRange();

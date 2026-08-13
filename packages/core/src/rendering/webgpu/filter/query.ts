@@ -2,8 +2,10 @@ import { buildFilterPipeline } from "./build";
 import { assembleQuery } from "./gen";
 import * as wgh from 'webgpu-utils'
 import type { alpha,Tables,SwizzleIndexExpr, ComponentType, IndexExpr, SwizzleExpr, AST, BufferTables, ColumnExpr, OP, PExpr, RunFilterArgs, RunIndexedFilterArgs, Sel, TsType, VOP, WgslType, ScalarType, VLen, VectorType, onlyLetters, FType, Cmp, BTables,} from "./types";
-import entries from "lodash/entries";
-import mapValues from "lodash/mapValues";
+import * as lo from 'lodash'
+const { mapValues } = lo;
+
+const entries = <T extends {}>(r: T): ReadonlyArray<[keyof T, T[keyof T]]> => Object.entries(r) as any;
 
 export function given<Ts extends Tables>(
   tables: Ts,
@@ -160,7 +162,8 @@ export function given<Ts extends Tables>(
       function mapTablesToBindings<Ts extends Tables>(tables: BufferTables<Ts>, lookups: Record<string, Record<string, number>>) {
         return entries(tables).flatMap(([name, table]) => {
           return entries(table).map(([field, buffer]) => {
-            const b = lookups[name]?.[field];
+            // I promise, these are all strings, its ok
+            const b = lookups[name as string]?.[field as string];
             if (b) {
               return { resource: buffer, binding: b }
             }
@@ -360,7 +363,8 @@ function validate<Ts extends Tables, Params extends Parameters, Indexed extends 
     const pBytes = filter.serializeParameters(params)
     const paramB = dev.createBuffer({ size: pBytes.byteLength, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM, label: 'validate params' })
     dev.queue.writeBuffer(paramB, 0, pBytes)
-    const inputs: GPUBuffer[]=[]
+  const inputs: GPUBuffer[] = []
+    Object.entries
     const tableBuffers = mapValues(tables, (table) => mapValues(table, (column:{buffer:ArrayBuffer}) => {
         const buf = dev.createBuffer({ size: column.buffer.byteLength, usage: R });
         dev.queue.writeBuffer(buf, 0, column.buffer);
