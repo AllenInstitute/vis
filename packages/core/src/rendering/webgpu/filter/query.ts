@@ -31,8 +31,7 @@ import * as lo from 'lodash';
 import { logger } from '~/src/logger';
 const { mapValues } = lo;
 
-/* oxlint-disable no-console, typescript/no-explicit-any*/
-const entries = <T extends {}>(r: T): ReadonlyArray<[keyof T, T[keyof T]]> => Object.entries(r) as any;
+const entries = <T extends {}>(r: T):ReadonlyArray<[string, T[keyof T]]> => Object.entries(r) ;
 
 function predicate<S extends VLen, L extends ScalarType | VectorType<S>, P extends `${alpha}${string}`>(
     lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>,
@@ -169,12 +168,10 @@ function mapTablesToBindings<Ts extends Tables>(
     return entries(tables)
         .flatMap(([name, table]) => {
             return entries(table).map(([field, buffer]) => {
-                // I promise, these are all strings, its ok
-                const b = lookups[name as string]?.[field as string];
+                const b = lookups[name]?.[field];
                 if (b) {
-                    return { resource: buffer as GPUBuffer, binding: b };
+                  return { resource: buffer as GPUBuffer, binding: b };
                 }
-                // console.log('omit ', name, field, ' its not referenced!');
                 return undefined;
             });
         })
@@ -196,6 +193,7 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
         const type = determineType(this.tables, selection);
         return new Selection(this.tables, this.from, [...this.selections, { selection: s, type }]);
     }
+
     where<Params extends Parameters>(predicates: AndGroup<Params> | Clause<Params>) {
         // constants //
 
@@ -207,11 +205,12 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
         const paramDecls = entries(paramTypes)
             .map(([name, type]) => `${name}:${type}`)
             .join(',\n');
-        // const uniDecl = `struct ${UNI_STRUCT_NAME} {
-        //   ${paramDecls}
-        //   };`
-        const { tables } = this;
-        const predicateExpr = `(${compilePredicate(this.toWgsl, predicates, UNI_INSTANCE_NAME)})`;
+
+      const { tables } = this;
+
+
+
+      const predicateExpr = `(${compilePredicate(this.toWgsl, predicates, UNI_INSTANCE_NAME)})`;
         let binding = START_BINDING;
         let columnBindings: Record<string, Record<string, number>> = {};
         // associate a binding with every field of every table
@@ -222,6 +221,7 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 binding += 1;
             }
         }
+
         const makeRunner = <Indexed extends boolean>(options: {
             device: GPUDevice;
             pipe: ReturnType<typeof buildFilterPipeline>;
@@ -235,10 +235,8 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
             const { device, pipe, safeLookups, indexed, label, wgSize } = options;
             const runner = (args: Indexed extends true ? RunIndexedFilterArgs<Ts> : RunFilterArgs<Ts>) => {
                 const { enc, parameters, sets, timestampWrites } = args;
-                // here, we zero out the result counters
-                // TODO - consider not doing this - if we didnt do that:
-                // 1. we could potentially accumulate results onto results that had previously been captured in the results buffer
-                // 2. we technically could invoke this whole thing in an open compute pass...? right?
+
+                // zero out the result counters...
                 args.sets.forEach((s) => {
                     device.queue.writeBuffer(s.resultCounter, 0, new Uint32Array([0]));
                 });
@@ -328,7 +326,6 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                     dev.queue.writeBuffer(elemBuffer, 0, elements.buffer);
                 }
                 const resultsCounter = dev.createBuffer({ size: 16, usage: R });
-                const resolveCount = dev.createBuffer({ size: 16, usage: M });
                 const results = dev.createBuffer({ size: rowCount * 32, usage: R });
                 const resolve = dev.createBuffer({ size: rowCount * 32, usage: M });
                 // very awkward a bit longwinded, and there are some TS issues, but its ok!
@@ -363,15 +360,10 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                     (runner as (args: RunFilterArgs<Ts>) => void)(args);
                 }
                 enc.copyBufferToBuffer(results, resolve);
-                enc.copyBufferToBuffer(resultsCounter, resolveCount);
                 dev.queue.submit([enc.finish()]);
                 // ok now get the results and compare them!
-                Promise.all([resolve.mapAsync(GPUMapMode.READ), resolveCount.mapAsync(GPUMapMode.READ)])
-                    .then(() => {
-                        const count = new Uint32Array(resolveCount.getMappedRange());
+                resolve.mapAsync(GPUMapMode.READ).then(() => {
                         const recvd = resolve.getMappedRange();
-                        // TODO: we dont know how large each result is... so just compare byte-by-byte for the length of the expected result?
-                        // if(count[0]!==expected)
                         const dv = new DataView(recvd);
                         const ex = new DataView(expected.buffer);
                         let failBytes = 0;
@@ -387,7 +379,7 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                     })
                     .finally(() => {
                         // destroy all things
-                        [resolve, resolveCount, paramB, resultsCounter, results, ...inputs].forEach((b) => b.destroy());
+                        [resolve, paramB, resultsCounter, results, ...inputs].forEach((b) => b.destroy());
                         if (elemBuffer) {
                             elemBuffer.destroy();
                         }
@@ -396,7 +388,46 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
 
             return { runner, validate };
         };
+        const buildHelper = <Indexed extends boolean>(device: GPUDevice,label:string,indexed:Indexed) => {
+          const Q = assembleQuery(
+              {
+                  from: this.from as string,
+                  selections: this.selections,
+                  tables,
+                  uniformName: UNI_INSTANCE_NAME,
+                  uniformTypeName: UNI_STRUCT_TYPE_NAME,
+              },
+              predicateExpr,
+              paramDecls,
+              64,
+              indexed
+          );
+          const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
+          const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
+          const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
+              const unis = wgh.makeStructuredView(uniDef, buffer);
+              unis.set(parameters);
+              return unis.arrayBuffer;
+          };
 
+          const { runner, validate } = makeRunner({
+              device,
+              indexed,
+              label,
+              pipe,
+              safeLookups: columnBindings,
+              serializeParameters,
+              shader: Q.shader,
+              wgSize: WG_SIZE,
+          });
+          return {
+              run: runner,
+              validate,
+              serializeParameters,
+              pipeline: pipe,
+              parameterTypeDef: uniDef,
+          };
+        }
         return {
             shaderOnly: () => {
                 const Q = assembleQuery(
@@ -413,87 +444,13 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                     false
                 );
                 return Q.shader;
-            },
+          },
+
             build: (device: GPUDevice, label: string) => {
-                const Q = assembleQuery(
-                    {
-                        from: this.from as string,
-                        selections: this.selections,
-                        tables,
-                        uniformName: UNI_INSTANCE_NAME,
-                        uniformTypeName: UNI_STRUCT_TYPE_NAME,
-                    },
-                    predicateExpr,
-                    paramDecls,
-                    64,
-                    false
-                );
-                const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
-                const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
-                const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
-                    const unis = wgh.makeStructuredView(uniDef, buffer);
-                    unis.set(parameters);
-                    return unis.arrayBuffer;
-                };
-                const { runner, validate } = makeRunner({
-                    device,
-                    indexed: false,
-                    label,
-                    pipe,
-                    safeLookups: columnBindings,
-                    serializeParameters,
-                    shader: Q.shader,
-                    wgSize: WG_SIZE,
-                });
-                return {
-                    run: runner,
-                    validate,
-                    serializeParameters,
-                    pipeline: pipe,
-                    parameterTypeDef: uniDef,
-                    // validate:partial(validate,false) // todo fix validate
-                };
+              return buildHelper(device, label, false);
             },
             buildIndexed: (device: GPUDevice, label: string) => {
-                const Q = assembleQuery(
-                    {
-                        from: this.from as string,
-                        selections: this.selections,
-                        tables,
-                        uniformName: UNI_INSTANCE_NAME,
-                        uniformTypeName: 'Params',
-                    },
-                    predicateExpr,
-                    paramDecls,
-                    64,
-                    true
-                );
-                const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
-                const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
-                const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
-                    const unis = wgh.makeStructuredView(uniDef, buffer);
-                    unis.set(parameters);
-                    return unis.arrayBuffer;
-                };
-                const { runner, validate } = makeRunner({
-                    device,
-                    indexed: true,
-                    label,
-                    pipe,
-                    safeLookups: columnBindings,
-                    serializeParameters,
-                    shader: Q.shader,
-                    wgSize: WG_SIZE,
-                });
-
-                return {
-                    run: runner,
-                    validate,
-                    serializeParameters,
-                    pipeline: pipe,
-                    parameterTypeDef: uniDef,
-                    // validate:partial(validate,true)
-                };
+                return buildHelper(device, label, true);
             },
         };
     }
