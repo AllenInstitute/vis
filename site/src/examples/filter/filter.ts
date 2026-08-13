@@ -175,9 +175,10 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
             ],
         });
         enc.resolveQuerySet(querySet, 0, querySet.count, resolveBuffer, 0);
-        enc.copyBufferToBuffer(resolveBuffer, 0, queryResultBuffer, 0, queryResultBuffer.size);
+        enc.copyBufferToBuffer(resolveBuffer, queryResultBuffer);
         enc.copyBufferToBuffer(results, 0, resultReader, 0, edges * outputSizeBytes);
         enc.copyBufferToBuffer(resultCounter, 0, usedReader, 0, resultCounter.size);
+
         device.queue.submit([enc.finish()]);
         usedReader.mapAsync(GPUMapMode.READ).then(async () => {
             const arr = usedReader.getMappedRange();
