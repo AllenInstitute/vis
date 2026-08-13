@@ -46,10 +46,19 @@ export type BTable<T extends ITable, B> = {
 };
 
 export type Tables = { [table: string]: ITable };
-export type BTables<Ts extends Tables, B> = {
-    [tbl in keyof Ts]: BTable<Ts[tbl], B>;
+export type BufferTables<Ts extends Tables> = {
+    [k in keyof Ts]: {
+        [c in keyof Ts[k]]: GPUBuffer;
+    };
 };
-export type BufferTables<Ts extends Tables> = BTables<Ts, GPUBuffer>;
+export type ArrayBufferTables<Ts extends Tables> = {
+    [k in keyof Ts]: {
+         [c in keyof Ts[k]]: {
+            buffer: ArrayBuffer;
+        };
+    };
+};
+// export type BufferTables<Ts extends Tables> = BTables<Ts, GPUBuffer>;
 export type Elem<T> = T extends ReadonlyArray<infer E> ? E : never;
 export const OPS = ['==', '>', '>=', '<', '<=', '!='] as const;
 export type OP = Elem<typeof OPS>;
@@ -144,7 +153,7 @@ export type RunFilterArgs<Ts extends Tables> = {
     sets: {
         resultCounter: GPUBuffer;
         rowCount: number;
-        tables: BTables<Ts, GPUBuffer>;
+      tables: BufferTables<Ts>;
         results: GPUBuffer;
     }[];
     enc: GPUCommandEncoder;
@@ -157,7 +166,7 @@ export type RunIndexedFilterArgs<Ts extends Tables> = {
         resultCounter: GPUBuffer;
         rowCount: number;
         elements: GPUBuffer;
-        tables: BTables<Ts, GPUBuffer>;
+        tables: BufferTables<Ts>;
         results: GPUBuffer;
     }[];
     enc: GPUCommandEncoder;
