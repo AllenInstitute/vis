@@ -23,9 +23,9 @@ import type {
     VLen,
     VectorType,
     onlyLetters,
-    FType,
-    Cmp,
     ArrayBufferTables,
+    vKeys,
+    ITable,
 } from './types';
 import * as lo from 'lodash';
 import { logger } from '~/src/logger';
@@ -144,6 +144,10 @@ function componentType(t: WgslType): ScalarType {
         }
     }
     return t as ScalarType;
+}
+function inferType(table:ITable,e: string) {
+  const [field, swizzle] = e.split('.');
+  return swizzle ? componentType(table![field!]!) : table![field!]!;
 }
 function determineType(
     tables: Tables,
@@ -467,38 +471,42 @@ export function given<Ts extends Tables>(tables: Ts) {
     function all<Params extends Record<string, string | number | number[]>>(clause: Clause<Params>) {
         return new AndGroup<Params>([clause]);
     }
+    // these are fun...  they do belong in types.ts, but moving them there means they no longer directly deal with Ts
+    // I think that discconnect pushes TS over the edge and they end up not working - everything turns to unknown
+    type UnionToIntersection<U> =
+      (U extends any ? (x: U) => void : never) extends ((x: infer I) => void) ? I : never
+    type ExpandTableColumn<T extends keyof Ts,F extends keyof Ts[T]> = F extends string ? vKeys<Ts[T], F> & T : never
+    type ExpandTableVectors<T extends keyof Ts> = keyof Ts[T] extends string ? UnionToIntersection<ExpandTableColumn<T, keyof Ts[T]>>:never
     return {
         from: <From extends keyof Ts>(from: From) => {
-            function column<E extends SwizzleExpr<Ts, From, keyof Ts[From]>>(
+            function column<E extends keyof ExpandTableVectors<From>>(
                 k: E
-            ): E extends `${infer Field}.${string}`
-                ? ColumnExpr<string, string, Cmp<FType<Ts[From], Field>>>
-                : E extends `${infer Field}`
-                  ? ColumnExpr<string, string, FType<Ts[From], Field>>
-                  : never {
+            ):ColumnExpr<string,string,ExpandTableVectors<From>[E]>{
                 return {
                     kind: 'from field',
                     from: from as string,
-                    field: k,
-                    type: undefined as unknown as WgslType,
-                    /* oxlint-disabletypescript/no-explicit-any */
-                } as unknown as any;
+                    field: k as string,
+                    type: inferType(tables[from],k as string) as ExpandTableVectors<From>[E]
+                }
             }
             function table<Other extends Exclude<keyof Ts, From>>(t: Other) {
+
                 return {
                     at: <E extends SwizzleIndexExpr<Ts, From, keyof Ts[From]>>(
                         indexExpr: E | IndexExpr<string, string, 'u32'>
                     ) => {
+
+
                         return {
-                            dot: <Field extends keyof Ts[Other], OE extends SwizzleExpr<Ts, Other, Field>>(
+                          dot: <OE extends keyof ExpandTableVectors<Other>>(
                                 field: OE
                             ) => {
-                                const IE: IndexExpr<string, string, ComponentType<Ts, Other, Field, OE>> = {
+                              const IE: IndexExpr<string, string,ExpandTableVectors<Other>[OE]> = {
                                     kind: 'table at field',
                                     table: t as string,
-                                    field: field,
+                                    field: field as string,
                                     atExpr: indexExpr,
-                                    type: undefined as unknown as ComponentType<Ts, Other, Field, OE>, // TODO!
+                                    type: inferType(tables[t],field as string) as ExpandTableVectors<Other>[OE]
                                 };
                                 return IE;
                             },
@@ -521,3 +529,14 @@ export function given<Ts extends Tables>(tables: Ts) {
     };
 }
 type Parameters = Record<string, string | number | number[]>;
+
+// this function is not exported or called - its only purpose is to explode if something in the above file
+// changes enough to mess up the types - we want restrictive types here, its the whole point
+function typescriptCanary() {
+  type hey = { cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }
+  const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges')
+  // @ts-expect-error
+  e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'))
+  // @ts-expect-error
+  e.select('$index').where(e.clause(e.column('E.x'), 'all(==)', 'mom'))
+}
