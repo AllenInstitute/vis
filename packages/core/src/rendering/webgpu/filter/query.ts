@@ -473,7 +473,10 @@ export function given<Ts extends Tables>(tables: Ts) {
     }
     // these are fun...  they do belong in types.ts, but moving them there means they no longer directly deal with Ts
     // I think that discconnect pushes TS over the edge and they end up not working - everything turns to unknown
+
+    /* oxlint-disable typescript/no-explicit-any */
     type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
+
     type ExpandTableColumn<T extends keyof Ts, F extends keyof Ts[T]> = F extends string ? vKeys<Ts[T], F> & T : never;
     type ExpandTableVectors<T extends keyof Ts> = keyof Ts[T] extends string
         ? UnionToIntersection<ExpandTableColumn<T, keyof Ts[T]>>

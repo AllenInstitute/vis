@@ -61,17 +61,6 @@ export type vKeys<T extends ITable, F extends keyof ITable> = F extends string
             : T
     : T;
 
-// doesnt seem to work in general
-
-type ExpandTableColumn<T extends ITable, F extends keyof ITable> = vKeys<T, F> & T;
-
-type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
-
-export type ExpandTableVectors<T extends ITable> = keyof T extends string
-    ? UnionToIntersection<ExpandTableColumn<T, keyof T>>
-    : never;
-export type ValidKeys<T extends ITable> = keyof ExpandTableVectors<T>;
-
 export type ArrayBufferTables<Ts extends Tables> = {
     [k in keyof Ts]: {
         [c in keyof Ts[k]]: {
