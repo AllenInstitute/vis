@@ -27,6 +27,7 @@ import type {
     vKeys,
     ITable,
 } from './types';
+import { setupAggregator } from './aggregate/over'
 import * as lo from 'lodash';
 const { mapValues } = lo;
 
@@ -455,10 +456,10 @@ export function given<Ts extends Tables>(tables: Ts) {
         from: <From extends keyof Ts>(from: From) => {
             function column<E extends keyof ExpandTableVectors<From>>(
                 k: E
-            ): ColumnExpr<string, string, ExpandTableVectors<From>[E]> {
+            ): ColumnExpr<From&string, string, ExpandTableVectors<From>[E]> {
                 return {
                     kind: 'from field',
-                    from: from as string,
+                    from: from as any,
                     field: k as string,
                     type: inferType(tables[from], k as string) as ExpandTableVectors<From>[E],
                 };
@@ -466,13 +467,13 @@ export function given<Ts extends Tables>(tables: Ts) {
             function table<Other extends Exclude<keyof Ts, From>>(t: Other) {
                 return {
                     at: <E extends SwizzleIndexExpr<Ts, From, keyof Ts[From]>>(
-                        indexExpr: E | IndexExpr<string, string, 'u32'>
+                        indexExpr: E | IndexExpr<Other&string, string, 'u32'>
                     ) => {
                         return {
                             dot: <OE extends keyof ExpandTableVectors<Other>>(field: OE) => {
-                                const IE: IndexExpr<string, string, ExpandTableVectors<Other>[OE]> = {
+                                const IE: IndexExpr<Other&string, string, ExpandTableVectors<Other>[OE]> = {
                                     kind: 'table at field',
-                                    table: t as string,
+                                    table: t as any,
                                     field: field as string,
                                     atExpr: indexExpr,
                                     type: inferType(tables[t], field as string) as ExpandTableVectors<Other>[OE],
@@ -493,7 +494,8 @@ export function given<Ts extends Tables>(tables: Ts) {
                 return new Selection(tables, from, [{ selection: s, type }]);
             }
 
-            return { column, table, any, all, clause: any, select };
+            const over = ()=>setupAggregator(tables,from as string)
+            return { column, table, any, all, clause: any, select, over};
         },
     };
 }
@@ -502,10 +504,15 @@ type Parameters = Record<string, string | number | number[]>;
 // this function is not exported or called - its only purpose is to explode if something in the above file
 // changes enough to mess up the types - we want restrictive types here, its the whole point
 function typescriptCanary() {
-    type hey = { cells: { A: 'f32'; B: 'vec2f' }; edges: { E: 'vec2u'; str: 'f32' } };
-    const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
+    type hey = { cells: { A: 'f32'; B: 'vec2f' }; edges: { E: 'vec2u'; str: 'f32',w:'u32' } };
+    const e = given({ cells: { A: 'f32', B: 'vec2f',C:'u32' }, edges: { E: 'vec2u', str: 'f32',w:'u32' } }).from('edges');
     // @ts-expect-error
     e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
     // @ts-expect-error
-    e.select('$index').where(e.clause(e.column('E.x'), 'all(==)', 'mom'));
+  e.select('$index').where(e.clause(e.column('E.x'), 'all(==)', 'mom'));
+  const { groupBy, aggregate } = e.over();
+  const hey = e.table('cells').at('E.x').dot('C')
+  const yes = aggregate().min('mn', hey).count('count')
+  const x: any = null;
+  groupBy(e.column('w'), yes).build(null as any).run(x, x, {count:x,mn:x},x,x)
 }

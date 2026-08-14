@@ -44,3 +44,6 @@ export {
     vertexFormatInfo,
     vertexInput,
 } from './shaders';
+
+export { given } from './filter/query';
+export { type Aggregation } from './filter/aggregate/over'

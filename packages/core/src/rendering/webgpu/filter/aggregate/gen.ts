@@ -1,4 +1,4 @@
-import { AST, ColumnExpr, IndexExpr, ScalarType, Tables, WgslType } from "../types";
+import type { AST, ColumnExpr, IndexExpr, ScalarType, Tables, WgslType } from "../types";
 import {generateTableBindings, setupExprBuilder} from '../gen'
 export type Agg = {
   kind: 'min' | 'max' | 'sum',
@@ -27,9 +27,9 @@ function sum(output: string, field: number, type: 'u32' | 'f32' | 'i32') {
     // so complicated...
     return `atomicStore(&${output}_${field.toFixed(0)}[loc],
       bitcast<u32>(
-      tmp + bitcast<f32>(atomicLoad(&${output}_${field.toFixed(0)}[loc])
+      tmp.f_${field} + bitcast<f32>(atomicLoad(&${output}_${field.toFixed(0)}[loc])
       )
-    )`
+    ))`
   }
   return`atomicAdd(&${output}_${field.toFixed(0)}[loc],tmp)`
 }
@@ -39,13 +39,13 @@ function sat(op:'min'|'max', output: string, field: number, type: 'u32' | 'f32' 
     // so complicated...
     return `atomicStore(&${output}_${field.toFixed(0)}[loc],
       bitcast<u32>(
-      ${op}(tmp, bitcast<f32>(atomicLoad(&${output}_${field.toFixed(0)}[loc]))
+      ${op}(tmp.f_${field}, bitcast<f32>(atomicLoad(&${output}_${field.toFixed(0)}[loc]))
       )
     )`
   }
   return op === 'min' ?
-    `atomicMin(&${output}_${field.toFixed(0)}[loc],tmp)` :
-    `atomicMax(&${output}_${field.toFixed(0)}[loc],tmp)`
+    `atomicMin(&${output}_${field.toFixed(0)}[loc],tmp.f_${field})` :
+    `atomicMax(&${output}_${field.toFixed(0)}[loc],tmp.f_${field})`
 }
 function count( output: string, field: number,) {
   return`atomicAdd(&${output}_${field.toFixed(0)}[loc],1)`
@@ -87,7 +87,7 @@ export function generateAggregationShader(indexed:boolean, tables:Tables, from:s
   const localSetup = generateResult(aggregations, Temporary);
   const locationSetup = generateLocation(col, row);
   const finalResult = aggregations.map((a, i) => atomicAggregateExpr(a,outputName, i)).join(';\n')
-
+  const structFieldDecls = aggregations.map((a, i) => `f_${i} : ${a.kind==='count' ? 'u32':a.expr.type}`).join(',\n')
   let bindingStart = 3;
   let bindings: string = '';
 
@@ -102,10 +102,11 @@ export function generateAggregationShader(indexed:boolean, tables:Tables, from:s
   // output bindings...
   let outBindings = ''
   for (let out_field = 0; out_field < aggregations.length;out_field++) {
-    outBindings += `group(${outGroup}) binding(${bindingStart}) ${outputName}_${out_field}:array<atomic<u32>>;\n`
+    outBindings += `@group(${outGroup}) @binding(${bindingStart}) var<storage,read_write> ${outputName}_${out_field}:array<atomic<u32>>;\n`
     bindingStart += 1;
   }
-  return shaderPlz({
+  const shader =
+   shaderPlz({
     workgroupSize: '64',
     atomicFinal: finalResult,
     indexed,
@@ -113,14 +114,18 @@ export function generateAggregationShader(indexed:boolean, tables:Tables, from:s
     outputBindings: outBindings,
     locationExpr: locationSetup,
     resultExpr: localSetup,
-    structName:Temporary
-  })
+     structName: Temporary,
+    structFieldDecls
+   })
+console.warn(shader)
+  return shader;
 }
 
 
-function shaderPlz(args: {
+export function shaderPlz(args: {
   workgroupSize: string,
   structName: string,
+  structFieldDecls:string,
   outputBindings: string,
   inputBindings: string,
   indexed: boolean,
@@ -128,9 +133,13 @@ function shaderPlz(args: {
   locationExpr: string,
   atomicFinal: string
 }) {
-  const {workgroupSize,structName,atomicFinal,indexed,inputBindings,locationExpr,outputBindings,resultExpr}=args
+  const {workgroupSize,structName,structFieldDecls,atomicFinal,indexed,inputBindings,locationExpr,outputBindings,resultExpr}=args
   // AGGREGATE STUFF!
-  return `var<workgroup> results: array<${structName},${workgroupSize}>;
+  return `
+  struct ${structName} {
+    ${structFieldDecls}
+  };
+  var<workgroup> results: array<${structName},${workgroupSize}>;
   var<workgroup> locations: array<vec2u,${workgroupSize}>;
   var<workgroup> count: atomic<u32>;
 
@@ -138,7 +147,7 @@ function shaderPlz(args: {
   @group(0) @binding(0) var<uniform> dimensions:vec2u; // Nx1 in the 1D case
 
   // result count and results are in group1, as they change at the same rate as the input buffers
-  ${indexed ? '@group(1) @binding(2) var<storage, read_write> elements: array<u32>;' : ''};
+  ${indexed ? '@group(1) @binding(0) var<storage, read_write> elements: array<u32>;' : ''};
 
   ${inputBindings}
   ${outputBindings} // cant use a single structure, because atomics!
@@ -166,16 +175,17 @@ function shaderPlz(args: {
           colEnd = dimensions.x;
       }
       // ok!
-      for(let i =0;i<${workgroupSize};i++){
+      for(var i =0;i<${workgroupSize};i++){
           if(locations[i].x >= colStart && locations[i].x < colEnd){
-              // atomically write the structure... which is hard... because you cant do that...
               let tmp = results[i];
               let loc = locations[i].x + (dimensions.x*locations[i].y);
-              // also atomics cant be f32
-              // we could use bitcast to cast them to floats, do the op, then put the new value back...
               ${atomicFinal};
           }
       }
   }
 `
+}
+
+function buildAggregator(device: GPUDevice) {
+
 }

@@ -38,7 +38,7 @@ function generateFake(dev: GPUDevice, each: (p: number) => number, count: number
 
 const tableLayout = {
     cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
-    edges: { start: 'u32', end: 'u32' },
+    edges: { start: 'u32', end: 'u32', },
 } as const;
 type gpuDataset = {
     cells: { [k in keyof (typeof tableLayout)['cells']]: GPUBuffer };
@@ -54,10 +54,24 @@ function generateFakeDataset(device: GPUDevice, edges: number, cells: number): g
     const str = generateFake(device, (r) => 1.0 + r * 22.0, edges, 'f32');
     return { cells: { position: positions, subclass, gene_x }, edges: { start, end } };
 }
+export function setupAgg(device: GPUDevice, edges: number, cells: number) {
+  const { all, any, column, table, select, clause, over } = given(tableLayout).from('edges');
 
+  const { groupBy, aggregate } = over();
+  // todo - the build fails here... either the class gets split, or the type
+  // is too deep for parcel's wimpy lil transformer, which is silly because its already explicit...
+  const hey = aggregate().sum('total',
+    table('cells').at('start').dot('gene_x'))
+  const x: any = null;
+
+  const wow = groupBy(table('cells').at('start').dot('subclass'), hey).build(x)
+
+  wow.run(x,x,{},x,3)
+  return wow;
+}
 export function setupDemo(device: GPUDevice, edges: number, cells: number) {
     const { all, any, column, table, select, clause } = given(tableLayout).from('edges');
-
+  const aggregate = setupAgg(device, edges, cells);
     const filter = select('$index')
         .select(table('cells').at('start').dot('gene_x'))
         .select(table('cells').at('start').dot('subclass'))
@@ -161,14 +175,23 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         size: resolveBuffer.size,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
     });
-
+  const doAgg = (enc: GPUCommandEncoder) => {
+    const results = device.createBuffer({ size: 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC })
+    const dims = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
+    device.queue.writeBuffer(dims, 0, new Uint32Array([8, 1]));
+    aggregate.run(enc, dataset, { totasl: results }, dims, edges);
+}
     const doFilter = (
         params: Parameters<(typeof filter)['serializeParameters']>[0],
         onFilterComplete: (rows: Array<RowType>, gpuTime: number) => void
     ) => {
+
+
+
         const serialized = filter.serializeParameters(params);
         device.queue.writeBuffer(paramBuffer, 0, serialized, 0, serialized.byteLength);
-        const enc = device.createCommandEncoder();
+      const enc = device.createCommandEncoder();
+      doAgg(enc);
         filter.run({
             enc,
             timestampWrites: {
