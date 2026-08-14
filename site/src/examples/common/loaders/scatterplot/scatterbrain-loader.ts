@@ -120,7 +120,7 @@ function convertTree2D(
     bounds: box3D,
     depth: number,
     metadataPath: string,
-    genePath: string,
+    genePath: string
 ): ColumnarTree<vec2> {
     const safeName = sanitizeName(n.file);
     return {
@@ -140,8 +140,8 @@ function convertTree2D(
                           getChildBoundsUsingPotreeIndexing(bounds, getRelativeIndex(safeName, sanitizeName(c.file))),
                           depth + 1,
                           metadataPath,
-                          genePath,
-                      ),
+                          genePath
+                      )
                   )
                 : [],
     };
@@ -178,7 +178,7 @@ function loadSlideViewDataset(metadata: SlideColumnarMetadata, _datasetUrl: stri
                 } as const,
             });
         },
-        {} as Record<string, ColumnMetadata>,
+        {} as Record<string, ColumnMetadata>
     );
 
     const slideTrees: SlideTree[] = slides.map((slide) => {
@@ -217,7 +217,7 @@ export function loadDataset(metadata: ColumnarMetadata, datasetUrl: string) {
                 } as const,
             });
         },
-        {} as Record<string, ColumnMetadata>,
+        {} as Record<string, ColumnMetadata>
     );
     return {
         dimensions: 2,
@@ -256,7 +256,7 @@ export async function fetchColumn(
     node: ColumnarNode<ReadonlyArray<number>>,
     dataset: ReturnType<typeof loadDataset>,
     column: ColumnRequest,
-    signal?: AbortSignal,
+    signal?: AbortSignal
 ): Promise<ColumnData> {
     const referenceIdForEmbedding = dataset.visualizationReferenceId;
     const getColumnUrl = (columnName: string) => `${node.url}${columnName}/${referenceIdForEmbedding}/${node.name}.bin`;

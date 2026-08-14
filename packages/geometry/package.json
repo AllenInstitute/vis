@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-geometry",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -42,14 +42,14 @@
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
-        "changelog": "git-cliff -o changelog.md"
+        "changelog": "git-cliff -o CHANGELOG.md --tag-pattern @alleninstitute/vis-geometry@* && oxfmt CHANGELOG.md"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/AllenInstitute/vis.git"
     },
     "publishConfig": {
-        "registry": "https://npm.pkg.github.com/AllenInstitute"
-    },
-    "packageManager": "pnpm@9.14.2"
+        "registry": "https://registry.npmjs.org",
+        "access": "public"
+    }
 }

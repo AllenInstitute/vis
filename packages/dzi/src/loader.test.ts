@@ -51,7 +51,7 @@ describe('tiling math', () => {
         const s = Box2D.size(tiles[0][0]);
         expect(s).toEqual([110, 145]);
     });
-    it('image size is as expected for real data (layer 9) ', () => {
+    it('image size is as expected for real data (layer 9)', () => {
         const size = imageSizeAtLayer(highsmith, 9);
         expect(size).toEqual([220, 289]);
     });

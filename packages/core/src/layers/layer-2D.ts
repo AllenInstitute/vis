@@ -18,7 +18,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
         regl: REGL.Regl,
         imgRenderer: ImageRenderer,
         renderFn: RenderFn<Renderable, RenderSettings & RequiredSettings>,
-        resolution: vec2,
+        resolution: vec2
     ) {
         this.buffers = {
             readFrom: {
@@ -54,7 +54,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
             readonly data: Readonly<Renderable>;
             readonly settings: Readonly<RenderSettings>;
         },
-        cancel = true,
+        cancel = true
     ) {
         if (cancel && this.runningFrame) {
             this.runningFrame.cancelFrame();

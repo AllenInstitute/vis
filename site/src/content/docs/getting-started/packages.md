@@ -20,6 +20,7 @@ To install and use these packages, see the instructions on [using packages](../u
 The following is a list of packages that we would like to create in the future.
 
 If you are interested in contributing to the development of any of these packages, please reach out on GitHub to get started!
+
 - `vis-components` - A collection of web components for displaying visualizations built with our `vis` packages
 - `vis-react` - React component implementations of each of the visualization packages
 - `vis-[your favorite framework]` - Any other framework-specific implementations of our visualization packages, as driven by community needs

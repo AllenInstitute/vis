@@ -85,7 +85,6 @@ export type CachingMultithreadedFetchStoreOptions = {
 type PromiseResolve<T> = (t: T) => void;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// biome-ignore lint/suspicious/noExplicitAny: This is aligned with the standard Promise API
 type PromiseReject = (reason: any) => void;
 
 type PendingRequest<T> = {
@@ -100,7 +99,7 @@ export interface RequestHandler<RequestType, ResponseType> {
         message: RequestType,
         responseValidator: Guard<ResponseType>,
         transfers: Transferable[],
-        signal?: AbortSignal | undefined,
+        signal?: AbortSignal | undefined
     ): Promise<ResponseType>;
     destroy: () => void;
 }
@@ -113,7 +112,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      * enable us to restrict what types of messages can be sent to workers
      * for a given store instance.
      */
-    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
+    // oxlint-disable-next-line typescript/no-explicit-any -- end-to-end Message-based type constraints are a future enhancement
     #workerPool: RequestHandler<any, any>;
 
     /**
@@ -150,14 +149,14 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
      */
     #scoreFn: (h: CacheKey) => number;
 
-    // biome-ignore lint/suspicious/noExplicitAny: the type system for these parameters is a future feature
+    // oxlint-disable-next-line typescript/no-explicit-any -- end-to-end Message-based type constraints are a future enhancement
     constructor(url: string | URL, handler: RequestHandler<any, any>, options?: CachingMultithreadedFetchStoreOptions) {
         super(url, options?.fetchStoreOptions);
         this.#scoreFn = (h: CacheKey) => this.score(h);
         this.#dataCache = new PriorityCache<CacheableByteArray>(
             new Map<CacheKey, CacheableByteArray>(),
             this.#scoreFn,
-            options?.maxBytes ?? getDataCacheSizeLimit(),
+            options?.maxBytes ?? getDataCacheSizeLimit()
         );
         this.#priorityByTimestamp = new Map<CacheKey, number>();
         this.#workerPool = handler;
@@ -216,7 +215,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
         key: zarr.AbsolutePath,
         range: zarr.RangeQuery | undefined,
         options: TransferableRequestInit,
-        abort: AbortSignal | undefined,
+        abort: AbortSignal | undefined
     ): Promise<Uint8Array | undefined> {
         const cacheKey = asCacheKey(key, range);
 
@@ -257,7 +256,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
             },
             isFetchResponseMessage,
             [],
-            chain.signal,
+            chain.signal
         );
 
         request
@@ -297,7 +296,7 @@ export class CachingMultithreadedFetchStore extends zarr.FetchStore {
     async getRange(
         key: zarr.AbsolutePath,
         range: zarr.RangeQuery,
-        options?: RequestInit,
+        options?: RequestInit
     ): Promise<Uint8Array | undefined> {
         const cacheKey = asCacheKey(key, range);
         const cached = this.#fromCache(cacheKey);

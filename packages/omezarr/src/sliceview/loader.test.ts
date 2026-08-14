@@ -212,7 +212,7 @@ const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
             shape: [3, 142, 58, 78],
         },
     ],
-    2,
+    2
 );
 
 describe('omezarr basic tiled loading', () => {

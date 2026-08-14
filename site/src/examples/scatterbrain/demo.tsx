@@ -79,7 +79,7 @@ function Demo(props: Props) {
             const { render, connectToCache } = buildScatterbrainRenderFn(
                 // @ts-expect-error we'll deal with this later
                 regl,
-                { ...settings, dataset },
+                { ...settings, dataset }
             );
             // this ts error is bogus, dont know why
             const renderOneFrame = () => {
@@ -105,5 +105,11 @@ function Demo(props: Props) {
             renderOneFrame();
         }
     }, [dataset, server, screenSize]);
-    return <canvas ref={cnvs} width={screenSize[0]} height={screenSize[1]} />;
+    return (
+        <canvas
+            ref={cnvs}
+            width={screenSize[0]}
+            height={screenSize[1]}
+        />
+    );
 }

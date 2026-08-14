@@ -101,7 +101,7 @@ type Decoder = (
     dataset: OmeZarrMetadata,
     req: ZarrRequest,
     level: OmeZarrShapedDataset,
-    signal?: AbortSignal,
+    signal?: AbortSignal
 ) => Promise<VoxelTileImage>;
 
 export type OmeZarrSliceRendererOptions = {
@@ -114,7 +114,7 @@ const DEFAULT_NUM_CHANNELS = 3;
 export function buildOmeZarrSliceRenderer(
     regl: REGL.Regl,
     decoder: Decoder,
-    options?: OmeZarrSliceRendererOptions | undefined,
+    options?: OmeZarrSliceRendererOptions | undefined
 ): Renderer<OmeZarrMetadata, VoxelTile, RenderSettings, ImageChannels> {
     const numChannels = options?.numChannels ?? DEFAULT_NUM_CHANNELS;
     function sliceAsTexture(slice: VoxelTileImage): CachedTexture {
@@ -151,7 +151,7 @@ export function buildOmeZarrSliceRenderer(
             for (const key in settings.channels) {
                 contents[key] = (signal) =>
                     decoder(dataset, toZarrRequest(item, settings.channels[key].index), item.level, signal).then(
-                        sliceAsTexture,
+                        sliceAsTexture
                     );
             }
             return contents;

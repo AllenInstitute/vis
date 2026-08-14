@@ -1,4 +1,4 @@
-# Core 
+# Core
 
 This README is under construction!
 

@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/style/noUnusedTemplateLiteral: not at all helpful*/
-
 import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
 import type { Cacheable, CachedVertexBuffer } from '@alleninstitute/vis-core';
@@ -135,12 +133,14 @@ export type RenderProps = {
     };
 };
 export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) {
+    // oxlint-disable-next-line typescript/no-explicit-any -- regl prop types are dynamic and cannot be given explicitly here
     const prop = (p: string) => regl.prop<any, string>(p);
     const { quantitativeColumns, categoricalColumns, categoricalTable, gradientTable, positionColumn } = config;
     const ranges = reduce(
         quantitativeColumns,
         (unis, col) => ({ ...unis, [rangeFor(col)]: prop(rangeFor(col)) }),
-        {} as Record<string, REGL.DynamicVariable<any>>,
+        // oxlint-disable-next-line typescript/no-explicit-any -- regl dynamic variable types are dynamic and cannot be given explicitly here
+        {} as Record<string, REGL.DynamicVariable<any>>
     );
     const { vs, fs } = buildShaders(config);
     const uniforms = {
@@ -158,8 +158,9 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
         vert: vs,
         frag: fs,
         attributes: [positionColumn, ...categoricalColumns, ...quantitativeColumns].reduce(
+            // oxlint-disable-next-line typescript/no-explicit-any -- regl prop types are dynamic and cannot be given explicitly here
             (attribs, col) => ({ ...attribs, [col]: regl.prop<any, string>(col) }),
-            {},
+            {}
         ),
         uniforms,
         blend: {
@@ -186,7 +187,7 @@ export function buildScatterbrainRenderCommand(config: Config, regl: REGL.Regl) 
         const filterRanges = reduce(
             keys(quantitativeRangeFilters),
             (acc, cur) => ({ ...acc, [rangeFor(cur)]: quantitativeRangeFilters[cur] }),
-            {},
+            {}
         );
         const { view, screenResolution } = camera;
         const { count, columnData } = item;
@@ -217,7 +218,7 @@ function categoricalFilterExpression(categoricalColumns: readonly string[], tabl
     return categoricalColumns
         .map(
             (attrib, i) =>
-                /*glsl*/ `step(0.01,texture2D(${tableName},vec2(${i.toFixed(0)}.5,${attrib}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a)`,
+                /*glsl*/ `step(0.01,texture2D(${tableName},vec2(${i.toFixed(0)}.5,${attrib}+0.5)/vec2(${w.toFixed(1)},${h.toFixed(1)})).a)`
         )
         .join(' * ');
 }
@@ -351,7 +352,7 @@ export function configureShader(settings: ShaderSettings): {
     const longestCategory = reduce(
         keys(categoricalFilters),
         (highest, cur) => Math.max(highest, categoricalFilters[cur]),
-        0,
+        0
     );
 
     // the goal here is to associate column names with shader-safe names
@@ -363,13 +364,13 @@ export function configureShader(settings: ShaderSettings): {
     const qAttrs = reduce(
         quantitativeFilters.toSorted(),
         (quantAttrs, quantFilter, i) => ({ ...quantAttrs, [quantFilter]: `MEASURE_${i.toFixed(0)}` }),
-        initialQuantitativeAttrs,
+        initialQuantitativeAttrs
     );
     // we map each categorical filter's name to the shader-safe attribute name: CATEGORY_{i}
     const cAttrs = reduce(
         categories,
         (catAttrs, categoricalFilter, i) => ({ ...catAttrs, [categoricalFilter]: `CATEGORY_${i.toFixed(0)}` }),
-        initialCategoricalAttrs,
+        initialCategoricalAttrs
     );
 
     const colToAttribute = { ...qAttrs, ...cAttrs, [dataset.metadata.spatialColumn]: 'position' };

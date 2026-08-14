@@ -34,7 +34,7 @@ function mapValues<T extends Record<string, V>, V, R>(obj: T, fn: (v: V) => R): 
             acc[k] = fn(obj[k]);
             return acc;
         },
-        {} as { [k in keyof T]: R },
+        {} as { [k in keyof T]: R }
     );
 }
 
@@ -43,7 +43,7 @@ export function buildConnectedRenderer(
     screenSize: vec2,
     cache: SharedPriorityCache,
     decoder: Decoder,
-    onData: () => void,
+    onData: () => void
 ) {
     const renderer = buildOmeZarrSliceRenderer(regl, decoder);
     const client = cache.registerClient<Thing, Record<string, Tex>>({
@@ -67,7 +67,7 @@ export function buildConnectedRenderer(
         },
         isValue: (v): v is Record<string, Tex> =>
             renderer.isPrepared(
-                mapValues(v, (tx: Cacheable | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined)),
+                mapValues(v, (tx: Cacheable | undefined) => (tx && tx instanceof Tex ? tx.texture : undefined))
             ),
         onDataArrived: onData,
     });
@@ -99,7 +99,7 @@ export function buildConnectedRenderer(
             });
             client.setPriorities(
                 new Set(items.map((tile) => ({ tile, dataset, settings }))),
-                new Set(baselayer.map((tile) => ({ tile, dataset, settings }))),
+                new Set(baselayer.map((tile) => ({ tile, dataset, settings })))
             );
 
             regl.clear({ framebuffer: target, color: [0, 0, 0, 1], depth: 1 });
@@ -113,7 +113,7 @@ export function buildConnectedRenderer(
                         dataset,
                         settings,
                         // { ...settings, camera: { ...settings.camera, view: upsideDown } },
-                        mapValues(drawme, (d: Tex) => d.texture),
+                        mapValues(drawme, (d: Tex) => d.texture)
                     );
                 }
             }

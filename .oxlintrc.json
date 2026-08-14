@@ -1,0 +1,23 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["react", "vitest", "import", "typescript"],
+    "env": {
+        "browser": true,
+        "es2021": true,
+        "vitest": true
+    },
+    "settings": {
+        "react": {
+            "version": "18"
+        }
+    },
+    "ignorePatterns": ["build", "dist", "node_modules", "*.d.ts"],
+    "rules": {
+        "import/no-cycle": "error",
+        "import/no-self-import": "error",
+        "import/no-duplicates": "error",
+        "import/no-named-as-default": "error",
+        "no-console": "error",
+        "typescript/no-explicit-any": "error"
+    }
+}

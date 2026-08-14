@@ -38,19 +38,19 @@
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",
-        "changelog": "git-cliff -o changelog.md"
+        "changelog": "git-cliff -o CHANGELOG.md --tag-pattern @alleninstitute/vis-dzi@* && oxfmt CHANGELOG.md"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/AllenInstitute/vis.git"
     },
     "publishConfig": {
-        "registry": "https://npm.pkg.github.com/AllenInstitute"
+        "registry": "https://registry.npmjs.org",
+        "access": "public"
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
         "@alleninstitute/vis-core": "workspace:*",
         "regl": "2.1.1"
-    },
-    "packageManager": "pnpm@9.14.2"
+    }
 }

@@ -32,7 +32,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
         tile: DziTile,
         _img: DziImage,
         _settings: RenderSettings,
-        _abort?: AbortSignal,
+        _abort?: AbortSignal
     ): Record<string, () => Promise<ReglCacheEntry>> => {
         return {
             pixels: () => {

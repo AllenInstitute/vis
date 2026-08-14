@@ -52,14 +52,20 @@ export function MultithreadingDemo() {
                             value={numWorkers}
                             onChange={(e) => setNumWorkers(Number.parseInt(e.target.value, 10))}
                         />
-                        <button type="button" onClick={updateWorkers}>
+                        <button
+                            type="button"
+                            onClick={updateWorkers}
+                        >
                             Update
                         </button>
                     </span>
                 ) : (
                     <span style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'center' }}>
                         {numWorkers}
-                        <button type="button" onClick={() => setEditingWorkers(true)}>
+                        <button
+                            type="button"
+                            onClick={() => setEditingWorkers(true)}
+                        >
                             Edit
                         </button>
                     </span>

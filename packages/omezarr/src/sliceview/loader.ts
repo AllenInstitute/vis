@@ -53,7 +53,7 @@ function getVisibleTilesInLayer(
     orthoVal: number,
     dataset: OmeZarrMetadata,
     tileSize: number,
-    level: OmeZarrShapedDataset,
+    level: OmeZarrShapedDataset
 ) {
     const size = planeSizeInVoxels(plane, dataset.attrs.multiscales[0].axes, level);
     const realSize = sizeInUnits(plane, dataset.attrs.multiscales[0].axes, level);
@@ -96,7 +96,7 @@ export function getVisibleTiles(
     plane: CartesianPlane,
     planeLocation: number,
     metadata: OmeZarrMetadata,
-    tileSize: number,
+    tileSize: number
 ): VoxelTile[] {
     // TODO (someday) open the array, look at its chunks, use that size for the size of the tiles I request!
 
@@ -120,7 +120,7 @@ export const defaultDecoder = (
     metadata: OmeZarrMetadata,
     r: ZarrRequest,
     level: OmeZarrShapedDataset,
-    signal?: AbortSignal,
+    signal?: AbortSignal
 ): Promise<VoxelTileImage> => {
     return loadSlice(metadata, r, level, signal).then((result: { shape: number[]; buffer: Chunk<'float32'> }) => {
         const { shape, buffer } = result;

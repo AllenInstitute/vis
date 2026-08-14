@@ -1,6 +1,6 @@
 {
     "name": "@alleninstitute/vis-core",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "contributors": [
         {
             "name": "Lane Sawyer",
@@ -41,23 +41,26 @@
         "dev": "parcel watch --port 1235",
         "test": "vitest --watch",
         "test:ci": "vitest run",
-        "coverage": "vitest run --coverage"
+        "coverage": "vitest run --coverage",
+        "changelog": "git-cliff -o CHANGELOG.md --tag-pattern @alleninstitute/vis-core@* && oxfmt CHANGELOG.md"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/AllenInstitute/vis.git"
     },
     "publishConfig": {
-        "registry": "https://npm.pkg.github.com/AllenInstitute"
+        "registry": "https://registry.npmjs.org",
+        "access": "public"
     },
     "devDependencies": {
-        "@types/lodash": "4.17.23"
+        "@types/lodash": "4.17.24",
+        "@webgpu/types": "0.1.71"
     },
     "dependencies": {
         "@alleninstitute/vis-geometry": "workspace:*",
-        "lodash": "4.17.23",
+        "lodash": "4.18.1",
         "regl": "2.1.1",
-        "uuid": "13.0.0"
-    },
-    "packageManager": "pnpm@9.14.2"
+        "uuid": "14.0.1",
+        "zod": "4.4.3"
+    }
 }

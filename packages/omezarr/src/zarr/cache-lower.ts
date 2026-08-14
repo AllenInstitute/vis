@@ -11,11 +11,11 @@ export function decoderFactory(url: string, workerModule: WorkerInit, options?: 
         metadata: OmeZarrMetadata,
         req: ZarrRequest,
         level: OmeZarrShapedDataset,
-        signal?: AbortSignal,
+        signal?: AbortSignal
     ) => {
         if (metadata.url !== url) {
             throw new Error(
-                'trying to use a decoder from a different store - we cant do that yet, although we could build a map of url->stores here if we wanted later - TODO',
+                'trying to use a decoder from a different store - we cant do that yet, although we could build a map of url->stores here if we wanted later - TODO'
             );
         }
         const scene = metadata.attrs.multiscales[0];
@@ -40,7 +40,7 @@ export function decoderFactory(url: string, workerModule: WorkerInit, options?: 
         if (typeof data !== 'object' || !('buffer' in data)) {
             throw new Error('slice was malformed, array-buffer response required');
         }
-        // biome-ignore lint/suspicious/noExplicitAny: <hard to prove - but the typeof check above is sufficient for this to be safe>
+        // oxlint-disable-next-line typescript/no-explicit-any -- the typeof check above is sufficient for this to be safe
         return { shape, data: new Float32Array(data as any) };
     };
     return {

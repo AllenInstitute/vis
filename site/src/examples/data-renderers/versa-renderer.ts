@@ -134,7 +134,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
     return (
         item: VoxelTile,
         settings: VoxelSliceRenderSettings,
-        channels: Record<string, Bfr | object | undefined>,
+        channels: Record<string, Bfr | object | undefined>
     ) => {
         const { view, gamut, target, rotation } = settings;
         const { realBounds } = item;
@@ -272,7 +272,7 @@ export function getVisibleTiles(
     plane: CartesianPlane,
     planeIndex: number,
     metadata: OmeZarrMetadata,
-    offset?: vec2,
+    offset?: vec2
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
     const layer = pickBestScale(metadata, plane, camera.view, camera.screen);
     // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!

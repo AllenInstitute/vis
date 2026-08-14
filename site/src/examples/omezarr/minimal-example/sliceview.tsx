@@ -7,8 +7,7 @@ import {
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn } from '@alleninstitute/vis-core';
-import { useCallback, useState } from 'react';
-import { useContext, useEffect, useRef } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { renderServerContext } from '../../common/react/render-server-provider';
 type Props = {
@@ -79,7 +78,7 @@ export function SliceView(props: Props) {
                         { ...settings, camera: { ...settings.camera, view } },
                         callback,
                         target,
-                        cache,
+                        cache
                     );
                 }
                 return null;
@@ -105,7 +104,7 @@ export function SliceView(props: Props) {
                         }
                     }
                 },
-                cnvs.current,
+                cnvs.current
             );
         }
     }, [server, omezarr, view]);
@@ -118,7 +117,7 @@ export function SliceView(props: Props) {
                 setView(v);
             }
         },
-        [view],
+        [view]
     );
     return (
         <canvas

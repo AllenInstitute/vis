@@ -8,7 +8,10 @@ const screenSize: vec2 = [800, 800];
 export function OmezarrDemo() {
     return (
         <SharedCacheProvider>
-            <OmeZarrView res={OMEZARR_DEMO_FILESETS[3].res} screenSize={screenSize} />
+            <OmeZarrView
+                res={OMEZARR_DEMO_FILESETS[3].res}
+                screenSize={screenSize}
+            />
         </SharedCacheProvider>
     );
 }

@@ -30,7 +30,7 @@ export function composeRotation(b: AxisAngle, a: AxisAngle): AxisAngle {
 
     const D = Vec3.add(
         Vec3.add(Vec3.scale(B, sinB * cosA), Vec3.scale(A, sinA * cosB)),
-        Vec3.scale(Vec3.cross(B, A), sinB * sinA),
+        Vec3.scale(Vec3.cross(B, A), sinB * sinA)
     );
 
     const dir = Vec3.normalize(D);
@@ -55,6 +55,6 @@ export function rotateVector(rotation: AxisAngle, v: vec3): vec3 {
 
     return Vec3.add(
         Vec3.add(Vec3.scale(v, c), Vec3.scale(Vec3.cross(k, v), s)),
-        Vec3.scale(k, Vec3.dot(k, v) * (1 - c)),
+        Vec3.scale(k, Vec3.dot(k, v) * (1 - c))
     );
 }

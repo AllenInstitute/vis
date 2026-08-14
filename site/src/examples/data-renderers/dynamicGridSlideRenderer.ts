@@ -29,7 +29,7 @@ const cacheKey = (reqKey: string, item: ColumnarTree<vec2>, settings: { colorBy:
 export function renderSlide<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     slide: DynamicGridSlide,
-    settings: RenderSettings<C>,
+    settings: RenderSettings<C>
 ) {
     const {
         cache,
@@ -64,14 +64,14 @@ export function renderSlide<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKey,
-        cpuLimit,
+        cpuLimit
     );
 }
 
 export function renderDynamicGrid<C extends CacheContentType | object>(
     target: REGL.Framebuffer2D | null,
     grid: DynamicGrid,
-    settings: RenderSettings<C>,
+    settings: RenderSettings<C>
 ) {
     const {
         cache,
@@ -102,8 +102,8 @@ export function renderDynamicGrid<C extends CacheContentType | object>(
         if (Box2D.intersection(view, realBounds)) {
             items.push(
                 ...getVisibleItemsInSlide(grid.dataset, slide.id, settings.camera.view, 10 * unitsPerPixel[0]).map(
-                    (t) => ({ ...t, offset }),
-                ),
+                    (t) => ({ ...t, offset })
+                )
             );
         }
     });
@@ -119,6 +119,6 @@ export function renderDynamicGrid<C extends CacheContentType | object>(
         renderer,
         callback,
         cacheKey,
-        cpuLimit,
+        cpuLimit
     );
 }

@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noConsole: <its tests> */
+/* oxlint-disable no-console -- these are tests */
 import { beforeEach, describe, expect, test } from 'vitest';
 import { AsyncPriorityCache, type Cacheable } from './priority-cache';
 import { FakeStore, type Payload, PayloadFactory, PromiseFarm } from './test-utils';
@@ -92,7 +92,7 @@ describe.skip('throughput', () => {
                 return priorities[item] ?? 0;
             },
             1000,
-            20,
+            20
         );
         const newItem = (ID: string): Cacheable => {
             priorities[ID] = Math.random() * 100;
@@ -121,7 +121,9 @@ describe.skip('throughput', () => {
     });
     test(
         'performs well under non-stop puts with random prioritization values, and intermittant re-prioritizations',
-        { timeout: 10000 },
+        {
+            timeout: 10000,
+        },
         () => {
             // because puts get called as the result of a promise resolution, its hard to isolate the cost
             // using a "realistic" example - lets just call put in a loop?
@@ -169,7 +171,7 @@ describe.skip('throughput', () => {
             expect(numEvicted).toBe(999000);
             expect(rePrioritizeEvents).toBe(onemil / 100);
             expect(rePrioritizeOverheadMS / rePrioritizeEvents).toBeLessThan(0.1);
-        },
+        }
     );
     test('enqueue with instant fetching - overall speed', { timeout: 10000 }, async () => {
         const promises = new PromiseFarm();

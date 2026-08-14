@@ -60,7 +60,6 @@ export class MinHeap<T extends {}> {
     popItem(i: number): T | null {
         while (i !== 0) {
             this.swap(i, this.parent(i));
-            /** biome-ignore lint/style/noParameterAssign: a great example of why we should ditch this linter */
             i = this.parent(i);
         }
         return this.popMinItem();

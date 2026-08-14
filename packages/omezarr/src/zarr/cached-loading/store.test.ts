@@ -4,9 +4,9 @@ import { FETCH_RESPONSE_MESSAGE_TYPE, type FetchMessage, type FetchResponseMessa
 import { PromiseFarm } from '@alleninstitute/vis-core/src/shared-priority-cache/test-utils';
 
 type SpyLog = {
-    // biome-ignore lint/suspicious/noExplicitAny: Typing improvements for Messages are a future enhancement
+    // oxlint-disable-next-line typescript/no-explicit-any -- typing improvements for Messages are a future enhancement
     request: any;
-    // biome-ignore lint/suspicious/noExplicitAny: Typing improvements for Messages are a future enhancement
+    // oxlint-disable-next-line typescript/no-explicit-any -- typing improvements for Messages are a future enhancement
     response: any;
     status: 'cancelled' | 'failed' | 'resolved';
 };
@@ -21,7 +21,7 @@ class Whatever implements RequestHandler<FetchMessage, FetchResponseMessage> {
         message: FetchMessage,
         _responseValidator: (obj: unknown) => obj is FetchResponseMessage,
         _transfers: Transferable[],
-        signal?: AbortSignal | undefined,
+        signal?: AbortSignal | undefined
     ): Promise<FetchResponseMessage> {
         // so the generic parameters here cant work - the compile-time types of the interface to the worker are determined at construction time, not request time.
         // you can make the types work out here, but its a foot-gun. if you pass a responseValidator that the worker cant handle, the types will work out, but none of your promises will ever
@@ -41,12 +41,12 @@ class Whatever implements RequestHandler<FetchMessage, FetchResponseMessage> {
             signal.addEventListener('abort', () => {
                 this.log.push({ request: message, response: undefined, status: 'cancelled' });
                 if (!this.promises.mockReject(p, 'cancel')) {
-                    // biome-ignore lint/suspicious/noConsole: Provides test outcome context
+                    // oxlint-disable-next-line no-console -- provides test outcome context
                     console.log('fake promise could not be found to reject...');
                 }
             });
         } else {
-            // biome-ignore lint/suspicious/noConsole: Provides test outcome context
+            // oxlint-disable-next-line no-console -- provides test outcome context
             console.warn('warning - test request had no abort signal!');
         }
 
@@ -125,15 +125,15 @@ describe('basics', () => {
             const B = await b;
             // we know a is toast... do it this way for shortness:
             a.then(
-                // biome-ignore lint/suspicious/noConsole: Provides test outcome context
+                // oxlint-disable-next-line no-console -- provides test outcome context
                 (x) => console.log('a should be cancelled, but instead its', x),
-                () => {},
+                () => {}
             );
             expect(B instanceof Uint8Array).toBeTruthy();
             expect(pool.log).toHaveLength(1);
             expect(pool.log[0].status).toEqual('resolved');
         } catch (reason) {
-            // biome-ignore lint/suspicious/noConsole: Provides test outcome context
+            // oxlint-disable-next-line no-console -- provides test outcome context
             console.error('b was aborted - this is a bug! ', reason);
             expect(false).toBeTruthy();
         }

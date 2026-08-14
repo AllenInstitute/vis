@@ -1,13 +1,19 @@
+import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import {
+    type OmeZarrMetadata,
+    type RenderSettings,
+    type RenderSettingsChannels,
+    loadMetadata,
+    nextSliceStep,
+    sizeInUnits,
+} from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
-import { Box2D, type box2D, type Interval, PLANE_XY, type vec2 } from '@alleninstitute/vis-geometry';
-import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
-import { loadMetadata, nextSliceStep, type OmeZarrMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type React from 'react';
 import { useId, useMemo, useState } from 'react';
-import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
 import { pan, zoom } from '../../common/camera';
 import { RenderServerProvider } from '../../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
+import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
 
 const screenSize: vec2 = [800, 800];
 
@@ -53,7 +59,7 @@ export function OmezarrDemo() {
 
     const settings: RenderSettings | undefined = useMemo(
         () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex, omezarr) : undefined),
-        [omezarr, view, planeIndex],
+        [omezarr, view, planeIndex]
     );
 
     const load = (res: WebResource) => {
@@ -133,16 +139,29 @@ export function OmezarrDemo() {
                 <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label htmlFor={selectId}>Select an OME-Zarr to View:</label>
-                        <select id={selectId} name="webresource" onChange={handleOptionSelected}>
-                            <option value="" key="default">
+                        <select
+                            id={selectId}
+                            name="webresource"
+                            onChange={handleOptionSelected}
+                        >
+                            <option
+                                value=""
+                                key="default"
+                            >
                                 -- Please select an option --
                             </option>
                             {OMEZARR_DEMO_FILESETS.map((opt) => (
-                                <option value={opt.value} key={opt.value}>
+                                <option
+                                    value={opt.value}
+                                    key={opt.value}
+                                >
                                     {opt.label}
                                 </option>
                             ))}
-                            <option value="custom" key="custom">
+                            <option
+                                value="custom"
+                                key="custom"
+                            >
                                 * Enter a custom URL... *
                             </option>
                         </select>
@@ -154,7 +173,10 @@ export function OmezarrDemo() {
                                     onChange={(e) => setCustomUrl(e.target.value)}
                                     style={{ flexGrow: 1 }}
                                 />
-                                <button type="button" onClick={handleCustomUrlLoad}>
+                                <button
+                                    type="button"
+                                    onClick={handleCustomUrlLoad}
+                                >
                                     Load
                                 </button>
                             </div>
@@ -208,10 +230,16 @@ export function OmezarrDemo() {
                                     </span>
                                 )) || <span>No image loaded</span>}
                                 <div style={{}}>
-                                    <button type="button" onClick={() => handlePlaneIndex(-1)}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePlaneIndex(-1)}
+                                    >
                                         &#9664;
                                     </button>
-                                    <button type="button" onClick={() => handlePlaneIndex(1)}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePlaneIndex(1)}
+                                    >
                                         &#9654;
                                     </button>
                                 </div>

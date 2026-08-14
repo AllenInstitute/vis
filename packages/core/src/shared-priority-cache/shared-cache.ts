@@ -19,7 +19,7 @@ type CacheInterface<Item, ItemContent extends Record<string, Cacheable>> = {
 };
 
 export type ClientSpec<Item, ItemContent extends Record<string, Cacheable>> = {
-    isValue: (v: Record<string, Cacheable | undefined>) => v is ItemContent;
+    isValue: (v: Record<string, Cacheable | undefined>, item: Item) => v is ItemContent;
     cacheKeys: (item: Item) => { [k in keyof ItemContent]: string };
     onDataArrived?: (cacheKey: string, result: FetchResult) => void;
     fetch: (item: Item) => { [k in keyof ItemContent]: (abort: AbortSignal) => Promise<Cacheable> };
@@ -32,14 +32,14 @@ function entries<T extends Record<string, unknown>>(t: T): ReadonlyArray<KV<T>> 
 }
 function mapFields<R extends Record<string, unknown>, Result>(
     r: R,
-    fn: (v: R[keyof R]) => Result,
+    fn: (v: R[keyof R]) => Result
 ): { [k in keyof R]: Result } {
     return entries(r).reduce(
         (acc, [k, v]) => {
             acc[k] = fn(v);
             return acc;
         },
-        {} as { [k in keyof R]: Result },
+        {} as { [k in keyof R]: Result }
     );
 }
 
@@ -61,11 +61,11 @@ export class SharedPriorityCache {
             (ck) => this.importance[ck] ?? 0,
             limitInBytes,
             max_concurrent_fetches,
-            (ck, result) => this.onCacheEntryArrived(ck, result),
+            (ck, result) => this.onCacheEntryArrived(ck, result)
         );
     }
     registerClient<Item, ItemContent extends Record<string, Cacheable>>(
-        spec: ClientSpec<Item, ItemContent>,
+        spec: ClientSpec<Item, ItemContent>
     ): CacheInterface<Item, ItemContent> {
         const id = uniqueId('client');
         this.clients[id] = { priorities: {}, notify: spec.onDataArrived };
@@ -109,7 +109,7 @@ export class SharedPriorityCache {
             get: (k: Item) => {
                 const keys = spec.cacheKeys(k);
                 const v = mapFields<Record<string, string>, Cacheable | undefined>(keys, (k) => this.cache.get(k));
-                return spec.isValue(v) ? v : undefined;
+                return spec.isValue(v, k) ? v : undefined;
             },
             has: (k: Item) => {
                 const atLeastOneMissing = Object.values(spec.cacheKeys(k)).some((ck) => !this.cache.has(ck));

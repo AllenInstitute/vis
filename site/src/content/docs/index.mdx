@@ -3,33 +3,43 @@ title: Vis
 description: Homepage for the Vis open-source project
 template: splash
 hero:
-  tagline: Typescript packages for building big-data visualization tools & components, with examples for a variety of common data types & formats. Built by the Allen Institute for Brain Science.
-  image:
-    file: ../../assets/umap.png
-  actions:
-    - text: Get Started
-      link: /vis/getting-started/packages
-      variant: primary
-    - text: Examples
-      link: /vis/examples/omezarr1
-      variant: secondary
+    tagline: Typescript packages for building big-data visualization tools & components, with examples for a variety of common data types & formats. Built by the Allen Institute for Brain Science.
+    image:
+        file: ../../assets/umap.png
+    actions:
+        - text: Get Started
+          link: /vis/getting-started/packages
+          variant: primary
+        - text: Examples
+          link: /vis/examples/omezarr1
+          variant: secondary
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Powered by Vis 
+## Powered by Vis
 
 <CardGrid stagger>
-	<Card title="ABC Atlas" icon="rocket">
-		The [Allen Brain Cell Atlas (ABC Atlas)](https://knowledge.brain-map.org/abcatlas)
-        uses `@alleninstitute/vis-core` to visualize millions of points of data in the browser.
-	</Card>
-	<Card title="GTA" icon="magnifier">
-		The [Genetic Tools Atlas (GTA)](https://knowledge.brain-map.org/data/7CVKSF7QGAKIQ8LM5LC/specimens/HTS03VQD4BBB67I3BAP)
-        uses `@alleninstitute/vis-omezarr` to display OME-Zarr previews.
-	</Card>
-	<Card title="DZI" icon="information">
-		The [SEA-AD project](https://knowledge.brain-map.org/data/JGN327NUXRZSHEV88TN/specimens/JGCXWER774NLNWX2NNR)
+    <Card
+        title="ABC Atlas"
+        icon="rocket"
+    >
+        The [Allen Brain Cell Atlas (ABC Atlas)](https://knowledge.brain-map.org/abcatlas) uses
+        `@alleninstitute/vis-core` to visualize millions of points of data in the browser.
+    </Card>
+    <Card
+        title="GTA"
+        icon="magnifier"
+    >
+        The [Genetic Tools Atlas
+        (GTA)](https://knowledge.brain-map.org/data/7CVKSF7QGAKIQ8LM5LC/specimens/HTS03VQD4BBB67I3BAP) uses
+        `@alleninstitute/vis-omezarr` to display OME-Zarr previews.
+    </Card>
+    <Card
+        title="DZI"
+        icon="information"
+    >
+        The [SEA-AD project](https://knowledge.brain-map.org/data/JGN327NUXRZSHEV88TN/specimens/JGCXWER774NLNWX2NNR)
         uses `@alleninstitute/vis-dzi` to display Deep Zoom Image (DZI) views.
-	</Card>
+    </Card>
 </CardGrid>

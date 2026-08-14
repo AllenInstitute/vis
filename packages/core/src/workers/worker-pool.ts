@@ -5,7 +5,6 @@ import { isHeartbeatMessage, isWorkerMessageWithId, type WorkerMessage, type Wor
 type PromiseResolve<T extends WorkerMessageWithId> = (t: T) => void;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// biome-ignore lint/suspicious/noExplicitAny: This is aligned with the standard Promise API
 type PromiseReject = (reason: any) => void;
 
 type MessageValidator<T> = TypeGuardFunction<unknown, T>;
@@ -97,7 +96,7 @@ export class WorkerPool {
         message: WorkerMessage,
         responseValidator: MessageValidator<WorkerMessageWithId>,
         transfers: Transferable[],
-        signal?: AbortSignal | undefined,
+        signal?: AbortSignal | undefined
     ): Promise<WorkerMessageWithId> {
         if (this.#workers.length < 1) {
             return Promise.reject('this woorker pool has been disposed');

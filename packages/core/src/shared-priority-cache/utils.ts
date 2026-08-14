@@ -6,7 +6,7 @@ import type { ClientSpec } from './shared-cache';
 export function prioritizeCacheKeys<Item, ItemContent extends Record<string, Cacheable>>(
     spec: ClientSpec<Item, ItemContent>,
     items: Iterable<Item>,
-    priority: 1 | 2,
+    priority: 1 | 2
 ) {
     const pri: Record<string, number> = {};
     for (const item of items) {
@@ -32,7 +32,7 @@ export function mergeAndAdd(A: Record<string, number>, B: Record<string, number>
 export function priorityDelta(
     old: Record<string, number>,
     current: Record<string, number>,
-    update: (key: string, value: number) => void,
+    update: (key: string, value: number) => void
 ) {
     for (const o in old) {
         const curPri = current[o] ?? 0;

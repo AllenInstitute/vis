@@ -204,7 +204,7 @@ export class Demo {
                     this.regl,
                     this.imgRenderer,
                     renderDynamicGrid<CacheEntry>,
-                    [w, h],
+                    [w, h]
                 );
                 this.layers.push({
                     type: 'scatterplotGrid',
@@ -236,7 +236,7 @@ export class Demo {
             | ZarrSliceConfig
             | ZarrSliceGridConfig
             | ScatterPlotGridSlideConfig
-            | AnnotationGridConfig,
+            | AnnotationGridConfig
     ) {
         switch (config.type) {
             case 'AnnotationGridConfig':
@@ -260,7 +260,7 @@ export class Demo {
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
-                [w, h],
+                [w, h]
             ),
         });
         this.uiChange();
@@ -276,7 +276,7 @@ export class Demo {
                 this.regl,
                 this.imgRenderer,
                 renderAnnotationLayer,
-                [w, h],
+                [w, h]
             ),
         });
         this.uiChange();
@@ -289,7 +289,7 @@ export class Demo {
                     this.regl,
                     this.imgRenderer,
                     renderSlide<CacheEntry>,
-                    [w, h],
+                    [w, h]
                 );
                 this.layers.push({
                     type: 'scatterplot',
@@ -354,7 +354,7 @@ export class Demo {
                         this.regl,
                         this.imgRenderer,
                         renderAnnotationGrid,
-                        [w, h],
+                        [w, h]
                     ),
                 });
                 // look at it!
@@ -370,7 +370,7 @@ export class Demo {
                 this.regl,
                 this.imgRenderer,
                 renderGrid<CacheEntry>,
-                [w, h],
+                [w, h]
             );
             this.layers.push({
                 type: 'volumeGrid',
@@ -395,7 +395,7 @@ export class Demo {
                 screen: [w, h],
                 projection: projection === 'webImage' ? 'cartesian' : 'webImage',
             },
-            this.layers,
+            this.layers
         );
         // create an offscreen canvas...
         const cnvs = new OffscreenCanvas(w, h);
@@ -427,7 +427,7 @@ export class Demo {
 
             const layerPromises: Array<() => FrameLifecycle> = [];
             const nextLayerWhenFinished: RenderCallback = (
-                e: { status: NormalStatus } | { status: 'error'; error: unknown },
+                e: { status: NormalStatus } | { status: 'error'; error: unknown }
             ) => {
                 const { status } = e;
                 switch (status) {
@@ -467,7 +467,7 @@ export class Demo {
                             renderGrid<CacheEntry>(target, layer.data, {
                                 ...settings,
                                 renderer: renderers[layer.type],
-                            }),
+                            })
                         );
                         break;
                     case 'annotationGrid':
@@ -475,7 +475,7 @@ export class Demo {
                             renderAnnotationGrid(target, layer.data, {
                                 ...settings,
                                 renderers: renderers[layer.type],
-                            }),
+                            })
                         );
                         break;
                     case 'volumeSlice':
@@ -483,7 +483,7 @@ export class Demo {
                             renderSlice(target, layer.data, {
                                 ...settings,
                                 renderer: renderers[layer.type],
-                            }),
+                            })
                         );
                         break;
                     case 'scatterplot':
@@ -491,7 +491,7 @@ export class Demo {
                             renderSlide(target, layer.data, {
                                 ...settings,
                                 renderer: renderers[layer.type],
-                            }),
+                            })
                         );
                         break;
                     case 'annotationLayer':
@@ -499,7 +499,7 @@ export class Demo {
                             renderAnnotationLayer(target, layer.data, {
                                 ...settings,
                                 renderer: renderers[layer.type],
-                            }),
+                            })
                         );
                         break;
                     case 'scatterplotGrid':
@@ -507,7 +507,7 @@ export class Demo {
                             renderDynamicGrid<CacheEntry>(target, layer.data, {
                                 ...settings,
                                 renderer: renderers[layer.type],
-                            }),
+                            })
                         );
                         break;
                 }
@@ -578,7 +578,7 @@ export class Demo {
                             renderer: renderers[layer.type],
                         },
                     },
-                    this.mode === 'pan',
+                    this.mode === 'pan'
                 ); // dont cancel while drawing
             } else if (layer.type === 'volumeGrid') {
                 layer.render.onChange({
@@ -695,7 +695,7 @@ export class Demo {
                 this.zoom(e.deltaY > 0 ? 1.1 : 0.9);
                 e.preventDefault();
             },
-            { passive: false },
+            { passive: false }
         );
 
         window.onkeyup = (e: KeyboardEvent) => {

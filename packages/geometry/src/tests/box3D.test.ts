@@ -33,7 +33,7 @@ describe('Box3D', () => {
     });
     test('map', () => {
         expect(Box3D.map(Box3D.create([0, 0, 0], [1, 1, 1]), (v) => Vec3.scale(v, 300))).toStrictEqual(
-            Box3D.create([0, 0, 0], [300, 300, 300]),
+            Box3D.create([0, 0, 0], [300, 300, 300])
         );
     });
     test('isValid', () => {
@@ -44,7 +44,7 @@ describe('Box3D', () => {
         expect(nanBox).toBeFalsy();
 
         const infinityBox = Box3D.isValid(
-            Box3D.create([Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY], [1, 1, 1]),
+            Box3D.create([Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY], [1, 1, 1])
         );
         expect(infinityBox).toBeFalsy();
 
@@ -88,6 +88,17 @@ describe('Box3D', () => {
     test('size', () => {
         const size = Box3D.size(box);
         expect(size).toStrictEqual([2, 2, 2]);
+    });
+
+    test('parameter', () => {
+        // minCorner maps to [0, 0, 0]
+        expect(Box3D.parameter(box, [1, 2, 3])).toStrictEqual([0, 0, 0]);
+        // maxCorner maps to [1, 1, 1]
+        expect(Box3D.parameter(box, [3, 4, 5])).toStrictEqual([1, 1, 1]);
+        // midpoint maps to [0.5, 0.5, 0.5]
+        expect(Box3D.parameter(box, [2, 3, 4])).toStrictEqual([0.5, 0.5, 0.5]);
+        // points outside the box are not clamped
+        expect(Box3D.parameter(box, [5, 6, 7])).toStrictEqual([2, 2, 2]);
     });
 
     test('midpoint', () => {
