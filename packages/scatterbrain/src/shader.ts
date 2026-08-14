@@ -2,8 +2,7 @@ import type REGL from 'regl';
 import type { ScatterbrainDataset, SlideviewScatterbrainDataset } from './types';
 import type { Cacheable, CachedVertexBuffer } from '@alleninstitute/vis-core';
 import { Box2D, type box2D, type Interval, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
-import * as lodash from 'lodash';
-const { keys, mapValues, reduce } = lodash;
+import { keys, mapValues, reduce } from 'lodash-es';
 
 // the set of columns and what to do with them can vary
 // there might be 3 categorical columns and 2 range columns

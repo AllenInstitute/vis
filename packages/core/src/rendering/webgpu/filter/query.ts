@@ -1,4 +1,4 @@
-import entries from 'lodash/entries';
+import { entries } from 'lodash-es';
 import { buildFilterPipeline } from './build';
 import { genQuery, indexExprType, looksLikeIndexExpr } from './gen';
 import type {
