@@ -25,3 +25,4 @@ export {
 export { WorkerPool, type WorkerInit } from './workers/worker-pool';
 
 export * from './rendering/webgpu';
+export { given, FilterTable } from './rendering/webgpu/filter/query';
