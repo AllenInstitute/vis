@@ -371,16 +371,12 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                         const copy = new Uint8Array(dv.buffer.byteLength);
                         copy.set(new Uint8Array(dv.buffer));
                         const ex = new DataView(expected.buffer);
-                        let failBytes = 0;
                         for (let i = 0; i < expected.buffer.byteLength; i++) {
                             if (dv.getUint8(i) !== ex.getUint8(i)) {
-                                failBytes += 1;
+                              return { status: 'failure', result: copy } as const;
                             }
                         }
-                        if (failBytes === 0) {
-                            return { status: 'success' } as const;
-                        }
-                        return { status: 'failure', result: copy } as const;
+                        return { status: 'success' } as const;
                     })
                     .finally(() => {
                         // destroy all things
