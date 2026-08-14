@@ -13,8 +13,7 @@
         "lint:check": "oxlint",
         "check": "oxfmt --check && prettier --check 'site/**/*.astro' && oxlint",
         "check:fix": "oxfmt && prettier --write 'site/**/*.astro' && oxlint --fix",
-        "changelog": "pnpm -r run changelog",
-        "prepare": "lefthook install"
+        "changelog": "pnpm -r run changelog"
     },
     "devDependencies": {
         "oxfmt": "0.61.0",
