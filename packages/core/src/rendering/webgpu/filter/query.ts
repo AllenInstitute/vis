@@ -28,7 +28,6 @@ import type {
     ITable,
 } from './types';
 import * as lo from 'lodash';
-import { logger } from '~/src/logger';
 const { mapValues } = lo;
 
 const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
@@ -364,25 +363,28 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 enc.copyBufferToBuffer(results, resolve);
                 dev.queue.submit([enc.finish()]);
                 // ok now get the results and compare them!
-                resolve
+                return resolve
                     .mapAsync(GPUMapMode.READ)
                     .then(() => {
                         const recvd = resolve.getMappedRange();
-                        const dv = new DataView(recvd);
+                      const dv = new DataView(recvd);
+                      const copy = new Uint8Array(dv.buffer.byteLength);
+                      copy.set(new Uint8Array(dv.buffer));
                         const ex = new DataView(expected.buffer);
                         let failBytes = 0;
                         for (let i = 0; i < expected.buffer.byteLength; i++) {
                             if (dv.getUint8(i) !== ex.getUint8(i)) {
-                                logger.error('filter validation failed at byte: ', i);
                                 failBytes += 1;
                             }
                         }
-                        if (failBytes === 0) {
-                            logger.info('validation success');
-                        }
+                      if (failBytes === 0) {
+                        return { status: 'success' } as const;
+                      }
+                      return { status: 'failure', result: copy } as const;
                     })
                     .finally(() => {
-                        // destroy all things
+                      // destroy all things
+                        resolve.unmap();
                         [resolve, paramB, resultsCounter, results, ...inputs].forEach((b) => b.destroy());
                         if (elemBuffer) {
                             elemBuffer.destroy();
