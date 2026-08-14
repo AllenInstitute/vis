@@ -1,0 +1,24 @@
+# Autofix-only: these commands never block a commit. Unfixable lint errors are
+# printed for visibility, but `|| true` keeps the hook green. CI is what gates.
+#
+# `glob` scopes each tool to the file types it handles, so a commit touching
+# only e.g. Markdown skips all three commands instead of spawning no-op
+# processes. Lefthook already skips a command when its file list comes out
+# empty, so the globs are for clarity and speed, not safety.
+pre-commit:
+    commands:
+        lint:
+            priority: 1
+            glob: '*.{js,jsx,mjs,cjs,mts,cts,ts,tsx}'
+            run: pnpm exec oxlint --fix {staged_files} || true
+            stage_fixed: true
+        fmt:
+            priority: 2
+            glob: '*.{js,jsx,mjs,cjs,mts,cts,ts,tsx,json,jsonc,yaml,yml}'
+            run: pnpm exec oxfmt {staged_files} || true
+            stage_fixed: true
+        fmt-astro:
+            priority: 2
+            glob: '*.astro'
+            run: pnpm exec prettier --write {staged_files} || true
+            stage_fixed: true

@@ -14,7 +14,7 @@
         "check": "oxfmt --check && prettier --check 'site/**/*.astro' && oxlint",
         "check:fix": "oxfmt && prettier --write 'site/**/*.astro' && oxlint --fix",
         "changelog": "pnpm -r run changelog",
-        "prepare": "node .husky/install.mjs"
+        "prepare": "lefthook install"
     },
     "devDependencies": {
         "oxfmt": "0.61.0",
@@ -26,8 +26,7 @@
         "@vitest/coverage-istanbul": "4.1.1",
         "buffer": "6.0.3",
         "git-cliff": "2.13.1",
-        "husky": "9.1.7",
-        "lint-staged": "16.2.7",
+        "lefthook": "2.1.10",
         "parcel": "2.16.4",
         "process": "0.11.10",
         "typescript": "5.9.3",
@@ -36,14 +35,5 @@
     "volta": {
         "node": "24.15.0",
         "pnpm": "10.33.0"
-    },
-    "lint-staged": {
-        "*.{js,jsx,mjs,cjs,ts,tsx,json}": [
-            "oxfmt",
-            "oxlint --fix"
-        ],
-        "*.astro": [
-            "prettier --write"
-        ]
     }
 }
