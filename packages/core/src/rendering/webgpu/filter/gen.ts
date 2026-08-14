@@ -10,7 +10,7 @@ function generateOutputStructure(selections: ReadonlyArray<Sel>) {
     const initializers = selections.map((s) => s.selection).join(', ');
     const construct = `${structName}(${initializers})`;
 
-    return { structName,  structDecl, construct };
+    return { structName, structDecl, construct };
 }
 export function generateShader(params: {
     workgroupSize: number;

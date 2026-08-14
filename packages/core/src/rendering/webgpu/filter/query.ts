@@ -373,7 +373,7 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                         const ex = new DataView(expected.buffer);
                         for (let i = 0; i < expected.buffer.byteLength; i++) {
                             if (dv.getUint8(i) !== ex.getUint8(i)) {
-                              return { status: 'failure', result: copy } as const;
+                                return { status: 'failure', result: copy } as const;
                             }
                         }
                         return { status: 'success' } as const;
