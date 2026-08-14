@@ -1,9 +1,9 @@
 // @ts-check
-
-import mdx from '@astrojs/mdx';
-import react from '@astrojs/react';
-import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import starlight from '@astrojs/starlight';
+
+import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
