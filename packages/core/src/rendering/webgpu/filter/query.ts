@@ -31,7 +31,7 @@ import * as lo from 'lodash';
 import { logger } from '~/src/logger';
 const { mapValues } = lo;
 
-const entries = <T extends {}>(r: T):ReadonlyArray<[string, T[keyof T]]> => Object.entries(r) ;
+const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 
 function predicate<S extends VLen, L extends ScalarType | VectorType<S>, P extends `${alpha}${string}`>(
     lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>,
@@ -145,9 +145,9 @@ function componentType(t: WgslType): ScalarType {
     }
     return t as ScalarType;
 }
-function inferType(table:ITable,e: string) {
-  const [field, swizzle] = e.split('.');
-  return swizzle ? componentType(table![field!]!) : table![field!]!;
+function inferType(table: ITable, e: string) {
+    const [field, swizzle] = e.split('.');
+    return swizzle ? componentType(table![field!]!) : table![field!]!;
 }
 function determineType(
     tables: Tables,
@@ -174,7 +174,7 @@ function mapTablesToBindings<Ts extends Tables>(
             return entries(table).map(([field, buffer]) => {
                 const b = lookups[name]?.[field];
                 if (b) {
-                  return { resource: buffer as GPUBuffer, binding: b };
+                    return { resource: buffer as GPUBuffer, binding: b };
                 }
                 return undefined;
             });
@@ -210,11 +210,9 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
             .map(([name, type]) => `${name}:${type}`)
             .join(',\n');
 
-      const { tables } = this;
+        const { tables } = this;
 
-
-
-      const predicateExpr = `(${compilePredicate(this.toWgsl, predicates, UNI_INSTANCE_NAME)})`;
+        const predicateExpr = `(${compilePredicate(this.toWgsl, predicates, UNI_INSTANCE_NAME)})`;
         let binding = START_BINDING;
         let columnBindings: Record<string, Record<string, number>> = {};
         // associate a binding with every field of every table
@@ -366,7 +364,9 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 enc.copyBufferToBuffer(results, resolve);
                 dev.queue.submit([enc.finish()]);
                 // ok now get the results and compare them!
-                resolve.mapAsync(GPUMapMode.READ).then(() => {
+                resolve
+                    .mapAsync(GPUMapMode.READ)
+                    .then(() => {
                         const recvd = resolve.getMappedRange();
                         const dv = new DataView(recvd);
                         const ex = new DataView(expected.buffer);
@@ -392,46 +392,46 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
 
             return { runner, validate };
         };
-        const buildHelper = <Indexed extends boolean>(device: GPUDevice,label:string,indexed:Indexed) => {
-          const Q = assembleQuery(
-              {
-                  from: this.from as string,
-                  selections: this.selections,
-                  tables,
-                  uniformName: UNI_INSTANCE_NAME,
-                  uniformTypeName: UNI_STRUCT_TYPE_NAME,
-              },
-              predicateExpr,
-              paramDecls,
-              64,
-              indexed
-          );
-          const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
-          const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
-          const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
-              const unis = wgh.makeStructuredView(uniDef, buffer);
-              unis.set(parameters);
-              return unis.arrayBuffer;
-          };
+        const buildHelper = <Indexed extends boolean>(device: GPUDevice, label: string, indexed: Indexed) => {
+            const Q = assembleQuery(
+                {
+                    from: this.from as string,
+                    selections: this.selections,
+                    tables,
+                    uniformName: UNI_INSTANCE_NAME,
+                    uniformTypeName: UNI_STRUCT_TYPE_NAME,
+                },
+                predicateExpr,
+                paramDecls,
+                64,
+                indexed
+            );
+            const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
+            const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
+            const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
+                const unis = wgh.makeStructuredView(uniDef, buffer);
+                unis.set(parameters);
+                return unis.arrayBuffer;
+            };
 
-          const { runner, validate } = makeRunner({
-              device,
-              indexed,
-              label,
-              pipe,
-              safeLookups: columnBindings,
-              serializeParameters,
-              shader: Q.shader,
-              wgSize: WG_SIZE,
-          });
-          return {
-              run: runner,
-              validate,
-              serializeParameters,
-              pipeline: pipe,
-              parameterTypeDef: uniDef,
-          };
-        }
+            const { runner, validate } = makeRunner({
+                device,
+                indexed,
+                label,
+                pipe,
+                safeLookups: columnBindings,
+                serializeParameters,
+                shader: Q.shader,
+                wgSize: WG_SIZE,
+            });
+            return {
+                run: runner,
+                validate,
+                serializeParameters,
+                pipeline: pipe,
+                parameterTypeDef: uniDef,
+            };
+        };
         return {
             shaderOnly: () => {
                 const Q = assembleQuery(
@@ -448,10 +448,10 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                     false
                 );
                 return Q.shader;
-          },
+            },
 
             build: (device: GPUDevice, label: string) => {
-              return buildHelper(device, label, false);
+                return buildHelper(device, label, false);
             },
             buildIndexed: (device: GPUDevice, label: string) => {
                 return buildHelper(device, label, true);
@@ -473,40 +473,36 @@ export function given<Ts extends Tables>(tables: Ts) {
     }
     // these are fun...  they do belong in types.ts, but moving them there means they no longer directly deal with Ts
     // I think that discconnect pushes TS over the edge and they end up not working - everything turns to unknown
-    type UnionToIntersection<U> =
-      (U extends any ? (x: U) => void : never) extends ((x: infer I) => void) ? I : never
-    type ExpandTableColumn<T extends keyof Ts,F extends keyof Ts[T]> = F extends string ? vKeys<Ts[T], F> & T : never
-    type ExpandTableVectors<T extends keyof Ts> = keyof Ts[T] extends string ? UnionToIntersection<ExpandTableColumn<T, keyof Ts[T]>>:never
+    type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
+    type ExpandTableColumn<T extends keyof Ts, F extends keyof Ts[T]> = F extends string ? vKeys<Ts[T], F> & T : never;
+    type ExpandTableVectors<T extends keyof Ts> = keyof Ts[T] extends string
+        ? UnionToIntersection<ExpandTableColumn<T, keyof Ts[T]>>
+        : never;
     return {
         from: <From extends keyof Ts>(from: From) => {
             function column<E extends keyof ExpandTableVectors<From>>(
                 k: E
-            ):ColumnExpr<string,string,ExpandTableVectors<From>[E]>{
+            ): ColumnExpr<string, string, ExpandTableVectors<From>[E]> {
                 return {
                     kind: 'from field',
                     from: from as string,
                     field: k as string,
-                    type: inferType(tables[from],k as string) as ExpandTableVectors<From>[E]
-                }
+                    type: inferType(tables[from], k as string) as ExpandTableVectors<From>[E],
+                };
             }
             function table<Other extends Exclude<keyof Ts, From>>(t: Other) {
-
                 return {
                     at: <E extends SwizzleIndexExpr<Ts, From, keyof Ts[From]>>(
                         indexExpr: E | IndexExpr<string, string, 'u32'>
                     ) => {
-
-
                         return {
-                          dot: <OE extends keyof ExpandTableVectors<Other>>(
-                                field: OE
-                            ) => {
-                              const IE: IndexExpr<string, string,ExpandTableVectors<Other>[OE]> = {
+                            dot: <OE extends keyof ExpandTableVectors<Other>>(field: OE) => {
+                                const IE: IndexExpr<string, string, ExpandTableVectors<Other>[OE]> = {
                                     kind: 'table at field',
                                     table: t as string,
                                     field: field as string,
                                     atExpr: indexExpr,
-                                    type: inferType(tables[t],field as string) as ExpandTableVectors<Other>[OE]
+                                    type: inferType(tables[t], field as string) as ExpandTableVectors<Other>[OE],
                                 };
                                 return IE;
                             },
@@ -533,10 +529,10 @@ type Parameters = Record<string, string | number | number[]>;
 // this function is not exported or called - its only purpose is to explode if something in the above file
 // changes enough to mess up the types - we want restrictive types here, its the whole point
 function typescriptCanary() {
-  type hey = { cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }
-  const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges')
-  // @ts-expect-error
-  e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'))
-  // @ts-expect-error
-  e.select('$index').where(e.clause(e.column('E.x'), 'all(==)', 'mom'))
+    type hey = { cells: { A: 'f32'; B: 'vec2f' }; edges: { E: 'vec2u'; str: 'f32' } };
+    const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
+    // @ts-expect-error
+    e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
+    // @ts-expect-error
+    e.select('$index').where(e.clause(e.column('E.x'), 'all(==)', 'mom'));
 }

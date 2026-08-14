@@ -1,6 +1,6 @@
 import { type WgslType, type Sel, type Tables } from './types';
 
-const entries = (r: object)=> Object.entries(r);
+const entries = (r: object) => Object.entries(r);
 
 function generateOutputStructure(selections: ReadonlyArray<Sel>) {
     // the names of the values in the structure dont matter at all -

@@ -51,20 +51,26 @@ export type BufferTables<Ts extends Tables> = {
         [c in keyof Ts[k]]: GPUBuffer;
     };
 };
-export type vKeys<T extends ITable, F extends keyof ITable> = F extends string ? T[F] extends `vec2${Abbr}` ?
-  Record<`${F}.${'x' | 'y'}`, Cmp<T[F]>> : T[F] extends `vec3${Abbr}` ? Record<`${F}.${'x' | 'y' | 'z'}`,  Cmp<T[F]>> :
-  T[F] extends `vec4${Abbr}` ? Record<`${F}.${'x' | 'y' | 'z' | 'w'}`,  Cmp<T[F]>> : T : T;
+export type vKeys<T extends ITable, F extends keyof ITable> = F extends string
+    ? T[F] extends `vec2${Abbr}`
+        ? Record<`${F}.${'x' | 'y'}`, Cmp<T[F]>>
+        : T[F] extends `vec3${Abbr}`
+          ? Record<`${F}.${'x' | 'y' | 'z'}`, Cmp<T[F]>>
+          : T[F] extends `vec4${Abbr}`
+            ? Record<`${F}.${'x' | 'y' | 'z' | 'w'}`, Cmp<T[F]>>
+            : T
+    : T;
 
+// doesnt seem to work in general
 
-  // doesnt seem to work in general
+type ExpandTableColumn<T extends ITable, F extends keyof ITable> = vKeys<T, F> & T;
 
-type ExpandTableColumn<T extends ITable, F extends keyof ITable> = vKeys<T, F> & T
+type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
 
-type UnionToIntersection<U> =
-  (U extends any ? (x: U) => void : never) extends ((x: infer I) => void) ? I : never
-
-export type ExpandTableVectors<T extends ITable> = keyof T extends string ? UnionToIntersection<ExpandTableColumn<T, keyof T>>:never
-export type ValidKeys<T extends ITable> = keyof ExpandTableVectors<T>
+export type ExpandTableVectors<T extends ITable> = keyof T extends string
+    ? UnionToIntersection<ExpandTableColumn<T, keyof T>>
+    : never;
+export type ValidKeys<T extends ITable> = keyof ExpandTableVectors<T>;
 
 export type ArrayBufferTables<Ts extends Tables> = {
     [k in keyof Ts]: {
@@ -139,11 +145,7 @@ export type IndexExpr<Table extends string, Field extends string, T> = {
     field: Field;
     type: T;
 };
-export type ColumnExpr<
-    From extends string,
-    Field extends string | '$index',
-    T
-> = {
+export type ColumnExpr<From extends string, Field extends string | '$index', T> = {
     kind: 'from field';
     from: From;
     field: Field;
