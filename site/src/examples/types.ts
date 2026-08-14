@@ -31,7 +31,7 @@ export type CacheEntry =
       }
     | ColumnBuffer
     | GpuMesh;
-console.log('complain mr linter! but let me commit mr lefthook');
+
 export type ScatterPlotLayer = {
     type: 'scatterplot';
     data: DynamicGridSlide;
