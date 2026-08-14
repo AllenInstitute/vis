@@ -23,16 +23,14 @@ import type {
     VLen,
     VectorType,
     onlyLetters,
-    FType,
-    Cmp,
     ArrayBufferTables,
+    vKeys,
+    ITable,
 } from './types';
 import * as lo from 'lodash';
-import { logger } from '~/src/logger';
 const { mapValues } = lo;
 
-/* oxlint-disable no-console, typescript/no-explicit-any*/
-const entries = <T extends {}>(r: T): ReadonlyArray<[keyof T, T[keyof T]]> => Object.entries(r) as any;
+const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 
 function predicate<S extends VLen, L extends ScalarType | VectorType<S>, P extends `${alpha}${string}`>(
     lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>,
@@ -114,6 +112,10 @@ function componentType(t: WgslType): ScalarType {
     }
     return t as ScalarType;
 }
+function inferType(table: ITable, e: string) {
+    const [field, swizzle] = e.split('.');
+    return swizzle ? componentType(table![field!]!) : table![field!]!;
+}
 function determineType(
     tables: Tables,
     expr: '$index' | IndexExpr<string, string, WgslType> | ColumnExpr<string, string, WgslType>
@@ -137,12 +139,10 @@ function mapTablesToBindings<Ts extends Tables>(
     return entries(tables)
         .flatMap(([name, table]) => {
             return entries(table).map(([field, buffer]) => {
-                // I promise, these are all strings, its ok
-                const b = lookups[name as string]?.[field as string];
+                const b = lookups[name]?.[field];
                 if (b) {
                     return { resource: buffer as GPUBuffer, binding: b };
                 }
-                // console.log('omit ', name, field, ' its not referenced!');
                 return undefined;
             });
         })
@@ -164,6 +164,7 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
         const type = determineType(this.tables, selection);
         return new Selection(this.tables, this.from, [...this.selections, { selection: s, type }]);
     }
+
     where<Params extends Parameters>(predicates: AndGroup<Params> | Clause<Params>) {
         // constants //
 
@@ -175,10 +176,9 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
         const paramDecls = entries(paramTypes)
             .map(([name, type]) => `${name}:${type}`)
             .join(',\n');
-        // const uniDecl = `struct ${UNI_STRUCT_NAME} {
-        //   ${paramDecls}
-        //   };`
+
         const { tables } = this;
+
         const predicateExpr = `(${compilePredicate(this.toWgsl, predicates, UNI_INSTANCE_NAME)})`;
         let binding = START_BINDING;
         let columnBindings: Record<string, Record<string, number>> = {};
@@ -190,6 +190,7 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 binding += 1;
             }
         }
+
         const makeRunner = <Indexed extends boolean>(options: {
             device: GPUDevice;
             pipe: ReturnType<typeof buildFilterPipeline>;
@@ -203,10 +204,8 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
             const { device, pipe, safeLookups, indexed, label, wgSize } = options;
             const runner = (args: Indexed extends true ? RunIndexedFilterArgs<Ts> : RunFilterArgs<Ts>) => {
                 const { enc, parameters, sets, timestampWrites } = args;
-                // here, we zero out the result counters
-                // TODO - consider not doing this - if we didnt do that:
-                // 1. we could potentially accumulate results onto results that had previously been captured in the results buffer
-                // 2. we technically could invoke this whole thing in an open compute pass...? right?
+
+                // zero out the result counters...
                 args.sets.forEach((s) => {
                     device.queue.writeBuffer(s.resultCounter, 0, new Uint32Array([0]));
                 });
@@ -296,7 +295,6 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                     dev.queue.writeBuffer(elemBuffer, 0, elements.buffer);
                 }
                 const resultsCounter = dev.createBuffer({ size: 16, usage: R });
-                const resolveCount = dev.createBuffer({ size: 16, usage: M });
                 const results = dev.createBuffer({ size: rowCount * 32, usage: R });
                 const resolve = dev.createBuffer({ size: rowCount * 32, usage: M });
                 // very awkward a bit longwinded, and there are some TS issues, but its ok!
@@ -331,31 +329,31 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                     (runner as (args: RunFilterArgs<Ts>) => void)(args);
                 }
                 enc.copyBufferToBuffer(results, resolve);
-                enc.copyBufferToBuffer(resultsCounter, resolveCount);
                 dev.queue.submit([enc.finish()]);
                 // ok now get the results and compare them!
-                Promise.all([resolve.mapAsync(GPUMapMode.READ), resolveCount.mapAsync(GPUMapMode.READ)])
+                return resolve
+                    .mapAsync(GPUMapMode.READ)
                     .then(() => {
-                        const count = new Uint32Array(resolveCount.getMappedRange());
                         const recvd = resolve.getMappedRange();
-                        // TODO: we dont know how large each result is... so just compare byte-by-byte for the length of the expected result?
-                        // if(count[0]!==expected)
                         const dv = new DataView(recvd);
+                        const copy = new Uint8Array(dv.buffer.byteLength);
+                        copy.set(new Uint8Array(dv.buffer));
                         const ex = new DataView(expected.buffer);
                         let failBytes = 0;
                         for (let i = 0; i < expected.buffer.byteLength; i++) {
                             if (dv.getUint8(i) !== ex.getUint8(i)) {
-                                logger.error('filter validation failed at byte: ', i);
                                 failBytes += 1;
                             }
                         }
                         if (failBytes === 0) {
-                            logger.info('validation success');
+                            return { status: 'success' } as const;
                         }
+                        return { status: 'failure', result: copy } as const;
                     })
                     .finally(() => {
                         // destroy all things
-                        [resolve, resolveCount, paramB, resultsCounter, results, ...inputs].forEach((b) => b.destroy());
+                        resolve.unmap();
+                        [resolve, paramB, resultsCounter, results, ...inputs].forEach((b) => b.destroy());
                         if (elemBuffer) {
                             elemBuffer.destroy();
                         }
@@ -364,7 +362,46 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
 
             return { runner, validate };
         };
+        const buildHelper = <Indexed extends boolean>(device: GPUDevice, label: string, indexed: Indexed) => {
+            const Q = assembleQuery(
+                {
+                    from: this.from as string,
+                    selections: this.selections,
+                    tables,
+                    uniformName: UNI_INSTANCE_NAME,
+                    uniformTypeName: UNI_STRUCT_TYPE_NAME,
+                },
+                predicateExpr,
+                paramDecls,
+                64,
+                indexed
+            );
+            const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
+            const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
+            const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
+                const unis = wgh.makeStructuredView(uniDef, buffer);
+                unis.set(parameters);
+                return unis.arrayBuffer;
+            };
 
+            const { runner, validate } = makeRunner({
+                device,
+                indexed,
+                label,
+                pipe,
+                safeLookups: columnBindings,
+                serializeParameters,
+                shader: Q.shader,
+                wgSize: WG_SIZE,
+            });
+            return {
+                run: runner,
+                validate,
+                serializeParameters,
+                pipeline: pipe,
+                parameterTypeDef: uniDef,
+            };
+        };
         return {
             shaderOnly: () => {
                 const Q = assembleQuery(
@@ -382,86 +419,12 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 );
                 return Q.shader;
             },
+
             build: (device: GPUDevice, label: string) => {
-                const Q = assembleQuery(
-                    {
-                        from: this.from as string,
-                        selections: this.selections,
-                        tables,
-                        uniformName: UNI_INSTANCE_NAME,
-                        uniformTypeName: UNI_STRUCT_TYPE_NAME,
-                    },
-                    predicateExpr,
-                    paramDecls,
-                    64,
-                    false
-                );
-                const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
-                const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
-                const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
-                    const unis = wgh.makeStructuredView(uniDef, buffer);
-                    unis.set(parameters);
-                    return unis.arrayBuffer;
-                };
-                const { runner, validate } = makeRunner({
-                    device,
-                    indexed: false,
-                    label,
-                    pipe,
-                    safeLookups: columnBindings,
-                    serializeParameters,
-                    shader: Q.shader,
-                    wgSize: WG_SIZE,
-                });
-                return {
-                    run: runner,
-                    validate,
-                    serializeParameters,
-                    pipeline: pipe,
-                    parameterTypeDef: uniDef,
-                    // validate:partial(validate,false) // todo fix validate
-                };
+                return buildHelper(device, label, false);
             },
             buildIndexed: (device: GPUDevice, label: string) => {
-                const Q = assembleQuery(
-                    {
-                        from: this.from as string,
-                        selections: this.selections,
-                        tables,
-                        uniformName: UNI_INSTANCE_NAME,
-                        uniformTypeName: 'Params',
-                    },
-                    predicateExpr,
-                    paramDecls,
-                    64,
-                    true
-                );
-                const pipe = buildFilterPipeline(device, Q.shader, 'main', label);
-                const uniDef = pipe.defs.structs[UNI_STRUCT_TYPE_NAME]!;
-                const serializeParameters = (parameters: Params, buffer?: ArrayBuffer) => {
-                    const unis = wgh.makeStructuredView(uniDef, buffer);
-                    unis.set(parameters);
-                    return unis.arrayBuffer;
-                };
-                const { runner, validate } = makeRunner({
-                    device,
-                    indexed: true,
-                    label,
-                    pipe,
-                    safeLookups: columnBindings,
-                    serializeParameters,
-                    shader: Q.shader,
-                    wgSize: WG_SIZE,
-                });
-
-                return {
-                    run: runner,
-                    validate,
-                    serializeParameters,
-                    pipeline: pipe,
-                    parameterTypeDef: uniDef,
-                    // validate:partial(validate,true)
-                };
+                return buildHelper(device, label, true);
             },
         };
     }
@@ -478,22 +441,27 @@ export function given<Ts extends Tables>(tables: Ts) {
     function all<Params extends Record<string, string | number | number[]>>(clause: Clause<Params>) {
         return new AndGroup<Params>([clause]);
     }
+    // these are fun...  they do belong in types.ts, but moving them there means they no longer directly deal with Ts
+    // I think that discconnect pushes TS over the edge and they end up not working - everything turns to unknown
+
+    /* oxlint-disable typescript/no-explicit-any */
+    type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
+
+    type ExpandTableColumn<T extends keyof Ts, F extends keyof Ts[T]> = F extends string ? vKeys<Ts[T], F> & T : never;
+    type ExpandTableVectors<T extends keyof Ts> = keyof Ts[T] extends string
+        ? UnionToIntersection<ExpandTableColumn<T, keyof Ts[T]>>
+        : never;
     return {
         from: <From extends keyof Ts>(from: From) => {
-            function column<E extends SwizzleExpr<Ts, From, keyof Ts[From]>>(
+            function column<E extends keyof ExpandTableVectors<From>>(
                 k: E
-            ): E extends `${infer Field}.${string}`
-                ? ColumnExpr<string, string, Cmp<FType<Ts[From], Field>>>
-                : E extends `${infer Field}`
-                  ? ColumnExpr<string, string, FType<Ts[From], Field>>
-                  : never {
+            ): ColumnExpr<string, string, ExpandTableVectors<From>[E]> {
                 return {
                     kind: 'from field',
                     from: from as string,
-                    field: k,
-                    type: undefined as unknown as WgslType,
-                    /* oxlint-disabletypescript/no-explicit-any */
-                } as unknown as any;
+                    field: k as string,
+                    type: inferType(tables[from], k as string) as ExpandTableVectors<From>[E],
+                };
             }
             function table<Other extends Exclude<keyof Ts, From>>(t: Other) {
                 return {
@@ -501,15 +469,13 @@ export function given<Ts extends Tables>(tables: Ts) {
                         indexExpr: E | IndexExpr<string, string, 'u32'>
                     ) => {
                         return {
-                            dot: <Field extends keyof Ts[Other], OE extends SwizzleExpr<Ts, Other, Field>>(
-                                field: OE
-                            ) => {
-                                const IE: IndexExpr<string, string, ComponentType<Ts, Other, Field, OE>> = {
+                            dot: <OE extends keyof ExpandTableVectors<Other>>(field: OE) => {
+                                const IE: IndexExpr<string, string, ExpandTableVectors<Other>[OE]> = {
                                     kind: 'table at field',
                                     table: t as string,
-                                    field: field,
+                                    field: field as string,
                                     atExpr: indexExpr,
-                                    type: undefined as unknown as ComponentType<Ts, Other, Field, OE>, // TODO!
+                                    type: inferType(tables[t], field as string) as ExpandTableVectors<Other>[OE],
                                 };
                                 return IE;
                             },
@@ -532,3 +498,14 @@ export function given<Ts extends Tables>(tables: Ts) {
     };
 }
 type Parameters = Record<string, string | number | number[]>;
+
+// this function is not exported or called - its only purpose is to explode if something in the above file
+// changes enough to mess up the types - we want restrictive types here, its the whole point
+function typescriptCanary() {
+    type hey = { cells: { A: 'f32'; B: 'vec2f' }; edges: { E: 'vec2u'; str: 'f32' } };
+    const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
+    // @ts-expect-error
+    e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
+    // @ts-expect-error
+    e.select('$index').where(e.clause(e.column('E.x'), 'all(==)', 'mom'));
+}

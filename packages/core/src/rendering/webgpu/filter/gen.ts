@@ -1,8 +1,6 @@
 import { type WgslType, type Sel, type Tables, type AST, type VOP, type OP } from './types';
 
-// lodash is being really troublesome.. so I wrote my own here
-/* oxlint-disable no-console, typescript/no-explicit-any*/
-const entries = <T extends {}>(r: T): ReadonlyArray<[keyof T, T[keyof T]]> => Object.entries(r) as any;
+const entries = (r: object) => Object.entries(r);
 
 function generateOutputStructure(selections: ReadonlyArray<Sel>) {
     // the names of the values in the structure dont matter at all -

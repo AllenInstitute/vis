@@ -51,6 +51,16 @@ export type BufferTables<Ts extends Tables> = {
         [c in keyof Ts[k]]: GPUBuffer;
     };
 };
+export type vKeys<T extends ITable, F extends keyof ITable> = F extends string
+    ? T[F] extends `vec2${Abbr}`
+        ? Record<`${F}.${'x' | 'y'}`, Cmp<T[F]>>
+        : T[F] extends `vec3${Abbr}`
+          ? Record<`${F}.${'x' | 'y' | 'z'}`, Cmp<T[F]>>
+          : T[F] extends `vec4${Abbr}`
+            ? Record<`${F}.${'x' | 'y' | 'z' | 'w'}`, Cmp<T[F]>>
+            : T
+    : T;
+
 export type ArrayBufferTables<Ts extends Tables> = {
     [k in keyof Ts]: {
         [c in keyof Ts[k]]: {
@@ -58,11 +68,9 @@ export type ArrayBufferTables<Ts extends Tables> = {
         };
     };
 };
-// export type BufferTables<Ts extends Tables> = BTables<Ts, GPUBuffer>;
 export type Elem<T> = T extends ReadonlyArray<infer E> ? E : never;
 export const OPS = ['==', '>', '>=', '<', '<=', '!='] as const;
 export type OP = Elem<typeof OPS>;
-// export const VOPS = ['==' , '!=' , 'any <' , 'any >' , 'all <' , 'all <']
 export type VOP = `${'any' | 'all'}(${OP})`;
 
 export type FType<T extends ITable, K extends keyof T> = T[K];
@@ -116,21 +124,17 @@ export type ComponentType<
     OE extends SwizzleExpr<Ts, Other, Field>,
 > = Field extends string ? (OE extends SwizzledField<Field> ? FType<Ts[Other], Field> : FType<Ts[Other], OE>) : never;
 // not sure why - but componentType goes super banans for simpler, non-index-style expressions... use Cmp instead
-export type Cmp<V extends WgslType> = V extends `vec${infer S}${infer A}` ? `${A}32` : never;
+export type Cmp<V extends WgslType> = V extends `vec${infer S}${infer A extends Abbr}` ? `${A}32` : never;
 // }
 // any expr that resolves to a u32 type?
-export type IndexExpr<Table extends string, Field extends string, T extends ScalarType | VectorType<VLen>> = {
+export type IndexExpr<Table extends string, Field extends string, T> = {
     kind: 'table at field';
     table: Table;
     atExpr: IndexExpr<string, string, 'u32'> | string;
     field: Field;
     type: T;
 };
-export type ColumnExpr<
-    From extends string,
-    Field extends string | '$index',
-    T extends ScalarType | VectorType<VLen>,
-> = {
+export type ColumnExpr<From extends string, Field extends string | '$index', T> = {
     kind: 'from field';
     from: From;
     field: Field;
