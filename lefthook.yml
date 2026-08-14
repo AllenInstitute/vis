@@ -9,12 +9,15 @@ pre-commit:
     commands:
         lint:
             priority: 1
-            glob: '*.{js,jsx,mjs,cjs,mts,cts,ts,tsx}'
+            # oxlint reads .astro too, and CI's bare `oxlint` discovers them.
+            glob: '*.{js,jsx,mjs,cjs,mts,cts,ts,tsx,astro}'
             run: pnpm exec oxlint --fix {staged_files} || true
             stage_fixed: true
         fmt:
             priority: 2
-            glob: '*.{js,jsx,mjs,cjs,mts,cts,ts,tsx,json,jsonc,yaml,yml}'
+            # Must cover every type oxfmt handles, or the hook stays silent on a
+            # file that `pnpm run check` then fails on in CI.
+            glob: '*.{js,jsx,mjs,cjs,mts,cts,ts,tsx,json,jsonc,yaml,yml,md,mdx,html}'
             run: pnpm exec oxfmt {staged_files} || true
             stage_fixed: true
         fmt-astro:
