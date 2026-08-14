@@ -1,5 +1,5 @@
 import type { AST, ColumnExpr, IndexExpr, ScalarType, Tables, WgslType } from "../types";
-import {generateTableBindings, setupExprBuilder} from '../gen'
+import { generateTableBindings, setupExprBuilder } from '../gen'
 export type Agg = {
   kind: 'min' | 'max' | 'sum',
   expr: IndexExpr<string, string, ScalarType> |
@@ -8,7 +8,7 @@ export type Agg = {
   kind: 'count'
 };
 
-export function atomicAggregateExpr(agg:Agg, output:string, field:number) {
+export function atomicAggregateExpr(agg: Agg, output: string, field: number) {
   // get the value out
   `atomicLoad(&output_${field.toFixed(0)}[loc])`
   switch (agg.kind) {
@@ -31,10 +31,10 @@ function sum(output: string, field: number, type: 'u32' | 'f32' | 'i32') {
       )
     ))`
   }
-  return`atomicAdd(&${output}_${field.toFixed(0)}[loc],tmp)`
+  return `atomicAdd(&${output}_${field.toFixed(0)}[loc],tmp)`
 }
 
-function sat(op:'min'|'max', output: string, field: number, type: 'u32' | 'f32' | 'i32') {
+function sat(op: 'min' | 'max', output: string, field: number, type: 'u32' | 'f32' | 'i32') {
   if (type === 'f32') {
     // so complicated...
     return `atomicStore(&${output}_${field.toFixed(0)}[loc],
@@ -47,19 +47,19 @@ function sat(op:'min'|'max', output: string, field: number, type: 'u32' | 'f32' 
     `atomicMin(&${output}_${field.toFixed(0)}[loc],tmp.f_${field})` :
     `atomicMax(&${output}_${field.toFixed(0)}[loc],tmp.f_${field})`
 }
-function count( output: string, field: number,) {
-  return`atomicAdd(&${output}_${field.toFixed(0)}[loc],1)`
+function count(output: string, field: number,) {
+  return `atomicAdd(&${output}_${field.toFixed(0)}[loc],1)`
 }
 
 // I need to compile the exprs that set the location[i]
 // I need to compile the expr that initilizes the local results
 type G = IndexExpr<string, string, ScalarType> |
-ColumnExpr<string, string, ScalarType>
-export function generateAggregationShader(indexed:boolean, tables:Tables, from:string, aggregations:Agg[], col:G, row?:G) {
+  ColumnExpr<string, string, ScalarType>
+export function generateAggregationShader(indexed: boolean, tables: Tables, from: string, aggregations: Agg[], col: G, row?: G) {
   const toWgsl = setupExprBuilder(from);
-  function generateLocation(col: G, row?:G) {
+  function generateLocation(col: G, row?: G) {
     const c = toWgsl(col, 'element', '');
-    const r = row ? toWgsl(row, 'element', '') : '1u';
+    const r = row ? toWgsl(row, 'element', '') : '0';
     return `
       locations[element]=vec2u(
         ${c},
@@ -67,9 +67,8 @@ export function generateAggregationShader(indexed:boolean, tables:Tables, from:s
       );
     `
   }
-  function generateResult(aggs: Agg[], structName:string) {
-    const v = aggs.map(a =>
-    {
+  function generateResult(aggs: Agg[], structName: string) {
+    const v = aggs.map(a => {
       if (a.kind === 'count') {
         return '1'
       }
@@ -83,41 +82,41 @@ export function generateAggregationShader(indexed:boolean, tables:Tables, from:s
     `
   }
   const outputName = 'output'
-  const Temporary='Temporary'
+  const Temporary = 'Temporary'
   const localSetup = generateResult(aggregations, Temporary);
   const locationSetup = generateLocation(col, row);
-  const finalResult = aggregations.map((a, i) => atomicAggregateExpr(a,outputName, i)).join(';\n')
-  const structFieldDecls = aggregations.map((a, i) => `f_${i} : ${a.kind==='count' ? 'u32':a.expr.type}`).join(',\n')
-  let bindingStart = 3;
+  const finalResult = aggregations.map((a, i) => atomicAggregateExpr(a, outputName, i)).join(';\n')
+  const structFieldDecls = aggregations.map((a, i) => `f_${i} : ${a.kind === 'count' ? 'u32' : a.expr.type}`).join(',\n')
+  let bindingStart = 1;
   let bindings: string = '';
 
   const bindingLookups: Record<string, Record<string, number>> = {};
   for (const t of Object.keys(tables)) {
-      const binding = generateTableBindings(t, tables[t]!, 1, bindingStart);
-      bindings += `\n //${t}\n${binding.decls}\n`;
-      bindingStart += binding.numBindings;
-      bindingLookups[t] = binding.bindingLookup;
+    const binding = generateTableBindings(t, tables[t]!, 1, bindingStart);
+    bindings += `\n //${t}\n${binding.decls}\n`;
+    bindingStart += binding.numBindings;
+    bindingLookups[t] = binding.bindingLookup;
   }
-  const outGroup = 0;
+  const outGroup = 1;
   // output bindings...
   let outBindings = ''
-  for (let out_field = 0; out_field < aggregations.length;out_field++) {
+  for (let out_field = 0; out_field < aggregations.length; out_field++) {
     outBindings += `@group(${outGroup}) @binding(${bindingStart}) var<storage,read_write> ${outputName}_${out_field}:array<atomic<u32>>;\n`
     bindingStart += 1;
   }
   const shader =
-   shaderPlz({
-    workgroupSize: '64',
-    atomicFinal: finalResult,
-    indexed,
-    inputBindings: bindings,
-    outputBindings: outBindings,
-    locationExpr: locationSetup,
-    resultExpr: localSetup,
-     structName: Temporary,
-    structFieldDecls
-   })
-console.warn(shader)
+    shaderPlz({
+      workgroupSize: '64',
+      atomicFinal: finalResult,
+      indexed,
+      inputBindings: bindings,
+      outputBindings: outBindings,
+      locationExpr: locationSetup,
+      resultExpr: localSetup,
+      structName: Temporary,
+      structFieldDecls
+    })
+  console.warn(shader)
   return shader;
 }
 
@@ -125,7 +124,7 @@ console.warn(shader)
 export function shaderPlz(args: {
   workgroupSize: string,
   structName: string,
-  structFieldDecls:string,
+  structFieldDecls: string,
   outputBindings: string,
   inputBindings: string,
   indexed: boolean,
@@ -133,7 +132,7 @@ export function shaderPlz(args: {
   locationExpr: string,
   atomicFinal: string
 }) {
-  const {workgroupSize,structName,structFieldDecls,atomicFinal,indexed,inputBindings,locationExpr,outputBindings,resultExpr}=args
+  const { workgroupSize, structName, structFieldDecls, atomicFinal, indexed, inputBindings, locationExpr, outputBindings, resultExpr } = args
   // AGGREGATE STUFF!
   return `
   struct ${structName} {
