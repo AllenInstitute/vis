@@ -6,11 +6,11 @@ function generateOutputStructure(selections: ReadonlyArray<Sel>) {
     // the names of the values in the structure dont matter at all -
     const structName = `OutputStruct`;
     const fields = selections.map((s, i) => `field_${i.toFixed(0)}: ${s.type},`).join('\n');
-    const decl = `struct ${structName} {\n ${fields} \n };`;
+    const structDecl = `struct ${structName} {\n ${fields} \n };`;
     const initializers = selections.map((s) => s.selection).join(', ');
     const construct = `${structName}(${initializers})`;
 
-    return { structName, decl, construct };
+    return { structName, structDecl, construct };
 }
 
 export function setupExprBuilder(from: string) {
@@ -51,16 +51,16 @@ export function generateShader(params: {
     workgroupSize: number;
     inputBindings: string;
     predicateExpr: string;
-    uniformStruct: { name: string; typeName: string; decl: string };
+    uniformStruct: { name: string; typeName: string; structDecl: string };
     indexed: boolean;
     selections: ReadonlyArray<Sel>;
 }) {
     const { inputBindings, predicateExpr, uniformStruct, selections, workgroupSize, indexed } = params;
-    const { structName, decl, construct } = generateOutputStructure(selections);
+    const { structName, structDecl, construct } = generateOutputStructure(selections);
     const host = /*wgsl*/ `
 
-    ${uniformStruct.decl}
-    ${decl}
+    ${uniformStruct.structDecl}
+    ${structDecl}
     var<workgroup> results: array<u32,${workgroupSize}>;
     var<workgroup> count: atomic<u32>;
 
@@ -164,7 +164,7 @@ export function assembleQuery<Ts extends Tables>(
             predicateExpr: predExpr,
             indexed,
             selections: ctx.selections.map((s) => ({ selection: s.selection, type: s.type })),
-            uniformStruct: { name: ctx.uniformName, typeName: ctx.uniformTypeName, decl: uniStructDecl },
+            uniformStruct: { name: ctx.uniformName, typeName: ctx.uniformTypeName, structDecl: uniStructDecl },
         }),
         bindingLookups,
     };
