@@ -22,11 +22,11 @@ export async function init() {
     return device;
 }
 
-function generateFake(dev: GPUDevice, each: (p: number) => number, count: number, type: 'f32' | 'u32' | 'i32') {
+function generateFake(dev: GPUDevice, each: (p: number,i:number) => number, count: number, type: 'f32' | 'u32' | 'i32') {
     const data =
         type === 'f32' ? new Float32Array(count) : type === 'i32' ? new Uint32Array(count) : new Uint32Array(count);
     for (let i = 0; i < count; i++) {
-        data[i] = each(Math.random());
+        data[i] = each(Math.random(),i);
     }
     const fake = dev.createBuffer({
         size: count * 4,
@@ -42,7 +42,7 @@ const tableLayout = {
 } as const;
 const aggLayout = {
     cells: { subclass: 'u32', gene_x: 'f32', },
-    edges: { start: 'u32', },
+    // edges: { start: 'u32', },
 } as const;
 type gpuDataset = {
     cells: { [k in keyof (typeof tableLayout)['cells']]: GPUBuffer };
@@ -50,8 +50,9 @@ type gpuDataset = {
 };
 function generateFakeDataset(device: GPUDevice, edges: number, cells: number): gpuDataset {
     const positions = generateFake(device, (r) => r, cells * 2, 'f32');
-    const subclass = generateFake(device, (r) => (r * 100) % 8, cells, 'u32');
-    const gene_x = generateFake(device, (r) => r, cells, 'f32');
+    const subclass = generateFake(device,(r)=>r>0.5 ? 1 : 2,cells,'u32')
+    // generateFake(device, (r) => (r * 100) % 8, cells, 'u32');
+    const gene_x = generateFake(device, (r,i) => 1.2, cells, 'f32');
 
     const start = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const end = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
@@ -59,7 +60,7 @@ function generateFakeDataset(device: GPUDevice, edges: number, cells: number): g
     return { cells: { position: positions, subclass, gene_x }, edges: { start, end } };
 }
 export function setupAgg(device: GPUDevice, edges: number, cells: number) {
-    const { all, any, column, table, select, clause, over } = given(aggLayout).from('edges');
+    const { all, any, column, table, select, clause, over } = given(aggLayout).from('cells');
 
 
 
@@ -68,10 +69,14 @@ export function setupAgg(device: GPUDevice, edges: number, cells: number) {
     // todo - the build fails here... either the class gets split, or the type
     // is too deep for parcel's wimpy lil transformer, which is silly because its already explicit...
     const hey = aggregate().sum('total',
-        table('cells').at('start').dot('gene_x'))
+        // table('cells').at('start').dot('gene_x'))
+        column('gene_x'))
         .count('count')
 
-    const wow = groupBy(table('cells').at('start').dot('subclass'), hey).build(device)
+    const wow = groupBy(
+        // table('cells').at('start').dot('subclass'),
+        column('subclass'),
+         hey).build(device)
 
     // wow.run(device, x, { total: x }, x, 3)
     return wow;
@@ -183,18 +188,21 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
     });
     const doAgg = (enc: GPUCommandEncoder) => {
-        const results = device.createBuffer({ size: 4 * 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC, label: 'agg results' })
-        const countResults = device.createBuffer({ size: 4 * 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC, label: 'agg count' })
-        const resolve = device.createBuffer({ size: 4 * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST, label: 'resolve agg results' })
-        const resolveCounts = device.createBuffer({ size: 4 * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST, label: 'resolve agg counts' })
-        const dims = device.createBuffer({ size: 8, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
-        device.queue.writeBuffer(dims, 0, new Uint32Array([8, 1]));
-        aggregate.run(enc, dataset, { total: results, count: countResults }, dims, edges);
+        const results = device.createBuffer({ size: 8* 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC| GPUBufferUsage.COPY_DST, label: 'agg results' })
+        const locks = device.createBuffer({ size: 4 * 8, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC| GPUBufferUsage.COPY_DST, label: 'agg locks' })
+        const resolve = device.createBuffer({ size: 8 * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST, label: 'resolve agg results' })
+        // const resolveCounts = device.createBuffer({ size: 4 * 8, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST, label: 'resolve agg counts' })
+        const dims = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
+        const numRows = 10000;
+        device.queue.writeBuffer(dims, 0, new Uint32Array([8, 1, numRows]));
+        device.queue.writeBuffer(results, 0, new Float32Array([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]));
+        // device.queue.writeBuffer(countResults, 0, new Uint32Array([0,0,0,0, 0,0,0,0]));
+        aggregate.run(enc, dataset, results,locks, dims, numRows-1);
         // ok that might actually work?
         // lets read the answer!
         enc.copyBufferToBuffer(results, resolve);
-        enc.copyBufferToBuffer(countResults, resolveCounts);
-        return { resolve, resolveCounts };
+        // enc.copyBufferToBuffer(countResults, resolveCounts);
+        return { resolve };
     }
     const doFilter = (
         params: Parameters<(typeof filter)['serializeParameters']>[0],
@@ -206,7 +214,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         const serialized = filter.serializeParameters(params);
         device.queue.writeBuffer(paramBuffer, 0, serialized, 0, serialized.byteLength);
         const enc = device.createCommandEncoder();
-        const { resolve, resolveCounts } = doAgg(enc);
+        const { resolve } = doAgg(enc);
         filter.run({
             enc,
             timestampWrites: {
@@ -231,16 +239,16 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
 
         device.queue.submit([enc.finish()]);
 
-        Promise.all([resolve.mapAsync(GPUMapMode.READ), resolveCounts.mapAsync(GPUMapMode.READ)]).then(async () => {
+        Promise.all([resolve.mapAsync(GPUMapMode.READ)]).then(async () => {
             const total = resolve.getMappedRange();
-            const count = resolveCounts.getMappedRange();
+            // const count = resolveCounts.getMappedRange();
             const copy = new Float32Array(total.byteLength / 4);
-            const copyCount = new Uint32Array(count.byteLength / 4);
+            // const copyCount = new Uint32Array(count.byteLength / 4);
             copy.set(new Float32Array(total))
-            copyCount.set(new Uint32Array(count))
-            console.log('aggregation result!!!', copy, copyCount)
+            // copyCount.set(new Uint32Array(count))
+            console.log('aggregation result!!!', copy)
             resolve.unmap();
-            resolveCounts.unmap()
+            // resolveCounts.unmap()
         })
         usedReader.mapAsync(GPUMapMode.READ).then(async () => {
             const arr = usedReader.getMappedRange();
