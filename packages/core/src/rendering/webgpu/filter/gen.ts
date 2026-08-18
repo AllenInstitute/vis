@@ -123,13 +123,14 @@ export function generateTableBindings(
         (acc, [f, _t], index) => ({ ...acc, [f]: index + bindingStart }),
         {} as Record<string, number>
     );
-    const decls = cols
+    
+    const bindings = cols
         .map(
             ([f, t], index) =>
-                `@group(${group}) @binding(${index + bindingStart}) var<storage,read> ${tableName}_${f}: array<${t}>;`
+                ({decl:`@group(${group}) @binding(${index + bindingStart}) var<storage,read> ${tableName}_${f}: array<${t}>;`,
+                  varname:`${tableName}_${f}` })
         )
-        .join('\n');
-    return { decls, numBindings: cols.length, bindingLookup };
+    return { decls:bindings.map(b=>b.decl).join('\n'),vars:bindings.map(b=>b.varname), numBindings: cols.length, bindingLookup };
 }
 export type FilterCtx<Ts extends Tables> = {
     from: string;

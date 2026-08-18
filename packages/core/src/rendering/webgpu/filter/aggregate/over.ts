@@ -20,14 +20,6 @@ type AggregationSubject<Ts extends Tables, From extends keyof Ts, O extends keyo
   ColumnExpr<From,string, ScalarType>
   : never : never : never : never
 
-// lets test it real quick
-function stuff<Ts extends Tables, From extends keyof Ts, O extends keyof Ts>
-  (args: AggregationSubject<Ts, From, O>) {
-    return args.kind
-  }
-const what = { cells: { A: 'u32', B: 'f32' }, edges: { e: 'vec2u', str: 'f32',type:'u32' } } as const;
-type T = typeof what;
-stuff<T, 'edges', 'cells'>({ kind: 'table at field', table: 'cells', field: 'A', atExpr: 'hi mom', type: 'vec2u' })
 // good enough for me
 
 
@@ -144,7 +136,7 @@ export function setupAggregator<Ts extends Tables, From extends keyof Ts>(tables
         const pipe = buildFilterPipeline(device, shader, 'main', 'todo');
         // type ResultBindings = {[K in keyof Aggs]:GPUBuffer}
         let columnBindings: Record<string, Record<string, number>> = {};
-        let outputBindings: Record<string,number> = {};
+        // let outputBindings: Record<string,number> = {};
         // associate a binding with every field of every table
         let binding = 1; // elements (optional) takes up group 1 binding 0
         for (const t of Object.keys(tables)) {
@@ -154,23 +146,29 @@ export function setupAggregator<Ts extends Tables, From extends keyof Ts>(tables
                 binding += 1;
             }
         }
-        for (const t of Object.keys(aggregator.fields)) {
-          outputBindings[t] = binding;
-          binding+=1
-        }
+        // for (const t of Object.keys(aggregator.fields)) {
+        //   outputBindings[t] = binding;
+        //   binding+=1
+        // }
 
-        const runner = (enc:GPUCommandEncoder, inputs: BufferTables<Ts>, results: Buffers<Aggs>, dimensions:GPUBuffer, rowCount:number) => {
+        const runner = (enc:GPUCommandEncoder, inputs: BufferTables<Ts>, results: GPUBuffer,locks:GPUBuffer, dimensions:GPUBuffer, rowCount:number) => {
           // create bind groups for inputs / results
           // bind dimensions uniform
           const bg0 = device.createBindGroup({
             layout: pipe.pipeline.getBindGroupLayout(0),
-            entries: [{ resource: dimensions, binding: 0 }]
+            entries: [{ resource: dimensions, binding: 0 },
+              { resource: results, binding:1 },
+              { resource: locks, binding: 2 }
+
+            ]
           });
           const bg1=device.createBindGroup({
             layout: pipe.pipeline.getBindGroupLayout(1),
-            entries: [...mapTablesToBindings(inputs, columnBindings), ...entries(results).map(([k, v]) => {
-              return {resource:v,binding:outputBindings[k]}
-            })]
+            entries:mapTablesToBindings(inputs, columnBindings)
+            // entries: [...mapTablesToBindings(inputs, columnBindings), 
+            //   ...entries(results).map(([k, v]) => {
+            //   return {resource:v,binding:outputBindings[k]}
+            // })]
           })
 
           // do the thing!
@@ -178,7 +176,10 @@ export function setupAggregator<Ts extends Tables, From extends keyof Ts>(tables
           pass.setPipeline(pipe.pipeline);
           pass.setBindGroup(0, bg0);
           pass.setBindGroup(1, bg1);
-          pass.dispatchWorkgroups(Math.ceil(rowCount/64))
+          const disp = Math.ceil(rowCount/64)
+
+          console.log('workgroup dispatches:',disp)
+          pass.dispatchWorkgroups(disp)
           pass.end();
         }
         return {run:runner}
