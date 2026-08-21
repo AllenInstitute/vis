@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-08-17
+
+### 💼 Other
+
+- Noah/refactor filtering ([#287](https://github.com/AllenInstitute/vis/pull/287))
+
 ## [0.1.0] - 2026-08-07
 
 ### 🚀 Features
@@ -41,6 +47,7 @@ All notable changes to this project will be documented in this file.
 - _(deps)_ Bump uuid from 13.0.0 to 14.0.0 ([#251](https://github.com/AllenInstitute/vis/pull/251))
 - Reorganize WebGPU folders in Core [DT-9593] ([#264](https://github.com/AllenInstitute/vis/pull/264))
 - _(deps)_ Bump uuid from 14.0.0 to 14.0.1 ([#272](https://github.com/AllenInstitute/vis/pull/272))
+- _(release)_ @alleninstitute/vis-core@0.1.0
 
 ## [0.0.4] - 2025-07-14
 
