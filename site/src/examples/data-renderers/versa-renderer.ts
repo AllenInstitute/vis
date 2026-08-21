@@ -15,7 +15,7 @@ import {
     sizeInUnits,
 } from '@alleninstitute/vis-omezarr';
 import { logger } from '@alleninstitute/vis-core';
-import omit from 'lodash/omit';
+import { omit } from 'lodash-es';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
 import type { Camera } from '../common/camera';

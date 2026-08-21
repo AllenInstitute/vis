@@ -27,8 +27,7 @@ import type {
     vKeys,
     ITable,
 } from './types';
-import * as lo from 'lodash';
-const { mapValues } = lo;
+import { mapValues } from 'lodash-es';
 
 const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 

@@ -1,5 +1,5 @@
 import type { Cacheable, Store } from './priority-cache';
-import { uniqueId } from 'lodash';
+import { uniqueId } from 'lodash-es';
 
 export class PayloadFactory {
     resources: Record<string, 'created' | 'destroyed'>;
