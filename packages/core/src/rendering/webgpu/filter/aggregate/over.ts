@@ -23,7 +23,7 @@ type AggregationSubject<Ts extends Tables, From extends keyof Ts, O extends keyo
 // good enough for me
 
 
-// this being a class makes vite build some total nonsense in types.d.ts...
+// this being a class makes vite(parcel??) build some total nonsense in types.d.ts...
 // it would (for totally silly reasons) probably work fine if it were defined in query.ts
 // export class Aggregation<Ts extends Tables, From extends keyof Ts, Aggs extends Record<string,Agg>> {
 //   constructor(readonly fields: Aggs) {
@@ -165,7 +165,7 @@ export function setupAggregator<Ts extends Tables, From extends keyof Ts>(tables
           const bg1=device.createBindGroup({
             layout: pipe.pipeline.getBindGroupLayout(1),
             entries:mapTablesToBindings(inputs, columnBindings)
-            // entries: [...mapTablesToBindings(inputs, columnBindings), 
+            // entries: [...mapTablesToBindings(inputs, columnBindings),
             //   ...entries(results).map(([k, v]) => {
             //   return {resource:v,binding:outputBindings[k]}
             // })]
