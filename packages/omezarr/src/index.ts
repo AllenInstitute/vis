@@ -6,6 +6,7 @@ export {
     type RenderSettingsChannel,
     type RenderSettingsChannels,
 } from './sliceview/slice-renderer';
+export { clampGamutToDataRange, fallbackRGBChannels, renderChannelsFromMetadata } from './sliceview/render-channels';
 export { VisZarrError, VisZarrDataError, VisZarrIndexError } from './errors';
 export { type VoxelTile, defaultDecoder, getVisibleTiles } from './sliceview/loader';
 export { buildTileRenderCommand, buildRGBTileRenderCommand } from './sliceview/tile-renderer';
@@ -21,6 +22,7 @@ export {
     type OmeZarrOmeroChannelWindow,
     type OmeZarrOmeroChannel,
     type OmeZarrOmero,
+    type OmeZarrColorChannel,
     type OmeZarrAttrs,
     type OmeZarrArrayMetadata,
     OmeZarrAxisSchema,
