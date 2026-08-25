@@ -81,16 +81,37 @@ describe('pan', () => {
 
 describe('fitToScreen', () => {
     it('should frame a wide image so all of its width fits', () => {
-        expect(Box2D.size(fitToScreen([200, 100], [100, 100]))).toEqual([200, 200]);
+        const view = fitToScreen([200, 100], [100, 100]);
+
+        expect(view.minCorner[0]).toBe(0);
+        expect(view.maxCorner[0]).toBe(200);
     });
 
     it('should frame a tall image so all of its height fits', () => {
-        expect(Box2D.size(fitToScreen([100, 200], [100, 100]))).toEqual([200, 200]);
+        const view = fitToScreen([100, 200], [100, 100]);
+
+        expect(view.minCorner[1]).toBe(0);
+        expect(view.maxCorner[1]).toBe(200);
+    });
+
+    it('should split the slack evenly across the axis with room to spare', () => {
+        // a 2:1 image on a square screen leaves half a screen of slack, so a quarter on each side
+        const view = fitToScreen([200, 100], [100, 100]);
+
+        expect(view.minCorner).toEqual([0, -50]);
+        expect(view.maxCorner).toEqual([200, 150]);
     });
 
     it('should match the aspect ratio of the screen so the image is not stretched', () => {
         const [width, height] = Box2D.size(fitToScreen([300, 100], [200, 100]));
 
         expect(width / height).toBeCloseTo(2);
+    });
+
+    it('should leave an image that already matches the screen aspect ratio alone', () => {
+        const view = fitToScreen([200, 100], [200, 100]);
+
+        expect(view.minCorner).toEqual([0, 0]);
+        expect(view.maxCorner).toEqual([200, 100]);
     });
 });

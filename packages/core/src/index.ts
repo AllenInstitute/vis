@@ -5,7 +5,7 @@ export * from './layers/buffer-pair';
 export * from './resources';
 export * from './errors';
 export * from './colors';
-export { screenToData, zoomAround, zoom, pan, fitToScreen } from './camera';
+export * as Camera2D from './camera';
 
 export { beginFrame, buildAsyncRenderer, type RenderFrameConfig } from './abstract/async-frame';
 export type { CachedTexture, CachedVertexBuffer, ReglCacheEntry, Renderer } from './abstract/types';
