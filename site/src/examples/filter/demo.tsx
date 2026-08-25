@@ -25,19 +25,14 @@ export function Demo() {
     const clickme = useCallback(() => {
         if (runner) {
             const start = performance.now();
-            runner(
-                params,
-                (rows, gpuTime: number) => {
-                    const wallTime = performance.now() - start;
-                    setGpuDuration(gpuTime);
-                    setDuration(wallTime - gpuTime);
-                    setRows(rows);
-                },
-                (stats, gpuTime: number) => {
-                    setAggregationGpuDuration(gpuTime);
-                    setStats(stats);
-                }
-            );
+            runner(params, (rows, stats, filterTime: number, aggTime: number) => {
+                const wallTime = performance.now() - start;
+                setGpuDuration(filterTime);
+                setAggregationGpuDuration(aggTime);
+                setStats(stats);
+                setDuration(wallTime - (filterTime + aggTime));
+                setRows(rows);
+            });
         }
     }, [params]);
 

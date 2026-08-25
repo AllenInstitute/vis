@@ -52,10 +52,6 @@ const aggLayout = {
     edges: { start: 'u32', end: 'u32', str: 'f32' },
 } as const;
 
-// type gpuDataset = {
-//     cells: { [k in keyof (typeof aggLayout)['cells']]: GPUBuffer };
-//     edges: { [k in keyof (typeof aggLayout)['edges']]: GPUBuffer };
-// };
 function generateFakeDataset(device: GPUDevice, edges: number, cells: number) {
     const positions = generateFake(device, (r) => r, cells * 2, 'f32');
     const subclass = generateFake(device, (_r, i) => i % 8, cells, 'u32');
@@ -234,8 +230,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
 
     const doFilter = (
         params: Parameters<(typeof filter)['serializeParameters']>[0],
-        onFilterComplete: (rows: Array<RowType>, gpuTime: number) => void,
-        onAggregateComplete: (statistics: number[][], gpuTime: number) => void
+        onFilterComplete: (rows: Array<RowType>, statistics: number[][], gpuTime: number, aggTime: number) => void
     ) => {
         const serialized = filter.serializeParameters(params);
         device.queue.writeBuffer(paramBuffer, 0, serialized, 0, serialized.byteLength);
@@ -265,55 +260,50 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         enc.resolveQuerySet(aggregateQuerySet, 0, aggregateQuerySet.count, aggQueryResolveBuffer, 0);
         enc.copyBufferToBuffer(aggQueryResolveBuffer, aggQueryResultBuffer);
         device.queue.submit([enc.finish()]);
-        usedReader.mapAsync(GPUMapMode.READ).then(async () => {
-            const arr = usedReader.getMappedRange();
-            const usedCopy = new Uint32Array(arr);
-            const usedElems = usedCopy[0]!;
-            usedReader.unmap();
-            await queryResultBuffer.mapAsync(GPUMapMode.READ); // .then(() => {
-            const times = new BigUint64Array(queryResultBuffer.getMappedRange());
-            const gpuTime = Number(times[1]! - times[0]!); // holy crap these are in nanoseconds?? daaamn
-            queryResultBuffer.unmap();
-            // console.log('SORT OP TOOK: ',gpuTime/1_000_000,'ms')
-            resultReader.mapAsync(GPUMapMode.READ).then(() => {
-                const resultsArr = resultReader.getMappedRange(0, Math.max(16, usedElems * outputSizeBytes));
-                const copy = new Uint32Array(resultsArr.byteLength / 4);
-                copy.set(new Uint32Array(resultsArr));
-                // console.log("RESULTS!", copy);
-                resultReader.unmap();
-                // convert the data from raw bytes to our expected table format
-                const dv = new DataView(copy.buffer);
-                const rows: Array<RowType> = [];
-                for (let row = 0; row < usedElems; row++) {
-                    rows.push(extractRow(row, dv));
-                }
-                onFilterComplete(rows, gpuTime / 1_000_000); // divide by 1 million to get to milliseconds from nanoseconds
-            });
-        });
-        // read the aggregation results too...
-        aggregate.resolve.mapAsync(GPUMapMode.READ).then(async () => {
-            const histo = aggregate.resolve.getMappedRange();
-            const copy = new Float32Array(histo.byteLength / 4);
-            copy.set(new Float32Array(histo));
-            aggregate.resolve.unmap();
+
+        const copyOut = (buffer: GPUBuffer, byteRange?: number) => {
+            const data = byteRange === undefined ? buffer.getMappedRange() : buffer.getMappedRange(0, byteRange);
+            const copy = new Uint32Array(data.byteLength / 4);
+            copy.set(new Uint32Array(data));
+            buffer.unmap();
+            return copy;
+        };
+        Promise.all([
+            usedReader.mapAsync(GPUMapMode.READ),
+            aggregate.resolve.mapAsync(GPUMapMode.READ),
+            queryResultBuffer.mapAsync(GPUMapMode.READ),
+            resultReader.mapAsync(GPUMapMode.READ),
+            aggQueryResultBuffer.mapAsync(GPUMapMode.READ),
+        ]).then(() => {
+            // wait for all the data to show up, then do all the timing and result reporting...
+            const filterGpuTime = new BigUint64Array(copyOut(queryResultBuffer).buffer);
+            const aggGpuTime = new BigUint64Array(copyOut(aggQueryResultBuffer).buffer);
+            const used = copyOut(usedReader);
+            const usedElems = used[0]!;
+            const filteredResults = copyOut(resultReader, Math.max(16, usedElems * outputSizeBytes)).buffer;
+            const aggregationTable = new Float32Array(copyOut(aggregate.resolve).buffer);
+            // interpret the results... aka make some javascript data:
+            const dv = new DataView(filteredResults);
+            const rows: Array<RowType> = [];
+            for (let row = 0; row < usedElems; row++) {
+                rows.push(extractRow(row, dv));
+            }
             const statistics: number[][] = [];
-            // console.log('aggregation results!')
             for (let row = 0; row < 8; row++) {
                 statistics[row] = [];
                 for (let col = 0; col < 8; col++) {
                     const index = row * 32 * 2 + col * 2;
-                    const sum = copy[index];
-                    const count = copy[index + 1];
-                    // console.log('avg: ', col, row, `=${sum}/${count} aka ${sum / count}`);
-                    // statistics[`${col},${row}`] = sum / count;
+                    const sum = aggregationTable[index];
+                    const count = aggregationTable[index + 1];
                     statistics[row].push(sum / count);
                 }
             }
-            await aggQueryResultBuffer.mapAsync(GPUMapMode.READ);
-            const times = new BigUint64Array(aggQueryResultBuffer.getMappedRange());
-            const gpuTime = Number(times[1]! - times[0]!); // holy crap these are in nanoseconds?? daaamn
-            aggQueryResultBuffer.unmap();
-            onAggregateComplete(statistics, gpuTime / 1_000_000);
+            onFilterComplete(
+                rows,
+                statistics,
+                Number(filterGpuTime[1]! - filterGpuTime[0]!) / 1_000_000,
+                Number(aggGpuTime[1]! - aggGpuTime[0]!) / 1_000_000
+            );
         });
     };
     return doFilter;
