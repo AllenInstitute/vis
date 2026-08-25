@@ -18,7 +18,7 @@ import { logger } from '@alleninstitute/vis-core';
 import { omit } from 'lodash-es';
 import type REGL from 'regl';
 import type { Framebuffer2D } from 'regl';
-import type { Camera } from './types';
+import type { Camera } from '../common/camera';
 import { getSlicePool } from '../common/loaders/ome-zarr/sliceWorkerPool';
 
 const TILE_SIZE = 256;

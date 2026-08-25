@@ -2,10 +2,11 @@ import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
 import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-core';
 import { flatten } from 'lodash-es';
 import type REGL from 'regl';
+import type { Camera } from '../common/camera';
 import type { ColumnData } from '../common/loaders/scatterplot/scatterbrain-loader';
 import type { OptionalTransform } from '../data-sources/types';
 import type { Path, buildPathRenderer } from './lineRenderer';
-import type { Camera, RenderCallback } from './types';
+import type { RenderCallback } from './types';
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 
