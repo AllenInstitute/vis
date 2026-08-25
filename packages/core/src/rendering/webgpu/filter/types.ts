@@ -33,11 +33,11 @@ export type alpha =
 type letter = alpha | Capitalize<alpha>;
 type justLetters<S extends string> = S extends `${letter}${infer R extends string}`
     ? justLetters<R> extends true
-        ? true
-        : false
+    ? true
+    : false
     : S extends ''
-      ? true
-      : false;
+    ? true
+    : false;
 export type onlyLetters<S extends `${alpha}${string}`> = justLetters<S> extends true ? S : never;
 export type ITable = { [field: string]: WgslType };
 
@@ -53,12 +53,12 @@ export type BufferTables<Ts extends Tables> = {
 };
 export type vKeys<T extends ITable, F extends keyof ITable> = F extends string
     ? T[F] extends `vec2${Abbr}`
-        ? Record<`${F}.${'x' | 'y'}`, Cmp<T[F]>>
-        : T[F] extends `vec3${Abbr}`
-          ? Record<`${F}.${'x' | 'y' | 'z'}`, Cmp<T[F]>>
-          : T[F] extends `vec4${Abbr}`
-            ? Record<`${F}.${'x' | 'y' | 'z' | 'w'}`, Cmp<T[F]>>
-            : T
+    ? Record<`${F}.${'x' | 'y'}`, Cmp<T[F]>>
+    : T[F] extends `vec3${Abbr}`
+    ? Record<`${F}.${'x' | 'y' | 'z'}`, Cmp<T[F]>>
+    : T[F] extends `vec4${Abbr}`
+    ? Record<`${F}.${'x' | 'y' | 'z' | 'w'}`, Cmp<T[F]>>
+    : T
     : T;
 
 export type ArrayBufferTables<Ts extends Tables> = {
@@ -78,14 +78,14 @@ export type FType<T extends ITable, K extends keyof T> = T[K];
 // a ts type for the wgsl type...
 export type TSVec<WT> =
     WT extends VectorType<infer S>
-        ? S extends 2
-            ? [number, number]
-            : S extends 3
-              ? [number, number, number]
-              : S extends 4
-                ? [number, number, number, number]
-                : never
-        : never;
+    ? S extends 2
+    ? [number, number]
+    : S extends 3
+    ? [number, number, number]
+    : S extends 4
+    ? [number, number, number, number]
+    : never
+    : never;
 export type TsType<WT> = WT extends ScalarType ? number : TSVec<WT>;
 
 export type Swizzled = `${string}.${'x' | 'y' | 'z' | 'w'}`;
@@ -101,18 +101,18 @@ export type SwizzleIndexExpr<
     Field extends keyof Ts[From],
 > = Field extends string
     ? FType<Ts[From], Field> extends `vec${infer S extends VLen}u`
-        ? `${Field}.${Swizzle<S>}`
-        : FType<Ts[From], Field> extends 'u32'
-          ? `${Field}`
-          : never
+    ? `${Field}.${Swizzle<S>}`
+    : FType<Ts[From], Field> extends 'u32'
+    ? `${Field}`
+    : never
     : never;
 
 export type SwizzleExpr<Ts extends Tables, From extends keyof Ts, Field extends keyof Ts[From]> = Field extends string
     ? FType<Ts[From], Field> extends VectorType<infer S>
-        ? `${Field}.${Swizzle<S>}` | `${Field}`
-        : FType<Ts[From], Field> extends ScalarType
-          ? `${Field}`
-          : never
+    ? `${Field}.${Swizzle<S>}` | `${Field}`
+    : FType<Ts[From], Field> extends ScalarType
+    ? `${Field}`
+    : never
     : never;
 
 // FType doesnt know about swizzle...
@@ -127,14 +127,14 @@ export type ComponentType<
 export type Cmp<V extends WgslType> = V extends `vec${infer S}${infer A extends Abbr}` ? `${A}32` : never;
 // }
 // any expr that resolves to a u32 type?
-export type IndexExpr<Table extends string, Field extends string, T> = {
+export type IndexExpr<Table, Field extends string, T> = {
     kind: 'table at field';
     table: Table;
     atExpr: IndexExpr<string, string, 'u32'> | string;
     field: Field;
     type: T;
 };
-export type ColumnExpr<From extends string, Field extends string | '$index', T> = {
+export type ColumnExpr<From, Field extends string | '$index', T> = {
     kind: 'from field';
     from: From;
     field: Field;

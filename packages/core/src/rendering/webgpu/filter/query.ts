@@ -1,5 +1,5 @@
 import { buildFilterPipeline } from './build';
-import { assembleQuery } from './gen';
+import { assembleQuery, setupExprBuilder } from './gen';
 import * as wgh from 'webgpu-utils';
 import type {
     alpha,
@@ -27,7 +27,9 @@ import type {
     vKeys,
     ITable,
 } from './types';
+import { buildRunner } from './aggregate/runner'
 import { mapValues } from 'lodash-es';
+import { buildPipeline, generateAggregationShader } from './aggregate/gen';
 
 const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 
@@ -82,41 +84,9 @@ class AndGroup<Params extends Record<string, string | number | number[]>> {
     }
 }
 
-function isVecOp(s: OP | VOP): s is VOP {
-    return s.startsWith('a');
-}
-function parseVecOp(op: VOP) {
-    const aggregation = op.substring(0, 3);
-    const sop = op.substring(4).split(')')[0];
-    return [aggregation, sop] as ['any' | 'all', OP];
-}
 
-function setupExprBuilder(from: string) {
-    function toWgsl(ast: AST, indexing: string, uniName: string): string {
-        switch (ast.kind) {
-            case 'from field': {
-                const [column, swizzle] = ast.field.split('.');
-                return swizzle ? `${ast.from}_${column}[${indexing}].${swizzle}` : `${ast.from}_${column}[${indexing}]`;
-            }
-            case 'table at field':
-                const subExpr =
-                    typeof ast.atExpr === 'string'
-                        ? `[${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: 'u32' }, indexing, uniName)}]`
-                        : `[${toWgsl(ast.atExpr, indexing, uniName)}]`;
-                const [column, swizzle] = ast.field.split('.');
-                const sel: string = `${ast.table}_${column}${subExpr}`;
-                return swizzle ? `${sel}.${swizzle}` : sel;
-            case 'predicate':
-                const { lhs, op, rhs } = ast;
-                if (isVecOp(op)) {
-                    const [agg, sop] = parseVecOp(op);
-                    return `${agg}(${toWgsl(lhs, indexing, uniName)} ${sop} ${uniName}.${rhs})`;
-                }
-                return `${toWgsl(lhs, indexing, uniName)} ${op} ${uniName}.${rhs}`;
-        }
-    }
-    return toWgsl;
-}
+
+
 
 function compilePredicate<Params extends Record<string, string | number | number[]>>(
     toWgsl: ReturnType<typeof setupExprBuilder>,
@@ -125,8 +95,8 @@ function compilePredicate<Params extends Record<string, string | number | number
 ) {
     return group instanceof AndGroup
         ? group.ands
-              .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
-              .join(' && ')
+            .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
+            .join(' && ')
         : group.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ');
 }
 function componentType(t: WgslType): ScalarType {
@@ -242,26 +212,26 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 });
                 const bindings = indexed
                     ? (args as RunIndexedFilterArgs<Ts>).sets.map((s, i) => {
-                          return device.createBindGroup({
-                              layout: pipe.pipeline.getBindGroupLayout(1),
-                              entries: [
-                                  { binding: 0, resource: s.resultCounter },
-                                  { binding: 1, resource: s.results },
-                                  { binding: 2, resource: s.elements },
-                                  ...mapTablesToBindings(s.tables, safeLookups),
-                              ],
-                          });
-                      })
+                        return device.createBindGroup({
+                            layout: pipe.pipeline.getBindGroupLayout(1),
+                            entries: [
+                                { binding: 0, resource: s.resultCounter },
+                                { binding: 1, resource: s.results },
+                                { binding: 2, resource: s.elements },
+                                ...mapTablesToBindings(s.tables, safeLookups),
+                            ],
+                        });
+                    })
                     : args.sets.map((s, i) => {
-                          return device.createBindGroup({
-                              layout: pipe.pipeline.getBindGroupLayout(1),
-                              entries: [
-                                  { binding: 0, resource: s.resultCounter },
-                                  { binding: 1, resource: s.results },
-                                  ...mapTablesToBindings(s.tables, safeLookups),
-                              ],
-                          });
-                      });
+                        return device.createBindGroup({
+                            layout: pipe.pipeline.getBindGroupLayout(1),
+                            entries: [
+                                { binding: 0, resource: s.resultCounter },
+                                { binding: 1, resource: s.results },
+                                ...mapTablesToBindings(s.tables, safeLookups),
+                            ],
+                        });
+                    });
 
                 const bg0 = device.createBindGroup({
                     layout: pipe.pipeline.getBindGroupLayout(0),
@@ -271,9 +241,9 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 const pass = enc.beginComputePass(
                     timestampWrites
                         ? {
-                              label,
-                              timestampWrites,
-                          }
+                            label,
+                            timestampWrites,
+                        }
                         : { label }
                 );
                 pass.setPipeline(pipe.pipeline);
@@ -480,12 +450,86 @@ export function given<Ts extends Tables>(tables: Ts) {
         : never;
     return {
         from: <From extends keyof Ts>(from: From) => {
+            type GroupSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> =
+                IndexExpr<O & string, string, 'u32'> |
+                ColumnExpr<From & string, string, 'u32'>
+            type AggregationSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> =
+                From extends string ?
+                O extends string ?
+                keyof Ts[From] extends string ?
+                keyof Ts[O] extends string ?
+                IndexExpr<O, string, ScalarType> |
+                ColumnExpr<From, string, ScalarType>
+                : never : never : never : never
+            function groupBy<ColGroup extends keyof Ts, RowGroup extends keyof Ts>(col: GroupSubject<Ts, From, ColGroup>, row?: GroupSubject<Ts, From, RowGroup>,) {
+                type G = IndexExpr<string, string, ScalarType> |
+                    ColumnExpr<string, string, ScalarType>
+                type S = G | '$count' | '$unused'
+                type M = G | '$unused'
+                type SumLayout = [S, S, S, S]
+                type SatLayout = [M, M, M, M]
+
+                type AggregationConfig = {
+                    op: 'sum',
+                    layout: SumLayout;
+                } | {
+                    op: 'min' | 'max',
+                    layout: SatLayout;
+                }
+                function buildAggregate(dev: GPUDevice, conf: AggregationConfig) {
+                    const shader = generateAggregationShader(tables, from as string, conf, col, row)
+                    if (!shader) {
+                        // todo think about how to handle...
+                        return undefined;
+                    }
+                    const { code, format, op } = shader;
+                    const pipe = buildPipeline(dev, code, format, op, 'histogram');
+                    // create a runner 
+                    return { run: buildRunner(dev, tables, pipe) }
+                }
+                return {
+                    min: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
+                        r: '$unused' | AggregationSubject<Ts, From, R>,
+                        g: '$unused' | AggregationSubject<Ts, From, G>,
+                        b: '$unused' | AggregationSubject<Ts, From, B>,
+                        a: '$unused' | AggregationSubject<Ts, From, A>) => {
+                        return {
+                            build: (device: GPUDevice) => {
+                                return buildAggregate(device, { op: 'min', layout: [r, g, b, a] })
+                            }
+                        }
+                    },
+                    max: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
+                        r: '$unused' | AggregationSubject<Ts, From, R>,
+                        g: '$unused' | AggregationSubject<Ts, From, G>,
+                        b: '$unused' | AggregationSubject<Ts, From, B>,
+                        a: '$unused' | AggregationSubject<Ts, From, A>) => {
+                        return {
+                            build: (device: GPUDevice) => {
+                                return buildAggregate(device, { op: 'max', layout: [r, g, b, a] })
+                            }
+                        }
+                    },
+                    sum: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
+                        r: '$count' | '$unused' | AggregationSubject<Ts, From, R>,
+                        g: '$count' | '$unused' | AggregationSubject<Ts, From, G>,
+                        b: '$count' | '$unused' | AggregationSubject<Ts, From, B>,
+                        a: '$count' | '$unused' | AggregationSubject<Ts, From, A>) => {
+                        return {
+                            build: (device: GPUDevice) => {
+                                buildAggregate(device, { op: 'sum', layout: [r, g, b, a] })
+                            }
+                        }
+                    },
+
+                }
+            }
             function column<E extends keyof ExpandTableVectors<From>>(
                 k: E
-            ): ColumnExpr<string, string, ExpandTableVectors<From>[E]> {
+            ): ColumnExpr<From, string, ExpandTableVectors<From>[E]> {
                 return {
                     kind: 'from field',
-                    from: from as string,
+                    from: from,
                     field: k as string,
                     type: inferType(tables[from], k as string) as ExpandTableVectors<From>[E],
                 };
@@ -497,9 +541,9 @@ export function given<Ts extends Tables>(tables: Ts) {
                     ) => {
                         return {
                             dot: <OE extends keyof ExpandTableVectors<Other>>(field: OE) => {
-                                const IE: IndexExpr<string, string, ExpandTableVectors<Other>[OE]> = {
+                                const IE: IndexExpr<Other, string, ExpandTableVectors<Other>[OE]> = {
                                     kind: 'table at field',
-                                    table: t as string,
+                                    table: t,
                                     field: field as string,
                                     atExpr: indexExpr,
                                     type: inferType(tables[t], field as string) as ExpandTableVectors<Other>[OE],
@@ -519,8 +563,8 @@ export function given<Ts extends Tables>(tables: Ts) {
                 const type = determineType(tables, selection);
                 return new Selection(tables, from, [{ selection: s, type }]);
             }
-
-            return { column, table, any, all, clause: any, select };
+            // const { groupBy, min, max, sum } = setupAggregator<Tables,From>(tables, from)
+            return { column, table, any, all, clause: any, select, groupBy };
         },
     };
 }
@@ -531,6 +575,9 @@ type Parameters = Record<string, string | number | number[]>;
 function typescriptCanary() {
     type hey = { cells: { A: 'f32'; B: 'vec2f' }; edges: { E: 'vec2u'; str: 'f32' } };
     const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
+
+    e.groupBy(e.column('E.x'), e.column('E.y')).min(e.column('str'), e.table('cells').at('E.x').dot('A'), '$unused', '$unused')
+    // .build(null as any).run(null as any, [{ count: 33, tables: {} }],)
     // @ts-expect-error
     e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
     // @ts-expect-error
