@@ -11,7 +11,7 @@ const DEFAULT_GAMUT: Interval = { min: 0, max: 80 };
  * @param displayRange the omero window's start and end
  * @param dataRange the omero window's min and max
  */
-export function clampGamutToDataRange(displayRange: Interval, dataRange: Interval): Interval {
+export const clampGamutToDataRange = (displayRange: Interval, dataRange: Interval): Interval => {
     // a degenerate data range tells us nothing, so trust the display range
     if (dataRange.max <= dataRange.min) {
         return displayRange;
@@ -24,7 +24,7 @@ export function clampGamutToDataRange(displayRange: Interval, dataRange: Interva
  * Plain red, green and blue, for files with no omero metadata to describe their channels.
  * @param gamut the gamut to give each channel
  */
-export function fallbackRGBChannels(gamut: Interval = DEFAULT_GAMUT): RenderSettingsChannels {
+export const fallbackRGBChannels = (gamut: Interval = DEFAULT_GAMUT): RenderSettingsChannels => {
     return {
         R: { index: 0, gamut, rgb: [1, 0, 0] },
         G: { index: 1, gamut, rgb: [0, 1, 0] },
@@ -32,7 +32,7 @@ export function fallbackRGBChannels(gamut: Interval = DEFAULT_GAMUT): RenderSett
     };
 }
 
-function channelSettings(channel: OmeZarrColorChannel, index: number) {
+const channelSettings = (channel: OmeZarrColorChannel, index: number) => {
     return {
         index,
         gamut: clampGamutToDataRange(channel.range, channel.window),
@@ -45,7 +45,7 @@ function channelSettings(channel: OmeZarrColorChannel, index: number) {
  * @param metadata metadata of the OME-Zarr file to render
  * @returns the file's channels, or {@link fallbackRGBChannels} if it has no omero metadata
  */
-export function renderChannelsFromMetadata(metadata: Pick<OmeZarrMetadata, 'colorChannels'>): RenderSettingsChannels {
+export const renderChannelsFromMetadata = (metadata: Pick<OmeZarrMetadata, 'colorChannels'>): RenderSettingsChannels => {
     const { colorChannels } = metadata;
     if (colorChannels.length === 0) {
         return fallbackRGBChannels();
