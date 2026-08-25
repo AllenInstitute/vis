@@ -27,7 +27,7 @@ import type {
     vKeys,
     ITable,
 } from './types';
-import { buildRunner } from './aggregate/runner'
+import { buildRunner } from './aggregate/runner';
 import { mapValues } from 'lodash-es';
 import { buildPipeline, generateAggregationShader } from './aggregate/gen';
 
@@ -84,10 +84,6 @@ class AndGroup<Params extends Record<string, string | number | number[]>> {
     }
 }
 
-
-
-
-
 function compilePredicate<Params extends Record<string, string | number | number[]>>(
     toWgsl: ReturnType<typeof setupExprBuilder>,
     group: AndGroup<Params> | Clause<Params>,
@@ -95,8 +91,8 @@ function compilePredicate<Params extends Record<string, string | number | number
 ) {
     return group instanceof AndGroup
         ? group.ands
-            .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
-            .join(' && ')
+              .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
+              .join(' && ')
         : group.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ');
 }
 function componentType(t: WgslType): ScalarType {
@@ -212,26 +208,26 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 });
                 const bindings = indexed
                     ? (args as RunIndexedFilterArgs<Ts>).sets.map((s, i) => {
-                        return device.createBindGroup({
-                            layout: pipe.pipeline.getBindGroupLayout(1),
-                            entries: [
-                                { binding: 0, resource: s.resultCounter },
-                                { binding: 1, resource: s.results },
-                                { binding: 2, resource: s.elements },
-                                ...mapTablesToBindings(s.tables, safeLookups),
-                            ],
-                        });
-                    })
+                          return device.createBindGroup({
+                              layout: pipe.pipeline.getBindGroupLayout(1),
+                              entries: [
+                                  { binding: 0, resource: s.resultCounter },
+                                  { binding: 1, resource: s.results },
+                                  { binding: 2, resource: s.elements },
+                                  ...mapTablesToBindings(s.tables, safeLookups),
+                              ],
+                          });
+                      })
                     : args.sets.map((s, i) => {
-                        return device.createBindGroup({
-                            layout: pipe.pipeline.getBindGroupLayout(1),
-                            entries: [
-                                { binding: 0, resource: s.resultCounter },
-                                { binding: 1, resource: s.results },
-                                ...mapTablesToBindings(s.tables, safeLookups),
-                            ],
-                        });
-                    });
+                          return device.createBindGroup({
+                              layout: pipe.pipeline.getBindGroupLayout(1),
+                              entries: [
+                                  { binding: 0, resource: s.resultCounter },
+                                  { binding: 1, resource: s.results },
+                                  ...mapTablesToBindings(s.tables, safeLookups),
+                              ],
+                          });
+                      });
 
                 const bg0 = device.createBindGroup({
                     layout: pipe.pipeline.getBindGroupLayout(0),
@@ -241,9 +237,9 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 const pass = enc.beginComputePass(
                     timestampWrites
                         ? {
-                            label,
-                            timestampWrites,
-                        }
+                              label,
+                              timestampWrites,
+                          }
                         : { label }
                 );
                 pass.setPipeline(pipe.pipeline);
@@ -451,78 +447,85 @@ export function given<Ts extends Tables>(tables: Ts) {
     return {
         from: <From extends keyof Ts>(from: From) => {
             type GroupSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> =
-                IndexExpr<O & string, string, 'u32'> |
-                ColumnExpr<From & string, string, 'u32'>
-            type AggregationSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> =
-                From extends string ?
-                O extends string ?
-                keyof Ts[From] extends string ?
-                keyof Ts[O] extends string ?
-                IndexExpr<O, string, ScalarType> |
-                ColumnExpr<From, string, ScalarType>
-                : never : never : never : never
-            function groupBy<ColGroup extends keyof Ts, RowGroup extends keyof Ts>(col: GroupSubject<Ts, From, ColGroup>, row?: GroupSubject<Ts, From, RowGroup>,) {
-                type G = IndexExpr<string, string, ScalarType> |
-                    ColumnExpr<string, string, ScalarType>
-                type S = G | '$count' | '$unused'
-                type M = G | '$unused'
-                type SumLayout = [S, S, S, S]
-                type SatLayout = [M, M, M, M]
+                | IndexExpr<O & string, string, 'u32'>
+                | ColumnExpr<From & string, string, 'u32'>;
+            type AggregationSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> = From extends string
+                ? O extends string
+                    ? keyof Ts[From] extends string
+                        ? keyof Ts[O] extends string
+                            ? IndexExpr<O, string, ScalarType> | ColumnExpr<From, string, ScalarType>
+                            : never
+                        : never
+                    : never
+                : never;
+            function groupBy<ColGroup extends keyof Ts, RowGroup extends keyof Ts>(
+                col: GroupSubject<Ts, From, ColGroup>,
+                row?: GroupSubject<Ts, From, RowGroup>
+            ) {
+                type G = IndexExpr<string, string, ScalarType> | ColumnExpr<string, string, ScalarType>;
+                type S = G | '$count' | '$unused';
+                type M = G | '$unused';
+                type SumLayout = [S, S, S, S];
+                type SatLayout = [M, M, M, M];
 
-                type AggregationConfig = {
-                    op: 'sum',
-                    layout: SumLayout;
-                } | {
-                    op: 'min' | 'max',
-                    layout: SatLayout;
-                }
+                type AggregationConfig =
+                    | {
+                          op: 'sum';
+                          layout: SumLayout;
+                      }
+                    | {
+                          op: 'min' | 'max';
+                          layout: SatLayout;
+                      };
                 function buildAggregate(dev: GPUDevice, conf: AggregationConfig) {
-                    const shader = generateAggregationShader(tables, from as string, conf, col, row)
+                    const shader = generateAggregationShader(tables, from as string, conf, col, row);
                     if (!shader) {
                         // todo think about how to handle...
                         return undefined;
                     }
                     const { code, format, op } = shader;
                     const pipe = buildPipeline(dev, code, format, op, 'histogram');
-                    // create a runner 
-                    return { run: buildRunner(dev, tables, pipe) }
+                    // create a runner
+                    return { run: buildRunner(dev, tables, pipe) };
                 }
                 return {
                     min: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
                         r: '$unused' | AggregationSubject<Ts, From, R>,
                         g: '$unused' | AggregationSubject<Ts, From, G>,
                         b: '$unused' | AggregationSubject<Ts, From, B>,
-                        a: '$unused' | AggregationSubject<Ts, From, A>) => {
+                        a: '$unused' | AggregationSubject<Ts, From, A>
+                    ) => {
                         return {
                             build: (device: GPUDevice) => {
-                                return buildAggregate(device, { op: 'min', layout: [r, g, b, a] })
-                            }
-                        }
+                                return buildAggregate(device, { op: 'min', layout: [r, g, b, a] });
+                            },
+                        };
                     },
                     max: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
                         r: '$unused' | AggregationSubject<Ts, From, R>,
                         g: '$unused' | AggregationSubject<Ts, From, G>,
                         b: '$unused' | AggregationSubject<Ts, From, B>,
-                        a: '$unused' | AggregationSubject<Ts, From, A>) => {
+                        a: '$unused' | AggregationSubject<Ts, From, A>
+                    ) => {
                         return {
                             build: (device: GPUDevice) => {
-                                return buildAggregate(device, { op: 'max', layout: [r, g, b, a] })
-                            }
-                        }
+                                return buildAggregate(device, { op: 'max', layout: [r, g, b, a] });
+                            },
+                        };
                     },
                     sum: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
                         r: '$count' | '$unused' | AggregationSubject<Ts, From, R>,
                         g: '$count' | '$unused' | AggregationSubject<Ts, From, G>,
                         b: '$count' | '$unused' | AggregationSubject<Ts, From, B>,
-                        a: '$count' | '$unused' | AggregationSubject<Ts, From, A>) => {
+                        a: '$count' | '$unused' | AggregationSubject<Ts, From, A>
+                    ) => {
                         return {
                             build: (device: GPUDevice) => {
-                                return buildAggregate(device, { op: 'sum', layout: [r, g, b, a] })
-                            }
-                        }
+                                return buildAggregate(device, { op: 'sum', layout: [r, g, b, a] });
+                            },
+                        };
                     },
-
-                }
+                };
             }
             function column<E extends keyof ExpandTableVectors<From>>(
                 k: E

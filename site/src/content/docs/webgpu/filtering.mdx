@@ -38,28 +38,35 @@ to a rendering pass (the data never has to leave the GPU).
 <br />
 
 the filter system can also be used for basic aggregation. The following will create a 2D table of values - each row/column value will represent a distinct subclass value. The subclass of the cells at the start of all edges make up the columns, and the subclass of the cells at the end of all edges become the rows.
+
 ```ts
 const { table, clause, select, all } = given({
     cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
     edges: { start: 'u32', end: 'u32', str: 'f32' },
 }).from('edges');
 // instead of using select, use groupBy on up to two u32 expressions:
-const aggregate = groupBy(
-    table('cells').at('start').dot('subclass'), 
-    table('cells').at('end').dot('subclass'))
-        .sum(column('str'), '$count', '$unused', '$unused').build(device)
+const aggregate = groupBy(table('cells').at('start').dot('subclass'), table('cells').at('end').dot('subclass'))
+    .sum(column('str'), '$count', '$unused', '$unused')
+    .build(device);
 ```
+
 <br />
-note that although `min`, `max` and `sum` are supported, you cannot mix aggregation operations (this is a hardware imposition) - in the above example, we can take the sum of up to 4 values concurrently. The resulting aggregation tool can be applied to the results of a previous filtering result, by selecting the `$index` and passing it to the aggregator.
-this is not done in the example to illustrate that aggregating the example in this case (edges) is about 10x slower than filtering!
+note that although `min`, `max` and `sum` are supported, you cannot mix aggregation operations (this is a hardware
+imposition) - in the above example, we can take the sum of up to 4 values concurrently. The resulting aggregation tool
+can be applied to the results of a previous filtering result, by selecting the `$index` and passing it to the
+aggregator. this is not done in the example to illustrate that aggregating the example in this case (edges) is about 10x
+slower than filtering!
 
 <h4> Caveats </h4>
-Aggregation is done via a render pass, rather than a compute shader, for annoying reasons that we wont get into here. That means that the format of the results is constrained by renderable, blendable, webGPU texture formats. note the '$unused' tags - these map to the RGBA position within a "pixel" of the resulting histogram.
-in the example, because `$unused` is set for the `B` and `A` components, the underlying system will choose a 2-component texture - in this case `rg32float`. 
-<br />
-* `$count` cant be used in min/max, because it would always be 0.
-* `$count` will be interpreted as `f32` if the other values selected for aggregation are `f32`, otherwise it will be interpreted as `u32`.
-* prefer using `$unused` in the later channels - choosing something like `sum($unused, $unused, $unused, something)` will force the system to pick a 4-component texture, when a single-channel texture would have worked.
+Aggregation is done via a render pass, rather than a compute shader, for annoying reasons that we wont get into here.
+That means that the format of the results is constrained by renderable, blendable, webGPU texture formats. note the
+'$unused' tags - these map to the RGBA position within a "pixel" of the resulting histogram. in the example, because
+`$unused` is set for the `B` and `A` components, the underlying system will choose a 2-component texture - in this case
+`rg32float`.
+<br />* `$count` cant be used in min/max, because it would always be 0. * `$count` will be interpreted as `f32` if the
+other values selected for aggregation are `f32`, otherwise it will be interpreted as `u32`. * prefer using `$unused` in
+the later channels - choosing something like `sum($unused, $unused, $unused, something)` will force the system to pick a
+4-component texture, when a single-channel texture would have worked.
 
 <h4> Live Demo </h4>
 once built, you can set the parameters of the filter operation dynamically - do so by editing the JSON below - be

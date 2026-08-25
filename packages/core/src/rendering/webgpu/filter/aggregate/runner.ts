@@ -1,5 +1,5 @@
-import type { BufferTables, Tables } from '../types'
-import * as wgh from 'webgpu-utils'
+import type { BufferTables, Tables } from '../types';
+import * as wgh from 'webgpu-utils';
 
 const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 function mapTablesToBindings<Ts extends Tables>(
@@ -19,8 +19,11 @@ function mapTablesToBindings<Ts extends Tables>(
         .filter((x) => x !== undefined);
 }
 
-export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pipe: { defs: wgh.ShaderDataDefinitions, pipeline: GPURenderPipeline }) {
-
+export function buildRunner<Ts extends Tables>(
+    device: GPUDevice,
+    tables: Ts,
+    pipe: { defs: wgh.ShaderDataDefinitions; pipeline: GPURenderPipeline }
+) {
     let safeLookups: Record<string, Record<string, number>> = {};
     // let outputBindings: Record<string,number> = {};
     // associate a binding with every field of every table
@@ -33,26 +36,36 @@ export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pi
         }
     }
 
-    const runner = (enc: GPUCommandEncoder, inputSets: { tables: BufferTables<Ts>, count: number | GPUBuffer, elements?: GPUBuffer }[], camera: GPUBuffer, results: GPUTextureView, clearFirst: boolean = false, timestampWrites?: GPURenderPassTimestampWrites) => {
-
+    const runner = (
+        enc: GPUCommandEncoder,
+        inputSets: { tables: BufferTables<Ts>; count: number | GPUBuffer; elements?: GPUBuffer }[],
+        camera: GPUBuffer,
+        results: GPUTextureView,
+        clearFirst: boolean = false,
+        timestampWrites?: GPURenderPassTimestampWrites
+    ) => {
         const { pipeline } = pipe;
         // create some bind groups...
         const bg0 = device.createBindGroup({
             layout: pipeline.getBindGroupLayout(0),
-            entries: [{ binding: 0, resource: camera }]
-        })
-        const bg1l = pipeline.getBindGroupLayout(1)
+            entries: [{ binding: 0, resource: camera }],
+        });
+        const bg1l = pipeline.getBindGroupLayout(1);
         const bg1s = inputSets.map((s) => {
             return device.createBindGroup({
                 layout: bg1l,
-                entries: mapTablesToBindings(s.tables, safeLookups)
+                entries: mapTablesToBindings(s.tables, safeLookups),
             });
-        })
-        const desc: GPURenderPassDescriptor = { colorAttachments: [{ clearValue: [0, 0, 0, 0], view: results, loadOp: clearFirst ? 'clear' : 'load', storeOp: 'store' }] }
+        });
+        const desc: GPURenderPassDescriptor = {
+            colorAttachments: [
+                { clearValue: [0, 0, 0, 0], view: results, loadOp: clearFirst ? 'clear' : 'load', storeOp: 'store' },
+            ],
+        };
         if (timestampWrites) {
-            desc.timestampWrites = timestampWrites
+            desc.timestampWrites = timestampWrites;
         }
-        const pass = enc.beginRenderPass(desc)
+        const pass = enc.beginRenderPass(desc);
         pass.setPipeline(pipeline);
         // bind all the stuff...
         pass.setBindGroup(0, bg0);
@@ -60,21 +73,21 @@ export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pi
             pass.setBindGroup(1, bg1s[i]);
             const { elements, count } = inputSets[i];
             if (elements) {
-                pass.setIndexBuffer(elements, 'uint32')
+                pass.setIndexBuffer(elements, 'uint32');
                 if (typeof count === 'number') {
                     pass.drawIndexed(count);
                 } else {
-                    pass.drawIndexedIndirect(count, 0)
+                    pass.drawIndexedIndirect(count, 0);
                 }
             } else {
                 if (typeof count === 'number') {
                     pass.draw(count);
                 } else {
-                    pass.drawIndirect(count, 0)
+                    pass.drawIndirect(count, 0);
                 }
             }
         }
         pass.end();
-    }
+    };
     return runner;
 }

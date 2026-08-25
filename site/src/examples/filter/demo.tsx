@@ -25,15 +25,19 @@ export function Demo() {
     const clickme = useCallback(() => {
         if (runner) {
             const start = performance.now();
-            runner(params, (rows, gpuTime: number) => {
-                const wallTime = performance.now() - start;
-                setGpuDuration(gpuTime);
-                setDuration(wallTime - gpuTime);
-                setRows(rows);
-            },(stats, gpuTime: number)=>{
-                setAggregationGpuDuration(gpuTime);
-                setStats(stats)
-            });
+            runner(
+                params,
+                (rows, gpuTime: number) => {
+                    const wallTime = performance.now() - start;
+                    setGpuDuration(gpuTime);
+                    setDuration(wallTime - gpuTime);
+                    setRows(rows);
+                },
+                (stats, gpuTime: number) => {
+                    setAggregationGpuDuration(gpuTime);
+                    setStats(stats);
+                }
+            );
         }
     }, [params]);
 
@@ -75,16 +79,21 @@ export function Demo() {
                 {rows.length} passing results out of {NEDGES} rows in the edges table:
             </p>
             <p>
-                filtering & aggregation took (compute + aggregate + overhead) ~ {gpuDuration.toFixed(3)} +{gpuAggregationDuration.toFixed(3)} + {duration.toFixed(3)} (
+                filtering & aggregation took (compute + aggregate + overhead) ~ {gpuDuration.toFixed(3)} +
+                {gpuAggregationDuration.toFixed(3)} + {duration.toFixed(3)} (
                 {(gpuDuration + gpuAggregationDuration + duration).toFixed(4)} ms total)
             </p>
 
             <button onClick={clickme}>run!</button>
             <h3>stats (not filtered)</h3>
             <table>
-                {stats.map(row=>(<tr>
-                    {row.map((s,c)=>(<td key={c}>{s}</td>))}
-                </tr>))}
+                {stats.map((row) => (
+                    <tr>
+                        {row.map((s, c) => (
+                            <td key={c}>{s}</td>
+                        ))}
+                    </tr>
+                ))}
             </table>
             <h3>filtered rows</h3>
             <table>

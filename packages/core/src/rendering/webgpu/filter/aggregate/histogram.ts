@@ -13,7 +13,6 @@ a compute shader might not work well for our aggregation aspirations:
   - a downside - it wont be possible to accumulate min(X) and sum(Y) in the same pass - because the operation is performed via fixed-fn blending
 */
 
-
 export function generateHistogramShader(stuff: {
     rowGroupExpr: string;
     colGroupExpr: string;
@@ -23,8 +22,8 @@ export function generateHistogramShader(stuff: {
     aggType: 'u32' | 'f32';
 }) {
     const { rowGroupExpr, colGroupExpr, aggComponents, aggregationExpr, inputBindings, aggType } = stuff;
-    const cmpType = aggType === 'u32' ? 'u' : 'f'
-    const wgslOutputType = aggComponents > 1 ? `vec${aggComponents}${cmpType}` : aggType
+    const cmpType = aggType === 'u32' ? 'u' : 'f';
+    const wgslOutputType = aggComponents > 1 ? `vec${aggComponents}${cmpType}` : aggType;
     const code = /* wgsl */ `
       struct VsIn {
           @builtin(vertex_index) vIndex: u32,
@@ -62,6 +61,6 @@ export function generateHistogramShader(stuff: {
       fn fmain(v:VsOut) ->@location(0) ${wgslOutputType} {
           return v.value;
       }
-    `
+    `;
     return code;
 }
