@@ -23,7 +23,7 @@ export function generateHistogramShader(stuff: {
     aggType: 'u32' | 'f32';
 }) {
     const { rowGroupExpr, colGroupExpr, aggComponents, aggregationExpr, inputBindings, aggType } = stuff;
-    const cmpType = aggType==='u32' ? 'u':'f'
+    const cmpType = aggType === 'u32' ? 'u' : 'f'
     const wgslOutputType = aggComponents > 1 ? `vec${aggComponents}${cmpType}` : aggType
     const code = /* wgsl */ `
       struct VsIn {
@@ -34,13 +34,8 @@ export function generateHistogramShader(stuff: {
           @builtin(position) pos: vec4f,
           @location(0) value:${wgslOutputType},
       };
-      struct Camera {
-          minCorner: vec2u,
-          maxCorner: vec2u,
-      };
-
       @group(0) @binding(0)
-      var<uniform> camera: Camera;
+      var<uniform> outputDimensions: vec2u;
 
       ${inputBindings}
 
@@ -50,12 +45,13 @@ export function generateHistogramShader(stuff: {
           let element = v.vIndex;
           let row = ${rowGroupExpr};
           let col = ${colGroupExpr};
-          let size = camera.maxCorner-camera.minCorner;
+          let size = outputDimensions;
           // convert the integer positions into output (clip) space:
-          let pos = (vec2f(col,row)+vec2f(0.5,0.5)-vec2f(camera.minCorner))/vec2f(size);
+          let pos = (vec2f(vec2u(col,row))+vec2f(0.5,0.5))/vec2f(size);
           // pos is now in unit space, relative to camera, coodinates at the center of pixels
           let clip = (pos*2.0)-1.0;
-          out.pos = vec4f(clip,0.5,1.0);
+          // upside down please, to match texture memory origin, rather than 'screen origin'
+          out.pos = vec4f(clip*vec2f(1.0,-1.0),0.5,1.0);
           // now gather the values that the blending-stage will aggregate:
           out.value = ${aggregationExpr};
 

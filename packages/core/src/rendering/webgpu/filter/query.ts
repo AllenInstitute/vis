@@ -517,7 +517,7 @@ export function given<Ts extends Tables>(tables: Ts) {
                         a: '$count' | '$unused' | AggregationSubject<Ts, From, A>) => {
                         return {
                             build: (device: GPUDevice) => {
-                                buildAggregate(device, { op: 'sum', layout: [r, g, b, a] })
+                                return buildAggregate(device, { op: 'sum', layout: [r, g, b, a] })
                             }
                         }
                     },
@@ -577,7 +577,7 @@ function typescriptCanary() {
     const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
 
     e.groupBy(e.column('E.x'), e.column('E.y')).min(e.column('str'), e.table('cells').at('E.x').dot('A'), '$unused', '$unused')
-    // .build(null as any).run(null as any, [{ count: 33, tables: {} }],)
+        .build(null as any).run(null as any, [{ count: 33, tables: {} }],)
     // @ts-expect-error
     e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
     // @ts-expect-error

@@ -33,7 +33,7 @@ export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pi
         }
     }
 
-    const runner = (enc: GPUCommandEncoder, inputSets: { tables: BufferTables<Ts>, count: number, elements?: GPUBuffer }[], camera: GPUBuffer, results: GPUTextureView, clearFirst: boolean = false) => {
+    const runner = (enc: GPUCommandEncoder, inputSets: { tables: BufferTables<Ts>, count: number | GPUBuffer, elements?: GPUBuffer }[], camera: GPUBuffer, results: GPUTextureView, clearFirst: boolean = false) => {
 
         const { pipeline } = pipe;
         // create some bind groups...
@@ -48,7 +48,10 @@ export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pi
                 entries: mapTablesToBindings(s.tables, safeLookups)
             });
         })
-        const pass = enc.beginRenderPass({ colorAttachments: [{ view: results, loadOp: clearFirst ? 'clear' : 'load', storeOp: 'store' }] })
+        const pass = enc.beginRenderPass({
+
+            colorAttachments: [{ clearValue: [0, 0, 0, 0], view: results, loadOp: clearFirst ? 'clear' : 'load', storeOp: 'store' }]
+        })
         pass.setPipeline(pipeline);
         // bind all the stuff...
         pass.setBindGroup(0, bg0);
@@ -57,9 +60,17 @@ export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pi
             const { elements, count } = inputSets[i];
             if (elements) {
                 pass.setIndexBuffer(elements, 'uint32')
-                pass.drawIndexed(count);
+                if (typeof count === 'number') {
+                    pass.drawIndexed(count);
+                } else {
+                    pass.drawIndexedIndirect(count, 0)
+                }
             } else {
-                pass.draw(count);
+                if (typeof count === 'number') {
+                    pass.draw(count);
+                } else {
+                    pass.drawIndirect(count, 0)
+                }
             }
         }
         pass.end();

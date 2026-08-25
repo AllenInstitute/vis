@@ -37,12 +37,12 @@ function figureOut(tables: Tables, conf: AggregationConfig, toWgsl: (e: G) => st
     }
     if (type === undefined) {
       // not yet determined
-      determineType(tables, elem)
+      return determineType(tables, elem)
     }
     return type === determineType(tables, elem) ? type : null;
   }, undefined);
   // TODO panic if type == null or undefined
-
+  const typeSuffix = type === 'f32' ? 'f' : 'u'
   // we can only write to certain formats
   // we can write a single channel, 2 channels, or 4 - never 3
   const [_r, g, b, a] = conf.layout;
@@ -56,13 +56,13 @@ function figureOut(tables: Tables, conf: AggregationConfig, toWgsl: (e: G) => st
     }
     return toWgsl(c)
   });
-  let expr = `vec4${type}(${R},${G},${B},${A})`
+  let expr = `vec4${typeSuffix}(${R},${G},${B},${A})`
   if (every([g, b, a], (c) => c === '$unused')) {
     components = 1;
     expr = R
   } else if (every([b, a], (c => c === '$unused'))) {
     components = 2
-    expr = `vec4${type}(${R},${G})`
+    expr = `vec2${typeSuffix}(${type}(${R}),${type}(${G}))`
   }
   return { type, components, expr }
 }
@@ -125,7 +125,7 @@ export function generateAggregationShader(tables: Tables, from: string,
       aggType: type,
       aggregationExpr: expr,
       colGroupExpr: toWgsl(col, 'element', ''),
-      rowGroupExpr: row ? toWgsl(row, 'element', '') : '0',
+      rowGroupExpr: row ? toWgsl(row, 'element', '') : '0u',
       inputBindings: bindings
     })
     let format: GPUTextureFormat = 'rgba32float'
@@ -173,12 +173,16 @@ export function buildPipeline(dev: GPUDevice, code: string, format: GPUTextureFo
   });
   const pipeline = dev.createRenderPipeline({
     label,
+    primitive: {
+      topology: 'point-list',
+    },
     vertex: {
       module,
       entryPoint: 'vmain'
     }, fragment: {
       module,
       entryPoint: 'fmain',
+
       targets: [{
         format,
         blend: {

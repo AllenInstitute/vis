@@ -1,4 +1,4 @@
-import { given, type ArrayBufferTables } from '@alleninstitute/vis-core';
+import { given, type ArrayBufferTables, type BufferTables } from '@alleninstitute/vis-core';
 
 export async function init() {
     const adapter = await navigator.gpu?.requestAdapter();
@@ -13,7 +13,7 @@ export async function init() {
             maxComputeInvocationsPerWorkgroup: WG_SIZE,
             maxComputeWorkgroupSizeX: WG_SIZE,
         },
-        requiredFeatures: [...(canTimestamp ? ['timestamp-query' as const] : [])],
+        requiredFeatures: [...(canTimestamp ? ['float32-blendable', 'timestamp-query'] as const : ['float32-blendable'] as const)],
     });
     if (!device) {
         return;
@@ -22,11 +22,11 @@ export async function init() {
     return device;
 }
 
-function generateFake(dev: GPUDevice, each: (p: number) => number, count: number, type: 'f32' | 'u32' | 'i32') {
+function generateFake(dev: GPUDevice, each: (p: number, i: number) => number, count: number, type: 'f32' | 'u32' | 'i32') {
     const data =
         type === 'f32' ? new Float32Array(count) : type === 'i32' ? new Uint32Array(count) : new Uint32Array(count);
     for (let i = 0; i < count; i++) {
-        data[i] = each(Math.random());
+        data[i] = each(Math.random(), i);
     }
     const fake = dev.createBuffer({
         size: count * 4,
@@ -40,24 +40,49 @@ const tableLayout = {
     cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
     edges: { start: 'u32', end: 'u32' },
 } as const;
-type gpuDataset = {
-    cells: { [k in keyof (typeof tableLayout)['cells']]: GPUBuffer };
-    edges: { [k in keyof (typeof tableLayout)['edges']]: GPUBuffer };
-};
-function generateFakeDataset(device: GPUDevice, edges: number, cells: number): gpuDataset {
+const aggLayout = {
+    cells: { subclass: 'u32' },
+    edges: { start: 'u32', end: 'u32', str: 'f32' },
+} as const;
+
+// type gpuDataset = {
+//     cells: { [k in keyof (typeof aggLayout)['cells']]: GPUBuffer };
+//     edges: { [k in keyof (typeof aggLayout)['edges']]: GPUBuffer };
+// };
+function generateFakeDataset(device: GPUDevice, edges: number, cells: number) {
     const positions = generateFake(device, (r) => r, cells * 2, 'f32');
-    const subclass = generateFake(device, (r) => (r * 100) % 8, cells, 'u32');
+    const subclass = generateFake(device, (_r, i) => i % 8, cells, 'u32');
     const gene_x = generateFake(device, (r) => (r * 100) % 8, cells, 'f32');
 
     const start = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const end = generateFake(device, (r) => Math.floor(r * cells), edges, 'u32');
     const str = generateFake(device, (r) => 1.0 + r * 22.0, edges, 'f32');
-    return { cells: { position: positions, subclass, gene_x }, edges: { start, end } };
+    return { cells: { position: positions, subclass, gene_x }, edges: { start, end, str } } as const;
 }
+function setupAggregationDemo(device: GPUDevice) {
+    const { all, any, column, table, select, groupBy, } = given(aggLayout).from('edges');
+    // a realistic example - aggregate connection str over edges, grouped by subclass...
+    // const agg = groupBy(column('subclass')).sum(column('gene_x'), '$count', '$unused', '$unused').build(device)
+    const agg = groupBy(table('cells').at('start').dot('subclass'), table('cells').at('end').dot('subclass'))
+        .sum(column('str'), '$count', '$unused', '$unused').build(device)
+    const w = 32;
+    const h = 32; // hard to use a texture smaller than this...
+    const results = device.createTexture({
+        format: 'rg32float', size: { width: w, height: h, depthOrArrayLayers: 1 },
+        usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
+    })
+    const dims = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM });
+    const resolve = device.createBuffer({ size: w * h * 8, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    device.queue.writeBuffer(dims, 0, new Uint32Array([w, h]))
+    const doAggregate = (enc: GPUCommandEncoder, count: number | GPUBuffer, tables: any, edges?: GPUBuffer) => {
+        agg?.run(enc, [{ count, tables, elements: edges }], dims, results.createView(), true);
+        enc.copyTextureToBuffer({ texture: results }, { buffer: resolve, bytesPerRow: w * 8, rowsPerImage: h }, { width: w, height: h })
 
+    }
+    return { doAggregate, resolve, results, dims };
+}
 export function setupDemo(device: GPUDevice, edges: number, cells: number) {
     const { all, any, column, table, select, clause } = given(tableLayout).from('edges');
-
     const filter = select('$index')
         .select(table('cells').at('start').dot('gene_x'))
         .select(table('cells').at('start').dot('subclass'))
@@ -69,7 +94,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
                 .and(clause(table('cells').at('start').dot('position'), 'all(<)', 'maxCorner'))
         )
         .build(device, 'example');
-
+    const aggregate = setupAggregationDemo(device);
     const expectedResults = new DataView(new ArrayBuffer(4 * 4 * 2)); // index,gene,sub,sub, 4 bytes each, 2 expected matches
     expectedResults.setUint32(0, 1, true); // the first edge
     expectedResults.setFloat32(4, 0.2, true);
@@ -190,7 +215,7 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
         enc.copyBufferToBuffer(resolveBuffer, queryResultBuffer);
         enc.copyBufferToBuffer(results, 0, resultReader, 0, edges * outputSizeBytes);
         enc.copyBufferToBuffer(resultCounter, 0, usedReader, 0, resultCounter.size);
-
+        aggregate.doAggregate(enc, edges, dataset)
         device.queue.submit([enc.finish()]);
         usedReader.mapAsync(GPUMapMode.READ).then(async () => {
             const arr = usedReader.getMappedRange();
@@ -217,6 +242,22 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
                 onFilterComplete(rows, gpuTime / 1_000_000); // divide by 1 million to get to milliseconds from nanoseconds
             });
         });
+        // read the aggregation results too...
+        aggregate.resolve.mapAsync(GPUMapMode.READ).then(() => {
+            const histo = aggregate.resolve.getMappedRange();
+            const copy = new Float32Array(histo.byteLength / 4);
+            copy.set(new Float32Array(histo));
+            aggregate.resolve.unmap();
+            console.log('aggregation results!')
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const index = (row * 32 * 2) + (col * 2);
+                    const sum = copy[index];
+                    const count = copy[index + 1];
+                    console.log('avg: ', col, row, `=${sum}/${count} aka ${sum / count}`);
+                }
+            }
+        })
     };
     return doFilter;
 }
