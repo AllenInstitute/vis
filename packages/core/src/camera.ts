@@ -1,15 +1,12 @@
 import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
-// A larger canvas Y means a larger data Y, matching how RenderServer lands frames on the canvas.
-// Renderers that present frames some other way should convert the mouse themselves and use zoomAround.
-
 /**
  * Converts a canvas pixel position to data space.
  * @param view the region of data space in frame
  * @param screenSize size of the canvas region, in pixels
  * @param screenPos position relative to the top left of that region
  */
-export function screenToData(view: box2D, screenSize: vec2, screenPos: vec2): vec2 {
+export const screenToData = (view: box2D, screenSize: vec2, screenPos: vec2): vec2 => {
     return Vec2.add(view.minCorner, Vec2.mul(Vec2.div(screenPos, screenSize), Box2D.size(view)));
 }
 
@@ -19,7 +16,7 @@ export function screenToData(view: box2D, screenSize: vec2, screenPos: vec2): ve
  * @param dataPoint the point to hold still, in data space
  * @param zoomScale below 1 zooms in, above 1 zooms out
  */
-export function zoomAround(view: box2D, dataPoint: vec2, zoomScale: number): box2D {
+export const zoomAround = (view: box2D, dataPoint: vec2, zoomScale: number): box2D => {
     return Box2D.translate(
         Box2D.scale(Box2D.translate(view, Vec2.scale(dataPoint, -1)), [zoomScale, zoomScale]),
         dataPoint
@@ -33,7 +30,7 @@ export function zoomAround(view: box2D, dataPoint: vec2, zoomScale: number): box
  * @param zoomScale below 1 zooms in, above 1 zooms out
  * @param mousePos cursor position relative to the top left of that region
  */
-export function zoom(view: box2D, screenSize: vec2, zoomScale: number, mousePos: vec2): box2D {
+export const zoom = (view: box2D, screenSize: vec2, zoomScale: number, mousePos: vec2): box2D => {
     return zoomAround(view, screenToData(view, screenSize, mousePos), zoomScale);
 }
 
@@ -43,7 +40,7 @@ export function zoom(view: box2D, screenSize: vec2, zoomScale: number, mousePos:
  * @param screenSize size of the canvas region, in pixels
  * @param delta how far the cursor moved, in pixels
  */
-export function pan(view: box2D, screenSize: vec2, delta: vec2): box2D {
+export const pan = (view: box2D, screenSize: vec2, delta: vec2): box2D => {
     const relative = Vec2.div(Vec2.mul(delta, [-1, -1]), screenSize);
     const offset = Vec2.mul(relative, Box2D.size(view));
     return Box2D.translate(view, offset);
@@ -55,7 +52,7 @@ export function pan(view: box2D, screenSize: vec2, delta: vec2): box2D {
  * @param screenSize size of the canvas region, in pixels
  * @returns a view at the origin with the same aspect ratio as the screen
  */
-export function fitToScreen(imageSize: vec2, screenSize: vec2): box2D {
+export const fitToScreen = (imageSize: vec2, screenSize: vec2): box2D => {
     const unitsPerPx = Math.max(imageSize[0] / screenSize[0], imageSize[1] / screenSize[1]);
     return Box2D.create([0, 0], Vec2.scale(screenSize, unitsPerPx));
 }
