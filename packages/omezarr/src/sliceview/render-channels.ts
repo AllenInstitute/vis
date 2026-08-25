@@ -18,7 +18,7 @@ export const clampGamutToDataRange = (displayRange: Interval, dataRange: Interva
     }
     const clamp = (value: number) => Math.min(Math.max(value, dataRange.min), dataRange.max);
     return { min: clamp(displayRange.min), max: clamp(displayRange.max) };
-}
+};
 
 /**
  * Plain red, green and blue, for files with no omero metadata to describe their channels.
@@ -30,7 +30,7 @@ export const fallbackRGBChannels = (gamut: Interval = DEFAULT_GAMUT): RenderSett
         G: { index: 1, gamut, rgb: [0, 1, 0] },
         B: { index: 2, gamut, rgb: [0, 0, 1] },
     };
-}
+};
 
 const channelSettings = (channel: OmeZarrColorChannel, index: number) => {
     return {
@@ -38,14 +38,16 @@ const channelSettings = (channel: OmeZarrColorChannel, index: number) => {
         gamut: clampGamutToDataRange(channel.range, channel.window),
         rgb: channel.rgb,
     };
-}
+};
 
 /**
  * Builds render channels from a file's own omero metadata, keyed by channel label.
  * @param metadata metadata of the OME-Zarr file to render
  * @returns the file's channels, or {@link fallbackRGBChannels} if it has no omero metadata
  */
-export const renderChannelsFromMetadata = (metadata: Pick<OmeZarrMetadata, 'colorChannels'>): RenderSettingsChannels => {
+export const renderChannelsFromMetadata = (
+    metadata: Pick<OmeZarrMetadata, 'colorChannels'>
+): RenderSettingsChannels => {
     const { colorChannels } = metadata;
     if (colorChannels.length === 0) {
         return fallbackRGBChannels();
@@ -54,4 +56,4 @@ export const renderChannelsFromMetadata = (metadata: Pick<OmeZarrMetadata, 'colo
         acc[channel.label ?? `ch${index}`] = channelSettings(channel, index);
         return acc;
     }, {});
-}
+};
