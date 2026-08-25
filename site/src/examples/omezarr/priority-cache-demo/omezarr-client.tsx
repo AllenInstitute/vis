@@ -112,7 +112,7 @@ export function OmeZarrView(props: Props) {
                 setOmezarr(v);
             });
         }
-    }, [props.res]);
+    }, [props.res, server, screenSize, renderer]);
 
     useEffect(() => {
         if (omezarr && cnvs.current && renderer) {
@@ -125,15 +125,16 @@ export function OmeZarrView(props: Props) {
                 });
             }
         }
-    }, [omezarr, planeParam, view, tick]);
+    }, [omezarr, planeParam, view, tick, renderer, screenSize]);
 
     useEffect(() => {
-        if (cnvs?.current) {
-            cnvs.current.addEventListener('wheel', handleZoom, { passive: false });
+        const canvas = cnvs.current;
+        if (canvas) {
+            canvas.addEventListener('wheel', handleZoom, { passive: false });
         }
         return () => {
-            if (cnvs?.current) {
-                cnvs.current.removeEventListener('wheel', handleZoom);
+            if (canvas) {
+                canvas.removeEventListener('wheel', handleZoom);
             }
         };
     }, [handleZoom]);
