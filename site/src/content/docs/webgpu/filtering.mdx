@@ -40,7 +40,7 @@ to a rendering pass (the data never has to leave the GPU).
 the filter system can also be used for basic aggregation. The following will create a 2D table of values - each row/column value will represent a distinct subclass value. The subclass of the cells at the start of all edges make up the columns, and the subclass of the cells at the end of all edges become the rows.
 
 ```ts
-const { table, clause, select, all } = given({
+const { table, groupBy, column} = given({
     cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
     edges: { start: 'u32', end: 'u32', str: 'f32' },
 }).from('edges');
