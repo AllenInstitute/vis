@@ -5,7 +5,6 @@ import pkg from 'file-saver';
 const { saveAs } = pkg;
 import { createRoot } from 'react-dom/client';
 import REGL from 'regl';
-import type { Camera } from './common/camera';
 import { buildImageRenderer } from './common/image-renderer';
 import type { ColumnRequest } from './common/loaders/scatterplot/scatterbrain-loader';
 import {
@@ -27,7 +26,7 @@ import {
     type SimpleAnnotation,
     renderAnnotationLayer,
 } from './data-renderers/simpleAnnotationRenderer';
-import type { ColorMapping, RenderCallback } from './data-renderers/types';
+import type { Camera, ColorMapping, RenderCallback } from './data-renderers/types';
 import { type AxisAlignedPlane, buildVersaRenderer } from './data-renderers/versa-renderer';
 import {
     type RenderSettings as SliceRenderSettings,

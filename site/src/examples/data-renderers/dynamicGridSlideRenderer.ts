@@ -1,12 +1,11 @@
 import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-core';
 import type REGL from 'regl';
-import type { Camera } from '../common/camera';
 import { fetchItem, getVisibleItemsInSlide } from '../common/loaders/scatterplot/data';
 import type { ColumnRequest, ColumnarTree } from '../common/loaders/scatterplot/scatterbrain-loader';
 import type { DynamicGrid, DynamicGridSlide } from '../data-sources/scatterplot/dynamic-grid';
 import type { buildRenderer as buildScatterplotRenderer } from './scatterplot';
-import type { RenderCallback } from './types';
+import type { Camera, RenderCallback } from './types';
 import { applyOptionalTrn } from './utils';
 type CacheContentType = {
     type: 'vbo';
