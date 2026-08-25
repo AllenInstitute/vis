@@ -50,8 +50,8 @@ export function renderChannelsFromMetadata(metadata: Pick<OmeZarrMetadata, 'colo
     if (colorChannels.length === 0) {
         return fallbackRGBChannels();
     }
-    return colorChannels.reduce((acc, channel, index) => {
+    return colorChannels.reduce<RenderSettingsChannels>((acc, channel, index) => {
         acc[channel.label ?? `ch${index}`] = channelSettings(channel, index);
         return acc;
-    }, {} as RenderSettingsChannels);
+    }, {});
 }
