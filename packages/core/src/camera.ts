@@ -58,3 +58,19 @@ export const fitToScreen = (imageSize: vec2, screenSize: vec2): box2D => {
     const minCorner = Vec2.scale(Vec2.sub(imageSize, viewSize), 0.5);
     return Box2D.create(minCorner, Vec2.add(minCorner, viewSize));
 };
+
+/**
+ * The 2D camera helpers, grouped so that names as generic as `zoom` and `pan`
+ * do not land in this package's flat barrel.
+ *
+ * Exported as an object rather than `export * as Camera2D` because the latter
+ * compiles to a TypeScript `NamespaceExport`, which parcel's .d.ts transformer
+ * cannot walk (`node.exportClause.elements is not iterable`).
+ */
+export const Camera2D = {
+    screenToData,
+    zoomAround,
+    zoom,
+    pan,
+    fitToScreen,
+};

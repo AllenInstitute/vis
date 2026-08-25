@@ -1,46 +1,28 @@
-import { Box2D, type Interval, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type OmeZarrMetadata,
     type RenderSettings,
-    type RenderSettingsChannels,
     loadMetadata,
     nextSliceStep,
+    renderChannelsFromMetadata,
     sizeInUnits,
 } from '@alleninstitute/vis-omezarr';
-import { logger, type WebResource } from '@alleninstitute/vis-core';
+import { Camera2D, logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
 import { useId, useMemo, useState } from 'react';
-import { pan, zoom } from '../../common/camera';
 import { RenderServerProvider } from '../../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
 import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
 
 const screenSize: vec2 = [800, 800];
 
-const defaultInterval: Interval = { min: 0, max: 80 };
-
 function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
-    const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
-        acc[val.label ?? `${index}`] = {
-            rgb: val.rgb,
-            gamut: val.range,
-            index,
-        };
-        return acc;
-    }, {} as RenderSettingsChannels);
-
-    const fallbackChannels: RenderSettingsChannels = {
-        R: { rgb: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
-        G: { rgb: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
-        B: { rgb: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
-    };
-
     return {
         camera: { screenSize, view },
         planeLocation: param,
         plane: PLANE_XY,
         tileSize: 256,
-        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
+        channels: renderChannelsFromMetadata(omezarr),
     };
 }
 
@@ -73,7 +55,9 @@ export function OmezarrDemo() {
             const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
             if (size) {
                 logger.info('size', size);
-                setView(Box2D.create([0, 0], size));
+                // fitToScreen frames the whole image at the screen's aspect ratio - framing it as the raw
+                // data extent instead would stretch any non-square image onto this square canvas
+                setView(Camera2D.fitToScreen(size, screenSize));
             }
         });
     };
@@ -114,13 +98,13 @@ export function OmezarrDemo() {
     const handleZoom = (e: WheelEvent) => {
         e.preventDefault();
         const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-        const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
+        const v = Camera2D.zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
         setView(v);
     };
 
     const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (dragging) {
-            const v = pan(view, screenSize, [e.movementX, e.movementY]);
+            const v = Camera2D.pan(view, screenSize, [e.movementX, e.movementY]);
             setView(v);
         }
     };

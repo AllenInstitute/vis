@@ -1,4 +1,4 @@
-import { Box2D, PLANE_XY, Vec2, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, PLANE_XY, type box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
@@ -6,7 +6,7 @@ import {
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
-import type { RenderFrameFn } from '@alleninstitute/vis-core';
+import { Camera2D, type RenderFrameFn } from '@alleninstitute/vis-core';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { renderServerContext } from '../../common/react/render-server-provider';
@@ -111,10 +111,7 @@ export function SliceView(props: Props) {
     const pan = useCallback(
         (e: React.MouseEvent<HTMLCanvasElement>) => {
             if (e.ctrlKey) {
-                const pos = Vec2.div([-e.movementX, -e.movementY], settings.camera.screenSize);
-                const scaledOffset = Vec2.mul(pos, Box2D.size(view));
-                const v = Box2D.translate(view, scaledOffset);
-                setView(v);
+                setView(Camera2D.pan(view, settings.camera.screenSize, [e.movementX, e.movementY]));
             }
         },
         [view]
@@ -126,9 +123,9 @@ export function SliceView(props: Props) {
             onMouseMove={pan}
             onWheel={(e) => {
                 const scale = e.deltaY > 0 ? 1.1 : 0.9;
-                const m = Box2D.midpoint(view);
-                const v = Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m);
-                setView(v);
+                // this demo zooms about the middle of the view rather than the cursor, so it reaches for
+                // zoomAround directly instead of Camera2D.zoom
+                setView(Camera2D.zoomAround(view, Box2D.midpoint(view), scale));
             }}
             width={settings.camera.screenSize[0]}
             height={settings.camera.screenSize[1]}

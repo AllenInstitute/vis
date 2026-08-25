@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchDziMetadata, type DziImage } from '@alleninstitute/vis-dzi';
 import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
-import { pan, zoom } from '../common/camera';
+import { Camera2D } from '@alleninstitute/vis-core';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { DziViewer } from './dzi-viewer';
 
@@ -39,13 +39,13 @@ export function DziDemo() {
     const handleZoom = (e: WheelEvent) => {
         e.preventDefault();
         const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-        const v = zoom(view, SCREEN_SIZE, zoomScale, [e.offsetX, e.offsetY]);
+        const v = Camera2D.zoom(view, SCREEN_SIZE, zoomScale, [e.offsetX, e.offsetY]);
         setView(v);
     };
 
     const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (dragging) {
-            const v = pan(view, SCREEN_SIZE, [e.movementX, e.movementY]);
+            const v = Camera2D.pan(view, SCREEN_SIZE, [e.movementX, e.movementY]);
             setView(v);
         }
     };
