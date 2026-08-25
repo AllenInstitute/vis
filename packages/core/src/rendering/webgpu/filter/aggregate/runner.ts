@@ -33,7 +33,7 @@ export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pi
         }
     }
 
-    const runner = (enc: GPUCommandEncoder, inputSets: { tables: BufferTables<Ts>, count: number | GPUBuffer, elements?: GPUBuffer }[], camera: GPUBuffer, results: GPUTextureView, clearFirst: boolean = false) => {
+    const runner = (enc: GPUCommandEncoder, inputSets: { tables: BufferTables<Ts>, count: number | GPUBuffer, elements?: GPUBuffer }[], camera: GPUBuffer, results: GPUTextureView, clearFirst: boolean = false, timestampWrites?: GPURenderPassTimestampWrites) => {
 
         const { pipeline } = pipe;
         // create some bind groups...
@@ -48,10 +48,11 @@ export function buildRunner<Ts extends Tables>(device: GPUDevice, tables: Ts, pi
                 entries: mapTablesToBindings(s.tables, safeLookups)
             });
         })
-        const pass = enc.beginRenderPass({
-
-            colorAttachments: [{ clearValue: [0, 0, 0, 0], view: results, loadOp: clearFirst ? 'clear' : 'load', storeOp: 'store' }]
-        })
+        const desc: GPURenderPassDescriptor = { colorAttachments: [{ clearValue: [0, 0, 0, 0], view: results, loadOp: clearFirst ? 'clear' : 'load', storeOp: 'store' }] }
+        if (timestampWrites) {
+            desc.timestampWrites = timestampWrites
+        }
+        const pass = enc.beginRenderPass(desc)
         pass.setPipeline(pipeline);
         // bind all the stuff...
         pass.setBindGroup(0, bg0);

@@ -7,8 +7,10 @@ let runner: ReturnType<typeof setupDemo>;
 
 export function Demo() {
     const [rows, setRows] = useState<Array<readonly number[]>>([]);
+    const [stats, setStats] = useState<number[][]>([]);
     const [duration, setDuration] = useState<number>(Number.NaN);
     const [gpuDuration, setGpuDuration] = useState<number>(Number.NaN);
+    const [gpuAggregationDuration, setAggregationGpuDuration] = useState<number>(Number.NaN);
     const [params, setParams] = useState<Parameters<ReturnType<typeof setupDemo>>[0]>({
         minCorner: [0, 0],
         maxCorner: [1, 1],
@@ -28,6 +30,9 @@ export function Demo() {
                 setGpuDuration(gpuTime);
                 setDuration(wallTime - gpuTime);
                 setRows(rows);
+            },(stats, gpuTime: number)=>{
+                setAggregationGpuDuration(gpuTime);
+                setStats(stats)
             });
         }
     }, [params]);
@@ -70,11 +75,18 @@ export function Demo() {
                 {rows.length} passing results out of {NEDGES} rows in the edges table:
             </p>
             <p>
-                filtering took (compute + overhead) ~ {gpuDuration.toFixed(3)} + {duration.toFixed(3)} (
-                {(gpuDuration + duration).toFixed(4)} ms total)
+                filtering & aggregation took (compute + aggregate + overhead) ~ {gpuDuration.toFixed(3)} +{gpuAggregationDuration.toFixed(3)} + {duration.toFixed(3)} (
+                {(gpuDuration + gpuAggregationDuration + duration).toFixed(4)} ms total)
             </p>
 
             <button onClick={clickme}>run!</button>
+            <h3>stats (not filtered)</h3>
+            <table>
+                {stats.map(row=>(<tr>
+                    {row.map((s,c)=>(<td key={c}>{s}</td>))}
+                </tr>))}
+            </table>
+            <h3>filtered rows</h3>
             <table>
                 {rows.map((row, i) => (
                     <tr key={i}>
