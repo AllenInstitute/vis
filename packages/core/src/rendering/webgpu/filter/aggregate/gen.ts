@@ -1,9 +1,8 @@
-import type { AST, ColumnExpr, IndexExpr, ITable, ScalarType, Tables, WgslType } from '../types';
+import type { ColumnExpr, IndexExpr, ScalarType, Tables, WgslType } from '../types';
 import { generateTableBindings, setupExprBuilder } from '../gen';
 import { generateHistogramShader } from './histogram';
 import * as wgh from 'webgpu-utils';
 import { every } from 'lodash-es';
-
 
 type G = IndexExpr<string, string, ScalarType> | ColumnExpr<string, string, ScalarType>;
 type S = G | '$count' | '$unused';
@@ -13,13 +12,13 @@ type SatLayout = [M, M, M, M];
 
 export type AggregationConfig =
     | {
-        op: 'sum';
-        layout: SumLayout;
-    }
+          op: 'sum';
+          layout: SumLayout;
+      }
     | {
-        op: 'min' | 'max';
-        layout: SatLayout;
-    };
+          op: 'min' | 'max';
+          layout: SatLayout;
+      };
 function isScalarType(t: WgslType): t is ScalarType {
     return t === 'f32' || t === 'u32' || t === 'i32';
 }
@@ -38,8 +37,8 @@ function figureOutFormat(tables: Tables, conf: AggregationConfig, toWgsl: (e: G)
         }
         return type === determineType(tables, elem) ? type : null;
     }, undefined);
-    // TODO panic if type == null or undefined
-    const typeSuffix = type === 'f32' ? 'f' : 'u';
+
+    const typeSuffix = type === 'f32' ? 'f' : type === 'u32' ? 'u' : 'i';
     // we can only write to certain formats
     // we can write a single channel, 2 channels, or 4 - never 3
     const [_r, g, b, a] = conf.layout;
@@ -102,7 +101,6 @@ export function generateAggregationShader(
 ) {
     const toWgsl = setupExprBuilder(from);
 
-    // const structFieldDecls = aggregations.map((a, i) => `f_${i} : ${a.kind === 'count' ? 'u32' : a.expr.type}`).join(',\n')
     let bindingStart = 1;
     let bindings: string = '';
 

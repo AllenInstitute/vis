@@ -5,10 +5,7 @@ import type {
     alpha,
     Tables,
     SwizzleIndexExpr,
-    ComponentType,
     IndexExpr,
-    SwizzleExpr,
-    AST,
     BufferTables,
     ColumnExpr,
     OP,
@@ -91,8 +88,8 @@ function compilePredicate<Params extends Record<string, string | number | number
 ) {
     return group instanceof AndGroup
         ? group.ands
-            .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
-            .join(' && ')
+              .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
+              .join(' && ')
         : group.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ');
 }
 function componentType(t: WgslType): ScalarType {
@@ -208,26 +205,26 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 });
                 const bindings = indexed
                     ? (args as RunIndexedFilterArgs<Ts>).sets.map((s, i) => {
-                        return device.createBindGroup({
-                            layout: pipe.pipeline.getBindGroupLayout(1),
-                            entries: [
-                                { binding: 0, resource: s.resultCounter },
-                                { binding: 1, resource: s.results },
-                                { binding: 2, resource: s.elements },
-                                ...mapTablesToBindings(s.tables, safeLookups),
-                            ],
-                        });
-                    })
+                          return device.createBindGroup({
+                              layout: pipe.pipeline.getBindGroupLayout(1),
+                              entries: [
+                                  { binding: 0, resource: s.resultCounter },
+                                  { binding: 1, resource: s.results },
+                                  { binding: 2, resource: s.elements },
+                                  ...mapTablesToBindings(s.tables, safeLookups),
+                              ],
+                          });
+                      })
                     : args.sets.map((s, i) => {
-                        return device.createBindGroup({
-                            layout: pipe.pipeline.getBindGroupLayout(1),
-                            entries: [
-                                { binding: 0, resource: s.resultCounter },
-                                { binding: 1, resource: s.results },
-                                ...mapTablesToBindings(s.tables, safeLookups),
-                            ],
-                        });
-                    });
+                          return device.createBindGroup({
+                              layout: pipe.pipeline.getBindGroupLayout(1),
+                              entries: [
+                                  { binding: 0, resource: s.resultCounter },
+                                  { binding: 1, resource: s.results },
+                                  ...mapTablesToBindings(s.tables, safeLookups),
+                              ],
+                          });
+                      });
 
                 const bg0 = device.createBindGroup({
                     layout: pipe.pipeline.getBindGroupLayout(0),
@@ -237,9 +234,9 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 const pass = enc.beginComputePass(
                     timestampWrites
                         ? {
-                            label,
-                            timestampWrites,
-                        }
+                              label,
+                              timestampWrites,
+                          }
                         : { label }
                 );
                 pass.setPipeline(pipe.pipeline);
@@ -449,6 +446,7 @@ export function given<Ts extends Tables>(tables: Ts) {
             type GroupSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> =
                 | IndexExpr<O & string, string, 'u32'>
                 | ColumnExpr<From & string, string, 'u32'>;
+
             type AggregationSubject<
                 Ts extends Tables,
                 From extends keyof Ts,
@@ -456,24 +454,21 @@ export function given<Ts extends Tables>(tables: Ts) {
                 T extends ScalarType,
             > = From extends string
                 ? O extends string
-                ? keyof Ts[From] extends string
-                ? keyof Ts[O] extends string
-                ? IndexExpr<O, string, T> | ColumnExpr<From, string, T>
-                : never
-                : never
-                : never
+                    ? keyof Ts[From] extends string
+                        ? keyof Ts[O] extends string
+                            ? IndexExpr<O, string, T> | ColumnExpr<From, string, T>
+                            : never
+                        : never
+                    : never
                 : never;
+
             function groupBy<ColGroup extends keyof Ts, RowGroup extends keyof Ts>(
                 col: GroupSubject<Ts, From, ColGroup>,
                 row?: GroupSubject<Ts, From, RowGroup>
             ) {
-
                 function buildAggregate(dev: GPUDevice, conf: AggregationConfig) {
                     const shader = generateAggregationShader(tables, from as string, conf, col, row);
-                    if (!shader) {
-                        // todo think about how to handle...
-                        return undefined;
-                    }
+
                     const { code, format, op } = shader;
                     const pipe = buildAggregationPipeline(dev, code, format, op, 'histogram');
                     if (!pipe) {
@@ -592,8 +587,7 @@ type Parameters = Record<string, string | number | number[]>;
 
 // this function is not exported or called - its only purpose is to explode if something in the above file
 // changes enough to mess up the types - we want restrictive types here, its the whole point
-function typescriptCanary() {
-    type hey = { cells: { A: 'f32'; B: 'vec2f'; C: 'u32' }; edges: { E: 'vec2u'; str: 'f32' } };
+function _typescriptCanary() {
     const e = given({ cells: { A: 'f32', B: 'vec2f', C: 'u32' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
     e.groupBy(e.column('E.x'), e.column('E.y')).min(
         e.column('str'),
