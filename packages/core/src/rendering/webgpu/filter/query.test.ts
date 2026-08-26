@@ -84,8 +84,11 @@ describe('expression building', () => {
             const mod = groupBy(table('cells').at('E.x').dot('B'), table('cells').at('E.y').dot('B'))
                 .sum(column('str'), '$count', '$unused', '$unused')
                 .shader();
-            expect(mod.format).toEqual('rg32float')
-            const lines = mod.code.split('\n').map(s => s.trim()).filter(s => s !== '');
+            expect(mod.format).toEqual('rg32float');
+            const lines = mod.code
+                .split('\n')
+                .map((s) => s.trim())
+                .filter((s) => s !== '');
             const expected = `struct VsIn {
             @builtin(vertex_index) vIndex: u32,
             // delightfully, we dont need instancing! this is because 1px dots are completely fine in this scenaro! yay!
@@ -123,10 +126,13 @@ describe('expression building', () => {
         @fragment
         fn fmain(v:VsOut) ->@location(0) vec2f {
             return v.value;
-        }`
-            expect(lines).toEqual(expected.split('\n').map(s => s.trim()).filter(s => s !== ''))
-        })
-
-
-    })
+        }`;
+            expect(lines).toEqual(
+                expected
+                    .split('\n')
+                    .map((s) => s.trim())
+                    .filter((s) => s !== '')
+            );
+        });
+    });
 });
