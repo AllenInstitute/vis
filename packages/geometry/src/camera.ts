@@ -1,4 +1,5 @@
-import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type box2D } from './box2D';
+import { Vec2, type vec2 } from './vec2';
 
 /**
  * Converts a canvas pixel position to data space.

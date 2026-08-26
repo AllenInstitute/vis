@@ -1,4 +1,4 @@
-import { Box2D, PLANE_XY, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, Camera2D, PLANE_XY, type box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
@@ -6,7 +6,7 @@ import {
     buildAsyncOmezarrRenderer,
     defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
-import { Camera2D, type RenderFrameFn } from '@alleninstitute/vis-core';
+import type { RenderFrameFn } from '@alleninstitute/vis-core';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { renderServerContext } from '../../common/react/render-server-provider';

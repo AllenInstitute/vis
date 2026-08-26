@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchDziMetadata, type DziImage } from '@alleninstitute/vis-dzi';
-import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Camera2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
-import { Camera2D } from '@alleninstitute/vis-core';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { DziViewer } from './dzi-viewer';
 

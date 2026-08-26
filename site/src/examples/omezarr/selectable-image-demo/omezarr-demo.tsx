@@ -1,4 +1,4 @@
-import { Box2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Camera2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type OmeZarrMetadata,
     type RenderSettings,
@@ -7,7 +7,7 @@ import {
     renderChannelsFromMetadata,
     sizeInUnits,
 } from '@alleninstitute/vis-omezarr';
-import { Camera2D, logger, type WebResource } from '@alleninstitute/vis-core';
+import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
 import { useId, useMemo, useState } from 'react';
 import { RenderServerProvider } from '../../common/react/render-server-provider';

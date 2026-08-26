@@ -1,5 +1,5 @@
-import { Camera2D, getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
-import { Box2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
+import { Box2D, Camera2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type OmeZarrMetadata,
     loadMetadata,

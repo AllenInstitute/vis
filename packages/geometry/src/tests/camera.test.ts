@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D } from '../box2D';
+import type { vec2 } from '../vec2';
 import { fitToScreen, pan, screenToData, zoom, zoomAround } from '../camera';
 
 const SCREEN: vec2 = [100, 100];
