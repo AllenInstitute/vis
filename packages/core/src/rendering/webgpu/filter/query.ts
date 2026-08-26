@@ -29,7 +29,7 @@ import type {
 } from './types';
 import { buildRunner } from './aggregate/runner';
 import { mapValues } from 'lodash-es';
-import { buildAggregationPipeline, generateAggregationShader } from './aggregate/gen';
+import { buildAggregationPipeline, generateAggregationShader, type AggregationConfig } from './aggregate/gen';
 
 const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 
@@ -91,8 +91,8 @@ function compilePredicate<Params extends Record<string, string | number | number
 ) {
     return group instanceof AndGroup
         ? group.ands
-              .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
-              .join(' && ')
+            .flatMap((c) => `(${c.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ')})`)
+            .join(' && ')
         : group.predicates.flatMap((p) => toWgsl(p, 'element', uniName)).join(' || ');
 }
 function componentType(t: WgslType): ScalarType {
@@ -208,26 +208,26 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 });
                 const bindings = indexed
                     ? (args as RunIndexedFilterArgs<Ts>).sets.map((s, i) => {
-                          return device.createBindGroup({
-                              layout: pipe.pipeline.getBindGroupLayout(1),
-                              entries: [
-                                  { binding: 0, resource: s.resultCounter },
-                                  { binding: 1, resource: s.results },
-                                  { binding: 2, resource: s.elements },
-                                  ...mapTablesToBindings(s.tables, safeLookups),
-                              ],
-                          });
-                      })
+                        return device.createBindGroup({
+                            layout: pipe.pipeline.getBindGroupLayout(1),
+                            entries: [
+                                { binding: 0, resource: s.resultCounter },
+                                { binding: 1, resource: s.results },
+                                { binding: 2, resource: s.elements },
+                                ...mapTablesToBindings(s.tables, safeLookups),
+                            ],
+                        });
+                    })
                     : args.sets.map((s, i) => {
-                          return device.createBindGroup({
-                              layout: pipe.pipeline.getBindGroupLayout(1),
-                              entries: [
-                                  { binding: 0, resource: s.resultCounter },
-                                  { binding: 1, resource: s.results },
-                                  ...mapTablesToBindings(s.tables, safeLookups),
-                              ],
-                          });
-                      });
+                        return device.createBindGroup({
+                            layout: pipe.pipeline.getBindGroupLayout(1),
+                            entries: [
+                                { binding: 0, resource: s.resultCounter },
+                                { binding: 1, resource: s.results },
+                                ...mapTablesToBindings(s.tables, safeLookups),
+                            ],
+                        });
+                    });
 
                 const bg0 = device.createBindGroup({
                     layout: pipe.pipeline.getBindGroupLayout(0),
@@ -237,9 +237,9 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
                 const pass = enc.beginComputePass(
                     timestampWrites
                         ? {
-                              label,
-                              timestampWrites,
-                          }
+                            label,
+                            timestampWrites,
+                        }
                         : { label }
                 );
                 pass.setPipeline(pipe.pipeline);
@@ -456,32 +456,18 @@ export function given<Ts extends Tables>(tables: Ts) {
                 T extends ScalarType,
             > = From extends string
                 ? O extends string
-                    ? keyof Ts[From] extends string
-                        ? keyof Ts[O] extends string
-                            ? IndexExpr<O, string, T> | ColumnExpr<From, string, T>
-                            : never
-                        : never
-                    : never
+                ? keyof Ts[From] extends string
+                ? keyof Ts[O] extends string
+                ? IndexExpr<O, string, T> | ColumnExpr<From, string, T>
+                : never
+                : never
+                : never
                 : never;
             function groupBy<ColGroup extends keyof Ts, RowGroup extends keyof Ts>(
                 col: GroupSubject<Ts, From, ColGroup>,
                 row?: GroupSubject<Ts, From, RowGroup>
             ) {
-                type G = IndexExpr<string, string, ScalarType> | ColumnExpr<string, string, ScalarType>;
-                type S = G | '$count' | '$unused';
-                type M = G | '$unused';
-                type SumLayout = [S, S, S, S];
-                type SatLayout = [M, M, M, M];
 
-                type AggregationConfig =
-                    | {
-                          op: 'sum';
-                          layout: SumLayout;
-                      }
-                    | {
-                          op: 'min' | 'max';
-                          layout: SatLayout;
-                      };
                 function buildAggregate(dev: GPUDevice, conf: AggregationConfig) {
                     const shader = generateAggregationShader(tables, from as string, conf, col, row);
                     if (!shader) {

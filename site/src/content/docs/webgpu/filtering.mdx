@@ -63,13 +63,12 @@ That means that the format of the results is constrained by renderable, blendabl
 '$unused' tags - these map to the RGBA position within a "pixel" of the resulting histogram. in the example, because
 `$unused` is set for the `B` and `A` components, the underlying system will choose a 2-component texture - in this case
 `rg32float`.
-<br />* `$count` cant be used in min/max, because it would always be 0. * `$count` will be interpreted as `f32` if the
-other values selected for aggregation are `f32`, otherwise it will be interpreted as `u32`. * prefer using `$unused` in
-the later channels - choosing something like `sum($unused, $unused, $unused, something)` will force the system to pick a
-4-component texture, when a single-channel texture would have worked. * the expected type of the G,B,A components is
-based on the inferred type of the R component - setting it as count or unused will likely result in a type error. * the
-aggregation system requires float32-blendable (if you attempt to aggregate floating point data), so the build will fail
-if that feature is not supported by the given GPUDevice.
+<br />
+* `$count` cant be used in min/max, because it would always be 0. 
+* `$count` will be interpreted as `f32` if the other values selected for aggregation are `f32`, otherwise it will be interpreted as `u32`. 
+* prefer using `$unused` in the later channels - choosing something like `sum($unused, $unused, $unused, something)` will force the system to pick a 4-component texture, when a single-channel texture would have worked. 
+* the expected type of the G,B,A components is based on the inferred type of the R component - setting it as count or unused will likely result in a type error. 
+* the aggregation system requires float32-blendable (if you attempt to aggregate floating point data), so the build will fail if that feature is not supported by the given GPUDevice.
 
 <h4> Live Demo </h4>
 once built, you can set the parameters of the filter operation dynamically - do so by editing the JSON below - be

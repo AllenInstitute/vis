@@ -3,14 +3,7 @@ import { generateTableBindings, setupExprBuilder } from '../gen';
 import { generateHistogramShader } from './histogram';
 import * as wgh from 'webgpu-utils';
 import { every } from 'lodash-es';
-export type Agg =
-    | {
-          kind: 'min' | 'max' | 'sum';
-          expr: IndexExpr<string, string, ScalarType> | ColumnExpr<string, string, ScalarType>;
-      }
-    | {
-          kind: 'count';
-      };
+
 
 type G = IndexExpr<string, string, ScalarType> | ColumnExpr<string, string, ScalarType>;
 type S = G | '$count' | '$unused';
@@ -18,15 +11,15 @@ type M = G | '$unused';
 type SumLayout = [S, S, S, S];
 type SatLayout = [M, M, M, M];
 
-type AggregationConfig =
+export type AggregationConfig =
     | {
-          op: 'sum';
-          layout: SumLayout;
-      }
+        op: 'sum';
+        layout: SumLayout;
+    }
     | {
-          op: 'min' | 'max';
-          layout: SatLayout;
-      };
+        op: 'min' | 'max';
+        layout: SatLayout;
+    };
 function isScalarType(t: WgslType): t is ScalarType {
     return t === 'f32' || t === 'u32' || t === 'i32';
 }
