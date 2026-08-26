@@ -29,7 +29,7 @@ import type {
 } from './types';
 import { buildRunner } from './aggregate/runner';
 import { mapValues } from 'lodash-es';
-import { buildPipeline, generateAggregationShader } from './aggregate/gen';
+import { buildAggregationPipeline, generateAggregationShader } from './aggregate/gen';
 
 const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 
@@ -449,11 +449,16 @@ export function given<Ts extends Tables>(tables: Ts) {
             type GroupSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> =
                 | IndexExpr<O & string, string, 'u32'>
                 | ColumnExpr<From & string, string, 'u32'>;
-            type AggregationSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> = From extends string
+            type AggregationSubject<
+                Ts extends Tables,
+                From extends keyof Ts,
+                O extends keyof Ts,
+                T extends ScalarType,
+            > = From extends string
                 ? O extends string
                     ? keyof Ts[From] extends string
                         ? keyof Ts[O] extends string
-                            ? IndexExpr<O, string, ScalarType> | ColumnExpr<From, string, ScalarType>
+                            ? IndexExpr<O, string, T> | ColumnExpr<From, string, T>
                             : never
                         : never
                     : never
@@ -484,16 +489,28 @@ export function given<Ts extends Tables>(tables: Ts) {
                         return undefined;
                     }
                     const { code, format, op } = shader;
-                    const pipe = buildPipeline(dev, code, format, op, 'histogram');
+                    const pipe = buildAggregationPipeline(dev, code, format, op, 'histogram');
+                    if (!pipe) {
+                        throw new Error(
+                            'failed to generate aggregation query - WebGPU feature float32-blendable is required but not supported'
+                        );
+                    }
                     // create a runner
                     return { run: buildRunner(dev, tables, pipe) };
                 }
                 return {
-                    min: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
-                        r: '$unused' | AggregationSubject<Ts, From, R>,
-                        g: '$unused' | AggregationSubject<Ts, From, G>,
-                        b: '$unused' | AggregationSubject<Ts, From, B>,
-                        a: '$unused' | AggregationSubject<Ts, From, A>
+                    min: <
+                        R extends keyof Ts,
+                        G extends keyof Ts,
+                        B extends keyof Ts,
+                        A extends keyof Ts,
+                        RT extends ScalarType,
+                        TT extends RT,
+                    >(
+                        r: '$unused' | AggregationSubject<Ts, From, R, RT>,
+                        g: '$unused' | AggregationSubject<Ts, From, G, TT>,
+                        b: '$unused' | AggregationSubject<Ts, From, B, TT>,
+                        a: '$unused' | AggregationSubject<Ts, From, A, TT>
                     ) => {
                         return {
                             build: (device: GPUDevice) => {
@@ -501,11 +518,18 @@ export function given<Ts extends Tables>(tables: Ts) {
                             },
                         };
                     },
-                    max: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
-                        r: '$unused' | AggregationSubject<Ts, From, R>,
-                        g: '$unused' | AggregationSubject<Ts, From, G>,
-                        b: '$unused' | AggregationSubject<Ts, From, B>,
-                        a: '$unused' | AggregationSubject<Ts, From, A>
+                    max: <
+                        R extends keyof Ts,
+                        G extends keyof Ts,
+                        B extends keyof Ts,
+                        A extends keyof Ts,
+                        RT extends ScalarType,
+                        TT extends RT,
+                    >(
+                        r: '$unused' | AggregationSubject<Ts, From, R, RT>,
+                        g: '$unused' | AggregationSubject<Ts, From, G, TT>,
+                        b: '$unused' | AggregationSubject<Ts, From, B, TT>,
+                        a: '$unused' | AggregationSubject<Ts, From, A, TT>
                     ) => {
                         return {
                             build: (device: GPUDevice) => {
@@ -513,11 +537,18 @@ export function given<Ts extends Tables>(tables: Ts) {
                             },
                         };
                     },
-                    sum: <R extends keyof Ts, G extends keyof Ts, B extends keyof Ts, A extends keyof Ts>(
-                        r: '$count' | '$unused' | AggregationSubject<Ts, From, R>,
-                        g: '$count' | '$unused' | AggregationSubject<Ts, From, G>,
-                        b: '$count' | '$unused' | AggregationSubject<Ts, From, B>,
-                        a: '$count' | '$unused' | AggregationSubject<Ts, From, A>
+                    sum: <
+                        R extends keyof Ts,
+                        G extends keyof Ts,
+                        B extends keyof Ts,
+                        A extends keyof Ts,
+                        RT extends ScalarType,
+                        TT extends RT,
+                    >(
+                        r: '$count' | '$unused' | AggregationSubject<Ts, From, R, RT>,
+                        g: '$count' | '$unused' | AggregationSubject<Ts, From, G, TT>,
+                        b: '$count' | '$unused' | AggregationSubject<Ts, From, B, TT>,
+                        a: '$count' | '$unused' | AggregationSubject<Ts, From, A, TT>
                     ) => {
                         return {
                             build: (device: GPUDevice) => {
@@ -566,7 +597,7 @@ export function given<Ts extends Tables>(tables: Ts) {
                 const type = determineType(tables, selection);
                 return new Selection(tables, from, [{ selection: s, type }]);
             }
-            // const { groupBy, min, max, sum } = setupAggregator<Tables,From>(tables, from)
+
             return { column, table, any, all, clause: any, select, groupBy };
         },
     };
@@ -576,11 +607,16 @@ type Parameters = Record<string, string | number | number[]>;
 // this function is not exported or called - its only purpose is to explode if something in the above file
 // changes enough to mess up the types - we want restrictive types here, its the whole point
 function typescriptCanary() {
-    type hey = { cells: { A: 'f32'; B: 'vec2f' }; edges: { E: 'vec2u'; str: 'f32' } };
-    const e = given({ cells: { A: 'f32', B: 'vec2f' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
+    type hey = { cells: { A: 'f32'; B: 'vec2f'; C: 'u32' }; edges: { E: 'vec2u'; str: 'f32' } };
+    const e = given({ cells: { A: 'f32', B: 'vec2f', C: 'u32' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
+    e.groupBy(e.column('E.x'), e.column('E.y')).min(
+        e.column('str'),
+        // @ts-expect-error
+        e.table('cells').at('E.x').dot('C'),
+        '$unused',
+        '$unused'
+    );
 
-    // e.groupBy(e.column('E.x'), e.column('E.y')).min(e.column('str'), e.table('cells').at('E.x').dot('A'), '$unused', '$unused')
-    // .build(null as any).run(null as any, [{ count: 33, tables: {} }],)
     // @ts-expect-error
     e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
     // @ts-expect-error

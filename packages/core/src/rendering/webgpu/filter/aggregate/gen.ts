@@ -27,7 +27,10 @@ type AggregationConfig =
           op: 'min' | 'max';
           layout: SatLayout;
       };
-function figureOut(tables: Tables, conf: AggregationConfig, toWgsl: (e: G) => string) {
+function isScalarType(t: WgslType): t is ScalarType {
+    return t === 'f32' || t === 'u32' || t === 'i32';
+}
+function figureOutFormat(tables: Tables, conf: AggregationConfig, toWgsl: (e: G) => string) {
     // make sure all types agree
     const type = conf.layout.reduce((type: WgslType | null | undefined, elem) => {
         if (type === null) {
@@ -65,7 +68,7 @@ function figureOut(tables: Tables, conf: AggregationConfig, toWgsl: (e: G) => st
         components = 2;
         expr = `vec2${typeSuffix}(${type}(${R}),${type}(${G}))`;
     }
-    return { type, components, expr };
+    return { type: type ?? 'f32', components, expr };
 }
 function componentType(t: WgslType): ScalarType {
     if (t.startsWith('vec')) {
@@ -81,15 +84,11 @@ function componentType(t: WgslType): ScalarType {
     }
     return t as ScalarType;
 }
-function inferType(table: ITable, e: string) {
-    const [field, swizzle] = e.split('.');
-    return swizzle ? componentType(table![field!]!) : table![field!]!;
-}
+
 function determineType(
     tables: Tables,
-    expr: '$index' | IndexExpr<string, string, WgslType> | ColumnExpr<string, string, WgslType>
+    expr: IndexExpr<string, string, WgslType> | ColumnExpr<string, string, WgslType>
 ): WgslType {
-    if (expr === '$index') return 'u32';
     switch (expr.kind) {
         case 'from field': {
             const [field, swizzle] = expr.field.split('.');
@@ -121,46 +120,59 @@ export function generateAggregationShader(
         bindingStart += binding.numBindings;
         bindingLookups[t] = binding.bindingLookup;
     }
-    const { components, type, expr } = figureOut(tables, aggregation, (s) => toWgsl(s, 'element', ''));
-    if (type === 'f32' || type === 'u32') {
-        const code = generateHistogramShader({
-            aggComponents: components,
-            aggType: type,
-            aggregationExpr: expr,
-            colGroupExpr: toWgsl(col, 'element', ''),
-            rowGroupExpr: row ? toWgsl(row, 'element', '') : '0u',
-            inputBindings: bindings,
-        });
-        let format: GPUTextureFormat = 'rgba32float';
-        if (type === 'f32') {
-            if (components === 1) {
-                format = 'r32float';
-            } else if (components === 2) {
-                format = 'rg32float';
-            } else {
-                format = 'rgba32float';
-            }
-        } else if (type === 'u32') {
-            if (components === 1) {
-                format = 'r32uint';
-            } else if (components === 2) {
-                format = 'rg32uint';
-            } else {
-                format = 'rgba32uint';
-            }
-        }
-        return { code, format, op: aggregation.op === 'sum' ? 'add' : aggregation.op } as const;
+    const { components, type, expr } = figureOutFormat(tables, aggregation, (s) => toWgsl(s, 'element', ''));
+    if (!isScalarType(type)) {
+        throw new Error('this should not be possible - scalar types required statically by interface...');
     }
-    // todo - throw or something?
-    return undefined;
+    const code = generateHistogramShader({
+        aggComponents: components,
+        aggType: type as ScalarType,
+        aggregationExpr: expr,
+        colGroupExpr: toWgsl(col, 'element', ''),
+        rowGroupExpr: row ? toWgsl(row, 'element', '') : '0u',
+        inputBindings: bindings,
+    });
+    let format: GPUTextureFormat = 'rgba32float';
+    if (type === 'f32') {
+        if (components === 1) {
+            format = 'r32float';
+        } else if (components === 2) {
+            format = 'rg32float';
+        } else {
+            format = 'rgba32float';
+        }
+    } else if (type === 'u32') {
+        if (components === 1) {
+            format = 'r32uint';
+        } else if (components === 2) {
+            format = 'rg32uint';
+        } else {
+            format = 'rgba32uint';
+        }
+    } else if (type === 'i32') {
+        if (components === 1) {
+            format = 'r32sint';
+        } else if (components === 2) {
+            format = 'rg32sint';
+        } else {
+            format = 'rgba32sint';
+        }
+    }
+    return { code, format, op: aggregation.op === 'sum' ? 'add' : aggregation.op } as const;
 }
-export function buildPipeline(
+export function buildAggregationPipeline(
     dev: GPUDevice,
     code: string,
     format: GPUTextureFormat,
     op: 'min' | 'max' | 'add',
     label: string
 ) {
+    // fail if the device cant support our format...
+    if (format.includes('float32')) {
+        if (!dev.features.has('float32-blendable')) {
+            return undefined;
+        }
+    }
     const module = dev.createShaderModule({
         label,
         code,

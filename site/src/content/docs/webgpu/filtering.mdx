@@ -40,7 +40,7 @@ to a rendering pass (the data never has to leave the GPU).
 the filter system can also be used for basic aggregation. The following will create a 2D table of values - each row/column value will represent a distinct subclass value. The subclass of the cells at the start of all edges make up the columns, and the subclass of the cells at the end of all edges become the rows.
 
 ```ts
-const { table, groupBy, column} = given({
+const { table, groupBy, column } = given({
     cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
     edges: { start: 'u32', end: 'u32', str: 'f32' },
 }).from('edges');
@@ -66,7 +66,10 @@ That means that the format of the results is constrained by renderable, blendabl
 <br />* `$count` cant be used in min/max, because it would always be 0. * `$count` will be interpreted as `f32` if the
 other values selected for aggregation are `f32`, otherwise it will be interpreted as `u32`. * prefer using `$unused` in
 the later channels - choosing something like `sum($unused, $unused, $unused, something)` will force the system to pick a
-4-component texture, when a single-channel texture would have worked.
+4-component texture, when a single-channel texture would have worked. * the expected type of the G,B,A components is
+based on the inferred type of the R component - setting it as count or unused will likely result in a type error. * the
+aggregation system requires float32-blendable (if you attempt to aggregate floating point data), so the build will fail
+if that feature is not supported by the given GPUDevice.
 
 <h4> Live Demo </h4>
 once built, you can set the parameters of the filter operation dynamically - do so by editing the JSON below - be

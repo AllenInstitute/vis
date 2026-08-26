@@ -81,7 +81,12 @@ function setupAggregationDemo(device: GPUDevice, querySet: GPUQuerySet) {
     const dims = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM });
     const resolve = device.createBuffer({ size: w * h * 8, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
     device.queue.writeBuffer(dims, 0, new Uint32Array([w, h]));
-    const doAggregate = (enc: GPUCommandEncoder, count: number | GPUBuffer, tables: ReturnType<typeof generateFakeDataset>, edges?: GPUBuffer) => {
+    const doAggregate = (
+        enc: GPUCommandEncoder,
+        count: number | GPUBuffer,
+        tables: ReturnType<typeof generateFakeDataset>,
+        edges?: GPUBuffer
+    ) => {
         if (typeof count !== 'number') {
             enc.copyBufferToBuffer(count, 0, indirectBuffer, 0, 4); // copy the count to the vertex count of the indirect call...
         }
