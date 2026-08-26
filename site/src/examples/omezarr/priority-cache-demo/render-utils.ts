@@ -43,9 +43,12 @@ export function buildConnectedRenderer(
     screenSize: vec2,
     cache: SharedPriorityCache,
     decoder: Decoder,
-    onData: () => void
+    onData: () => void,
+    numChannels: number
 ) {
-    const renderer = buildOmeZarrSliceRenderer(regl, decoder);
+    // the render command is compiled for a fixed number of channels, so this has to match the number of
+    // entries the settings will carry - fewer, and the command reads past the end of the channel array
+    const renderer = buildOmeZarrSliceRenderer(regl, decoder, { numChannels });
     const client = cache.registerClient<Thing, Record<string, Tex>>({
         cacheKeys: (item) => {
             const channelKeys = Object.keys(item.settings.channels);
