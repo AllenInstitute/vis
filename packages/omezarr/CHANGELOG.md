@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-08-27
+
+### 🚀 Features
+
+- Share 2D camera math and OME-Zarr render channels [DT-9938] ([#293](https://github.com/AllenInstitute/vis/pull/293))
+
+### 💼 Other
+
+- Bump the version again ([#277](https://github.com/AllenInstitute/vis/pull/277))
+- Migrate linter from Biome to oxlint 1.73.0 ([#280](https://github.com/AllenInstitute/vis/pull/280))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(vis-omezarr)_ Fix published but broken version 0.1.0 ([#276](https://github.com/AllenInstitute/vis/pull/276))
+
 ## [0.1.0] - 2026-07-07
 
 ### 🚀 Features
@@ -61,6 +76,7 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Remove packageManager since Volta manages the proper version ([#258](https://github.com/AllenInstitute/vis/pull/258))
 - _(deps)_ Bump zod from 4.3.6 to 4.4.3 ([#273](https://github.com/AllenInstitute/vis/pull/273))
 - _(omezarr)_ Update version due to a workspace-imported dependency ([#275](https://github.com/AllenInstitute/vis/pull/275))
+- _(release)_ @alleninstitute/vis-omezarr@0.1.0
 
 ## [0.0.11] - 2025-04-23
 
