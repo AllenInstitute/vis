@@ -2,11 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-08-27
+
+### 💼 Other
+
+- Noah/aggregation shader ([#294](https://github.com/AllenInstitute/vis/pull/294))
+
+merging despite formatting issue in mdx file - the "formatted" markdown produces a webpage that has formatting issues for human readers.
+
+### 🚜 Refactor
+
+- _(deps)_ Replace lodash with lodash-es ([#288](https://github.com/AllenInstitute/vis/pull/288))
+
 ## [0.1.1] - 2026-08-17
 
 ### 💼 Other
 
 - Noah/refactor filtering ([#287](https://github.com/AllenInstitute/vis/pull/287))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.1
 
 ## [0.1.0] - 2026-08-07
 
