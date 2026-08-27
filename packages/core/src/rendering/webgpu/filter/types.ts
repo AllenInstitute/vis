@@ -124,17 +124,17 @@ export type ComponentType<
     OE extends SwizzleExpr<Ts, Other, Field>,
 > = Field extends string ? (OE extends SwizzledField<Field> ? FType<Ts[Other], Field> : FType<Ts[Other], OE>) : never;
 // not sure why - but componentType goes super banans for simpler, non-index-style expressions... use Cmp instead
-export type Cmp<V extends WgslType> = V extends `vec${infer S}${infer A extends Abbr}` ? `${A}32` : never;
+export type Cmp<V extends WgslType> = V extends `vec${infer _S}${infer A extends Abbr}` ? `${A}32` : never;
 // }
 // any expr that resolves to a u32 type?
-export type IndexExpr<Table extends string, Field extends string, T> = {
+export type IndexExpr<Table, Field extends string, T> = {
     kind: 'table at field';
     table: Table;
     atExpr: IndexExpr<string, string, 'u32'> | string;
     field: Field;
     type: T;
 };
-export type ColumnExpr<From extends string, Field extends string | '$index', T> = {
+export type ColumnExpr<From, Field extends string | '$index', T> = {
     kind: 'from field';
     from: From;
     field: Field;
