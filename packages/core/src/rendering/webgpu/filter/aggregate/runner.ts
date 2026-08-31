@@ -1,3 +1,4 @@
+import type { vec4 } from '@alleninstitute/vis-geometry';
 import type { BufferTables, Tables } from '../types';
 import * as wgh from 'webgpu-utils';
 
@@ -39,16 +40,16 @@ export function buildRunner<Ts extends Tables>(
     const runner = (
         enc: GPUCommandEncoder,
         inputSets: { tables: BufferTables<Ts>; count: number | GPUBuffer; elements?: GPUBuffer }[],
-        camera: GPUBuffer,
+        outputDimensions: GPUBuffer,
         results: GPUTextureView,
-        clearFirst: boolean = false,
+        clear?: vec4,
         timestampWrites?: GPURenderPassTimestampWrites
     ) => {
         const { pipeline } = pipe;
         // create some bind groups...
         const bg0 = device.createBindGroup({
             layout: pipeline.getBindGroupLayout(0),
-            entries: [{ binding: 0, resource: camera }],
+            entries: [{ binding: 0, resource: outputDimensions }],
         });
         const bg1l = pipeline.getBindGroupLayout(1);
         const bg1s = inputSets.map((s) => {
@@ -59,7 +60,12 @@ export function buildRunner<Ts extends Tables>(
         });
         const desc: GPURenderPassDescriptor = {
             colorAttachments: [
-                { clearValue: [0, 0, 0, 0], view: results, loadOp: clearFirst ? 'clear' : 'load', storeOp: 'store' },
+                {
+                    clearValue: clear ? [...clear] : [0, 0, 0, 0],
+                    view: results,
+                    loadOp: clear !== undefined ? 'clear' : 'load',
+                    storeOp: 'store',
+                },
             ],
         };
         if (timestampWrites) {

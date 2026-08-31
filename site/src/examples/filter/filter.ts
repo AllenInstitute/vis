@@ -96,7 +96,7 @@ function setupAggregationDemo(device: GPUDevice, querySet: GPUQuerySet) {
             [{ count: typeof count !== 'number' ? indirectBuffer : count, tables, elements: edges }],
             dims,
             results.createView(),
-            true,
+            [0, 0, 0, 0],
             { querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 }
         );
         enc.copyTextureToBuffer(
