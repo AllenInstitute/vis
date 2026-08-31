@@ -60,7 +60,12 @@ export function buildRunner<Ts extends Tables>(
         });
         const desc: GPURenderPassDescriptor = {
             colorAttachments: [
-                { clearValue: clear?[...clear]:[0,0,0,0], view: results, loadOp: clear !== undefined ? 'clear' : 'load', storeOp: 'store' },
+                {
+                    clearValue: clear ? [...clear] : [0, 0, 0, 0],
+                    view: results,
+                    loadOp: clear !== undefined ? 'clear' : 'load',
+                    storeOp: 'store',
+                },
             ],
         };
         if (timestampWrites) {
