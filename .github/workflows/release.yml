@@ -26,16 +26,9 @@ jobs:
                   ssh-key: ${{ secrets.SERVICE_ACCOUNT_SSH_KEY }}
                   fetch-depth: 0
 
-            - uses: pnpm/action-setup@v6
+            - uses: pnpm/setup@v1
               with:
-                  version: 11.21.0
-
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 24.15.0
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+                  cache: true
 
             - name: Set git user
               run: |
