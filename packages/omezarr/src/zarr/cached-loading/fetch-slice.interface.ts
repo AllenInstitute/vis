@@ -1,5 +1,5 @@
 import type { AbsolutePath, RangeQuery } from 'zarrita';
-import z from 'zod';
+import { z } from 'zod';
 
 export type TransferrableRequestInit = Omit<RequestInit, 'body' | 'headers' | 'signal'> & {
     body?: string;
