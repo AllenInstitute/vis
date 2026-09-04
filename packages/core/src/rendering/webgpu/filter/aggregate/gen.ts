@@ -99,7 +99,7 @@ export function generateAggregationShader(
     col: G,
     row?: G
 ) {
-    const toWgsl = setupExprBuilder(from);
+    const toWgsl = setupExprBuilder(from, tables);
 
     let bindingStart = 1;
     let bindings: string = '';
