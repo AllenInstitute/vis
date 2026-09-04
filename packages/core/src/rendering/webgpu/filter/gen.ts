@@ -49,6 +49,8 @@ export function setupExprBuilder(from: string, tables: Tables) {
                     const offset = offsets[swizzle];
                     return `${table}_${column}[(${indexing})*3+${offset}]`;
                 }
+                // if somehow, the swizzle isn't x,y,z, which should be impossible - lets just make a vec3 and append the swizzle expr to it anyway:
+                return `${type}(${table}_${column}[(${indexing})*3],${table}_${column}[(${indexing})*3+1],${table}_${column}[(${indexing})*3+2]).${swizzle}`;
             }
             return `${type}(${table}_${column}[(${indexing})*3],${table}_${column}[(${indexing})*3+1],${table}_${column}[(${indexing})*3+2])`;
         }
