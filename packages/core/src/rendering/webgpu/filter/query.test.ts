@@ -111,7 +111,7 @@ describe('expression building', () => {
         };
         struct VsOut {
             @builtin(position) pos: vec4f,
-            @location(0) value:vec2f,
+            @location(0) @interpolate(flat) value:vec2f,
         };
         @group(0) @binding(0)
         var<uniform> outputDimensions: vec2u;

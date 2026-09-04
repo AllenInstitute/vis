@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-08-31
+
+### 🐛 Bug Fixes
+
+- _(vis-core)_ Minor fix on inter-stage variables in the generated aggregation shader ([#296](https://github.com/AllenInstitute/vis/pull/296))
+
 ## [0.1.2] - 2026-08-27
 
 ### 💼 Other
@@ -13,6 +19,10 @@ merging despite formatting issue in mdx file - the "formatted" markdown produces
 ### 🚜 Refactor
 
 - _(deps)_ Replace lodash with lodash-es ([#288](https://github.com/AllenInstitute/vis/pull/288))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.2
 
 ## [0.1.1] - 2026-08-17
 
