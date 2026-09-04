@@ -38,34 +38,37 @@ function parseVecOp(op: VOP) {
     return [aggregation, sop] as ['any' | 'all', OP];
 }
 export function setupExprBuilder(from: string, tables: Tables) {
-    function columnAt(table: string, column: string, indexing: string) {
+    function columnAt(table: string, column: string, indexing: string, swizzle: string | undefined) {
         const type = tables[table][column];
         if (type.startsWith('vec3')) {
             // webGPU can handle vec3 as vertex data (tight 12byte pack) but not in a storage buffer, because why be nice to developers?
             // so we do this silly hack:
+            const offsets: Record<string, string> = { x: '0', y: '1', z: '2' };
+            if (swizzle) {
+                if (swizzle in offsets) {
+                    const offset = offsets[swizzle];
+                    return `${table}_${column}[(${indexing})*3+${offset}]`;
+                }
+            }
             return `${type}(${table}_${column}[(${indexing})*3],${table}_${column}[(${indexing})*3+1],${table}_${column}[(${indexing})*3+2])`;
         }
         // otherwise, be normal about stuff
-        return `${table}_${column}[${indexing}]`;
+        return swizzle ? `${table}_${column}[${indexing}].${swizzle}` : `${table}_${column}[${indexing}]`;
     }
 
     function toWgsl(ast: AST, indexing: string, uniName: string): string {
         switch (ast.kind) {
             case 'from field': {
                 const [column, swizzle] = ast.field.split('.');
-                // if the column is a vec3*, we have to massage the index... due to alignment issues!
-                return swizzle
-                    ? `${columnAt(ast.from, column, indexing)}.${swizzle}`
-                    : `${columnAt(ast.from, column, indexing)}`;
+                return columnAt(ast.from, column, indexing, swizzle);
             }
             case 'table at field':
                 const subExpr =
                     typeof ast.atExpr === 'string'
-                        ? `[${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: 'u32' }, indexing, uniName)}]`
-                        : `[${toWgsl(ast.atExpr, indexing, uniName)}]`;
+                        ? `${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: 'u32' }, indexing, uniName)}`
+                        : `${toWgsl(ast.atExpr, indexing, uniName)}`;
                 const [column, swizzle] = ast.field.split('.');
-                const sel: string = columnAt(ast.table, column, subExpr); //`${ast.table}_${column}${subExpr}`;
-                return swizzle ? `${sel}.${swizzle}` : sel;
+                return columnAt(ast.table, column, subExpr, swizzle);
             case 'predicate':
                 const { lhs, op, rhs } = ast;
                 if (isVecOp(op)) {
