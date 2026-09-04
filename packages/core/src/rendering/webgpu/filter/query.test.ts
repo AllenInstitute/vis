@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { given } from './query';
+import { setupExprBuilder } from './gen';
 
 describe('expression building', () => {
     const tables = {
@@ -72,6 +73,21 @@ describe('expression building', () => {
             },
             op: '==',
             rhs: 'stuff',
+        });
+    });
+    describe('vec3 input handling', () => {
+        const tables = {
+            cells: { A: 'vec3f', B: 'u32' },
+        } as const;
+        test('vec3 columns are re-written as scalar arrays', () => {
+            const c = given(tables).from('cells');
+            const regular = c.column('A');
+            const swizzledRef = c.column('A.x');
+            const toWgsl = setupExprBuilder('cells', tables);
+            expect(toWgsl(regular, 'element', 'params')).toEqual(
+                'vec3f(cells_A[(element)*3],cells_A[(element)*3+1],cells_A[(element)*3+2])'
+            );
+            expect(toWgsl(swizzledRef, 'element', 'params')).toEqual('cells_A[(element)*3+0]');
         });
     });
     describe('aggregation shader', () => {

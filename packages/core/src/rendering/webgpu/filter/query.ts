@@ -151,7 +151,7 @@ class Selection<Ts extends Tables, From extends keyof Ts> {
         selections: ReadonlyArray<Sel>
     ) {
         this.selections = selections;
-        this.toWgsl = setupExprBuilder(this.from as string);
+        this.toWgsl = setupExprBuilder(this.from as string, tables);
     }
     select(selection: '$index' | IndexExpr<string, string, WgslType> | ColumnExpr<string, string, WgslType>) {
         const s = selection === '$index' ? 'tmp - 1' : this.toWgsl(selection, 'tmp - 1', ''); // uni-name not relavant in selection...
@@ -576,7 +576,7 @@ export function given<Ts extends Tables>(tables: Ts) {
                 };
             }
 
-            const toWgsl = setupExprBuilder(from as string);
+            const toWgsl = setupExprBuilder(from as string, tables);
             function select(
                 selection: '$index' | IndexExpr<string, string, WgslType> | ColumnExpr<string, string, WgslType>
             ) {

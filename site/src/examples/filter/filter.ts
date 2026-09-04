@@ -44,7 +44,7 @@ function generateFake(
 }
 
 const tableLayout = {
-    cells: { subclass: 'u32', gene_x: 'f32', position: 'vec2f' },
+    cells: { subclass: 'u32', gene_x: 'f32', position: 'vec3f' },
     edges: { start: 'u32', end: 'u32' },
 } as const;
 const aggLayout = {
@@ -146,35 +146,46 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
     expectedResults.setUint32(24, 1, true);
     expectedResults.setUint32(28, 2, true);
     // for fun, validate at runtime?
-    filter.validate(
-        device,
-        filter.serializeParameters,
-        {
-            cells: {
-                position: new Float32Array([
-                    0.5,
-                    0.5,
-                    0.25,
-                    0.25,
-                    0.5,
-                    0.5,
-                    0.5,
-                    0.5,
-                    2,
-                    2, // excluded by the min/max Corner check
-                ]),
-                subclass: new Uint32Array([0, 1, 2, 2, 1]),
-                gene_x: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5]),
+    filter
+        .validate(
+            device,
+            filter.serializeParameters,
+            {
+                cells: {
+                    position: new Float32Array([
+                        0.5,
+                        0.5,
+                        0.333,
+                        0.25,
+                        0.25,
+                        0.333,
+                        0.5,
+                        0.5,
+                        0.333,
+                        0.5,
+                        0.5,
+                        0.333,
+                        2,
+                        2,
+                        0.333, // excluded by the min/max Corner check
+                    ]),
+                    subclass: new Uint32Array([0, 1, 2, 2, 1]),
+                    gene_x: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5]),
+                },
+                edges: {
+                    start: new Uint32Array([1, 1, 4, 0, 1]),
+                    end: new Uint32Array([0, 2, 3, 4, 3]),
+                },
             },
-            edges: {
-                start: new Uint32Array([1, 1, 4, 0, 1]),
-                end: new Uint32Array([0, 2, 3, 4, 3]),
-            },
-        },
-        { fromClass: 1, toClass: 2, minCorner: [0, 0], maxCorner: [1, 1] },
-        expectedResults,
-        5
-    );
+            { fromClass: 1, toClass: 2, minCorner: [0, 0, 0], maxCorner: [1, 1, 1] },
+            expectedResults,
+            5
+        )
+        .then((result) => {
+            if (result.status === 'failure') {
+                throw new Error('warning - demo filter failed to validate!');
+            }
+        });
 
     const outputSizeBytes = 16;
 
@@ -191,8 +202,8 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
     const params = filter.serializeParameters({
         toClass: 4,
         fromClass: 3,
-        minCorner: [0, 0],
-        maxCorner: [0.9, 0.9],
+        minCorner: [0, 0, 0],
+        maxCorner: [0.9, 0.9, 0.9],
     });
     const paramBuffer = device.createBuffer({
         size: params.byteLength,

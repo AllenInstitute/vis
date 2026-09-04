@@ -1,6 +1,15 @@
-import { type WgslType, type Sel, type Tables, type AST, type OP, type VOP } from './types';
-
-const entries = (r: object) => Object.entries(r);
+import { entries } from 'lodash-es';
+import {
+    type WgslType,
+    type Sel,
+    type Tables,
+    type AST,
+    type OP,
+    type VOP,
+    type VectorType,
+    type VLen,
+    type ScalarType,
+} from './types';
 
 function generateOutputStructure(selections: ReadonlyArray<Sel>) {
     // the names of the values in the structure dont matter at all -
@@ -15,26 +24,53 @@ function generateOutputStructure(selections: ReadonlyArray<Sel>) {
 function isVecOp(s: OP | VOP): s is VOP {
     return s.startsWith('a');
 }
+function scalarTypeOf(type: VectorType<VLen>): ScalarType {
+    if (type.endsWith('u')) {
+        return 'u32';
+    } else if (type.endsWith('f')) {
+        return 'f32';
+    }
+    return 'i32';
+}
 function parseVecOp(op: VOP) {
     const aggregation = op.substring(0, 3);
     const sop = op.substring(4).split(')')[0];
     return [aggregation, sop] as ['any' | 'all', OP];
 }
-export function setupExprBuilder(from: string) {
+export function setupExprBuilder(from: string, tables: Tables) {
+    function columnAt(table: string, column: string, indexing: string, swizzle: string | undefined) {
+        const type = tables[table][column];
+        if (type.startsWith('vec3')) {
+            // webGPU can handle vec3 as vertex data (tight 12byte pack) but not in a storage buffer, because why be nice to developers?
+            // so we do this silly hack:
+            const offsets: Record<string, string> = { x: '0', y: '1', z: '2' };
+            if (swizzle) {
+                if (swizzle in offsets) {
+                    const offset = offsets[swizzle];
+                    return `${table}_${column}[(${indexing})*3+${offset}]`;
+                }
+                // if somehow, the swizzle isn't x,y,z, which should be impossible - lets just make a vec3 and append the swizzle expr to it anyway:
+                return `${type}(${table}_${column}[(${indexing})*3],${table}_${column}[(${indexing})*3+1],${table}_${column}[(${indexing})*3+2]).${swizzle}`;
+            }
+            return `${type}(${table}_${column}[(${indexing})*3],${table}_${column}[(${indexing})*3+1],${table}_${column}[(${indexing})*3+2])`;
+        }
+        // otherwise, be normal about stuff
+        return swizzle ? `${table}_${column}[${indexing}].${swizzle}` : `${table}_${column}[${indexing}]`;
+    }
+
     function toWgsl(ast: AST, indexing: string, uniName: string): string {
         switch (ast.kind) {
             case 'from field': {
                 const [column, swizzle] = ast.field.split('.');
-                return swizzle ? `${ast.from}_${column}[${indexing}].${swizzle}` : `${ast.from}_${column}[${indexing}]`;
+                return columnAt(ast.from, column, indexing, swizzle);
             }
             case 'table at field':
                 const subExpr =
                     typeof ast.atExpr === 'string'
-                        ? `[${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: 'u32' }, indexing, uniName)}]`
-                        : `[${toWgsl(ast.atExpr, indexing, uniName)}]`;
+                        ? `${toWgsl({ kind: 'from field', field: ast.atExpr, from: from as string, type: 'u32' }, indexing, uniName)}`
+                        : `${toWgsl(ast.atExpr, indexing, uniName)}`;
                 const [column, swizzle] = ast.field.split('.');
-                const sel: string = `${ast.table}_${column}${subExpr}`;
-                return swizzle ? `${sel}.${swizzle}` : sel;
+                return columnAt(ast.table, column, subExpr, swizzle);
             case 'predicate':
                 const { lhs, op, rhs } = ast;
                 if (isVecOp(op)) {
@@ -123,9 +159,10 @@ export function generateTableBindings(
         {} as Record<string, number>
     );
     const decls = cols
-        .map(
-            ([f, t], index) =>
-                `@group(${group}) @binding(${index + bindingStart}) var<storage,read> ${tableName}_${f}: array<${t}>;`
+        .map(([f, t], index) =>
+            t.startsWith('vec3')
+                ? `@group(${group}) @binding(${index + bindingStart}) var<storage,read> ${tableName}_${f}: array<${scalarTypeOf(t as VectorType<3>)}>;`
+                : `@group(${group}) @binding(${index + bindingStart}) var<storage,read> ${tableName}_${f}: array<${t}>;`
         )
         .join('\n');
     return { decls, numBindings: cols.length, bindingLookup };
