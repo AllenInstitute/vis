@@ -182,7 +182,9 @@ export function setupDemo(device: GPUDevice, edges: number, cells: number) {
             5
         )
         .then((result) => {
-            console.warn(result);
+            if (result.status === 'failure') {
+                throw new Error('warning - demo filter failed to validate!');
+            }
         });
 
     const outputSizeBytes = 16;

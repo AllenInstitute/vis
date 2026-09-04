@@ -12,8 +12,8 @@ export function Demo() {
     const [gpuDuration, setGpuDuration] = useState<number>(Number.NaN);
     const [gpuAggregationDuration, setAggregationGpuDuration] = useState<number>(Number.NaN);
     const [params, setParams] = useState<Parameters<ReturnType<typeof setupDemo>>[0]>({
-        minCorner: [0, 0],
-        maxCorner: [1, 1],
+        minCorner: [0, 0, 0],
+        maxCorner: [1, 1, 1],
         fromClass: 3,
         toClass: 4,
     });
