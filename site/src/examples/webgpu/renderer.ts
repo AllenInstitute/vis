@@ -8,7 +8,7 @@
  * Returns a `dispose()` that stops the loop and releases every GPU resource the demo owns.
  */
 
-import * as webgpu from '@alleninstitute/vis-core/src/rendering/webgpu';
+import * as webgpu from '@alleninstitute/vis-core';
 import { identity, lookAt, type Mat4, multiplyAll, perspective, rotationAxis, translation, type Vec3 } from './camera';
 import { cube, dodecahedron, type Mesh, tetrahedron } from './geometry';
 import { buildShaderProgram, type InstanceUniforms } from './shader';
@@ -51,7 +51,7 @@ export async function startWebGpuDemo(canvas: HTMLCanvasElement): Promise<() => 
     context.configure({ device, format, alphaMode: 'opaque' });
 
     // A modest batch-pool buffer manager covers the uniforms + geometry buffers.
-    const bufferManager = new webgpu.BatchPoolBufferAdapter({
+    const bufferManager = new webgpu.BatchPoolBufferManager({
         device,
         maxBytes: 32 * 1024 * 1024,
         idleFrameLimit: 60,

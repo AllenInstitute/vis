@@ -5,7 +5,7 @@
  * lambert shading, so no normal attribute is needed.
  */
 
-import * as webgpu from '@alleninstitute/vis-core/src/rendering/webgpu';
+import * as webgpu from '@alleninstitute/vis-core';
 
 const {
     bindings,
