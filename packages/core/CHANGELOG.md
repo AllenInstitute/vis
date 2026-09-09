@@ -2,11 +2,60 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.4] - 2026-09-04
+
+### 🐛 Bug Fixes
+
+- _(vis-core)_ Filter compute shaders incorrectly handled alignment of vec3 columns ([#301](https://github.com/AllenInstitute/vis/pull/301))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(deps)_ Bump uuid from 14.0.1 to 14.0.2 ([#298](https://github.com/AllenInstitute/vis/pull/298))
+- _(deps)_ Bump @webgpu/types from 0.1.71 to 0.1.72 ([#297](https://github.com/AllenInstitute/vis/pull/297))
+
+## [0.1.3] - 2026-08-31
+
+### 🐛 Bug Fixes
+
+- _(vis-core)_ Minor fix on inter-stage variables in the generated aggregation shader ([#296](https://github.com/AllenInstitute/vis/pull/296))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.3
+
+## [0.1.2] - 2026-08-27
+
+### 💼 Other
+
+- Noah/aggregation shader ([#294](https://github.com/AllenInstitute/vis/pull/294))
+
+merging despite formatting issue in mdx file - the "formatted" markdown produces a webpage that has formatting issues for human readers.
+
+### 🚜 Refactor
+
+- _(deps)_ Replace lodash with lodash-es ([#288](https://github.com/AllenInstitute/vis/pull/288))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.2
+
+## [0.1.1] - 2026-08-17
+
+### 💼 Other
+
+- Noah/refactor filtering ([#287](https://github.com/AllenInstitute/vis/pull/287))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.1
+
+## [0.1.0] - 2026-08-07
 
 ### 🚀 Features
 
 - Package tag changelog generation [DT-9260] ([#179](https://github.com/AllenInstitute/vis/pull/179))
+- WebGPU shader builder for Vis Core [DC-9506] ([#259](https://github.com/AllenInstitute/vis/pull/259))
+- Shader building now supports Vertex Inputs [DT-9715] ([#279](https://github.com/AllenInstitute/vis/pull/279))
 
 ### 🐛 Bug Fixes
 
@@ -15,10 +64,8 @@ All notable changes to this project will be documented in this file.
 ### 💼 Other
 
 - Slight changes to the CacheClient interface ([#253](https://github.com/AllenInstitute/vis/pull/253))
-- Fix name of file on changelog command
-- Make changelog files uppercase
-- Add fmt to changelog production command
-- Do git stuff to make sure it's actually changing the file name
+- Migrate linter from Biome to oxlint 1.73.0 ([#280](https://github.com/AllenInstitute/vis/pull/280))
+- Webgpu-filtering ([#285](https://github.com/AllenInstitute/vis/pull/285))
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -36,6 +83,12 @@ All notable changes to this project will be documented in this file.
 - _(deps)_ Bump @biomejs/biome from 2.4.4 to 2.4.9 ([#245](https://github.com/AllenInstitute/vis/pull/245))
 - Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
 - _(deps)_ Bump lodash from 4.17.23 to 4.18.1 ([#248](https://github.com/AllenInstitute/vis/pull/248))
+- Update documentation for publishing and fix changelog formatting [DT-9260] ([#257](https://github.com/AllenInstitute/vis/pull/257))
+- Remove packageManager since Volta manages the proper version ([#258](https://github.com/AllenInstitute/vis/pull/258))
+- _(deps)_ Bump uuid from 13.0.0 to 14.0.0 ([#251](https://github.com/AllenInstitute/vis/pull/251))
+- Reorganize WebGPU folders in Core [DT-9593] ([#264](https://github.com/AllenInstitute/vis/pull/264))
+- _(deps)_ Bump uuid from 14.0.0 to 14.0.1 ([#272](https://github.com/AllenInstitute/vis/pull/272))
+- _(release)_ @alleninstitute/vis-core@0.1.0
 
 ## [0.0.4] - 2025-07-14
 

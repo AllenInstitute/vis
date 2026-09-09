@@ -1,4 +1,4 @@
-import { partial, uniqueId } from 'lodash';
+import { partial, uniqueId } from 'lodash-es';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AsyncDataCache } from '../dataset-cache';
 type Columns = 'color' | 'position';

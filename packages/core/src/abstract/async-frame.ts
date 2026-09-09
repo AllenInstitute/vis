@@ -1,4 +1,4 @@
-import partial from 'lodash/partial';
+import { partial } from 'lodash-es';
 import type REGL from 'regl';
 import type { AsyncDataCache } from '../dataset-cache';
 import type { ReglCacheEntry, Renderer } from './types';

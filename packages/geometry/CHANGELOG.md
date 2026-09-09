@@ -2,11 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.1.0] - 2026-08-27
+
+### 🚀 Features
+
+- Share 2D camera math and OME-Zarr render channels [DT-9938] ([#293](https://github.com/AllenInstitute/vis/pull/293))
+
+### 💼 Other
+
+- Migrate linter from Biome to oxlint 1.73.0 ([#280](https://github.com/AllenInstitute/vis/pull/280))
+
+## [0.0.9] - 2026-06-30
 
 ### 🚀 Features
 
 - Package tag changelog generation [DT-9260] ([#179](https://github.com/AllenInstitute/vis/pull/179))
+- _(geometry)_ Add box parameter helper ([#267](https://github.com/AllenInstitute/vis/pull/267))
 
 ### 💼 Other
 
@@ -15,10 +26,7 @@ All notable changes to this project will be documented in this file.
 
 Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 
-- Fix name of file on changelog command
-- Make changelog files uppercase
-- Add fmt to changelog production command
-- Do git stuff to make sure it's actually changing the file name
+- Bump version so we can publish the new thing ([#269](https://github.com/AllenInstitute/vis/pull/269))
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -34,6 +42,8 @@ Co-authored-by: Lane Sawyer <lane.sawyer@alleninstitute.org>
 - Quick version bump (which I forgot) ([#231](https://github.com/AllenInstitute/vis/pull/231))
 - NPM registry [DT-9193] ([#241](https://github.com/AllenInstitute/vis/pull/241))
 - Migrate to oxfmt ([#247](https://github.com/AllenInstitute/vis/pull/247))
+- Update documentation for publishing and fix changelog formatting [DT-9260] ([#257](https://github.com/AllenInstitute/vis/pull/257))
+- Remove packageManager since Volta manages the proper version ([#258](https://github.com/AllenInstitute/vis/pull/258))
 
 ## [0.0.6] - 2025-04-08
 

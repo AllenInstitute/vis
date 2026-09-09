@@ -3,6 +3,16 @@ packages:
     - 'site/**'
     - '!**test**'
 
+# These packages ship prebuilt binaries; their install scripts were already
+# skipped under pnpm 10, and pnpm 11 requires an explicit decision.
+allowBuilds:
+    '@parcel/watcher': false
+    '@swc/core': false
+    esbuild: false
+    lmdb: false
+    msgpackr-extract: false
+    sharp: false
+
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
     - '@alleninstitute/*'
