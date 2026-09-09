@@ -441,16 +441,16 @@ function walk(node: SceneNode, ctx: WalkContext): void {
             });
             return;
         case 'viewport':
-            walkComposite(node, ctx, () => walkViewport(node, ctx));
+            walkComposite(node, ctx, () => walkScopedState(node, ctx, VIEWPORT_STATE));
             return;
         case 'scissor':
-            walkComposite(node, ctx, () => walkScissor(node, ctx));
+            walkComposite(node, ctx, () => walkScopedState(node, ctx, SCISSOR_STATE));
             return;
         case 'stencilref':
-            walkComposite(node, ctx, () => walkStencilRef(node, ctx));
+            walkComposite(node, ctx, () => walkScopedState(node, ctx, STENCIL_REF_STATE));
             return;
         case 'blendconstant':
-            walkComposite(node, ctx, () => walkBlendConstant(node, ctx));
+            walkComposite(node, ctx, () => walkScopedState(node, ctx, BLEND_CONSTANT_STATE));
             return;
         case 'override':
             walkComposite(node, ctx, () => walkOverride(node, ctx));
@@ -461,132 +461,90 @@ function walk(node: SceneNode, ctx: WalkContext): void {
     }
 }
 
-function walkViewport(node: ViewportNode, ctx: WalkContext): void {
-    const prior = ctx.active.snapshotViewport();
-    const desired: ViewportValue = {
+/** Read/compare/apply operations for one kind of scoped render state. `desired` must return a
+ *  fresh object — see the immutability invariant on `ActiveState`. */
+interface ScopedState<TNode, TValue> {
+    readonly read: (active: ActiveState) => TValue | undefined;
+    readonly write: (active: ActiveState, value: TValue | undefined) => void;
+    readonly desired: (node: TNode) => TValue;
+    readonly equal: (a: TValue | undefined, b: TValue | undefined) => boolean;
+    readonly command: (value: TValue) => PassCommand;
+}
+
+/** Apply a node's scoped state, walk its children, restore the prior value. Restoring is skipped
+ *  when there was no prior value — WebGPU cannot unset a viewport or scissor rect. */
+function walkScopedState<TNode extends { readonly children: readonly SceneNode[] }, TValue>(
+    node: TNode,
+    ctx: WalkContext,
+    state: ScopedState<TNode, TValue>
+): void {
+    const prior = state.read(ctx.active);
+    const desired = state.desired(node);
+    if (!state.equal(prior, desired)) {
+        emit(state.command(desired), ctx);
+        state.write(ctx.active, desired);
+    }
+    for (const c of node.children) walk(c, ctx);
+    if (!state.equal(prior, state.read(ctx.active))) {
+        if (prior !== undefined) emit(state.command(prior), ctx);
+        state.write(ctx.active, prior);
+    }
+}
+
+const VIEWPORT_STATE: ScopedState<ViewportNode, ViewportValue> = {
+    read: (active) => active.snapshotViewport(),
+    write: (active, value) => {
+        active.viewport = value;
+    },
+    desired: (node) => ({
         x: node.x,
         y: node.y,
         width: node.width,
         height: node.height,
         minDepth: node.minDepth,
         maxDepth: node.maxDepth,
-    };
-    if (!viewportsEqual(prior, desired)) {
-        emit(
-            {
-                kind: 'setViewport',
-                x: desired.x,
-                y: desired.y,
-                width: desired.width,
-                height: desired.height,
-                minDepth: desired.minDepth,
-                maxDepth: desired.maxDepth,
-            },
-            ctx
-        );
-        ctx.active.viewport = desired;
-    }
-    for (const c of node.children) walk(c, ctx);
-    if (!viewportsEqual(prior, ctx.active.viewport)) {
-        if (prior !== undefined) {
-            emit(
-                {
-                    kind: 'setViewport',
-                    x: prior.x,
-                    y: prior.y,
-                    width: prior.width,
-                    height: prior.height,
-                    minDepth: prior.minDepth,
-                    maxDepth: prior.maxDepth,
-                },
-                ctx
-            );
-        }
-        ctx.active.viewport = prior;
-    }
-}
+    }),
+    equal: viewportsEqual,
+    command: (v) => ({
+        kind: 'setViewport',
+        x: v.x,
+        y: v.y,
+        width: v.width,
+        height: v.height,
+        minDepth: v.minDepth,
+        maxDepth: v.maxDepth,
+    }),
+};
 
-function walkScissor(node: ScissorNode, ctx: WalkContext): void {
-    const prior = ctx.active.snapshotScissor();
-    const desired: ScissorValue = {
-        x: node.x,
-        y: node.y,
-        width: node.width,
-        height: node.height,
-    };
-    if (!scissorsEqual(prior, desired)) {
-        emit(
-            {
-                kind: 'setScissorRect',
-                x: desired.x,
-                y: desired.y,
-                width: desired.width,
-                height: desired.height,
-            },
-            ctx
-        );
-        ctx.active.scissor = desired;
-    }
-    for (const c of node.children) walk(c, ctx);
-    if (!scissorsEqual(prior, ctx.active.scissor)) {
-        if (prior !== undefined) {
-            emit(
-                {
-                    kind: 'setScissorRect',
-                    x: prior.x,
-                    y: prior.y,
-                    width: prior.width,
-                    height: prior.height,
-                },
-                ctx
-            );
-        }
-        ctx.active.scissor = prior;
-    }
-}
+const SCISSOR_STATE: ScopedState<ScissorNode, ScissorValue> = {
+    read: (active) => active.snapshotScissor(),
+    write: (active, value) => {
+        active.scissor = value;
+    },
+    desired: (node) => ({ x: node.x, y: node.y, width: node.width, height: node.height }),
+    equal: scissorsEqual,
+    command: (v) => ({ kind: 'setScissorRect', x: v.x, y: v.y, width: v.width, height: v.height }),
+};
 
-function walkStencilRef(node: StencilRefNode, ctx: WalkContext): void {
-    const prior = ctx.active.snapshotStencilRef();
-    if (prior !== node.value) {
-        emit({ kind: 'setStencilReference', value: node.value }, ctx);
-        ctx.active.stencilRef = node.value;
-    }
-    for (const c of node.children) walk(c, ctx);
-    if (ctx.active.stencilRef !== prior) {
-        if (prior !== undefined) {
-            emit({ kind: 'setStencilReference', value: prior }, ctx);
-        }
-        ctx.active.stencilRef = prior;
-    }
-}
+const STENCIL_REF_STATE: ScopedState<StencilRefNode, number> = {
+    read: (active) => active.snapshotStencilRef(),
+    write: (active, value) => {
+        active.stencilRef = value;
+    },
+    desired: (node) => node.value,
+    equal: (a, b) => a === b,
+    command: (v) => ({ kind: 'setStencilReference', value: v }),
+};
 
-function walkBlendConstant(node: BlendConstantNode, ctx: WalkContext): void {
-    const prior = ctx.active.snapshotBlendConstant();
-    const desired: BlendConstantValue = normalizeBlendConstant(node.color);
-    if (!blendConstantsEqual(prior, desired)) {
-        emit(
-            {
-                kind: 'setBlendConstant',
-                color: { r: desired[0], g: desired[1], b: desired[2], a: desired[3] },
-            },
-            ctx
-        );
-        ctx.active.blendConstant = desired;
-    }
-    for (const c of node.children) walk(c, ctx);
-    if (!blendConstantsEqual(prior, ctx.active.blendConstant)) {
-        if (prior !== undefined) {
-            emit(
-                {
-                    kind: 'setBlendConstant',
-                    color: { r: prior[0], g: prior[1], b: prior[2], a: prior[3] },
-                },
-                ctx
-            );
-        }
-        ctx.active.blendConstant = prior;
-    }
-}
+const BLEND_CONSTANT_STATE: ScopedState<BlendConstantNode, BlendConstantValue> = {
+    read: (active) => active.snapshotBlendConstant(),
+    write: (active, value) => {
+        active.blendConstant = value;
+    },
+    desired: (node) => normalizeBlendConstant(node.color),
+    equal: blendConstantsEqual,
+    command: (v) => ({ kind: 'setBlendConstant', color: { r: v[0], g: v[1], b: v[2], a: v[3] } }),
+};
 
 function walkOverride(node: BindingOverrideNode, ctx: WalkContext): void {
     ctx.overrideStack.push(node.overrides);
