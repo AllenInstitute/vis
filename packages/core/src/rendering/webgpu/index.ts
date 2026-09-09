@@ -52,3 +52,31 @@ export {
 export type { BufferManager } from './memory';
 /** A concrete `BufferManager` backed by size-bucketed slab pools. */
 export { BatchPoolBufferAdapter } from './memory';
+
+// ---- Resource slots ---------------------------------------------------------------------------
+
+/** Slot constructors, annotated with a phantom TS shape so host-side writes are type-checked
+ *  against the WGSL struct they target. */
+export type {
+    TypedExternalTextureSlot,
+    TypedSamplerSlot,
+    TypedStorageSlot,
+    TypedStorageTextureSlot,
+    TypedTextureSlot,
+    TypedUniformSlot,
+} from './resources';
+export { slot } from './resources';
+
+// ---- Resources --------------------------------------------------------------------------------
+
+/** Data-bearing `Resource` family — the concrete bindable values a slot can be filled with. */
+export type {
+    BufferResource,
+    ExternalTextureResource,
+    RawBufferResource,
+    Resource,
+    SamplerResource,
+    StorageTextureResource,
+    TextureResource,
+} from './resources';
+export { isResource, RESOURCE_BRAND } from './resources';
