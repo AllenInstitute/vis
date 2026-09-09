@@ -51,4 +51,4 @@ export {
  *  suballocated slabs so that many small resources share a few large `GPUBuffer`s. */
 export type { BufferManager } from './memory';
 /** A concrete `BufferManager` backed by size-bucketed slab pools. */
-export { BatchPoolBufferAdapter } from './memory';
+export { BatchPoolBufferManager } from './memory';
