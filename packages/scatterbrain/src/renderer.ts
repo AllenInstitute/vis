@@ -1,7 +1,6 @@
 import type { SharedPriorityCache } from '@alleninstitute/vis-core';
 import { Box2D, type box2D, type vec4 } from '@alleninstitute/vis-geometry';
-import keys from 'lodash/keys';
-import reduce from 'lodash/reduce';
+import { keys, reduce } from 'lodash-es';
 import type REGL from 'regl';
 import { buildScatterbrainCacheClient } from './cache-client';
 import { getVisibleItems, type NodeWithBounds } from './dataset';

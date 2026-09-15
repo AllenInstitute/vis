@@ -1,6 +1,6 @@
 import { type Store, type Cacheable, type FetchResult, AsyncPriorityCache } from './priority-cache';
 import { mergeAndAdd, prioritizeCacheKeys, priorityDelta } from './utils';
-import uniqueId from 'lodash/uniqueId';
+import { uniqueId } from 'lodash-es';
 
 // goal: we want clients of the cache to experience a type-safe interface -
 // they expect that the things coming out of the cache are the type they expect (what they put in it)

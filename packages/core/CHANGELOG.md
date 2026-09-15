@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-09-04
+
+### 🐛 Bug Fixes
+
+- _(vis-core)_ Filter compute shaders incorrectly handled alignment of vec3 columns ([#301](https://github.com/AllenInstitute/vis/pull/301))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(deps)_ Bump uuid from 14.0.1 to 14.0.2 ([#298](https://github.com/AllenInstitute/vis/pull/298))
+- _(deps)_ Bump @webgpu/types from 0.1.71 to 0.1.72 ([#297](https://github.com/AllenInstitute/vis/pull/297))
+
+## [0.1.3] - 2026-08-31
+
+### 🐛 Bug Fixes
+
+- _(vis-core)_ Minor fix on inter-stage variables in the generated aggregation shader ([#296](https://github.com/AllenInstitute/vis/pull/296))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.3
+
+## [0.1.2] - 2026-08-27
+
+### 💼 Other
+
+- Noah/aggregation shader ([#294](https://github.com/AllenInstitute/vis/pull/294))
+
+merging despite formatting issue in mdx file - the "formatted" markdown produces a webpage that has formatting issues for human readers.
+
+### 🚜 Refactor
+
+- _(deps)_ Replace lodash with lodash-es ([#288](https://github.com/AllenInstitute/vis/pull/288))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.2
+
+## [0.1.1] - 2026-08-17
+
+### 💼 Other
+
+- Noah/refactor filtering ([#287](https://github.com/AllenInstitute/vis/pull/287))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-core@0.1.1
+
 ## [0.1.0] - 2026-08-07
 
 ### 🚀 Features
@@ -41,6 +88,7 @@ All notable changes to this project will be documented in this file.
 - _(deps)_ Bump uuid from 13.0.0 to 14.0.0 ([#251](https://github.com/AllenInstitute/vis/pull/251))
 - Reorganize WebGPU folders in Core [DT-9593] ([#264](https://github.com/AllenInstitute/vis/pull/264))
 - _(deps)_ Bump uuid from 14.0.0 to 14.0.1 ([#272](https://github.com/AllenInstitute/vis/pull/272))
+- _(release)_ @alleninstitute/vis-core@0.1.0
 
 ## [0.0.4] - 2025-07-14
 

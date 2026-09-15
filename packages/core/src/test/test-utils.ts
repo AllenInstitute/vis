@@ -1,4 +1,4 @@
-import { delay } from 'lodash';
+import { delay } from 'lodash-es';
 
 export const fakeFetch = <FakeTask>(data: FakeTask, signal?: AbortSignal): Promise<FakeTask> =>
     new Promise((resolve, reject) => {

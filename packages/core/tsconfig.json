@@ -8,7 +8,7 @@
         "module": "es6",
         "target": "es2024",
         "lib": ["es2024", "DOM"],
-        "types": ["@webgpu/types", "lodash"]
+        "types": ["@webgpu/types", "lodash-es"]
     },
     "include": ["./src/index.ts"]
 }
