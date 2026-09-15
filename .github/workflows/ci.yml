@@ -15,18 +15,10 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v6
+            - name: Setup pnpm
+              uses: pnpm/setup@v1
               with:
-                  version: 11.21.0
-
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24.15.0
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+                  cache: true
 
             - name: Build
               run: pnpm build
@@ -38,18 +30,10 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v6
+            - name: Setup pnpm
+              uses: pnpm/setup@v1
               with:
-                  version: 11.21.0
-
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24.15.0
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+                  cache: true
 
             - name: Format
               run: pnpm fmt:check
@@ -61,18 +45,10 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v6
+            - name: Setup pnpm
+              uses: pnpm/setup@v1
               with:
-                  version: 11.21.0
-
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24.15.0
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+                  cache: true
 
             - name: Lint
               run: pnpm lint:check
@@ -84,18 +60,10 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v6
+            - name: Setup pnpm
+              uses: pnpm/setup@v1
               with:
-                  version: 11.21.0
-
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24.15.0
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+                  cache: true
 
             - name: Build libraries
               run: pnpm build
@@ -110,18 +78,10 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            - name: Install pnpm
-              uses: pnpm/action-setup@v6
+            - name: Setup pnpm
+              uses: pnpm/setup@v1
               with:
-                  version: 11.21.0
-
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24.15.0
-
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+                  cache: true
 
             - name: Build
               run: pnpm build
