@@ -1,6 +1,14 @@
 {
     "name": "@alleninstitute/vis",
     "type": "module",
+    "packageManager": "pnpm@11.21.0",
+    "devEngines": {
+        "runtime": {
+            "name": "node",
+            "version": "24.15.0",
+            "onFail": "warn"
+        }
+    },
     "scripts": {
         "build": "pnpm -r run --no-bail build",
         "dev": "pnpm -r --parallel run dev",
