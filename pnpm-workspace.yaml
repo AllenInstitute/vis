@@ -9,6 +9,8 @@ allowBuilds:
     '@parcel/watcher': false
     '@swc/core': false
     esbuild: false
+    # lefthook's postinstall is what installs the git hooks.
+    lefthook: true
     lmdb: false
     msgpackr-extract: false
     sharp: false
