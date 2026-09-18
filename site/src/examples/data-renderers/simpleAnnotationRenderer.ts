@@ -1,6 +1,6 @@
 import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
 import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-core';
-import flatten from 'lodash/flatten';
+import { flatten } from 'lodash-es';
 import type REGL from 'regl';
 import type { Camera } from '../common/camera';
 import type { ColumnData } from '../common/loaders/scatterplot/scatterbrain-loader';

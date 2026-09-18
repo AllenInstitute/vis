@@ -1,5 +1,5 @@
 import type { Decoder, OmeZarrMetadata, OmeZarrShapedDataset, ZarrRequest } from '@alleninstitute/vis-omezarr';
-import uniqueId from 'lodash/uniqueId';
+import { uniqueId } from 'lodash-es';
 import type { ZarrSliceRequest } from './types';
 
 type PromisifiedMessage = {

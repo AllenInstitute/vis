@@ -1,43 +1,25 @@
 import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
-import { Box2D, PLANE_XY, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Camera2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type OmeZarrMetadata,
     loadMetadata,
     sizeInUnits,
     type RenderSettings,
-    type RenderSettingsChannels,
+    renderChannelsFromMetadata,
     nextSliceStep,
     decoderFactory,
 } from '@alleninstitute/vis-omezarr';
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
-import { zoom, pan } from '../../common/camera';
 import { SharedCacheContext } from '../../common/react/priority-cache-provider';
 import { buildConnectedRenderer } from './render-utils';
 
-const defaultInterval: Interval = { min: 0, max: 80 };
-
 function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
-    const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
-        acc[val.label ?? `${index}`] = {
-            rgb: val.rgb,
-            gamut: val.range,
-            index,
-        };
-        return acc;
-    }, {} as RenderSettingsChannels);
-
-    const fallbackChannels: RenderSettingsChannels = {
-        R: { rgb: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
-        G: { rgb: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
-        B: { rgb: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
-    };
-
     return {
         camera: { screenSize, view },
         planeLocation: param,
         plane: PLANE_XY,
         tileSize: 256,
-        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
+        channels: renderChannelsFromMetadata(omezarr),
     };
 }
 
@@ -59,21 +41,6 @@ export function OmeZarrView(props: Props) {
     const [renderer, setRenderer] = useState<ReturnType<typeof buildConnectedRenderer>>();
     const [tick, setTick] = useState<number>(0);
     const cnvs = useRef<HTMLCanvasElement>(null);
-    const load = (res: WebResource) => {
-        loadMetadata(res).then((v) => {
-            setOmezarr(v);
-            setPlaneParam(0.5);
-            const dataset = v.getFirstShapedDataset(0);
-            if (!dataset) {
-                throw new Error('dataset 0 does not exist!');
-            }
-            const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
-            if (size) {
-                logger.info('size', size);
-                setView(Box2D.create([0, 0], size));
-            }
-        });
-    };
 
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handleScrollSlice = (next: 1 | -1) => {
@@ -88,7 +55,7 @@ export function OmeZarrView(props: Props) {
             e.preventDefault();
 
             const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-            const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
+            const v = Camera2D.zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
             setView(v);
         },
         [view, screenSize]
@@ -96,7 +63,7 @@ export function OmeZarrView(props: Props) {
 
     const handlePan = (e: React.MouseEvent) => {
         if (dragging) {
-            const v = pan(view, screenSize, [e.movementX, e.movementY]);
+            const v = Camera2D.pan(view, screenSize, [e.movementX, e.movementY]);
             setView(v);
         }
     };
@@ -111,17 +78,41 @@ export function OmeZarrView(props: Props) {
     useEffect(() => {
         if (cnvs.current && server && !renderer) {
             const { decoder } = decoderFactory(getResourceUrl(props.res), WORKERS);
-
             const { regl, cache } = server;
-            const renderer = buildConnectedRenderer(regl, screenSize, cache, decoder, () => {
-                requestAnimationFrame(() => {
-                    setTick(performance.now());
-                });
+            // the renderer has to be built after the metadata arrives: its render command is compiled for a
+            // fixed channel count, and only the file can say how many channels it actually has
+            loadMetadata(props.res).then((v) => {
+                const dataset = v.getFirstShapedDataset(0);
+                if (!dataset) {
+                    throw new Error('dataset 0 does not exist!');
+                }
+                const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
+                if (size) {
+                    logger.info('size', size);
+                    // fitToScreen frames the whole image at the screen's aspect ratio - framing it as the raw
+                    // data extent instead would stretch any non-square image onto this square canvas
+                    setView(Camera2D.fitToScreen(size, screenSize));
+                }
+                const numChannels = Object.keys(renderChannelsFromMetadata(v)).length;
+                setRenderer(
+                    buildConnectedRenderer(
+                        regl,
+                        screenSize,
+                        cache,
+                        decoder,
+                        () => {
+                            requestAnimationFrame(() => {
+                                setTick(performance.now());
+                            });
+                        },
+                        numChannels
+                    )
+                );
+                setPlaneParam(0.5);
+                setOmezarr(v);
             });
-            setRenderer(renderer);
-            load(props.res);
         }
-    }, [props.res]);
+    }, [props.res, server, screenSize, renderer]);
 
     useEffect(() => {
         if (omezarr && cnvs.current && renderer) {
@@ -134,15 +125,16 @@ export function OmeZarrView(props: Props) {
                 });
             }
         }
-    }, [omezarr, planeParam, view, tick]);
+    }, [omezarr, planeParam, view, tick, renderer, screenSize]);
 
     useEffect(() => {
-        if (cnvs?.current) {
-            cnvs.current.addEventListener('wheel', handleZoom, { passive: false });
+        const canvas = cnvs.current;
+        if (canvas) {
+            canvas.addEventListener('wheel', handleZoom, { passive: false });
         }
         return () => {
-            if (cnvs?.current) {
-                cnvs.current.removeEventListener('wheel', handleZoom);
+            if (canvas) {
+                canvas.removeEventListener('wheel', handleZoom);
             }
         };
     }, [handleZoom]);

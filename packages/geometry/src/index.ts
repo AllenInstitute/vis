@@ -6,6 +6,7 @@ export { Vec4 } from './vec4';
 export type { vec4 } from './vec4';
 export { Vec5 } from './vec5';
 export type { vec5 } from './vec5';
+export { Camera2D } from './camera';
 export { Box2D } from './box2D';
 export type { box2D } from './box2D';
 export { Box3D } from './box3D';

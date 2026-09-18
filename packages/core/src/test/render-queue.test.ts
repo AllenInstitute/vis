@@ -1,4 +1,4 @@
-import delay from 'lodash/delay';
+import { delay } from 'lodash-es';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AsyncDataCache } from '../dataset-cache';
 import { type NormalStatus, beginLongRunningFrame } from '../render-queue';

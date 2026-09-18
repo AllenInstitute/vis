@@ -26,7 +26,7 @@ jobs:
                   ssh-key: ${{ secrets.SERVICE_ACCOUNT_SSH_KEY }}
                   fetch-depth: 0
 
-            - uses: pnpm/setup@v1
+            - uses: pnpm/setup@v2
               with:
                   cache: true
 
