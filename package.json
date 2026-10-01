@@ -24,7 +24,7 @@
         "changelog": "pnpm -r run changelog"
     },
     "devDependencies": {
-        "oxfmt": "0.61.0",
+        "oxfmt": "0.70.0",
         "oxlint": "1.85.0",
         "prettier": "3.9.9",
         "prettier-plugin-astro": "0.14.1",
