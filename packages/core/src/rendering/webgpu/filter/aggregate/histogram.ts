@@ -22,7 +22,7 @@ export function generateHistogramShader(args: {
     aggType: 'f32';
 }) {
     const { rowGroupExpr, colGroupExpr, aggComponents, aggregationExpr, inputBindings, aggType } = args;
-    const cmpType = 'f'; //aggType === 'u32' ? 'u' : aggType === 'f32' ? 'f' : 'i';
+    const cmpType = 'f';
     const wgslOutputType = aggComponents > 1 ? `vec${aggComponents}${cmpType}` : aggType;
     const code = /* wgsl */ `
       struct VsIn {
