@@ -59,7 +59,7 @@ class Clause<Params extends Record<string, string | number | number[]>> {
     }
     paramDeclarations() {
         return this.predicates.reduce(
-            (acc, p) => (p.kind === 'predicate' ? { ...acc, [p.rhs]: determineType(this.tables, p.lhs) } : acc),
+            (acc, p) => ({ ...acc, [p.rhs]: determineType(this.tables, p.lhs) }),
             {} as Record<string, string>
         );
     }
