@@ -50,46 +50,13 @@ class Clause<Params extends Record<string, string | number | number[]>> {
     ) {
         this.predicates = preds;
     }
-    or<
-        S extends VLen,
-        L extends ScalarType | VectorType<S>,
-        O extends keyof Tables,
-        F extends keyof Tables[O] & string,
-    >(lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>, op: `in ${O}.${F}`): Clause<Params>;
-    or<
-        S extends VLen,
-        L extends ScalarType | VectorType<S>,
-        P extends `${alpha}${string}`,
-        O extends keyof Tables,
-        F extends keyof Tables[O] & string,
-    >(
+    or<S extends VLen, L extends ScalarType | VectorType<S>, P extends `${alpha}${string}`>(
         lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>,
-        op: `in ${O}.${F}` | (L extends ScalarType ? OP : VOP),
-        rhs?: onlyLetters<P>
+        op: L extends ScalarType ? OP : VOP,
+        rhs: onlyLetters<P>
     ) {
-        if (op.startsWith('in')) {
-            const [table, field] = op.split('.');
-            return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [
-                ...this.predicates,
-                { kind: 'included', lhs, search: { table, field } },
-            ]);
-        }
-        if (!rhs) {
-            // freak out
-            throw new Error();
-        }
-        return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [
-            ...this.predicates,
-            predicate(lhs, op as any, rhs),
-        ]);
+        return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [...this.predicates, predicate(lhs, op, rhs)]);
     }
-    // or<S extends VLen, L extends ScalarType | VectorType<S>, O extends keyof Tables, F extends keyof Tables[O]&string>(
-    //   lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>,
-    //   op: 'ExistsIn',
-    //   options: `${O}.${F}`
-    //   ) {
-    //     return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [...this.predicates, predicate(lhs, op, rhs)]);
-    //   }
     paramDeclarations() {
         return this.predicates.reduce(
             (acc, p) => (p.kind === 'predicate' ? { ...acc, [p.rhs]: determineType(this.tables, p.lhs) } : acc),
