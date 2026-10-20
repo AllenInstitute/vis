@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-10-20
+
+### 🚀 Features
+
+- _(vis)_ 3D rotation utils ([#318](https://github.com/AllenInstitute/vis/pull/318))
+
 ## [0.1.0] - 2026-08-27
 
 ### 🚀 Features
@@ -11,6 +17,10 @@ All notable changes to this project will be documented in this file.
 ### 💼 Other
 
 - Migrate linter from Biome to oxlint 1.73.0 ([#280](https://github.com/AllenInstitute/vis/pull/280))
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-geometry@0.1.0
 
 ## [0.0.9] - 2026-06-30
 
