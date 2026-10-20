@@ -635,7 +635,7 @@ function _typescriptCanary() {
         '$unused',
         '$unused'
     );
-    e.select('$index').where(e.clause(e.column('str'), '<', 'limit').or(e.column('E.x'), ''));
+
     // @ts-expect-error
     e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
     // @ts-expect-error
