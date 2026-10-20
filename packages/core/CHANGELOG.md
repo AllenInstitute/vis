@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-10-20
+
+### 🚀 Features
+
+- _(vis)_ 3D rotation utils ([#318](https://github.com/AllenInstitute/vis/pull/318))
+
 ## [0.1.4] - 2026-09-04
 
 ### 🐛 Bug Fixes
@@ -12,6 +18,7 @@ All notable changes to this project will be documented in this file.
 
 - _(deps)_ Bump uuid from 14.0.1 to 14.0.2 ([#298](https://github.com/AllenInstitute/vis/pull/298))
 - _(deps)_ Bump @webgpu/types from 0.1.71 to 0.1.72 ([#297](https://github.com/AllenInstitute/vis/pull/297))
+- _(release)_ @alleninstitute/vis-core@0.1.4
 
 ## [0.1.3] - 2026-08-31
 
