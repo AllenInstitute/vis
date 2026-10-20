@@ -24,7 +24,9 @@ import type {
     vKeys,
     ITable,
 } from './types';
+import { buildRunner } from './aggregate/runner';
 import { mapValues } from 'lodash-es';
+import { buildAggregationPipeline, generateAggregationShader, type AggregationConfig } from './aggregate/gen';
 
 const entries = <T extends {}>(r: T): ReadonlyArray<[string, T[keyof T]]> => Object.entries(r);
 
@@ -48,16 +50,49 @@ class Clause<Params extends Record<string, string | number | number[]>> {
     ) {
         this.predicates = preds;
     }
-    or<S extends VLen, L extends ScalarType | VectorType<S>, P extends `${alpha}${string}`>(
+    or<
+        S extends VLen,
+        L extends ScalarType | VectorType<S>,
+        O extends keyof Tables,
+        F extends keyof Tables[O] & string,
+    >(lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>, op: `in ${O}.${F}`): Clause<Params>;
+    or<
+        S extends VLen,
+        L extends ScalarType | VectorType<S>,
+        P extends `${alpha}${string}`,
+        O extends keyof Tables,
+        F extends keyof Tables[O] & string,
+    >(
         lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>,
-        op: L extends ScalarType ? OP : VOP,
-        rhs: onlyLetters<P>
+        op: `in ${O}.${F}` | (L extends ScalarType ? OP : VOP),
+        rhs?: onlyLetters<P>
     ) {
-        return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [...this.predicates, predicate(lhs, op, rhs)]);
+        if (op.startsWith('in')) {
+            const [table, field] = op.split('.');
+            return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [
+                ...this.predicates,
+                { kind: 'included', lhs, search: { table, field } },
+            ]);
+        }
+        if (!rhs) {
+            // freak out
+            throw new Error();
+        }
+        return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [
+            ...this.predicates,
+            predicate(lhs, op as any, rhs),
+        ]);
     }
+    // or<S extends VLen, L extends ScalarType | VectorType<S>, O extends keyof Tables, F extends keyof Tables[O]&string>(
+    //   lhs: IndexExpr<string, string, L> | ColumnExpr<string, string, L>,
+    //   op: 'ExistsIn',
+    //   options: `${O}.${F}`
+    //   ) {
+    //     return new Clause<Params & { [k in P]: TsType<L> }>(this.tables, [...this.predicates, predicate(lhs, op, rhs)]);
+    //   }
     paramDeclarations() {
         return this.predicates.reduce(
-            (acc, p) => ({ ...acc, [p.rhs]: determineType(this.tables, p.lhs) }),
+            (acc, p) => (p.kind === 'predicate' ? { ...acc, [p.rhs]: determineType(this.tables, p.lhs) } : acc),
             {} as Record<string, string>
         );
     }
@@ -441,6 +476,108 @@ export function given<Ts extends Tables>(tables: Ts) {
         : never;
     return {
         from: <From extends keyof Ts>(from: From) => {
+            type GroupSubject<Ts extends Tables, From extends keyof Ts, O extends keyof Ts> =
+                | IndexExpr<O & string, string, 'u32'>
+                | ColumnExpr<From & string, string, 'u32'>;
+
+            type AggregationSubject<
+                Ts extends Tables,
+                From extends keyof Ts,
+                O extends keyof Ts,
+                T extends ScalarType,
+            > = From extends string
+                ? O extends string
+                    ? keyof Ts[From] extends string
+                        ? keyof Ts[O] extends string
+                            ? IndexExpr<O, string, T> | ColumnExpr<From, string, T>
+                            : never
+                        : never
+                    : never
+                : never;
+
+            function groupBy<ColGroup extends keyof Ts, RowGroup extends keyof Ts>(
+                col: GroupSubject<Ts, From, ColGroup>,
+                row?: GroupSubject<Ts, From, RowGroup>
+            ) {
+                function generateShader(conf: AggregationConfig) {
+                    return generateAggregationShader(tables, from as string, conf, col, row);
+                }
+                function buildAggregate(dev: GPUDevice, conf: AggregationConfig) {
+                    const shader = generateShader(conf);
+
+                    const { code, format, op } = shader;
+                    const pipe = buildAggregationPipeline(dev, code, format, op, 'histogram');
+                    if (!pipe) {
+                        throw new Error(
+                            'failed to generate aggregation query - WebGPU feature float32-blendable is required but not supported'
+                        );
+                    }
+                    // create a runner
+                    return { run: buildRunner(dev, tables, pipe) };
+                }
+                return {
+                    min: <
+                        R extends keyof Ts,
+                        G extends keyof Ts,
+                        B extends keyof Ts,
+                        A extends keyof Ts,
+                        RT extends ScalarType,
+                        TT extends RT,
+                    >(
+                        r: '$unused' | AggregationSubject<Ts, From, R, RT>,
+                        g: '$unused' | AggregationSubject<Ts, From, G, TT>,
+                        b: '$unused' | AggregationSubject<Ts, From, B, TT>,
+                        a: '$unused' | AggregationSubject<Ts, From, A, TT>
+                    ) => {
+                        return {
+                            shader: () => generateShader({ op: 'min', layout: [r, g, b, a] }),
+                            build: (device: GPUDevice) => {
+                                return buildAggregate(device, { op: 'min', layout: [r, g, b, a] });
+                            },
+                        };
+                    },
+                    max: <
+                        R extends keyof Ts,
+                        G extends keyof Ts,
+                        B extends keyof Ts,
+                        A extends keyof Ts,
+                        RT extends ScalarType,
+                        TT extends RT,
+                    >(
+                        r: '$unused' | AggregationSubject<Ts, From, R, RT>,
+                        g: '$unused' | AggregationSubject<Ts, From, G, TT>,
+                        b: '$unused' | AggregationSubject<Ts, From, B, TT>,
+                        a: '$unused' | AggregationSubject<Ts, From, A, TT>
+                    ) => {
+                        return {
+                            shader: () => generateShader({ op: 'max', layout: [r, g, b, a] }),
+                            build: (device: GPUDevice) => {
+                                return buildAggregate(device, { op: 'max', layout: [r, g, b, a] });
+                            },
+                        };
+                    },
+                    sum: <
+                        R extends keyof Ts,
+                        G extends keyof Ts,
+                        B extends keyof Ts,
+                        A extends keyof Ts,
+                        RT extends ScalarType,
+                        TT extends RT,
+                    >(
+                        r: '$count' | '$unused' | AggregationSubject<Ts, From, R, RT>,
+                        g: '$count' | '$unused' | AggregationSubject<Ts, From, G, TT>,
+                        b: '$count' | '$unused' | AggregationSubject<Ts, From, B, TT>,
+                        a: '$count' | '$unused' | AggregationSubject<Ts, From, A, TT>
+                    ) => {
+                        return {
+                            shader: () => generateShader({ op: 'sum', layout: [r, g, b, a] }),
+                            build: (device: GPUDevice) => {
+                                return buildAggregate(device, { op: 'sum', layout: [r, g, b, a] });
+                            },
+                        };
+                    },
+                };
+            }
             function column<E extends keyof ExpandTableVectors<From>>(
                 k: E
             ): ColumnExpr<From, string, ExpandTableVectors<From>[E]> {
@@ -481,7 +618,7 @@ export function given<Ts extends Tables>(tables: Ts) {
                 return new Selection(tables, from, [{ selection: s, type }]);
             }
 
-            return { column, table, any, all, clause: any, select };
+            return { column, table, any, all, clause: any, select, groupBy };
         },
     };
 }
@@ -491,13 +628,13 @@ type Parameters = Record<string, string | number | number[]>;
 // changes enough to mess up the types - we want restrictive types here, its the whole point
 function _typescriptCanary() {
     const e = given({ cells: { A: 'f32', B: 'vec2f', C: 'u32' }, edges: { E: 'vec2u', str: 'f32' } }).from('edges');
-    // e.groupBy(e.column('E.x'), e.column('E.y')).min(
-    //     e.column('str'),
-    //     // @ts-expect-error
-    //     e.table('cells').at('E.x').dot('C'),
-    //     '$unused',
-    //     '$unused'
-    // );
+    e.groupBy(e.column('E.x'), e.column('E.y')).min(
+        e.column('str'),
+        // @ts-expect-error
+        e.table('cells').at('E.x').dot('C'),
+        '$unused',
+        '$unused'
+    );
     e.select('$index').where(e.clause(e.column('str'), '<', 'limit').or(e.column('E.x'), ''));
     // @ts-expect-error
     e.select('$index').where(e.clause(e.table('cells').at('E.x').dot('B'), '==', 'mom'));
