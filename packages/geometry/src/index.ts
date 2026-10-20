@@ -26,3 +26,4 @@ export {
     PLANE_YZ,
 } from './plane';
 export { type SpatialTreeInterface, visitBFS, visitBFSMaybe } from './spatialIndexing/tree';
+export { type AxisAngle, composeRotation, rotateVector } from './axisAngle';
