@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2] - 2026-10-21
+
+### ⚙️ Miscellaneous Tasks
+
+- _(deps)_ Bump oxlint from 1.75.0 to 1.80.0 ([#299](https://github.com/AllenInstitute/vis/pull/299))
+
+## [0.2.1] - 2026-08-31
+
+### ⚙️ Miscellaneous Tasks
+
+- _(release)_ @alleninstitute/vis-omezarr@0.2.1
+
 ## [0.2.0] - 2026-08-27
 
 ### 🚀 Features
@@ -16,6 +28,7 @@ All notable changes to this project will be documented in this file.
 ### ⚙️ Miscellaneous Tasks
 
 - _(vis-omezarr)_ Fix published but broken version 0.1.0 ([#276](https://github.com/AllenInstitute/vis/pull/276))
+- _(release)_ @alleninstitute/vis-omezarr@0.2.0
 
 ## [0.1.0] - 2026-07-07
 
