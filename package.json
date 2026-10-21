@@ -5,7 +5,7 @@
     "devEngines": {
         "runtime": {
             "name": "node",
-            "version": "24.15.0",
+            "version": "24.22.1",
             "onFail": "warn"
         }
     },
@@ -40,7 +40,7 @@
         "vitest": "4.1.1"
     },
     "volta": {
-        "node": "24.15.0",
+        "node": "24.22.1",
         "pnpm": "11.21.0"
     }
 }
