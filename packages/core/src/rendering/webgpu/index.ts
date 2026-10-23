@@ -80,3 +80,36 @@ export type {
     TextureResource,
 } from './resources';
 export { isResource, RESOURCE_BRAND } from './resources';
+
+// ---- Declarative vertex inputs ----------------------------------------------------------------
+
+/** Buffer grouping + `stepMode` + per-attribute format → `GPUVertexBufferLayout[]`, consumed by
+ *  `pipeline({ vertex: { layout } })` and the typed drawable upload path. */
+export type {
+    VertexAttributeDecl,
+    VertexAttributeRef,
+    VertexBufferDecl,
+    VertexBufferSpec,
+    VertexLayoutDeclaration,
+} from './renderer';
+export { buffer, isVertexLayout, VERTEX_LAYOUT_BRAND, vertexLayout } from './renderer';
+
+// ---- Binding graphs + pipeline state ----------------------------------------------------------
+
+/** A `BindingGraph` assigns resource slots to `@group`/`@binding` positions; the pipeline-state
+ *  descriptors normalize the remaining `GPURenderPipeline` knobs ahead of compilation. */
+export type {
+    BindingGraph,
+    BindingGroup,
+    FragmentStateDescriptor,
+    GroupSpec,
+    NormalizedPipelineState,
+    PipelineStateDescriptor,
+    VertexStateDescriptor,
+} from './renderer';
+export { bindings, group, isBindingGraph, isBindingGroup, resolveShaderBindings, shaderSlotEntries } from './renderer';
+
+// ---- Render target ----------------------------------------------------------------------------
+
+/** The per-submit render-pass destination. */
+export type { RenderTarget } from './renderer';
