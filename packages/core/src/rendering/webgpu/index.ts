@@ -44,3 +44,11 @@ export {
     vertexFormatInfo,
     vertexInput,
 } from './shaders';
+
+// ---- Memory -----------------------------------------------------------------------------------
+
+/** The GPU buffer-pooling interface. Implementations hand out `BufferHandle`s backed by pooled,
+ *  suballocated slabs so that many small resources share a few large `GPUBuffer`s. */
+export type { BufferManager } from './memory';
+/** A concrete `BufferManager` backed by size-bucketed slab pools. */
+export { BatchPoolBufferManager } from './memory';
