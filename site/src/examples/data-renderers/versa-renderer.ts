@@ -1,13 +1,6 @@
+import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
 import {
-    Box2D,
     type CartesianPlane,
-    type Interval,
-    Vec2,
-    type box2D,
-    type vec2,
-    type vec4,
-} from '@alleninstitute/vis-geometry';
-import {
     type OmeZarrMetadata,
     type ZarrRequest,
     pickBestScale,
@@ -57,7 +50,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
     >({
         vert: ` precision highp float;
     attribute vec2 pos;
-        
+
         uniform vec4 view;
         uniform vec4 tile;
         varying vec2 texCoord;
@@ -69,7 +62,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
         vec2 rotateTextureCoordinates(vec2 tx, float radians){
           vec2 xy = tx-vec2(0.5,0.5);
           mat2 R = mat2(
-            vec2(cos(radians),-sin(radians)), 
+            vec2(cos(radians),-sin(radians)),
             vec2(-sin(radians),cos(radians))
             );
           return ((R*xy)+vec2(0.5,0.5));
@@ -93,7 +86,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
     uniform vec2 Rgamut;
     uniform vec2 Ggamut;
     uniform vec2 Bgamut;
-    
+
     varying vec2 texCoord;
     void main(){
             vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
@@ -104,7 +97,7 @@ export function buildVersaRenderer(regl: REGL.Regl) {
                 texture2D(G, texCoord).r,
                 texture2D(B, texCoord).r
             )-mins) /span;
-           
+
             gl_FragColor = vec4(color, 1.0);
         }`,
         framebuffer: regl.prop<Props, 'target'>('target'),
@@ -185,7 +178,7 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
     const { minCorner: min, maxCorner: max } = bounds;
     const u = { min: min[0], max: max[0] };
     const v = { min: min[1], max: max[1] };
-    switch (plane.axes) {
+    switch (plane) {
         case 'xy':
             return {
                 x: u,
