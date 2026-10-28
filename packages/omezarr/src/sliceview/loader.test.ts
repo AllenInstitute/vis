@@ -1,14 +1,17 @@
 // TODO Unit test for loading is no longer feasible, as it requires an actual Zarr group + arrays to resolve correctly.
 // Best bet is to create a proper fake OmeZarr dataset and do a "unit" (really, integration) test that way.
 
-import { Box2D, PLANE_XY, PLANE_YZ, type box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
 import { describe, expect, it } from 'vitest';
 import { OmeZarrMetadata } from '../zarr/types';
 import { sizeInUnits } from '../zarr/loading';
 import { getVisibleTiles } from './loader';
+const PLANE_XY = 'xy';
+const PLANE_YZ = 'yz';
 const exampleOmeZarr: OmeZarrMetadata = new OmeZarrMetadata(
     'https://allen-genetic-tools.s3.us-west-2.amazonaws.com/tissuecyte/1263343692/ome-zarr/',
     {
+        zarrVersion: 1,
         multiscales: [
             {
                 name: 'test',
