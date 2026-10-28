@@ -51,7 +51,7 @@ export {
     planeSizeInVoxels,
     type ZarrRequest,
 } from './zarr/loading';
-
+export { type CartesianPlane, u, v, orthogonal } from './zarr/plane';
 export { type CancelRequest, type ZarrSliceRequest, makeOmeZarrSliceLoaderWorker } from './sliceview/worker-loader';
 export { decoderFactory } from './zarr/cache-lower';
 export { setupFetchDataWorker } from './zarr/cached-loading/fetch-data.worker-loader';

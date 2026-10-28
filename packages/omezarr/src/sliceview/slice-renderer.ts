@@ -1,12 +1,4 @@
-import {
-    Box2D,
-    type CartesianPlane,
-    type Interval,
-    type box2D,
-    type vec2,
-    type vec3,
-    intervalToVec2,
-} from '@alleninstitute/vis-geometry';
+import { Box2D, type Interval, type box2D, type vec2, type vec3, intervalToVec2 } from '@alleninstitute/vis-geometry';
 import {
     type CachedTexture,
     type QueueOptions,
@@ -20,6 +12,7 @@ import type { ZarrRequest } from '../zarr/loading';
 import { type VoxelTile, getVisibleTiles } from './loader';
 import { buildTileRenderCommand } from './tile-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
+import type { CartesianPlane } from '../zarr/plane';
 
 export type RenderSettingsChannel = {
     index: number;

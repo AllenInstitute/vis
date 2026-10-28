@@ -1,4 +1,4 @@
-import { Box2D, CartesianPlane, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { sizeInUnits } from '@alleninstitute/vis-omezarr';
 import { AsyncDataCache, type FrameLifecycle, logger, type NormalStatus, ReglLayer2D } from '@alleninstitute/vis-core';
 import pkg from 'file-saver';
@@ -178,7 +178,7 @@ export class Demo {
     setPlane(param: AxisAlignedPlane) {
         const layer = this.layers[this.selectedLayer];
         if (layer && (layer.type === 'volumeSlice' || layer.type === 'volumeGrid')) {
-            layer.data.plane = new CartesianPlane(param);
+            layer.data.plane = param;
             this.uiChange();
         }
     }

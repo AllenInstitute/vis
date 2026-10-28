@@ -1,12 +1,4 @@
-import {
-    Box2D,
-    type CartesianPlane,
-    type Interval,
-    Vec2,
-    type box2D,
-    limit,
-    type vec2,
-} from '@alleninstitute/vis-geometry';
+import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
 import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
 import { VisZarrDataError } from '../errors';
 import {
@@ -20,6 +12,8 @@ import {
 } from './types';
 import * as zarr from 'zarrita';
 import { ZodError } from 'zod';
+import * as Plane from './plane';
+import type { CartesianPlane } from './plane';
 
 // Documentation for OME-Zarr datasets (from which these types are built)
 // can be found here:
@@ -216,7 +210,7 @@ export function nextSliceStep(
     // figure out what layer we'd be viewing
     const layer = pickBestScale(zarr, plane, relativeView, displayResolution);
     const axes = zarr.attrs.multiscales[0].axes;
-    const slices = sizeInVoxels(plane.ortho, axes, layer);
+    const slices = sizeInVoxels(Plane.orthogonal(plane), axes, layer);
     return slices === undefined ? undefined : 1 / slices;
 }
 
@@ -247,8 +241,8 @@ export function sizeInUnits(
     for (const trn of dataset.coordinateTransformations) {
         if (trn.type === 'scale') {
             // try to apply it!
-            const uIndex = indexFor(plane.u, axes);
-            const vIndex = indexFor(plane.v, axes);
+            const uIndex = indexFor(Plane.u(plane), axes);
+            const vIndex = indexFor(Plane.v(plane), axes);
             size = Vec2.mul(size, [trn.scale[uIndex], trn.scale[vIndex]]);
         }
     }
@@ -283,13 +277,8 @@ export function planeSizeInVoxels(
     axes: readonly OmeZarrAxis[],
     dataset: OmeZarrShapedDataset
 ): vec2 | undefined {
-    // first - u&v must not refer to the same dimension,
-    // and both should exist in the axes...
-    if (!plane.isValid()) {
-        return undefined;
-    }
-    const uI = indexFor(plane.u, axes);
-    const vI = indexFor(plane.v, axes);
+    const uI = indexFor(Plane.u(plane), axes);
+    const vI = indexFor(Plane.v(plane), axes);
     if (uI === -1 || vI === -1) {
         return undefined;
     }
