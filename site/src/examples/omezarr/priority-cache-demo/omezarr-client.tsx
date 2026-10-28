@@ -1,5 +1,5 @@
 import { getResourceUrl, logger, type WebResource } from '@alleninstitute/vis-core';
-import { Box2D, Camera2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Camera2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type OmeZarrMetadata,
     loadMetadata,
@@ -12,7 +12,7 @@ import {
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { SharedCacheContext } from '../../common/react/priority-cache-provider';
 import { buildConnectedRenderer } from './render-utils';
-
+const PLANE_XY = 'xy';
 function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {
     return {
         camera: { screenSize, view },
