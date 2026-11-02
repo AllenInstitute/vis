@@ -28,18 +28,18 @@
         }
     ],
     "license": "BSD-3-Clause",
-    "source": "src/index.ts",
     "main": "dist/main.js",
-    "types": "dist/types.d.ts",
+    "types": "dist/types/index.d.ts",
     "type": "module",
     "files": [
         "dist"
     ],
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "build": "parcel build --no-cache",
-        "dev": "parcel watch --port 1239",
-        "demo": "vite",
+        "build": "vite build && tsc --emitDeclarationOnly --declaration --declarationMap --outDir dist/types",
+        "dev": "pnpm run \"/^dev:/\"",
+        "dev:bundle": "vite build --watch",
+        "dev:types": "tsc --emitDeclarationOnly --declaration --declarationMap --outDir dist/types --watch --preserveWatchOutput",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage",

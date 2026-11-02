@@ -17,7 +17,7 @@ export type RenderSettings = {
     };
 };
 
-type GpuProps = {
+export type GpuProps = {
     pixels: CachedTexture;
 };
 /**

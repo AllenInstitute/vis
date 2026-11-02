@@ -16,18 +16,14 @@
         "changelog": "pnpm -r run changelog"
     },
     "devDependencies": {
+        "@vitest/coverage-istanbul": "4.1.1",
+        "git-cliff": "2.13.1",
         "oxfmt": "0.61.0",
         "oxlint": "1.80.0",
         "prettier": "3.9.6",
         "prettier-plugin-astro": "0.14.1",
-        "@parcel/packager-ts": "2.16.4",
-        "@parcel/transformer-typescript-types": "2.16.4",
-        "@vitest/coverage-istanbul": "4.1.1",
-        "buffer": "6.0.3",
-        "git-cliff": "2.13.1",
-        "parcel": "2.16.4",
-        "process": "0.11.10",
         "typescript": "5.9.3",
+        "vite": "8.2.2",
         "vitest": "4.1.1"
     },
     "volta": {

@@ -13,7 +13,7 @@ import type { PointAttribute, ScatterbrainDataset, SlideviewScatterbrainDataset,
 import { reduce } from 'lodash-es';
 import * as z from 'zod';
 
-type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset;
+export type Dataset = ScatterbrainDataset | SlideviewScatterbrainDataset;
 // figure out that path through the tree, given a TreeNode name
 // these names are structured data - so it should always be possible
 export type NodeWithBounds = { node: TreeNode; bounds: box2D };

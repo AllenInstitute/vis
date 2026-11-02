@@ -183,7 +183,7 @@ export function beginFrame<
         },
     };
 }
-type QueueOptions = {
+export type QueueOptions = {
     queueProcessingIntervalMS?: number;
     maximumInflightAsyncTasks?: number;
     queueTimeBudgetMS?: number;

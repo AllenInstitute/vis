@@ -38,7 +38,7 @@ type RenderEvent<D, I> = AsyncFrameEvent<D, I> & {
     server: ServerActions;
 };
 type ServerCallback<D, I> = (event: RenderEvent<D, I>) => void;
-type RenderFrameFn<D, I> = (
+export type RenderFrameFn<D, I> = (
     target: REGL.Framebuffer2D | null,
     cache: AsyncDataCache<string, string, ReglCacheEntry>,
     callback: RenderCallback<D, I>

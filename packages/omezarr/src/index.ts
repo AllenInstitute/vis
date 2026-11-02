@@ -1,6 +1,7 @@
 export {
     buildOmeZarrSliceRenderer,
     buildAsyncOmezarrRenderer,
+    type Decoder,
     type VoxelTileImage,
     type RenderSettings,
     type RenderSettingsChannel,

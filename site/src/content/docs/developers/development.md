@@ -15,7 +15,7 @@ To get started developing in the `vis` repsitory, you can use the following comm
 pnpm run dev
 ```
 
-This will use the Parcel [`watch`](https://parceljs.org/features/cli/#parcel-watch-%3Centries%3E) command to detect changes in each `package` and the Starlight [development server](https://starlight.astro.build/getting-started/#start-the-development-server) in parallel in one console.
+This will use the Vite [build watcher](https://vite.dev/guide/build#rebuild-on-files-changes) and `tsc --watch` to rebuild each `package` on change, alongside the Starlight [development server](https://starlight.astro.build/getting-started/#start-the-development-server), in parallel in one console.
 
 If you'd rather run individual commands in multiple terminals, you can always use `pnpm run dev` in each individual `package` folder or the `site` folder for the docs website.
 
@@ -25,7 +25,7 @@ These tools will mostly be found in the `packages` directory. Each `example` wil
 
 ### Bundling
 
-We use [Parcel](https://parceljs.org/) to bundle our libraries. You can produce a builds of all our packages suitable for upload to a JavaScript package repository by running the following command from the root directory or inside each `packages` folder:
+We use [Vite](https://vite.dev/) in [library mode](https://vite.dev/guide/build#library-mode) to bundle our libraries, and `tsc` to emit their type declarations. The shared Vite configuration lives in `vite.config.base.ts` at the repository root; each package has a `vite.config.ts` that applies it. You can produce a builds of all our packages suitable for upload to a JavaScript package repository by running the following command from the root directory or inside each `packages` folder:
 
 ```sh
 pnpm run build
