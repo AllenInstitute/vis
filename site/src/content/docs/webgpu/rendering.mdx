@@ -1,0 +1,429 @@
+---
+title: Renderer and Scenes
+description: The RenderingContext, pipelines, drawables, the retained-mode scene graph, and the encoder that turns a scene into a WebGPU render pass.
+sidebar:
+    order: 5
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+This page covers the part of `@alleninstitute/vis-core` that actually draws: the `RenderingContext`
+that owns the device-scoped caches, the pipelines and drawables you build on it, the retained-mode
+`Scene` you assemble them into, and the encoder that walks that scene into a render pass.
+
+It assumes you have already met [shaders](../shader-builder) and
+[slots and binding graphs](../resources). For a complete working program, see the
+[Renderer Demo](../scene-rendering).
+
+## The shape of a renderer
+
+Almost every program built on this API has the same skeleton. Things that are expensive — pipelines,
+buffers, drawables, the scene tree — are built **once**; the per-frame work is limited to mutating
+resource contents and submitting.
+
+```ts
+// ---- once ----
+const bufferManager = new BatchPoolBufferManager({ device, maxBytes, idleFrameLimit, sizeBuckets });
+const ctx = renderingContext({ device, bufferManager, label: 'my-renderer' });
+
+const pipeline = ctx.pipeline(graph, program, state);
+const cameraRes = ctx.resource(cameraSlot, { viewProj: identity() });
+const drawable = ctx.drawable({ pipeline, vertex, index, bindings, draw });
+const sceneGraph = scene({ root: container([draw(drawable)]) });
+
+// ---- every frame ----
+cameraRes.set({ viewProj });
+cameraRes.commit(device);
+ctx.submit(sceneGraph, target); // `target` wraps this frame's swap-chain view
+bufferManager.endFrame();
+```
+
+The render target is supplied per submit rather than stored on the scene, precisely because the
+canvas hands you a fresh `GPUTextureView` every frame while the scene does not change.
+
+## RenderingContext
+
+```ts
+const ctx = renderingContext({ device, bufferManager, label: 'my-renderer' });
+```
+
+The context is the device-scoped facade. It owns four things:
+
+| It owns              | Keyed by                                            | Dropped by                                       |
+| -------------------- | --------------------------------------------------- | ------------------------------------------------ |
+| Pipeline cache       | Pipeline fingerprint                                | `disposePipelineCache()` / `dispose()`           |
+| Bind-group cache     | Fingerprint + group + resource `id.version`         | `sweepBindGroups()`, `disposeBindGroupCache()`   |
+| Resources + drawables | —                                                   | `dispose()`                                      |
+| The encoder          | —                                                   | `dispose()`                                      |
+
+`bufferManager` is optional, but without it any buffer-backed work throws: `ctx.resource()` on a
+uniform or storage slot, and the typed / raw-arrays vertex and index paths of `ctx.drawable()`.
+A context with no manager can still build pipelines and bind pre-built textures.
+
+| Method                            | Purpose                                                       |
+| --------------------------------- | ------------------------------------------------------------- |
+| `pipeline(graph, shader, state)`  | Build or return a cached `BuiltPipeline`                      |
+| `resource(slot, init?)`           | Build a data-bearing `Resource` (see [Resources](../resources)) |
+| `drawable(spec)`                  | Build a `Drawable`                                            |
+| `encoder()`                       | The lazily-created, cached `GraphEncoder`                     |
+| `submit(scene, target)`           | Encode and submit in one call                                 |
+| `sweepBindGroups(resources)`      | Selectively invalidate bind groups                            |
+| `disposePipelineCache()` / `disposeBindGroupCache()` | Drop one cache without tearing down the context |
+| `stats()`                         | `{ pipelines, bindGroups, bytes?, leasedBytes? }`             |
+| `dispose()`                       | Destroy everything the context owns. Idempotent               |
+
+`dispose()` does **not** dispose the buffer manager — that lifetime belongs to whoever created it.
+After disposal, `pipeline()`, `resource()`, `drawable()`, and `encoder()` all throw.
+
+## Pipelines
+
+```ts
+const pipeline = ctx.pipeline(graph, program, {
+    vertex: { layout },
+    fragment: { targets: [{ format }] },
+    primitive: { topology: 'triangle-list', cullMode: 'none' },
+    depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
+});
+```
+
+The state descriptor mirrors `GPURenderPipelineDescriptor` minus everything the library already
+knows — the shader module, the pipeline layout, and the bind group layouts are all derived from the
+`(graph, shader)` pair.
+
+| Field          | Notes                                                                             |
+| -------------- | --------------------------------------------------------------------------------- |
+| `vertex`       | `{ entryPoint?, layout?, buffers?, constants? }`. `entryPoint` defaults to `'vs_main'` |
+| `fragment`     | `{ entryPoint?, targets, constants? }`. `entryPoint` defaults to `'fs_main'`. Omit the whole field for depth-only passes |
+| `primitive`    | Passed through to WebGPU                                                          |
+| `depthStencil` | Passed through to WebGPU                                                          |
+| `multisample`  | Passed through to WebGPU                                                          |
+| `label`        | Propagated to the module, layout, and bind-group-layout labels                     |
+
+`vertex.layout` and `vertex.buffers` are **mutually exclusive** — supply a declarative
+`vertexLayout(...)` or a hand-written `GPUVertexBufferLayout[]`, never both. Supplying both throws
+during normalization.
+
+Every descriptor is Zod-validated and then canonicalized: entry points defaulted, keys sorted
+recursively. That canonical form is hashed together with the shader id and the resolved
+`(group, binding)` of every slot into a **fingerprint**, which keys the cache.
+
+<Aside>
+The fingerprint gives you a useful identity guarantee: for one context, one fingerprint always yields
+exactly the same `BuiltPipeline` **object**. Calling `ctx.pipeline(...)` with equivalent arguments in
+a hot loop is cheap (it hashes and hits the cache), and the encoder can compare pipelines with `===`.
+Two state descriptors that differ only in key order, or that rely on a defaulted entry point rather
+than spelling it out, land on the same entry.
+</Aside>
+
+A `BuiltPipeline` exposes `gpu`, `layout`, `bindGroupLayouts` (indexed by group), `slotIndex`,
+`defs` (the reflected struct layouts), `fingerprint`, the normalized `state`, and the `shader` it was
+built from. `bindGroupLayouts[i]` always corresponds to group index `i` — a shader that uses groups 0
+and 2 but not 1 gets an empty layout at index 1.
+
+## Declarative vertex layouts
+
+`vertexInput(...)` describes the shader side of the vertex stage; `vertexLayout(...)` adds the buffer
+side — which attributes live in which buffer, in what order, with what wire format.
+
+```ts
+import { vertexLayout, buffer } from '@alleninstitute/vis-core';
+
+const layout = vertexLayout(vin, [
+    buffer('vertex', [0, 1]), // @location(0) and @location(1), per-vertex
+    buffer('instance', [2, [3, 'unorm8x4']]), // @location(2) and @location(3), per-instance
+]);
+```
+
+Each attribute reference is either a bare `@location` — whose `GPUVertexFormat` is defaulted from the
+WGSL type — or a `[location, format]` tuple that overrides it. An override must still present as the
+same WGSL type: `[3, 'unorm8x4']` is valid for a `vec4f` attribute, because `unorm8x4` expands to
+`vec4f` in the shader.
+
+Packing follows WebGPU's rules mechanically: attributes are packed tightly in listed order, each
+offset aligned up to `min(4, componentByteSize)`, and `arrayStride` is the packed size rounded up to
+a multiple of 4. `stepMode` is omitted from the derived layout when it is `'vertex'` (the WebGPU
+default) so a derived layout is byte-identical to the hand-written equivalent — which keeps the
+pipeline fingerprint stable across both authoring styles.
+
+`vertexLayout` validates the whole mapping at once and reports **every** problem in a single throw:
+an unknown location, a location placed in two buffers, an incompatible format override, an empty
+buffer, or an interface attribute that no buffer claims. `@builtin` inputs are never placed — they
+are driver-generated, not buffer-backed.
+
+The same declaration then drives both the pipeline (`vertex: { layout }`) and the typed upload path
+on drawables, so the byte layout is defined exactly once.
+
+## Drawables
+
+A `Drawable` is the atomic unit the encoder knows how to emit: a pipeline, its vertex and index
+buffers, a resource per binding slot, and a draw call. It is frozen at construction.
+
+```ts
+const drawable = ctx.drawable({
+    pipeline,
+    vertex: { kind: 'typed', layout, data: { position: positions, uv: uvs } },
+    index: { kind: 'arrays', data: indices },
+    bindings: { camera: cameraRes, instance: instanceRes },
+    draw: { kind: 'indexed', indexCount: indices.length },
+    label: 'mesh',
+});
+```
+
+### Vertex input
+
+Three shapes are accepted, and they differ in who owns the bytes:
+
+| Shape                                            | Use when                                                             |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| `Map<bufferSlot, BufferResource \| RawBufferResource>` | You already allocated and uploaded the buffers. The drawable takes a reference to each |
+| `{ kind: 'typed', layout, data, bufferSlots? }`  | You have a `vertexLayout` — the packing is derived from it           |
+| `{ kind: 'arrays', arrays, options?, bufferSlots? }` | You want `webgpu-utils` to infer a layout from named arrays        |
+
+The typed path is the one to prefer when you already declared a layout: `data` is a record of flat
+host arrays keyed by attribute name, interleaved per the derived offsets and stride, allocated
+through the buffer manager and uploaded with `queue.writeBuffer`. One GPU buffer is produced per
+buffer in the layout.
+
+The raw-arrays path uses `webgpu-utils` to derive byte layouts only — GPU buffer creation still goes
+through the buffer manager, never `device.createBuffer`.
+
+<Aside type="caution">
+Typed uploads do not convert your numbers. For `float16` attributes supply **raw half-float bits**;
+for normalized formats (`unorm*` / `snorm*`) supply **pre-encoded integers**. Floats are not
+auto-quantized, and there is no runtime check that catches the mistake — it shows up as garbled
+geometry.
+</Aside>
+
+Keys in the pre-built map and entries in `bufferSlots` are **buffer slot indices** — positions in
+`pipeline.state.vertex.buffers` — not shader `@location`s. They default to the buffer's index in the
+layout, which is what you want unless you are deliberately remapping.
+
+### Index input
+
+Either pre-built (`{ resource, format }`) or raw (`{ kind: 'arrays', data, format? }`). For raw data
+the format is inferred: `Uint16Array` → `'uint16'`, `Uint32Array` → `'uint32'`, and a plain
+`number[]` defaults to `'uint32'`. A `draw` of kind `'indexed'` without an `index` input throws.
+
+### Bindings
+
+Two accepted shapes, with one behavioral difference worth knowing:
+
+```ts
+bindings: { camera: cameraRes, instance: instanceRes }      // keyed by slot.name
+bindings: new Map([[cameraSlot, cameraRes], [instanceSlot, instanceRes]]) // keyed by slot identity
+```
+
+Every slot in `pipeline.slotIndex` must be present, and each resource's kind must match its slot's
+kind (`rawBuffer` resources are accepted for `uniform` and `storage` slots). The **map** form
+additionally rejects entries for slots the pipeline does not declare — a useful typo catcher. The
+record form tolerates extras, since one record is often shared across several pipelines.
+
+### Draw calls
+
+```ts
+{ kind: 'array', vertexCount, instanceCount?, firstVertex?, firstInstance? }
+{ kind: 'indexed', indexCount, instanceCount?, firstIndex?, baseVertex?, firstInstance? }
+```
+
+Omitted fields default to `instanceCount: 1` and `0` for the rest.
+
+### Reusing geometry across pipelines
+
+`drawable.reuse(spec)` builds a sibling that **shares** the original's vertex and index buffers (and
+any bindings you don't override) while swapping in a new pipeline, bindings, or draw call:
+
+```ts
+const pickingPass = drawable.reuse({
+    pipeline: pickingPipeline,
+    bindings: { instance: pickingIdRes },
+    label: 'mesh:picking',
+});
+```
+
+This is how one geometry participates in a colour pass and a picking pass without duplicating a byte
+of vertex data. The buffers are reference-counted, so both drawables can be destroyed independently.
+Note that vertex buffer slot indices are **not** re-validated against the new pipeline — picking a
+layout-compatible pipeline is your responsibility.
+
+## The scene graph
+
+A `Scene` is a retained-mode tree. You build it once and mutate it; the encoder uses its structure
+and its dirty set to avoid re-walking parts that did not change.
+
+### Nodes
+
+Every node is created by a factory, gets a UUID, and is frozen.
+
+| Factory                                 | Node kind       | Effect on the pass                                        |
+| --------------------------------------- | --------------- | --------------------------------------------------------- |
+| `container(children, label?)`           | `container`     | None — pure grouping, and a cache boundary                |
+| `viewport({ x, y, width, height, minDepth?, maxDepth? }, children)` | `viewport` | `setViewport` on entry, restore on exit |
+| `scissor({ x, y, width, height }, children)` | `scissor`  | `setScissorRect` on entry, restore on exit                |
+| `stencilref(value, children, label?)`   | `stencilref`    | `setStencilReference` on entry, restore on exit           |
+| `blendconstant(color, children, label?)` | `blendconstant` | `setBlendConstant` on entry, restore on exit              |
+| `override(map, children, label?)`       | `override`      | Substitutes resources for the subtree                     |
+| `draw(drawable, label?)`                | `draw`          | The leaf — emits the actual draw call                     |
+
+Scoped-state nodes only emit a command when the value actually differs from the running state, and
+only restore when there is a prior value to restore to — WebGPU has no way to *unset* a viewport or
+scissor rect, so the outermost one wins for the rest of the pass.
+
+`override` must be given a real `Map` keyed by the slot objects; a plain record is rejected, because
+a scene node has no pipeline context with which to resolve slot names.
+
+```ts
+const root = container([
+    viewport({ x: 0, y: 0, width: w / 2, height: h }, [draw(leftEye)]),
+    viewport({ x: w / 2, y: 0, width: w / 2, height: h }, [draw(rightEye)]),
+]);
+
+const sceneGraph = scene({ root, label: 'stereo' });
+```
+
+### Mutation
+
+| Method                      | Behavior                                                                  |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `getNode(id)`               | Look up a node, or `undefined`                                            |
+| `add(parentId, node)`       | Append as the last child. Throws on a missing parent or a `draw` parent    |
+| `remove(id)`                | Detach the node and its subtree. Throws on the root                       |
+| `replace(id, node)`         | Substitute in place; the new node is rebranded to keep the existing `id`   |
+| `markDirty(id)`             | Mark the node and its ancestors dirty                                     |
+| `markSubtreeDirty(id)`      | Mark the node, its descendants, **and** its ancestors dirty               |
+| `on(type, listener)`        | Subscribe to `'structure-changed'`; returns an unsubscribe function        |
+
+`replace` has two conveniences worth calling out. Because the new node inherits the existing id,
+external references stay valid — the usual pattern for changing scoped state is to build a fresh
+`viewport(...)` and replace the old one. And if the replacement is a composite with an empty
+`children` array, the existing children are carried over, so you can change a node's state without
+restating its subtree. What you may not do is swap a composite for a leaf or vice versa.
+
+<Aside type="caution">
+**The scene owns the drawables in it.** Removing a `DrawableNode` — or replacing it with a node
+carrying a different `Drawable` — destroys the detached drawable and releases its resources. A given
+`Drawable` should therefore live in at most one scene at a time, and you should not hold onto one
+after removing it.
+</Aside>
+
+Because a `draw` leaf holds a live, GPU-backed `Drawable`, a scene containing one is not
+`structuredClone`-safe. To drive a scene across a worker boundary, send the tree without `draw`
+leaves and have the encoder-side reconstruct them from an `id → drawable` dictionary.
+
+## Render targets and submission
+
+```ts
+const target: RenderTarget = {
+    color: [
+        {
+            view: context.getCurrentTexture().createView(),
+            loadOp: 'clear',
+            clearValue: { r: 0.06, g: 0.07, b: 0.09, a: 1 },
+            storeOp: 'store',
+        },
+    ],
+    depthStencil: { view: depthView, depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' },
+};
+
+ctx.submit(sceneGraph, target);
+```
+
+`RenderTarget` is a thin descriptor: color attachments, an optional depth-stencil attachment, and an
+optional label. One `submit` encodes the entire scene into **one render pass** against that target.
+Multi-pass rendering is expressed as multiple submits — one per target, each with its own scene (or
+the same scene under a different `override`).
+
+`ctx.submit(scene, target)` is shorthand for `ctx.encoder().submit(scene, target)`. Use
+`encoder().encode(scene, target)` instead when you want the `GPUCommandBuffer` without queueing it —
+to interleave it with your own command buffers in a single `queue.submit` call.
+
+## What the encoder does
+
+The encoder walks the scene depth-first and emits pass commands, applying two layers of redundancy
+elimination.
+
+**State elision.** A running `ActiveState` tracks the current pipeline, bind groups, vertex buffers,
+index buffer, viewport, scissor, stencil reference, and blend constant. A command is emitted only
+when the desired value differs from the running one. Pipelines compare by reference (safe, because
+the pipeline cache guarantees one instance per fingerprint); buffers compare by
+`(gpu, offset, size)`, so two slices of one slab buffer are correctly treated as different.
+
+**The subtree command cache.** Every *composite* node's emitted command sequence is recorded, along
+with the encoder state at entry and at exit. On a later frame that subtree is replayed verbatim —
+without walking its children — when all of the following hold:
+
+- the node is not in the scene's dirty set,
+- the current running state structurally equals the recorded entry state, and
+- the override stack is identical (compared by map object identity, per level).
+
+After a successful replay, the running state is fast-forwarded to the recorded exit state. The cache
+is held per scene in a `WeakMap`, and entries are evicted automatically when a `structure-changed`
+event reports that a node — or an entire removed subtree — is gone. `scene.clearDirty()` runs at the
+end of every encode, so the dirty set describes changes since the last frame only.
+
+Draw leaves are not cached individually; they are emitted directly, and their commands are captured
+by whichever composite ancestor is recording.
+
+`override` nodes push their map for the duration of the subtree; resolution walks the stack
+innermost-first and falls through to the drawable's own binding for any uncovered slot. On exit, the
+bind-group portion of the running state is cleared so the next draw re-emits its own groups.
+
+### Reading the stats
+
+```ts
+const s = ctx.encoder().lastStats();
+```
+
+`EncoderStats` reports the commands emitted for the most recent encode — `setPipelineCalls`,
+`setBindGroupCalls`, `setVertexBufferCalls`, `setIndexBufferCalls`, `drawCalls`, `setViewportCalls`,
+`setScissorCalls`, `setStencilRefCalls`, `setBlendConstantCalls` — plus `subtreeCacheHits` and
+`subtreeCacheMisses`.
+
+Those last two are the ones to watch. In a steady-state scene where only uniform contents change, a
+mature frame should be almost all hits. Persistent misses mean something is invalidating the cache
+every frame, and the cause is nearly always one of the items below.
+
+## Getting good frames
+
+- **Build the scene once.** Rebuilding nodes each frame produces new node ids, which means no cache
+  entry exists and every subtree is re-walked. Prefer mutating resource contents — that requires no
+  scene change at all.
+- **Prefer `commit()` over structural change.** Updating a uniform's bytes doesn't touch the scene,
+  doesn't dirty anything, and doesn't change which GPU buffer a bind group points at.
+- **Keep dirty marking tight.** `markDirty` walks to the root; `markSubtreeDirty` also invalidates
+  everything below. Reach for the subtree variant only when a subtree's *structure* changed.
+- **Group by shared state.** Sibling drawables that use the same pipeline and bindings elide almost
+  every state command between them. Interleaving two pipelines costs a `setPipeline` — and a full
+  bind-group re-emit — at each switch.
+- **Reuse geometry with `reuse()`** rather than building a second drawable over the same arrays.
+- **Call `bufferManager.endFrame()`.** Nothing else does, and without it the pool never shrinks.
+- **Watch `ctx.stats()` and `lastStats()` together.** Rising `bindGroups` with steady draw counts
+  usually means resources are being rebuilt when they could be mutated.
+
+## API reference
+
+**Context** — `renderingContext(spec)`. Types: `RenderingContext`, `RenderingContextSpec`,
+`RenderingContextStats`.
+
+**Pipelines** — `ctx.pipeline(graph, shader, state)`. Types: `PipelineStateDescriptor`,
+`VertexStateDescriptor`, `FragmentStateDescriptor`, `NormalizedPipelineState`, `BuiltPipeline`.
+
+**Vertex layout** — `vertexLayout(vin, specs)`, `buffer(stepMode, attributes)`, `isVertexLayout`,
+`VERTEX_LAYOUT_BRAND`. Types: `VertexLayoutDeclaration`, `VertexBufferSpec`, `VertexBufferDecl`,
+`VertexAttributeDecl`, `VertexAttributeRef`.
+
+**Drawables** — `ctx.drawable(spec)`, `drawable.reuse(spec)`, `isDrawable`, `DRAWABLE_BRAND`. Types:
+`Drawable`, `DrawableSpec`, `DrawableReuseSpec`, `VertexData`, `TypedVertexData`,
+`RawArraysVertexData`, `PreBuiltVertexData`, `IndexData`, `RawArrayIndexData`, `PreBuiltIndexData`,
+`DrawCall`, `ArrayDrawCall`, `IndexedDrawCall`.
+
+**Scenes** — `scene(descriptor)`, `container`, `viewport`, `scissor`, `stencilref`, `blendconstant`,
+`override`, `draw`, `isScene`, `isSceneNode`, `SCENE_BRAND`, `SCENE_NODE_BRAND`. Types: `Scene`,
+`SceneDescriptor`, `SceneNode`, `CompositeSceneNode`, `ContainerNode`, `ViewportNode`, `ScissorNode`,
+`StencilRefNode`, `BlendConstantNode`, `BindingOverrideNode`, `DrawableNode`, `NodeId`,
+`ViewportSpec`, `ScissorSpec`, `SceneEvent`, `SceneEventListener`, `StructureChangedEvent`.
+
+**Encoding** — `ctx.encoder()`, `ctx.submit(scene, target)`, `isGraphEncoder`,
+`GRAPH_ENCODER_BRAND`. Types: `GraphEncoder`, `EncoderStats`, `RenderTarget`.
+
+For the authoritative surface, see
+[`packages/core/src/rendering/webgpu/renderer`](https://github.com/AllenInstitute/vis/tree/main/packages/core/src/rendering/webgpu/renderer).

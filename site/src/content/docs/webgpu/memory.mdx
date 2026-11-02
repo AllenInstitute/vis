@@ -1,0 +1,284 @@
+---
+title: Memory Management
+description: The BufferManager interface and the batch-pool implementation — how vis-core pools GPU buffers, when it evicts them, and how to size the pool for your workload.
+sidebar:
+    order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`device.createBuffer` is not free, and neither is `buffer.destroy()`. A visualization that streams
+tiles, rebuilds geometry, or updates per-object uniforms every frame will churn through thousands of
+small allocations, and WebGPU gives you no pooling of its own. The `memory` module is that pooling
+layer: a `BufferManager` interface plus one concrete implementation, `BatchPoolBufferManager`.
+
+Everything buffer-backed in the renderer funnels through it. `ctx.resource(uniformSlot, …)`,
+`ctx.drawable({ vertex: { kind: 'typed', … } })`, and the raw-arrays index path all allocate from the
+manager rather than calling `device.createBuffer` — so one budget and one set of statistics covers
+the whole renderer.
+
+## Setting one up
+
+```ts
+import { BatchPoolBufferManager, renderingContext } from '@alleninstitute/vis-core';
+
+const bufferManager = new BatchPoolBufferManager({
+    device,
+    maxBytes: 32 * 1024 * 1024,
+    idleFrameLimit: 60,
+    sizeBuckets: [256, 1024, 4096, 16384, 65536],
+});
+
+const ctx = renderingContext({ device, bufferManager, label: 'my-renderer' });
+```
+
+| Option             | Required | Meaning                                                                          |
+| ------------------ | -------- | -------------------------------------------------------------------------------- |
+| `device`           | ✓        | The `GPUDevice` every buffer is created on                                       |
+| `maxBytes`         | ✓        | Hard ceiling on total bytes held resident (leased + free) at any moment          |
+| `idleFrameLimit`   | ✓        | Frames a fully-free batch may sit unused before it becomes eligible for destruction |
+| `sizeBuckets`      | ✓        | The buffer sizes the manager will allocate; requests round **up** to the smallest fit |
+| `growthBatchSize`  |          | Buffers allocated per miss. Defaults to `2`                                      |
+| `telemetry`        |          | `onAllocate` / `onEvict` / `onMiss` callbacks                                    |
+
+The constructor validates all of it: `maxBytes` must be positive, `idleFrameLimit` a non-negative
+integer, `sizeBuckets` non-empty with positive-integer entries (they are sorted for you), and
+`growthBatchSize` a positive integer. Bad configuration throws immediately rather than failing on the
+first allocation.
+
+The context does **not** own the manager. `ctx.dispose()` releases every resource the context built
+but leaves the manager alive, so one manager can back several contexts and is disposed by whoever
+created it.
+
+## How the pool is organized
+
+Four nested concepts, from the outside in:
+
+| Concept     | What it is                                                                                |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| **Manager** | Owns every pool, the byte budget, and the frame counter                                   |
+| **Pool**    | One `(bucketSize, usage)` combination. Holds batches plus a FIFO of free buffers          |
+| **Batch**   | `growthBatchSize` buffers of `bucketSize` bytes, created together. The unit of allocation **and of destruction** |
+| **Handle**  | One leased buffer, presented as a `(gpu, offset, size)` triple                            |
+
+An `acquire(sizeBytes, usage)` call rounds `sizeBytes` up to the smallest bucket that fits, looks up
+(or creates) the pool for that `(bucketSize, usage)` pair, and shifts the oldest entry off the pool's
+free FIFO. The FIFO ordering is deliberate: handing back the least-recently-released buffer keeps
+recently-touched buffers warm in the driver.
+
+If the FIFO is empty, that's a **miss**: the manager allocates a fresh batch, hands you its first
+buffer, and queues the rest as free.
+
+<Aside>
+Pools are keyed by usage flags as well as size, so a 4 KiB `UNIFORM | COPY_DST` buffer and a 4 KiB
+`VERTEX | COPY_DST` buffer never share a pool. That is a correctness requirement — WebGPU fixes a
+buffer's usage at creation — but it's also a sizing consideration: each distinct usage mask you use
+multiplies the number of pools that can hold free bytes.
+</Aside>
+
+## Handles
+
+```ts
+const handle = bufferManager.acquire(1024, GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST);
+
+device.queue.writeBuffer(handle.gpu, handle.offset, bytes);
+pass.setVertexBuffer(0, handle.gpu, handle.offset, handle.size);
+
+handle.release();
+```
+
+| Member          | Meaning                                                                      |
+| --------------- | ---------------------------------------------------------------------------- |
+| `gpu`           | The `GPUBuffer`. Stable for the handle's lifetime                            |
+| `offset`        | Byte offset of this slice. Always `0` for the batch-pool manager             |
+| `size`          | Byte length of this slice. Always `>=` the requested size                    |
+| `sizeBytes`     | The size you originally asked for                                            |
+| `bucketSize`    | The physical allocation size                                                 |
+| `usage`         | The `GPUBufferUsage` mask it was created with                                |
+| `release()`     | Return it to the pool. `destroy()` is an alias                               |
+| `sizeInBytes()` | Returns `bucketSize` — the handle satisfies the repo's `Cacheable` interface  |
+
+Always pass `handle.offset` and `handle.size` through to WebGPU calls, even though the current
+implementation always reports offset `0`. Every consumer in the renderer does, which is what keeps a
+future slab-style manager — one that carves many handles out of one large `GPUBuffer` — a drop-in
+replacement.
+
+`release()` is **not** idempotent: releasing twice throws `InvalidHandleError`, as does releasing a
+handle that came from a different manager. Handles are validated against an internal token table, so
+neither mistake can silently corrupt the pool.
+
+### Slot-aware acquisition
+
+`acquireForSlot(slot, sizeBytes, usage)` is `acquire` plus a usage check against the slot's kind:
+
+| Slot kind                                              | Required usage bits           |
+| ------------------------------------------------------ | ----------------------------- |
+| `uniform`                                              | `UNIFORM \| COPY_DST`         |
+| `storage`                                              | `STORAGE \| COPY_DST`         |
+| `texture`, `storageTexture`, `sampler`, `externalTexture` | Throws — these are not buffer-backed |
+
+This is the path `ctx.resource()` uses, which is why a mis-declared uniform fails with a message
+naming the slot rather than a WebGPU validation error later.
+
+## The frame cycle
+
+The manager keeps a frame counter, and `endFrame()` is what advances it. **Nothing in the renderer
+calls it for you** — a context that renders on `requestAnimationFrame` will happily never advance the
+counter, which means idle batches are never swept. Call it once per frame after you submit:
+
+```ts
+const frame = (): void => {
+    // …update resources, submit the scene…
+    ctx.submit(sceneGraph, target);
+    bufferManager.endFrame();
+    requestAnimationFrame(frame);
+};
+```
+
+`endFrame()` does three things, in order:
+
+1. **Releases every `frameLease()` handle** vended since the last call.
+2. **Sweeps idle batches** — any batch that has been fully free for at least `idleFrameLimit` frames
+   is destroyed and its bytes returned to the device.
+3. **Increments the frame counter.**
+
+`frameLease(sizeBytes, usage)` is the companion to that first step: an `acquire` whose release is
+scheduled automatically. It's the right tool for within-frame scratch buffers — compute staging,
+readback targets, transient instance data — where tracking the release by hand buys nothing.
+
+```ts
+const scratch = bufferManager.frameLease(bytes, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC);
+// …use it this frame; do not call release() — endFrame() will.
+```
+
+## Eviction and the budget
+
+Two things destroy batches, and both only ever destroy batches that are **entirely** free:
+
+- **The idle sweep at `endFrame()`**, described above. This is the steady-state shrink path: a batch
+  released at frame _F_ survives until at least the `endFrame()` of frame _F + idleFrameLimit_.
+- **Pressure during `acquire()`.** When a miss needs `bucketSize × growthBatchSize` new bytes and
+  that would exceed `maxBytes`, the manager evicts the globally oldest fully-free batch — across all
+  pools, not just the one being allocated from — and repeats until the allocation fits. Ties break on
+  the pool's last-acquire frame, then on batch id. If nothing is left to evict, it throws
+  `OutOfBudgetError`.
+
+<Aside type="caution">
+Because the batch is the unit of destruction, **one leased buffer pins its entire batch**. With
+`growthBatchSize: 8` and a 64 KiB bucket, a single outstanding handle keeps 512 KiB resident. Smaller
+batches evict more gracefully; larger batches cut `createBuffer` traffic. The default of `2` is a
+deliberate middle.
+</Aside>
+
+`precheck(budgetCost)` is the non-allocating budget test that `ctx.resource()` and `ctx.drawable()`
+run before they allocate anything, so a request that cannot possibly fit fails cleanly instead of
+halfway. It compares `residentBytes - evictableBytes + budgetCost` against `maxBytes`, which makes it
+**optimistic**: a `false` answer means the request is definitely impossible, but a `true` answer is
+not a guarantee — `precheck` reasons about the raw byte count, while the allocation that follows may
+need a whole batch at the next bucket size up.
+
+## Errors
+
+| Error                  | Thrown when                                                             | Usual fix                                                     |
+| ---------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `OutOfBucketError`     | A request exceeds the largest configured bucket                         | Widen `sizeBuckets`, or split the data across smaller buffers  |
+| `OutOfBudgetError`     | A new batch won't fit in `maxBytes` and nothing is evictable            | Raise `maxBytes`, release more aggressively, or shrink the working set |
+| `InvalidHandleError`   | Double release, foreign handle, or use after `dispose()`                | Track ownership — a handle has exactly one owner               |
+| `DisposedBufferError`  | Any operation on a disposed manager                                     | Fix teardown ordering                                          |
+
+`OutOfBucketError` deserves specific attention, because it is the one that tends to surface late.
+Uniforms are small and predictable; a mesh's vertex buffer is neither. The bucket ladder in the
+example above tops out at 64 KiB, which is ample for uniforms and far too small for real geometry — a
+100 k-vertex position buffer alone is 1.2 MB. Size the top of the ladder against your largest single
+buffer, not your typical one.
+
+<Aside>
+The error **classes** are not re-exported from the package root, so match on the `name` field rather
+than using `instanceof`:
+
+```ts
+try {
+    const res = ctx.resource(bigSlot);
+} catch (err) {
+    if (err instanceof Error && err.name === 'OutOfBudgetError') {
+        // shed some work and retry next frame
+    }
+}
+```
+
+</Aside>
+
+## Observability
+
+`stats()` is cheap enough to call every frame and is the intended source for a debug HUD:
+
+```ts
+const s = bufferManager.stats();
+// s.residentBytes — total bytes owned (leased + free)
+// s.leasedBytes   — bytes in active use
+// s.freeBytes     — pooled bytes available for reuse
+// s.poolCount     — number of (bucketSize, usage) pools
+// s.perPool       — [{ bucketSize, usage, leased, free }, …]
+```
+
+`ctx.stats()` surfaces a read-through view of the same numbers (`bytes`, `leasedBytes`) alongside the
+pipeline and bind-group cache counts, so a HUD usually only needs the context.
+
+The telemetry hooks fire after the corresponding state change settles, and are the right place to
+watch for churn:
+
+```ts
+const bufferManager = new BatchPoolBufferManager({
+    device,
+    maxBytes: 64 * 1024 * 1024,
+    idleFrameLimit: 60,
+    sizeBuckets: [256, 1024, 4096, 16384, 65536, 1 << 20, 1 << 22],
+    telemetry: {
+        onMiss: ({ sizeBytes, bucketSize }) => console.debug('miss', sizeBytes, '→', bucketSize),
+        onAllocate: ({ bucketSize, batchSize }) => console.debug('alloc', bucketSize * batchSize),
+        onEvict: ({ bucketSize, batchSize }) => console.debug('evict', bucketSize * batchSize),
+    },
+});
+```
+
+A steady stream of `onMiss` paired with `onEvict` at the same bucket size means the pool is
+thrashing: either `maxBytes` is too tight for the working set, or `idleFrameLimit` is short enough
+that batches are destroyed just before they'd be reused.
+
+## Sizing the pool
+
+There is no universal configuration, but the reasoning is mechanical:
+
+- **Buckets.** A roughly doubling ladder keeps the worst-case waste near 50% and the pool count low.
+  Add a rung where your workload clusters (uniform blocks are often 64–256 B), and make sure the top
+  rung covers your largest single buffer.
+- **`maxBytes`.** Budget for peak simultaneous residency, not average, and leave headroom for the
+  free bytes the pool holds between reuses. Textures are not counted here — the manager only tracks
+  buffers.
+- **`idleFrameLimit`.** Long enough to survive a transient lull (60 frames ≈ one second) so buffers
+  are reused rather than recreated; short enough that a mode switch actually gives memory back.
+  `0` destroys a batch the moment it goes fully free at `endFrame()`.
+- **`growthBatchSize`.** Raise it when `onMiss` fires in bursts for the same bucket; lower it when
+  eviction granularity matters more than allocation cost.
+
+## Disposal
+
+```ts
+ctx.dispose(); // releases handles back to the manager
+bufferManager.dispose(); // destroys every GPUBuffer it owns
+```
+
+`dispose()` is a hard teardown: it force-destroys every batch, leased or not, and behavior of any
+outstanding handle afterwards is undefined. Dispose contexts first, the manager last.
+
+## Supplying your own implementation
+
+`BufferManager` is exported as a type, and `renderingContext({ device, bufferManager })` accepts
+anything structurally satisfying it. A custom implementation has to provide `acquire`,
+`acquireForSlot`, `precheck`, `release`, `endFrame`, `frameLease`, `stats`, and `dispose`, and must
+vend handles whose `(gpu, offset, size)` triple is valid for direct use in bind-group entries,
+`setVertexBuffer`, `setIndexBuffer`, and `queue.writeBuffer`. That triple is the entire contract
+between the memory layer and the renderer.
+
+For the authoritative surface, see
+[`packages/core/src/rendering/webgpu/memory`](https://github.com/AllenInstitute/vis/tree/main/packages/core/src/rendering/webgpu/memory).
