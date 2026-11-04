@@ -1,10 +1,10 @@
 # Autofix-only: these commands never block a commit. Unfixable lint errors are
 # printed for visibility, but `|| true` keeps the hook green. CI is what gates.
 #
-# `glob` scopes each tool to the file types it handles, so a commit touching
-# only e.g. Markdown skips all three commands instead of spawning no-op
-# processes. Lefthook already skips a command when its file list comes out
-# empty, so the globs are for clarity and speed, not safety.
+# `glob` scopes oxlint to the file types it handles, so a commit touching only
+# e.g. Markdown skips it instead of spawning a no-op process. fmt runs on every
+# staged file; --no-error-on-unmatched-pattern lets oxfmt skip types it doesn't
+# handle.
 pre-commit:
     commands:
         lint:
@@ -15,13 +15,5 @@ pre-commit:
             stage_fixed: true
         fmt:
             priority: 2
-            # Must cover every type oxfmt handles, or the hook stays silent on a
-            # file that `pnpm run check` then fails on in CI.
-            glob: '*.{js,jsx,mjs,cjs,mts,cts,ts,tsx,json,jsonc,yaml,yml,md,mdx,html}'
-            run: pnpm exec oxfmt {staged_files} || true
-            stage_fixed: true
-        fmt-astro:
-            priority: 2
-            glob: '*.astro'
-            run: pnpm exec prettier --write {staged_files} || true
+            run: pnpm exec oxfmt --no-error-on-unmatched-pattern {staged_files} || true
             stage_fixed: true
