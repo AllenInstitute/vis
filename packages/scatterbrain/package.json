@@ -49,19 +49,24 @@
         "type": "git",
         "url": "https://github.com/AllenInstitute/vis.git"
     },
-    "dependencies": {
-        "@alleninstitute/vis-core": "workspace:*",
-        "@alleninstitute/vis-geometry": "workspace:*",
-        "lodash-es": "4.18.1",
-        "regl": "2.1.0",
-        "ts-pattern": "5.9.0",
-        "zod": "4.4.3"
-    },
     "publishConfig": {
         "registry": "https://registry.npmjs.org",
         "access": "public"
     },
+    "dependencies": {
+        "lodash-es": "4.18.1",
+        "ts-pattern": "5.9.0",
+        "zod": "4.4.3"
+    },
+    "peerDependencies": {
+        "@alleninstitute/vis-core": "workspace:^",
+        "@alleninstitute/vis-geometry": "workspace:^",
+        "regl": "^2.1.0"
+    },
     "devDependencies": {
-        "@types/lodash-es": "4.17.12"
+        "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "@types/lodash-es": "4.17.12",
+        "regl": "2.1.1"
     }
 }

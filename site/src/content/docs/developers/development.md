@@ -5,11 +5,11 @@ sidebar:
     order: 0
 ---
 
-This document covers the tools, processes, and standards that we follow went developing within the `vis` repository.
+This document covers the tools, processes, and standards that we follow when developing within the `vis` repository.
 
 ## Development Servers
 
-To get started developing in the `vis` repsitory, you can use the following command to watch for changes in all packages and the documentation site:
+To get started developing in the `vis` repository, you can use the following command to watch for changes in all packages and the documentation site:
 
 ```sh
 pnpm run dev

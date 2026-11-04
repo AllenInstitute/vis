@@ -48,9 +48,14 @@
         "registry": "https://registry.npmjs.org",
         "access": "public"
     },
-    "dependencies": {
-        "@alleninstitute/vis-geometry": "workspace:*",
+    "peerDependencies": {
+        "@alleninstitute/vis-core": "workspace:^",
+        "@alleninstitute/vis-geometry": "workspace:^",
+        "regl": "^2.1.0"
+    },
+    "devDependencies": {
         "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
         "regl": "2.1.1"
     }
 }

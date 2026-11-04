@@ -79,3 +79,7 @@ filter_commits = false
 topo_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "oldest"
+
+[bump]
+# while pre-1.0, breaking changes bump the minor version instead of jumping to 1.0.0
+breaking_always_bump_major = false

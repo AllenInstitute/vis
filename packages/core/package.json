@@ -52,16 +52,20 @@
         "registry": "https://registry.npmjs.org",
         "access": "public"
     },
-    "devDependencies": {
-        "@types/lodash-es": "4.17.12",
-        "@webgpu/types": "0.1.74"
-    },
     "dependencies": {
-        "@alleninstitute/vis-geometry": "workspace:*",
         "lodash-es": "4.18.1",
-        "regl": "2.1.1",
         "uuid": "14.0.2",
         "webgpu-utils": "2.1.1",
         "zod": "4.4.3"
+    },
+    "peerDependencies": {
+        "@alleninstitute/vis-geometry": "workspace:^",
+        "regl": "^2.1.0"
+    },
+    "devDependencies": {
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "@types/lodash-es": "4.17.12",
+        "@webgpu/types": "0.1.74",
+        "regl": "2.1.1"
     }
 }
