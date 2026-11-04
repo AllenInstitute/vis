@@ -49,10 +49,17 @@
         "access": "public"
     },
     "dependencies": {
-        "@alleninstitute/vis-core": "workspace:*",
-        "@alleninstitute/vis-geometry": "workspace:*",
-        "regl": "2.1.1",
         "zarrita": "0.6.1",
         "zod": "4.4.3"
+    },
+    "peerDependencies": {
+        "@alleninstitute/vis-core": "workspace:^",
+        "@alleninstitute/vis-geometry": "workspace:^",
+        "regl": "^2.1.0"
+    },
+    "devDependencies": {
+        "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-geometry": "workspace:*",
+        "regl": "2.1.1"
     }
 }

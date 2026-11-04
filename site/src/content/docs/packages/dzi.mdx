@@ -8,13 +8,12 @@ import PackageManagerTabs from '../../../components/PackageManagerTabs.astro';
 
 # Installation
 
-To install the `@alleninstitute/vis-dzi` package, make sure you've followed the instructions for [authenticating
-with the Allen Institute's npm registry on GitHub](../../getting-started/using-packages), then run the following command in your terminal:
+To install the `@alleninstitute/vis-dzi` package, run the following command in your terminal. `@alleninstitute/vis-core`, `@alleninstitute/vis-geometry`, and `regl` are [peer dependencies](../../getting-started/using-packages#peer-dependencies), so they're installed alongside it:
 
 <PackageManagerTabs
-    npm="npm install @alleninstitute/vis-dzi"
-    pnpm="pnpm add @alleninstitute/vis-dzi"
-    yarn="yarn add @alleninstitute/vis-dzi"
+    npm="npm install @alleninstitute/vis-dzi @alleninstitute/vis-core @alleninstitute/vis-geometry regl"
+    pnpm="pnpm add @alleninstitute/vis-dzi @alleninstitute/vis-core @alleninstitute/vis-geometry regl"
+    yarn="yarn add @alleninstitute/vis-dzi @alleninstitute/vis-core @alleninstitute/vis-geometry regl"
 />
 
 ## Examples

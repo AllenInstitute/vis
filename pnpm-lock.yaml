@@ -50,15 +50,9 @@ importers:
 
   packages/core:
     dependencies:
-      '@alleninstitute/vis-geometry':
-        specifier: workspace:*
-        version: link:../geometry
       lodash-es:
         specifier: 4.18.1
         version: 4.18.1
-      regl:
-        specifier: 2.1.1
-        version: 2.1.1
       uuid:
         specifier: 14.0.2
         version: 14.0.2
@@ -69,15 +63,21 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
     devDependencies:
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
       '@webgpu/types':
         specifier: 0.1.74
         version: 0.1.74
+      regl:
+        specifier: 2.1.1
+        version: 2.1.1
 
   packages/dzi:
-    dependencies:
+    devDependencies:
       '@alleninstitute/vis-core':
         specifier: workspace:*
         version: link:../core
@@ -92,6 +92,13 @@ importers:
 
   packages/omezarr:
     dependencies:
+      zarrita:
+        specifier: 0.6.1
+        version: 0.6.1
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
       '@alleninstitute/vis-core':
         specifier: workspace:*
         version: link:../core
@@ -101,27 +108,12 @@ importers:
       regl:
         specifier: 2.1.1
         version: 2.1.1
-      zarrita:
-        specifier: 0.6.1
-        version: 0.6.1
-      zod:
-        specifier: 4.4.3
-        version: 4.4.3
 
   packages/scatterbrain:
     dependencies:
-      '@alleninstitute/vis-core':
-        specifier: workspace:*
-        version: link:../core
-      '@alleninstitute/vis-geometry':
-        specifier: workspace:*
-        version: link:../geometry
       lodash-es:
         specifier: 4.18.1
         version: 4.18.1
-      regl:
-        specifier: 2.1.0
-        version: 2.1.0
       ts-pattern:
         specifier: 5.9.0
         version: 5.9.0
@@ -129,9 +121,18 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
     devDependencies:
+      '@alleninstitute/vis-core':
+        specifier: workspace:*
+        version: link:../core
+      '@alleninstitute/vis-geometry':
+        specifier: workspace:*
+        version: link:../geometry
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
+      regl:
+        specifier: 2.1.1
+        version: 2.1.1
 
   site:
     dependencies:
@@ -3705,9 +3706,6 @@ packages:
 
   regex@6.0.1:
     resolution: {integrity: sha512-uorlqlzAKjKQZ5P+kTJr3eeJGSVroLKoHmquUj4zHWuR+hEyNqlXsSKlYYF5F4NI6nl7tWCs0apKJ0lmfsXAPA==}
-
-  regl@2.1.0:
-    resolution: {integrity: sha512-oWUce/aVoEvW5l2V0LK7O5KJMzUSKeiOwFuJehzpSFd43dO5spP9r+sSUfhKtsky4u6MCqWJaRL+abzExynfTg==}
 
   regl@2.1.1:
     resolution: {integrity: sha512-+IOGrxl3FZ8ZM9ixCWQZzFRiRn7Rzn9bu3iFHwg/yz4tlOUQgbO4PHLgG+1ZT60zcIV8tief6Qrmyl8qcoJP0g==}
@@ -8412,8 +8410,6 @@ snapshots:
   regex@6.0.1:
     dependencies:
       regex-utilities: 2.3.0
-
-  regl@2.1.0: {}
 
   regl@2.1.1: {}
 

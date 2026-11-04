@@ -7,13 +7,12 @@ import PackageManagerTabs from '../../../components/PackageManagerTabs.astro';
 
 ## Installation
 
-To install the `@alleninstitute/vis-core` package, make sure you've followed the instructions for [authenticating
-with the Allen Institute's npm registry on GitHub](../../getting-started/using-packages), then run the following command in your terminal:
+To install the `@alleninstitute/vis-core` package, run the following command in your terminal. `@alleninstitute/vis-geometry` and `regl` are [peer dependencies](../../getting-started/using-packages#peer-dependencies), so they're installed alongside it:
 
 <PackageManagerTabs
-    npm="npm install @alleninstitute/vis-core"
-    pnpm="pnpm add @alleninstitute/vis-core"
-    yarn="yarn add @alleninstitute/vis-core"
+    npm="npm install @alleninstitute/vis-core @alleninstitute/vis-geometry regl"
+    pnpm="pnpm add @alleninstitute/vis-core @alleninstitute/vis-geometry regl"
+    yarn="yarn add @alleninstitute/vis-core @alleninstitute/vis-geometry regl"
 />
 
 ## How To use generic rendering tools for your cool data
