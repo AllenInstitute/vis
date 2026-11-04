@@ -1,7 +1,9 @@
-import type { CartesianPlane, Interval, vec3, vec4 } from '@alleninstitute/vis-geometry';
+import type { Interval, vec3, vec4 } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
 import { logger, makeRGBAColorVector } from '@alleninstitute/vis-core';
 import { z } from 'zod';
+import * as Plane from './plane';
+import type { CartesianPlane } from './plane';
 
 export type ZarrDimension = 't' | 'c' | 'z' | 'y' | 'x';
 
@@ -418,16 +420,17 @@ export class OmeZarrMetadata {
     }
 
     maxOrthogonal(plane: CartesianPlane, multiscale: number | string = 0): number {
-        if (plane.ortho === 'x') {
+        const ortho = Plane.orthogonal(plane);
+        if (ortho === 'x') {
             return this.maxX(multiscale);
         }
-        if (plane.ortho === 'y') {
+        if (ortho === 'y') {
             return this.maxY(multiscale);
         }
-        if (plane.ortho === 'z') {
+        if (ortho === 'z') {
             return this.maxZ(multiscale);
         }
-        throw new VisZarrDataError(`invalid plane: ortho set to '${plane.ortho}'`);
+        throw new VisZarrDataError(`invalid plane: ortho set to '${ortho}'`);
     }
 
     #makeShapedDataset(dataset: OmeZarrDataset, multiscaleIndex: number, datasetIndex: number) {

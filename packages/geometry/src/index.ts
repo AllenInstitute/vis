@@ -14,16 +14,5 @@ export type { box3D } from './box3D';
 export { size, within, isFiniteInterval, isValid, fixOrder, intersection, limit, intervalToVec2 } from './interval';
 export type { box } from './BoundingBox';
 export { getMinimumBoundingBox, scaleFromPoint, interpolateRectangles } from './Rectangle2D';
-export {
-    type CartesianAxis,
-    type OrthogonalCartesianAxes,
-    type UVAxes,
-    type UVAxisMapping,
-    type OrthogonalAxisMapping,
-    CartesianPlane,
-    PLANE_XY,
-    PLANE_XZ,
-    PLANE_YZ,
-} from './plane';
 export { type SpatialTreeInterface, visitBFS, visitBFSMaybe } from './spatialIndexing/tree';
 export { type AxisAngle, composeRotation, rotateVector } from './axisAngle';

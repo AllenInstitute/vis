@@ -1,4 +1,4 @@
-import { Box2D, Camera2D, PLANE_XY, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, Camera2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
     type OmeZarrMetadata,
     type RenderSettings,
@@ -13,7 +13,7 @@ import { useId, useMemo, useState } from 'react';
 import { RenderServerProvider } from '../../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
 import { OMEZARR_DEMO_FILESETS } from 'src/examples/common/filesets/omezarr';
-
+const PLANE_XY = 'xy';
 const screenSize: vec2 = [800, 800];
 
 function makeZarrSettings(screenSize: vec2, view: box2D, param: number, omezarr: OmeZarrMetadata): RenderSettings {

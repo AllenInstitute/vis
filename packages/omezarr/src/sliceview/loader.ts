@@ -1,19 +1,12 @@
-import {
-    Box2D,
-    type CartesianPlane,
-    Vec2,
-    type box2D,
-    type OrthogonalCartesianAxes,
-    type vec2,
-} from '@alleninstitute/vis-geometry';
+import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import type { Chunk } from 'zarrita';
 import type { ZarrRequest } from '../zarr/loading';
 import { indexOfRelativeSlice, loadSlice, pickBestScale, planeSizeInVoxels, sizeInUnits } from '../zarr/loading';
 import type { VoxelTileImage } from './slice-renderer';
 import type { OmeZarrMetadata, OmeZarrShapedDataset } from '../zarr/types';
-
+import { orthogonal, type CartesianPlane } from '../zarr/plane';
 export type VoxelTile = {
-    plane: OrthogonalCartesianAxes; // the plane in which the tile sits
+    plane: CartesianPlane; // the plane in which the tile sits
     realBounds: box2D; // in the space given by the axis descriptions of the omezarr dataset
     bounds: box2D; // in voxels, in the plane
     orthoVal: number; // the value along the orthogonal axis to the plane (e.g. the slice index along Z relative to an XY plane)
@@ -64,7 +57,7 @@ function getVisibleTilesInLayer(
     const visibleTiles: VoxelTile[] = [];
     visitTilesWithin([tileSize, tileSize], size, realToVxl(camera.view), (uv) => {
         visibleTiles.push({
-            plane: plane.axes,
+            plane: plane,
             realBounds: vxlToReal(uv),
             bounds: uv,
             orthoVal,
@@ -103,7 +96,12 @@ export function getVisibleTiles(
     const layer = pickBestScale(metadata, plane, camera.view, camera.screenSize);
     // figure out the index of the slice
 
-    const sliceIndex = indexOfRelativeSlice(layer, metadata.attrs.multiscales[0].axes, planeLocation, plane.ortho);
+    const sliceIndex = indexOfRelativeSlice(
+        layer,
+        metadata.attrs.multiscales[0].axes,
+        planeLocation,
+        orthogonal(plane)
+    );
     return getVisibleTilesInLayer(camera, plane, sliceIndex, metadata, tileSize, layer);
 }
 

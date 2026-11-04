@@ -2,8 +2,8 @@ import { type AsyncDataCache, beginLongRunningFrame, logger } from '@alleninstit
 import type REGL from 'regl';
 import type { RenderCallback } from './types';
 
-import { Box2D, CartesianPlane, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
-import { pickBestScale, sizeInUnits, sizeInVoxels } from '@alleninstitute/vis-omezarr';
+import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import { orthogonal, pickBestScale, sizeInUnits, sizeInVoxels, type CartesianPlane } from '@alleninstitute/vis-omezarr';
 import type { Camera } from '../common/camera';
 import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
 import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
@@ -79,7 +79,7 @@ export function renderGrid<C extends CacheContentType | object>(
     const { cache, renderer, callback, regl } = settings;
     let { camera, concurrentTasks, queueInterval, cpuLimit } = settings;
     const { metadata, gamut, plane: aaPlane, slices } = grid;
-    const plane = new CartesianPlane(aaPlane);
+    const plane = aaPlane;
     const { axes } = metadata.attrs.multiscales[0];
     concurrentTasks = concurrentTasks ? Math.abs(concurrentTasks) : 10;
     queueInterval = queueInterval ? Math.abs(queueInterval) : 33;
@@ -110,7 +110,7 @@ export function renderGrid<C extends CacheContentType | object>(
         const param = i / slices;
         const slice: AxisAlignedZarrSlice = {
             ...grid,
-            plane: new CartesianPlane(grid.plane),
+            plane: grid.plane,
             type: 'AxisAlignedZarrSlice',
             planeParameter: param,
         };
@@ -118,7 +118,7 @@ export function renderGrid<C extends CacheContentType | object>(
             ...camera,
             view: applyOptionalTrn(camera.view, slice.toModelSpace, true),
         };
-        const dim = sizeInVoxels(plane.ortho, axes, best);
+        const dim = sizeInVoxels(orthogonal(plane), axes, best);
         const realSize = sizeInUnits(plane, axes, best);
 
         if (!realSize) {
@@ -174,7 +174,7 @@ export function renderSlice<C extends CacheContentType | object>(
     };
     const best = pickBestScale(metadata, plane, camera.view, desiredResolution);
     const axes = metadata.attrs.multiscales[0].axes;
-    const dim = sizeInVoxels(plane.ortho, axes, best);
+    const dim = sizeInVoxels(orthogonal(plane), axes, best);
     const orthoVal = Math.round(planeParameter * (dim ?? 0));
 
     const items = getVisibleTiles({ ...camera, screen: desiredResolution }, plane, orthoVal, metadata);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { CartesianPlane } from '@alleninstitute/vis-geometry';
 import { OmeZarrAxisSchema } from './types';
+import { u } from './plane';
 
 describe('OmeZarrAxisSchema', () => {
     it('should convert the axis name to lowercase when parsed to match our Cartesian Plane', () => {
@@ -10,7 +10,7 @@ describe('OmeZarrAxisSchema', () => {
         });
 
         // Create a concrete CartesianPlane to compare with so we know the parsed data will interop correctly
-        const plane = new CartesianPlane('xy');
-        expect(result.name).toBe(plane.u);
+        const plane = 'xy';
+        expect(result.name).toBe(u(plane));
     });
 });
