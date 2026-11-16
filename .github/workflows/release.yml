@@ -20,13 +20,13 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
               with:
                   ref: ${{ github.event.repository.default_branch }}
                   ssh-key: ${{ secrets.SERVICE_ACCOUNT_SSH_KEY }}
                   fetch-depth: 0
 
-            - uses: pnpm/setup@v2
+            - uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
               with:
                   cache: true
 
@@ -67,7 +67,7 @@ jobs:
               run: pnpm --filter "@alleninstitute/vis-${{ inputs.package }}" exec -- pnpm version "${{ env.BUMPED_VERSION }}" --no-git-tag-version
 
             - name: Generate changelog
-              uses: orhun/git-cliff-action@v4
+              uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
               with:
                   config: cliff.toml
                   args: >-
