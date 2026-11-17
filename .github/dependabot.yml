@@ -14,3 +14,16 @@ updates:
           patch-updates:
               update-types:
                   - 'patch'
+
+    - package-ecosystem: 'github-actions'
+      directory: '/'
+      schedule:
+          interval: 'monthly'
+      commit-message:
+          prefix: 'chore(deps):'
+      cooldown:
+          default-days: 7
+      groups:
+          patch-updates:
+              update-types:
+                  - 'patch'
