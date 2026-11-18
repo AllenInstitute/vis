@@ -32,7 +32,7 @@
         "@vitest/coverage-istanbul": "4.1.1",
         "buffer": "6.0.3",
         "git-cliff": "2.14.2",
-        "lefthook": "2.1.10",
+        "lefthook": "2.2.2",
         "parcel": "2.16.4",
         "process": "0.11.10",
         "typescript": "6.0.3",
