@@ -113,3 +113,72 @@ export { bindings, group, isBindingGraph, isBindingGroup, resolveShaderBindings,
 
 /** The per-submit render-pass destination. */
 export type { RenderTarget } from './renderer';
+
+// ---- Rendering context, drawables, scenes -----------------------------------------------------
+
+/** `BuiltPipeline` is the artefact returned by `RenderingContext.pipeline()`. A `Drawable` is a
+ *  pipeline + resource set + draw-call descriptor, built via `ctx.drawable({...})`. A `Scene` is
+ *  the retained-mode tree of drawables submitted for rendering. Encoding and submission live on
+ *  `RenderingContext` (`ctx.encoder()` / `ctx.submit(scene, target)`). */
+export type {
+    ArrayDrawCall,
+    BindingOverrideNode,
+    BlendConstantNode,
+    BuiltPipeline,
+    CompositeSceneNode,
+    ContainerNode,
+    Drawable,
+    DrawableNode,
+    DrawableReuseSpec,
+    DrawableSpec,
+    DrawCall,
+    EncoderStats,
+    GraphEncoder,
+    IndexBufferBinding,
+    IndexData,
+    IndexedDrawCall,
+    NodeId,
+    PreBuiltIndexData,
+    PreBuiltVertexData,
+    RawArrayIndexData,
+    RawArraysVertexData,
+    RenderingContext,
+    RenderingContextSpec,
+    RenderingContextStats,
+    ResourceFor,
+    ResourceInit,
+    Scene,
+    SceneDescriptor,
+    SceneEvent,
+    SceneEventListener,
+    SceneNode,
+    ScissorNode,
+    ScissorSpec,
+    StencilRefNode,
+    StructureChangedEvent,
+    TypedVertexData,
+    VertexBufferBinding,
+    VertexData,
+    ViewportNode,
+    ViewportSpec,
+} from './renderer';
+/** Device-scoped facade — owns the pipeline cache, buffer manager, and encoder hooks. */
+export {
+    blendconstant,
+    container,
+    DRAWABLE_BRAND,
+    draw,
+    GRAPH_ENCODER_BRAND,
+    isDrawable,
+    isGraphEncoder,
+    isScene,
+    isSceneNode,
+    override,
+    renderingContext,
+    SCENE_BRAND,
+    SCENE_NODE_BRAND,
+    scene,
+    scissor,
+    stencilref,
+    viewport,
+} from './renderer';
