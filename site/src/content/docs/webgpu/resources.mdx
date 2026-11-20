@@ -1,0 +1,315 @@
+---
+title: Resources and Bindings
+description: Slots, binding graphs, and data-bearing resources — how vis-core describes what a shader binds, where each binding lives, and what data fills it.
+sidebar:
+    order: 4
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The [Shader Builder](../shader-builder) page covers how a WGSL module is assembled from
+declarations. This page covers the other half of the authoring surface: **resource slots** (what a
+shader binds), **binding graphs** (where each binding lives), and **resources** (the data that fills
+them).
+
+The three concerns are deliberately separate objects, because they have different lifetimes:
+
+| Layer            | Created by                     | Lifetime                             | Answers                                    |
+| ---------------- | ------------------------------ | ------------------------------------ | ------------------------------------------ |
+| **Slot**         | `slot.uniform(...)` and family | Module scope — inert, reusable data  | _What kind of thing does the shader bind?_ |
+| **Binding graph** | `bindings(group(...), shader)` | Per layout — validated, frozen       | _Which `@group` / `@binding` does it get?_ |
+| **Resource**     | `ctx.resource(slot, init)`     | Owned by the `RenderingContext`      | _What data is in it right now?_            |
+
+A slot never stores its own `(group, binding)`, and a resource never stores its own bind group. That
+separation is what lets one slot appear in several unrelated layouts, and one resource be shared by
+many drawables.
+
+## Declaring slots
+
+Every binding a shader uses is declared once with a `slot` constructor, then dropped into the
+shader's declaration list alongside structs and entry points.
+
+```ts
+import { slot, struct, member, types } from '@alleninstitute/vis-core';
+
+type CameraData = { viewProj: Float32Array };
+
+const Camera = struct<CameraData>('Camera', [member('viewProj', types.mat4x4f)]);
+
+const camera = slot.uniform<CameraData>('camera', Camera);
+const albedo = slot.texture('albedo', types.texture('2d', 'f32'));
+const albedoSampler = slot.sampler('albedoSampler', types.sampler);
+```
+
+| Constructor                                       | Slot kind        | Notes                                                  |
+| ------------------------------------------------- | ---------------- | ------------------------------------------------------ |
+| `slot.uniform<T>(name, type, options?)`           | `uniform`        | `type` is a `StructDecl<T>` or a raw WGSL identifier    |
+| `slot.storage<T>(name, type, options?)`           | `storage`        | Adds `accessMode` to the options                        |
+| `slot.texture(name, type, options?)`              | `texture`        | Value supplied at draw time is a `GPUTextureView`       |
+| `slot.storageTexture(name, type, format, options?)` | `storageTexture` | `format` is required by the WebGPU API                  |
+| `slot.sampler(name, type, options?)`              | `sampler`        | `'sampler'` or `'sampler_comparison'`                   |
+| `slot.external(name, options?)`                   | `externalTexture` | Backed by a `GPUExternalTexture` (video / `ImageBitmap`) |
+
+The options object carries the metadata that ends up on the `GPUBindGroupLayoutEntry`. Every kind
+accepts `visibility` and `attributes`; the rest are per-kind:
+
+| Option             | Applies to                      | Effect                                                        |
+| ------------------ | ------------------------------- | ------------------------------------------------------------- |
+| `visibility`       | all                             | Shader-stage mask; defaults to vertex + fragment              |
+| `attributes`       | all                             | WGSL variable attributes (`@align(N)`, `@size(N)`)            |
+| `accessMode`       | `storage`                       | `'read'` \| `'write'` \| `'read_write'`                        |
+| `hasDynamicOffset` | `uniform`, `storage`            | `GPUBindGroupLayoutEntry.buffer.hasDynamicOffset`             |
+| `minBindingSize`   | `uniform`, `storage`            | `GPUBindGroupLayoutEntry.buffer.minBindingSize`               |
+| `sampleType`       | `texture`                       | Defaults to `'float'`                                         |
+| `viewDimension`    | `texture`, `storageTexture`     | Defaults to `'2d'`                                            |
+| `multisampled`     | `texture`                       | Defaults to `false`                                           |
+| `access`           | `storageTexture`                | Defaults to `'write-only'`                                    |
+| `bindingType`      | `sampler`                       | Defaults to `'filtering'`                                     |
+
+`visibility` is a plain bit mask, so the WebGPU global works directly:
+
+```ts
+const lights = slot.storage('lights', Light, {
+    accessMode: 'read',
+    visibility: GPUShaderStage.FRAGMENT,
+});
+```
+
+<Aside type="caution">
+A slot is **inert until it is bound**. Calling `gen()` on an unbound slot throws — a slot has no
+`@group`/`@binding` of its own to emit. `bindings(...)` is what supplies those numbers, and the
+pipeline build wraps each slot in a bound copy before generating WGSL. You never call `gen()`
+yourself in normal use.
+</Aside>
+
+## Laying out bind groups
+
+`group(...)` builds a tree of slots; `bindings(root, ...shaders)` validates that tree against one or
+more shaders and freezes the result into a `BindingGraph`.
+
+```ts
+import { bindings, group } from '@alleninstitute/vis-core';
+
+const graph = bindings(
+    group(
+        { label: 'frame' },
+        camera,
+        lights,
+        group({ label: 'material' }, albedo, albedoSampler)
+    ),
+    program
+);
+```
+
+That tree resolves to:
+
+| Slot            | `@group` | `@binding` | Owner      |
+| --------------- | -------- | ---------- | ---------- |
+| `camera`        | 0        | 0          | `frame`    |
+| `lights`        | 0        | 1          | `frame`    |
+| `albedo`        | 1        | 0          | `material` |
+| `albedoSampler` | 1        | 1          | `material` |
+
+The resolution rules are short enough to keep in your head:
+
+- **Group index is tree depth.** The root is group 0, its subgroups are group 1, and so on. There is
+  no way to name a group index explicitly — you express it by nesting.
+- **Binding index is source position among the group's _slot_ children.** Subgroup children are
+  bucketed separately, so interleaving them changes nothing: in `group(a, sub, b)`, `a` is binding 0
+  and `b` is binding 1.
+- **A slot may appear at most once per graph**, and a `BindingGroup` object may be used as a subgroup
+  at most once per graph. Both are checked, and both throw with the offending slot / group name.
+- **Depth is capped per node** by `maxDepth` (default 4), so the default allows group indices 0–3 —
+  matching the bind-group count WebGPU guarantees. Raise or lower it with
+  `group({ maxDepth: 2 }, ...)`.
+- **Every slot a shader declares must be present in the tree.** `bindings(...)` walks each shader's
+  declarations and throws naming any slot that the tree does not cover.
+
+Because ownership is graph-local, the same slot object can be laid out differently in two unrelated
+graphs — useful when a shared `camera` uniform sits at group 0 in your main pass and group 1 in a
+post-process pass. What you may *not* do is place it twice in one tree.
+
+### Inspecting a graph
+
+Two helpers make a layout auditable without building a pipeline:
+
+```ts
+import { shaderSlotEntries, resolveShaderBindings } from '@alleninstitute/vis-core';
+
+// [{ group, binding, slot, owner }, ...] sorted by (group, binding)
+console.table(
+    shaderSlotEntries(graph, program).map((e) => ({
+        slot: e.slot.name,
+        kind: e.slot.kind,
+        group: e.group,
+        binding: e.binding,
+        owner: e.owner.label,
+    }))
+);
+
+// Map<ResourceSlot, {group, binding}> for just the slots this shader declares
+const map = resolveShaderBindings(graph, program);
+```
+
+`isBindingGraph(value)` and `isBindingGroup(value)` are the runtime discriminators, should you need
+to validate a value that crossed a module boundary.
+
+## Filling slots with data
+
+`ctx.resource(slot, init?)` builds the concrete, data-bearing object for a slot. It dispatches on
+`slot.kind`, so one call covers every case:
+
+| Slot kind         | `init` argument                       | Returns                  | Notes                                             |
+| ----------------- | ------------------------------------- | ------------------------ | ------------------------------------------------- |
+| `uniform`         | `Partial<T>` (optional)               | `BufferResource<T>`      | Requires a `bufferManager` on the context         |
+| `storage`         | `Partial<T>` (optional)               | `BufferResource<T>`      | Requires a `bufferManager` on the context         |
+| `texture`         | `{ texture, view? }` (**required**)   | `TextureResource`        | View defaults to `texture.createView()`           |
+| `storageTexture`  | `{ texture, view? }` (**required**)   | `StorageTextureResource` | Same                                              |
+| `sampler`         | `GPUSampler` \| descriptor (optional) | `SamplerResource`        | A descriptor is passed to `device.createSampler()` |
+| `externalTexture` | `GPUExternalTexture` (**required**)   | `ExternalTextureResource` | Re-import each frame; external textures expire    |
+
+Texture creation is deliberately **not** part of this API: you create the `GPUTexture` (and upload to
+it) yourself, then hand it over for binding.
+
+### Buffer resources
+
+A buffer-backed slot produces a `BufferResource<T>` — a CPU-side structured view plus the pooled GPU
+buffer behind it:
+
+```ts
+const cameraRes = ctx.resource(camera, { viewProj: identity() });
+
+cameraRes.set({ viewProj }); // typed bulk update — Partial<T>
+cameraRes.setField('viewProj', viewProj); // typed single-field update
+cameraRes.commit(device); // upload the CPU bytes to the GPU
+```
+
+| Member               | What it is                                                                  |
+| -------------------- | --------------------------------------------------------------------------- |
+| `set(values)`        | `Partial<T>` bulk write into the CPU-side view                              |
+| `setField(key, v)`   | Single-field write; throws if the struct has no such field                  |
+| `commit(device)`     | `queue.writeBuffer(handle.gpu, handle.offset, arrayBuffer)`, then bumps `version` |
+| `view`               | The `webgpu-utils` `StructuredView`; `view.views.<field>` gives raw typed arrays |
+| `arrayBuffer`        | The CPU-side `ArrayBuffer` that `commit` uploads                            |
+| `handle`             | The pooled `(gpu, offset, size)` triple — see [Memory Management](../memory) |
+| `usage`              | The `GPUBufferUsage` mask the handle was allocated with                     |
+| `id` / `version`     | Stable UUID + mutation counter; together they key the bind-group cache      |
+
+Two behaviors are worth committing to memory:
+
+- **`init` seeds the CPU side only.** Values passed to `ctx.resource(slot, init)` are written into
+  the structured view but *not* uploaded. Call `commit(device)` before the first draw that reads them.
+- **Buffer slots need a real struct.** `makeBufferResource` reflects the slot's `StructDecl` to
+  compute the byte layout, so a slot declared with a raw WGSL type string (`slot.uniform('camera',
+  'Camera')`) throws at `ctx.resource()` time. Declare the struct with `struct<T>(...)` and pass the
+  declaration.
+
+### Everything else
+
+```ts
+const tex = ctx.resource(albedo, { texture: myGpuTexture });
+const samp = ctx.resource(albedoSampler, { magFilter: 'linear', minFilter: 'linear' });
+const video = ctx.resource(frameSlot, device.importExternalTexture({ source: videoEl }));
+```
+
+These wrappers carry no host-side data — they exist to give textures, samplers, and external textures
+the same identity, refcounting, and cache-invalidation behavior as buffers.
+
+## Lifetimes
+
+Resource lifetime is owned by the renderer, not by you. Every resource is reference-counted
+internally, and the counting is driven from three places:
+
+- **The `RenderingContext` owns everything it builds.** `ctx.resource(...)` and `ctx.drawable(...)`
+  register their products, and `ctx.dispose()` destroys all of them.
+- **A `Drawable` takes a reference to each resource it binds.** Building a drawable shares the
+  resources into it; destroying the drawable releases those references.
+- **A `Scene` owns the drawables in it.** Removing (or replacing) a `DrawableNode` destroys the
+  detached drawable, which in turn releases its resources.
+
+The `share()` / `destroy()` methods that implement this are intentionally absent from the public
+`Resource` and `Drawable` types. If you find yourself wanting them, the resource you are managing
+probably wants to be built through the context instead.
+
+What teardown actually releases depends on the kind:
+
+| Kind                              | On final release                                          |
+| --------------------------------- | --------------------------------------------------------- |
+| `uniform` / `storage` / raw buffer | `handle.release()` — the buffer returns to the pool        |
+| `texture` / `storageTexture`      | `texture.destroy()` — the context owns the `GPUTexture`    |
+| `sampler` / `externalTexture`     | Nothing to destroy; the reference is simply dropped        |
+
+<Aside type="caution">
+Because a `TextureResource` destroys its `GPUTexture` on teardown, do not hand the same
+`GPUTexture` to two `ctx.resource()` calls, and do not keep using it after `ctx.dispose()`.
+</Aside>
+
+## Bind groups and cache invalidation
+
+You never call `device.createBindGroup` yourself. The encoder assembles bind groups on demand from
+`(pipeline, drawable bindings, override stack)` and memoizes them on the context under a key built
+from the pipeline fingerprint, the group index, and a `${resource.id}.${resource.version}` token per
+binding.
+
+That key shape is what makes invalidation precise:
+
+- **`commit()` bumps `version`**, and both `commit()` and final `destroy()` sweep exactly the cached
+  bind groups that referenced the resource. Entries for unrelated resources survive, so the next
+  submit only rebuilds what actually changed.
+- **`ctx.sweepBindGroups([...])`** does the same thing on demand, for resources you built outside the
+  context's ownership. It returns the number of bind groups removed.
+- **`ctx.disposeBindGroupCache()`** drops everything; a good move after tearing out a large subtree.
+- **`ctx.stats().bindGroups`** reports the current entry count.
+
+The cache is unbounded by design — its entries are cheap, and they are pruned by resource mutation
+rather than by capacity.
+
+## Overriding bindings per subtree
+
+A scene can substitute resources for a subtree without rebuilding any drawables, using an `override`
+node keyed by the slot objects themselves:
+
+```ts
+import { override, draw, container } from '@alleninstitute/vis-core';
+
+const ghosted = override(new Map([[material, ghostMaterial]]), [draw(bodyDrawable)]);
+```
+
+Resolution walks the override stack innermost-first and falls through to the drawable's own binding
+for any slot no override covers. See [Renderer and Scenes](../rendering) for the encoder
+semantics.
+
+## What is and isn't validated
+
+| Concern                                              | When it's caught                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------- |
+| Duplicate slot in one graph                          | `bindings(...)` — throws, names both owning groups                   |
+| Group nesting deeper than `maxDepth`                 | `bindings(...)` — throws                                             |
+| Shader declares a slot absent from the tree          | `bindings(...)` — throws, names the slot                             |
+| Buffer slot without a `StructDecl` type              | `ctx.resource(...)` — throws                                         |
+| `setField` on a field the struct doesn't declare     | `setField(...)` — throws                                             |
+| Any use of a resource after teardown                 | `set` / `setField` / `commit` — throws `… after destroy()`           |
+| Drawable missing a binding the pipeline requires     | `ctx.drawable(...)` — throws, names slot and pipeline                |
+| Binding whose resource kind ≠ the slot kind          | `ctx.drawable(...)` — throws                                         |
+| Allocation that would exceed the memory budget       | `ctx.resource(...)` — throws via the buffer manager's precheck       |
+| Whether uniform **contents** match the WGSL struct   | ✗ never — `struct<T>`'s phantom shape is not cross-checked against its members |
+| Whether a slot's `visibility` covers the stages that use it | ✗ never — an under-wide mask surfaces as a WebGPU validation error |
+
+## API reference
+
+**Slot construction** — `slot.uniform`, `slot.storage`, `slot.texture`, `slot.storageTexture`,
+`slot.sampler`, `slot.external`. Types: `TypedUniformSlot<T>`, `TypedStorageSlot<T>`,
+`TypedTextureSlot`, `TypedStorageTextureSlot`, `TypedSamplerSlot`, `TypedExternalTextureSlot`.
+
+**Binding layout** — `group(spec?, ...children)`, `bindings(root, ...shaders)`,
+`resolveShaderBindings(graph, shader)`, `shaderSlotEntries(graph, shader)`, `isBindingGraph`,
+`isBindingGroup`. Types: `BindingGraph`, `BindingGroup`, `GroupSpec`.
+
+**Resources** — `ctx.resource(slot, init?)`, `isResource`, `RESOURCE_BRAND`. Types: `Resource`,
+`BufferResource<T>`, `RawBufferResource`, `TextureResource`, `StorageTextureResource`,
+`SamplerResource`, `ExternalTextureResource`, `ResourceInit<S>`, `ResourceFor<S>`.
+
+For the authoritative surface, see
+[`packages/core/src/rendering/webgpu/resources`](https://github.com/AllenInstitute/vis/tree/main/packages/core/src/rendering/webgpu/resources)
+and
+[`renderer/pipelines/binding-graph.ts`](https://github.com/AllenInstitute/vis/blob/main/packages/core/src/rendering/webgpu/renderer/pipelines/binding-graph.ts).
